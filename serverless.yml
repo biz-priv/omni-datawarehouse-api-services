@@ -1,0 +1,126 @@
+service: omni-dw
+
+provider:
+  name: aws
+  runtime: python3.7
+  versionFunctions: false
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  deploymentBucket: ${ssm:/${self:service}/${self:provider.stage}/slsDeploymentBucket}
+  role: ${ssm:/${self:service}/${self:provider.stage}/lambdaIamVpcRole}
+  apiName: ${self:service}-api-${self:provider.stage}  
+  vpc:
+    securityGroupIds:
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda-sg}
+    subnetIds:
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda-subnetA}
+  stackTags:
+    Project: OmniApi 
+    Environment: ${self:provider.stage}
+
+custom: 
+    usagePlan:
+      name: mock-api-usageplan-dev
+
+functions:
+  shipment-info:
+    handler: functions/shipmentInfo.handler
+    name: ${self:service}-shipment-info-${self:provider.stage}
+    events: 
+      - http: 
+          path: /shipment/info
+          method: GET
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+            # apiGatewayCaching:
+            #   enabled: false
+            # TODO: Turn off cache thru serverless
+    package:
+      include:
+      - psycopg2/**
+      - requests/**
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser}~true
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword}~true
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      # TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+      # CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost}~true 
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+      
+  shipment-detail:
+    handler: functions/shipmentDetail.handler
+    name: ${self:service}-shipment-detail-${self:provider.stage}
+    events: 
+      - http: 
+          path: /shipment/detail
+          method: GET
+          integration: lambda
+          private: true
+    package:
+      include:
+      - psycopg2/**
+      - requests/**
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser}
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword}
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      # TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+      # CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost}
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+
+  invoice-detail:
+    handler: functions/invoiceDetail.handler
+    name: ${self:service}-invoice-detail-${self:provider.stage}
+    events: 
+      - http: 
+          path: /invoice/detail
+          method: GET
+          integration: lambda
+          private: true
+    package:
+      include:
+      - psycopg2/**
+      - requests/**
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser}
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword}
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      # TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+      # CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost}
+
+  create-shipment:
+    handler: functions/createShipment.handler
+    name: ${self:service}-create-shipment-${self:provider.stage}
+    events:
+      - http:
+          path: /create/shipment
+          method: POST
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+    package:
+      include:
+      - requests/**
+    environment:
+      # TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+      CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
+      ACCOUNT_INFO_TABLE: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTable}
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+
+  custom-authorizer:
+    handler: functions/customAuthorizer.handler
+    name: ${self:service}-custom-authorizer-${self:provider.stage} 
+    environment:
+      TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+      CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+      
