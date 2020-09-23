@@ -1,0 +1,4 @@
+template_path: dynamo/tokenValidator.yaml
+parameters:
+  Environment: {{ stack_group_config.Environment }}
+  TableName: omni-dw-token-validator

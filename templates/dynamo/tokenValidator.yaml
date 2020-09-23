@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Environment: 
+    Type: String
+  TableName: 
+    Type: String
+    
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      ProvisionedThroughput:
+          ReadCapacityUnits: "5"
+          WriteCapacityUnits: "5"
+      AttributeDefinitions:
+      - 
+        AttributeName: "CustomerID"
+        AttributeType: "S"
+      - 
+        AttributeName: "ApiKey"
+        AttributeType: "S"
+      KeySchema:
+      - 
+        AttributeName: "CustomerID"
+        KeyType: "HASH"
+      - 
+        AttributeName: "ApiKey"
+        KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+      - 
+        IndexName: "ApiKeyindex"
+        KeySchema:
+        - 
+          AttributeName: "ApiKey"
+          KeyType: "HASH"
+        Projection:
+          ProjectionType: "KEYS_ONLY"
+        ProvisionedThroughput:
+          ReadCapacityUnits: "5"
+          WriteCapacityUnits: "5"
+      TableName: !Join ['-', [!Ref TableName, !Ref Environment]]
+      SSESpecification:
+        SSEEnabled: true 
+
+Outputs:
+  Name:
+    Value: !Ref Table
+  Arn:
+    Value: !GetAtt Table.Arn

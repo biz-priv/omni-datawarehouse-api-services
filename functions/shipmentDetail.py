@@ -2,6 +2,7 @@ import psycopg2
 import logging
 import json
 import datetime
+from datetime import datetime,timezone
 import requests
 import os
 import boto3
@@ -12,33 +13,60 @@ import botocore.session
 session = botocore.session.get_session()
 client = session.create_client('dynamodb', region_name='us-east-1')
 
+def handler(event, context):
+    try:
+        print(event)
+        house_bill_nbr = event.get("query")['house_bill_nbr']
+        print
+        response = client.query(
+            TableName = os.environ['SHIPMENT_DETAILS_TABLE'],
+            IndexName = os.environ['SHIPMENT_DETAILS_TABLE_INDEX'],
+            KeyConditionExpression='HouseBillNumber = :house_bill_nbr',
+            ExpressionAttributeValues={":house_bill_nbr": {"S": house_bill_nbr}}
+        )
+        print ("Dynamo query response: ", response)
+        if not response['Items'] or response['Items'][0]['Record Status']['S'] == "False":
+            return shipmentDetail(event)
+        else:
+            tempDynamoData = response['Items']
+            shipmentData = dynamoResponse(tempDynamoData)
+            print("This is the response from Dynamodb temp : ", shipmentData)
+            return shipmentData
+    except error as e:
+        raise error({"Error": True,"message":str(e)})
+
+def dynamoResponse(tempDynamoData):
+    dynamoDetails = []
+    dynamo_response = {}
+    dynamo_response["Service Level"] = tempDynamoData[0]["ServiceLevel"]["S"]
+    dynamo_response["House Waybill"] = tempDynamoData[0]["HouseBillNumber"]["S"]
+    dynamo_response["File Number"] = tempDynamoData[0]["File Number"]["S"]
+    dynamo_response["Shipper Name"] = tempDynamoData[0]["ShipperName"]["S"]
+    dynamo_response["Consignee Name"] = tempDynamoData[0]["ConsigneeName"]["S"]
+    dynamo_response["Current Status"] = tempDynamoData[0]["Shipment Status"]["S"]
+    dynamoDetails.append(dynamo_response)
+    dynamo_records = {'shipmentDetails':dynamoDetails}
+    return dynamo_records
+
 
 def shipmentDetail(event):
     try:        
-        con=psycopg2.connect(dbname = os.environ['db_name'], host = os.environ['db_host'],
-        port= '5439', user = os.environ['db_username'], password = os.environ['db_password'])
-    
+        con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
+        port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
-
         x = event.get("query")['house_bill_nbr']
         logger.info("Value of x: {}".format(x))
         records_list = []
-        
-
-        cur.execute(f"select shipment_info.file_nbr ,shipment_info.file_date ,shipment_info.handling_stn , shipment_info.master_bill_nbr , shipment_info.house_bill_nbr, shipment_info.origin_port_iata , shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,shipment_info.pieces , shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs , shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date , shipment_info.service_level ,shipment_info.current_status , customersb.name bill_to_customer, customersc.name controlling_customer from public.shipment_info left outer join public.customers customersb on  shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr) left outer join public.customers customersc on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr) where house_bill_nbr = '{x}'")
+        cur.execute(f"select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level ,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where house_bill_nbr = '{x}'")
         con.commit()
         for results in cur.fetchall():
             temp = recordsConv(results)
             records_list.append(temp)
         cur.close()
         con.close()
-
         shipment_records = {'shipmentDetails':records_list}
-        y = json.dumps(shipment_records)
-        payload = json.loads(y)
-        return payload
-        
+        return shipment_records
     except error as e:
         raise error({"Error": True,"message":str(e)})
 
@@ -65,11 +93,11 @@ def recordsConv(y):
         record["ETD Date"] = dateconv(y[17])
         record["Scheduled Delivery Date"] = dateconv(y[18])
         record["Service Level"] = y[19]
-        record["Current Status Desc"] = y[20]
-        record["Bill To Customer"] = y[21]
-        record["Control Customer"] = y[22]
-        return record
-    
+        record["Current Status"] = y[20]
+        record["Current Status Desc"] = y[21]
+        record["Bill To Customer"] = y[22]
+        record["Control Customer"] = y[23]
+        return record    
     except error as e:
         raise error({"Error": True,"message":str(e)})
 
@@ -79,32 +107,12 @@ def dateconv(x):
             x = 'null'
             return x
         else:
-            return x.strftime('%m/%d/%Y %H:%M:%S')
+            return x.isoformat()
     except error as e:
         raise error({"Error": True,"message":str(e)})
-
-
+    
 class error(Exception):
     def __init___(self, message):
         Exception.__init__(self, "error : {}".format(message))
         self.message = message
         #Python inbuilt error class to change the error into stack format
-
-def handler(event, context):
-    try:
-        print(event)
-        house_bill_nbr = event.get("query")['house_bill_nbr']
-        print
-        response = client.query(
-            TableName = os.environ['SHIPMENT_DETAILS_TABLE'],
-            IndexName = 'HouseBillKeyIndex',
-            KeyConditionExpression='HouseBillNumber = :house_bill_nbr',
-            ExpressionAttributeValues={":house_bill_nbr": {"S": house_bill_nbr}}
-        )
-        print ("Dynamo query response: ", response)
-        if not response['Items'] or response['Items'][0]['Record Status']['S'] == "False":
-            return shipmentDetail(event)
-        else:
-            return response['Items']
-    except error as e:
-        raise error({"Error": True,"message":str(e)})

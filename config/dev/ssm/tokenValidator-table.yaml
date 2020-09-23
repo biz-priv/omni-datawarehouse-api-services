@@ -1,0 +1,8 @@
+template_path: ssm/parameter.yaml
+parameters:
+  Name: /omni-dw/{{ stack_group_config.Environment }}/tokenValidatorTable
+  Value: "omni-dw-token-validator-dev"
+  Description: Token Validator DynamoDB Table
+
+
+  

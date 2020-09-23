@@ -38,6 +38,7 @@ def dynamoGetItem(customerId, house_bill_nbr):
             return "exists"
         else:
             return None
+        
     except error as e:
         raise error({"Error": True,"message":str(e)})
 
@@ -66,12 +67,31 @@ def generate_policy(principalId, effect, methodArn, customerId = None):
     except error as e:
         raise error({"Error": True,"message":str(e)})
 
+def dynamoGetFileNbr(customerId, file_nbr):
+    try:
+        response = client.get_item(
+            TableName=os.environ["FILE_NUMBER_TABLE"],
+            Key={
+                "CustomerID": {
+                    "S": customerId
+                },
+                "FileNumber":{
+                    "S": file_nbr
+                }
+            }
+        )
+        print ("Dynamo get response: ", response)
+        if "Item" in response:
+            return "exists"
+        else:
+            return None
+    except error as e:
+        raise error({"Error": True,"message":str(e)})
 class error(Exception):
     def __init___(self, message):
         Exception.__init__(self, "error : {}".format(message))
         self.message = message
         #Python inbuilt error class to change the error into stack format
-
 
 def handler(event, context):
     try:        
@@ -81,12 +101,19 @@ def handler(event, context):
         customerId = dynamoQuery(api_key, event, context)
         if not customerId:
             return generate_policy(None, 'Deny', event["methodArn"])
-        if not "/create/shipment" in event["methodArn"]:
+        if "/create/shipment" in event["methodArn"]:
+            return generate_policy("bizCloud|a1b2", 'Allow', event["methodArn"], customerId)
+        elif "/billoflading" in event["methodArn"]:
+            file_nbr = event['queryStringParameters']['file_nbr']
+            print("This is the File number provided by customer : " + file_nbr)
+            if not dynamoGetFileNbr(customerId, file_nbr):
+                return generate_policy(None, 'Deny', event["methodArn"])
+            return generate_policy("bizCloud|a1b2", 'Allow', event["methodArn"], customerId)
+        else:
             house_bill_nbr = event['queryStringParameters']['house_bill_nbr']
             print("This is the HouseBill number provided by customer : " + house_bill_nbr)
             if not dynamoGetItem(customerId, house_bill_nbr):
                 return generate_policy(None, 'Deny', event["methodArn"])
             return generate_policy("bizCloud|a1b2", 'Allow', event["methodArn"], customerId)
-        return generate_policy("bizCloud|a1b2", 'Allow', event["methodArn"], customerId)
     except error as e:
         raise error({"Error": True,"message":str(e)})

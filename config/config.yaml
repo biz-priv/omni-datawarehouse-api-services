@@ -1,0 +1,4 @@
+project_code: omni
+region: us-east-1
+AvailabilityZoneA: us-west-2a
+AvailabilityZoneB: us-west-2b

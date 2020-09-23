@@ -1,0 +1,6 @@
+template_path: api-gateway/usagePlan.yaml
+parameters:
+  Environment: {{ stack_group_config.Environment }}
+  Description: "mock API usageplan for all service APIs"
+  UsagePlanName: "mock-api-usageplan"
+  ApiKeyId: !stack_output {{ stack_group_config.Environment }}/api-gateway/mockUser1-key.yaml::Id

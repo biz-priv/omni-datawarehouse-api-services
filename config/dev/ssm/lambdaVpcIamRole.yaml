@@ -1,0 +1,5 @@
+template_path: ssm/parameter.yaml
+parameters:
+  Name: /omni-dw/{{ stack_group_config.Environment }}/lambdaIamVpcRole
+  Value: "arn:aws:iam::332281781429:role/dw-lambda-redshift-role"
+  Description: vpc lambda IAM role 

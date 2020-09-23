@@ -1,0 +1,5 @@
+template_path: api-gateway/key.yaml
+parameters:
+  Environment: {{ stack_group_config.Environment }}
+  Name: "mockUser1-key"
+  Description: "API Key for mock User1"
