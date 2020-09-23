@@ -1,8 +1,0 @@
-template_path: ssm/parameter.yaml
-parameters:
-  Name: /omni-dw/{{ stack_group_config.Environment }}/customerEntitlementTableIndex
-  Value: "HouseBillNumberindex"
-  Description: Customer Entitlement Table Index
-
-
-  

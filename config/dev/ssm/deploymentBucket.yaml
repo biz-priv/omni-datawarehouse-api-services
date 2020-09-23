@@ -1,8 +1,0 @@
-template_path: ssm/parameter.yaml
-parameters:
-  Name: /omni-dw/{{ stack_group_config.Environment }}/slsDeploymentBucket
-  Value: "sls-deploy-omni-dev"
-  Description: SLS Deployment Bucket - {{ stack_group_config.Environment }}
-
-
-  

@@ -1,4 +1,0 @@
-template_path: dynamo/shipmentDetails.yaml
-parameters:
-  Environment: {{ stack_group_config.Environment }}
-  TableName: omni-dw-shipment-details

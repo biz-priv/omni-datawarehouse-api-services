@@ -1,5 +1,0 @@
-template_path: ssm/parameter.yaml
-parameters:
-  Name: /omni-dw/{{ stack_group_config.Environment }}/lambda-subnetA
-  Value: "subnet-01b73865bdb44c156"
-  Description: vpc subnet ID A

@@ -1,8 +1,0 @@
-template_path: ssm/parameter.yaml
-parameters:
-  Name: /omni-dw/{{ stack_group_config.Environment }}/dbPort
-  Value: "5439"
-  Description: Redshift Stage Database Post 
-
-
-  

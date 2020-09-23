@@ -1,8 +1,0 @@
-template_path: ssm/parameter.yaml
-parameters:
-  Name: /omni-dw/{{ stack_group_config.Environment }}/tokenValidatorTableIndex
-  Value: "ApiKeyindex"
-  Description: Token Validator Table Index
-
-
-  

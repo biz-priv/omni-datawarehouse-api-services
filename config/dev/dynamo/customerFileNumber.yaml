@@ -1,6 +1,0 @@
-template_path: dynamo/customerFileNumber.yaml
-parameters:
-  Environment: {{ stack_group_config.Environment }}
-  TableName: omni-dw-customer-filenumber
-
-  
