@@ -1,0 +1,10 @@
+---
+function:
+  handler: src/customAuthorizer.handler
+  name: ${self:service}-custom-authorizer-${self:provider.stage}
+  description: custom authorizer - ${self:provider.stage}
+  environment:
+    TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTableIndex}
+    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}

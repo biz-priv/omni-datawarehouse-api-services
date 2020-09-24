@@ -1,0 +1,181 @@
+service: omni-dw
+
+provider:
+  name: aws
+  runtime: python3.7
+  versionFunctions: false
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  deploymentBucket: ${ssm:/${self:service}/${self:provider.stage}/slsDeploymentBucket}
+  role: ${ssm:/${self:service}/${self:provider.stage}/lambdaIamVpcRole}
+  apiName: ${self:service}-api-${self:provider.stage}  
+  vpc:
+    securityGroupIds:
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda-sg}
+    subnetIds:
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda-subnetA}
+  stackTags:
+    Project: OmniApi 
+    Environment: ${self:provider.stage}
+
+custom: 
+    usagePlan:
+      name: mock-api-usageplan-dev
+
+functions:
+  shipment-info:
+    handler: functions/shipmentInfo.handler
+    name: ${self:service}-shipment-info-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60 
+    events: 
+      - http: 
+          path: /shipment/info
+          method: GET
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+    package:
+      include:
+      - psycopg2/**
+      - requests/**
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+      db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+      SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
+      
+  shipment-detail:
+    handler: functions/shipmentDetail.handler
+    name: ${self:service}-shipment-detail-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60
+    events: 
+      - http: 
+          path: /shipment/detail
+          method: GET
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+    package:
+      include:
+      - psycopg2/**
+      - requests/**
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+      db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+      SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
+
+  invoice-detail:
+    handler: functions/invoiceDetail.handler
+    name: ${self:service}-invoice-detail-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60
+    events: 
+      - http: 
+          path: /invoice/detail
+          method: GET
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+    package:
+      include:
+      - psycopg2/**
+      - requests/**
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+      db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
+
+  create-shipment:
+    handler: functions/createShipment.handler
+    name: ${self:service}-create-shipment-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60
+    events:
+      - http:
+          path: /create/shipment
+          method: POST
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+    package:
+      include:
+      - requests/**
+    environment:
+      CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
+      ACCOUNT_INFO_TABLE: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTable}
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+      CUSTOMER_ENTITLEMENT_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTableIndex}
+      ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTableIndex}
+      FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
+  
+  bill-of-lading:
+    handler: functions/billOfLading.handler
+    name: ${self:service}-bill-of-lading-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60 
+    events:
+      - http:
+          path: /billoflading
+          method: GET
+          integration: lambda
+          private: true
+          authorizer: 
+            name: custom-authorizer
+            identitySource: method.request.header.x-api-key
+            type: request
+    package:
+      include:
+      - requests/**
+    environment:
+      billOfLading_key: ${ssm:/${self:service}/${self:provider.stage}/billofLadingKey~true}
+      FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
+
+  
+  custom-authorizer:
+    handler: functions/customAuthorizer.handler
+    name: ${self:service}-custom-authorizer-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60 
+    environment:
+      TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
+      CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+      TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTableIndex}
+      FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
+ 
+  update-record-status:
+    handler: functions/updateRecordStatus.handler
+    name: ${self:service}-update-record-status-${self:provider.stage}
+    memorySize: 512 
+    timeout: 60 
+    environment:
+      db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+      db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+      db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+      db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+      db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
+      SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+      SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
+      

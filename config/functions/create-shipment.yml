@@ -1,0 +1,26 @@
+---
+function:
+  handler: src/createShipment.handler
+  name: ${self:service}-create-shipment-${self:provider.stage}
+  description: create shipment api service - ${self:provider.stage}
+  events:
+    - http:
+        path: /create/shipment
+        method: POST
+        integration: lambda
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          identitySource: method.request.header.x-api-key
+          type: request
+  package:
+    include:
+    # - requests/**
+    - src/createShipment.py
+  environment:
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
+    ACCOUNT_INFO_TABLE: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTable}
+    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+    CUSTOMER_ENTITLEMENT_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/houseBillNumber/index}
+    ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTableIndex}
+    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}

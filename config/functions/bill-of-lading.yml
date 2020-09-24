@@ -1,0 +1,22 @@
+---
+function:
+  handler: src/billOfLading.handler
+  name: ${self:service}-bill-of-lading-${self:provider.stage}
+  description: bill of lading api service - ${self:provider.stage}
+  events:
+    - http:
+        path: /billoflading
+        method: GET
+        integration: lambda
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          identitySource: method.request.header.x-api-key
+          type: request
+  package:
+    include:
+    # - requests/**
+    - src/billOfLading.py
+  environment:
+    billOfLading_key: ${ssm:/${self:service}/${self:provider.stage}/billofLadingKey~true}
+    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}

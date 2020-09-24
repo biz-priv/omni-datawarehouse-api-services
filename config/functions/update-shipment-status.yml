@@ -1,0 +1,13 @@
+---
+function:
+  handler: src/updateShipmentStatus.handler
+  name: ${self:service}-update-shipment-status-${self:provider.stage}
+  description: update shipment status - cloudwatch trigger - ${self:provider.stage}
+  environment:
+    db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+    db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+    db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+    db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+    db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
+    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+    SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}

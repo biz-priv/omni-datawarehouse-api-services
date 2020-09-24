@@ -1,0 +1,28 @@
+---
+function:
+  handler: src/shipmentDetail.handler
+  name: ${self:service}-shipment-detail-${self:provider.stage}
+  description: shipment detail api service - ${self:provider.stage}
+  events: 
+    - http: 
+        path: /shipment/detail
+        method: GET
+        integration: lambda
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          identitySource: method.request.header.x-api-key
+          type: request
+  package:
+    include:
+    # - psycopg2/**
+    # - requests/**
+    - src/shipmentDetail.py
+  environment:
+    db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+    db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+    db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+    db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+    db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
+    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+    SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
