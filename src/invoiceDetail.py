@@ -2,36 +2,33 @@ import psycopg2
 import logging
 import json
 import datetime
-import requests
 import os
 import boto3
-from requests.auth import HTTPBasicAuth
+
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-import botocore.session
-session = botocore.session.get_session()
-client = session.create_client('dynamodb', region_name='us-east-1')
 
+InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
+    logger.info("Event: {}".format(json.dumps(event)))
     try :
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
-        port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
+                            port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
      
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
 
-        x = event.get("query")['house_bill_nbr']
-        logger.info("Value of x: {}".format(x))
+        house_bill_nbr = event['query']['house_bill_nbr']
+        print("HouseBillNo : ",house_bill_nbr)
         records_list = []
         invoice_records = {'updates':''}
 
-    
         cur.execute(f"SELECT count(*) FROM public.shipment_info where house_bill_nbr = '{x}'")
         con.commit()
-        #fetch the results from the slect statement executed above
         result = cur.fetchone()
-        #store the result in a variable
+        print("result is : ",result)
         count = result[0]
 
         #if the count of the house bill number is >= 1, i,e. if atleast 1 HB# exists, execute the below script
@@ -42,7 +39,7 @@ def handler(event, context):
             con.commit()
             data = cur.fetchall()
             charge_desc = charges(data)
-            temp = recordsConv(data[0], charge_desc)
+            temp = convert_records(data[0], charge_desc)
             records_list.append(temp)
             invoice_records = {'invoiceDetails':records_list}
             return(invoice_records)
@@ -53,7 +50,7 @@ def handler(event, context):
     except error as e:
         raise error({"Error": True,"message":str(e)})
 
-def recordsConv(y, h):
+def convert_records(y, h):
     try:
         record = {}
         record["File Number"] = y[0]
@@ -68,9 +65,11 @@ def recordsConv(y, h):
         record["Charges"] = h
         return record
 
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+    except Exception as e:
+        logging.exception("RecordsConversionError: {}".format(e))
+        raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
+#Will be in common module
 def dateconv(x):
     try:
         if x == None:
@@ -83,17 +82,19 @@ def dateconv(x):
 
 
 def charges(y):
-    charges_list =[]
-    for g in y:
-        res = {}
-        res["Charge Code Desc"] = g[7]
-        res["Total"] = g[10]
-        charges_list.append(res)
-    return charges_list 
+    try:
+            
+        charges_list =[]
+        for g in y:
+            res = {}
+            res["Charge Code Desc"] = g[7]
+            res["Total"] = g[10]
+            charges_list.append(res)
+        return charges_list 
+    
+    except Exception as e:
+        logging.exception("ChargesError: {}".format(e))
+        raise ChargesError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-class error(Exception):
-    def __init___(self, message):
-        Exception.__init__(self, "error : {}".format(message))
-        self.message = message
-        #Python inbuilt error class to change the error into stack format
-
+class RecordsConversionError(Exception): pass
+class ChargesError(Exception): pass 
