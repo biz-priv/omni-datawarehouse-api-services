@@ -64,23 +64,25 @@ def handler(event, context):
             num = params["file_nbr"]
             index = os.environ["CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX"]
             query += "FileNumber = :num"
+            msg = "File number does not exist."
         elif "house_bill_nbr" in params:
             num = params["house_bill_nbr"]
             index = os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"]
             query += "HouseBillNumber = :num"
+            msg = "House bill number does not exist."
         bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query, 
                         {":id": {"S": customer_id}, ":num": {"S": num}})
-        return validate_dynamo_query_response(bol_response, event, customer_id)
+        return validate_dynamo_query_response(bol_response, event, customer_id, msg)
     else:
         house_bill_nbr = event['queryStringParameters']['house_bill_nbr']
         hb_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"], 
             'CustomerID = :id AND HouseBillNumber = :num', {":id": {"S": customer_id}, ":num": {"S": house_bill_nbr}})
-        return validate_dynamo_query_response(hb_response, event, customer_id)
+        return validate_dynamo_query_response(hb_response, event, customer_id, "House bill number does not exist.")
 
-def validate_dynamo_query_response(response, event, customer_id=None):
+def validate_dynamo_query_response(response, event, customer_id=None, message=None):
     try:
         if not response or "Items" not in response or len(response['Items']) == 0:
-            return generate_policy(None, 'Deny', event["methodArn"])
+            return generate_policy(None, 'Deny', event["methodArn"], None, message)
         if not customer_id:
             return response['Items'][0]['CustomerID']['S']
         else:
