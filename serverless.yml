@@ -30,6 +30,7 @@ custom:
       - bill-of-lading
       - custom-authorizer
       - update-shipment-status
+      - customer-entitlement-sync
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     'Access-Control-Allow-Origin': "'*'"
