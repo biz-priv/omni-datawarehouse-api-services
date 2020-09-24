@@ -4,7 +4,7 @@ function:
   name: ${self:service}-shipment-info-${self:provider.stage}
   description: shipment info api service - ${self:provider.stage}
   events: 
-    - http: 
+    - http:  
         path: /shipment/info
         method: GET
         integration: lambda
@@ -13,9 +13,22 @@ function:
           name: custom-authorizer
           identitySource: method.request.header.x-api-key
           type: request
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ''
+            501:
+              pattern: '.*httpStatus\": 501.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
   package:
     include:
     - src/shipmentInfo.py
+    - src/common.py
+    - psycopg2/*
+    # - psycopg2-2.8.6.dist-info/*
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
     db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
@@ -24,3 +37,4 @@ function:
     db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
     SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
     SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
+    REGION: 'us-east-1'
