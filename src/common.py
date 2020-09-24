@@ -46,10 +46,10 @@ def modify_response(data):
         response = {}
         response["Service Level"] = data[0]["ServiceLevel"]["S"]
         response["House Waybill"] = data[0]["HouseBillNumber"]["S"]
-        response["File Number"] = data[0]["File Number"]["S"]
+        response["File Number"] = data[0]["FileNumber"]["S"]
         response["Shipper Name"] = data[0]["ShipperName"]["S"]
         response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
-        response["Current Status"] = data[0]["Shipment Status"]["S"]
+        response["Current Status"] = data[0]["ShipmentStatus"]["S"]
         return [response]
     except Exception as e:
         logging.exception("ModifyResponseError: {}".format(e))
