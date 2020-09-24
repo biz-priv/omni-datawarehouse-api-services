@@ -18,7 +18,7 @@ def handler(event, context):
         house_bill_nbr = event['query']['house_bill_nbr']
         response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_TABLE_INDEX'], 
                         'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
-        if not response['Items'] or response['Items'][0]['Record Status']['S'] == "False":
+        if not response['Items'] or response['Items'][0]['RecordStatus']['S'] == "False":
             return get_shipment_detail(house_bill_nbr)
         else:
             return {'shipmentDetails': modify_response(response['Items'])}

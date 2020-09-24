@@ -6,6 +6,8 @@ function:
   package:
     include:
     - src/updateShipmentStatus.py
+    - src/common.py
+    - psycopg2/*
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
     db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
@@ -14,3 +16,5 @@ function:
     db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
     SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
     SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
+    SHIPMENT_DETAILS_RECORDSTATUS_INDEX: RecordStatusindex
+    REGION: ${self:provider.region}
