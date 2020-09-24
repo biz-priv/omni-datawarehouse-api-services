@@ -58,15 +58,16 @@ def handler(event, context):
         r = requests.post(url, headers = {'Content-Type': 'text/xml; charset=utf-8'},data = payload, params = pars)
         response = r.text
         logger.info("Response is : {}".format(response))
-        shipment_data = update_response(response)
-        update_authorizer_table(shipment_data,customer_id)
-        house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
-        logger.info("House Bill Details are: {}".format(house_bill_info))
-        update_shipment_table(shipment_data,house_bill_info)
-        return shipment_data
     except Exception as e:
         logging.exception("HandlerError: {}".format(e))
         raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+    shipment_data = update_response(response)
+    update_authorizer_table(shipment_data,customer_id)
+    house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
+    logger.info("House Bill Details are: {}".format(house_bill_info))
+    update_shipment_table(shipment_data,house_bill_info)
+    return shipment_data
+
 def modify_object_keys(array):
     """Modify Object Keys"""
     try:
@@ -81,6 +82,7 @@ def modify_object_keys(array):
     except Exception as e:
         logging.exception("ModifyObjectError: {}".format(e))
         raise ModifyObjectError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def validate_dynamodb(customer_id):
     """DynamoDB Validation"""
     try:
@@ -93,6 +95,7 @@ def validate_dynamodb(customer_id):
     except Exception as e:
         logging.exception("ValidateDynamoDBError: {}".format(e))
         raise ValidateDynamoDBError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def update_response(response):
     """Update Response Function"""
     try:
@@ -100,15 +103,20 @@ def update_response(response):
         temp_shipment_details = xmltodict.parse(response)
         temp_shipment_details = json.dumps(temp_shipment_details)
         temp_shipment_details = json.loads(temp_shipment_details)
+        logger.info("Test Shipment Details are: {}".format(temp_shipment_details))
         shipment_details = temp_shipment_details["soap:Envelope"]["soap:Body"]["AddNewShipmentV3Response"]["AddNewShipmentV3Result"]
         temp_data = ['ErrorMessage','DestinationAirport']
         for i in temp_data:
             shipment_details.pop(i)
         logger.info("Shipment Details are: {}".format(shipment_details))
         return shipment_details
+    except KeyError as e:
+        logging.exception("WtBolApiError: {}".format(e))
+        raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
     except Exception as e:
         logging.exception("UpdateResponseError: {}".format(e))
         raise UpdateResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def update_authorizer_table(shipment_data,customer_id):
     """Update Authorizer Table"""
     try:
@@ -132,6 +140,7 @@ def update_authorizer_table(shipment_data,customer_id):
     except Exception as e:
         logging.exception("UpdateAuthorizerTableError: {}".format(e))
         raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def update_shipment_table(shipment_data,house_bill_info):
     """Update Shipment Table"""
     try:
@@ -158,6 +167,7 @@ def update_shipment_table(shipment_data,house_bill_info):
     except Exception as e:
         logging.exception("UpdateShipmentTableError: {}".format(e))
         raise UpdateShipmentTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def get_shipment_line_list(data_obj):
     """Get Shipment Line List"""
     try:
@@ -175,6 +185,7 @@ def get_shipment_line_list(data_obj):
     except Exception as e:
         logging.exception("GetShipmentLineListError: {}".format(e))
         raise GetShipmentLineListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def get_reference_list(data_obj):
     """Get Reference List"""
     try:
@@ -195,6 +206,7 @@ def get_reference_list(data_obj):
     except Exception as e:
         logging.exception("GetReferenceListError: {}".format(e))
         raise GetReferenceListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 def get_accessorial_list(data_obj):
     """Get Accessorial List"""
     try:
@@ -212,6 +224,7 @@ def get_accessorial_list(data_obj):
     except Exception as e:
         logging.exception("GetAccessorialListError: {}".format(e))
         raise GetAccessorialListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
 class HandlerError(Exception): pass
 class ModifyObjectError(Exception): pass
 class ValidateDynamoDBError(Exception): pass
@@ -221,3 +234,4 @@ class UpdateShipmentTableError(Exception): pass
 class GetShipmentLineListError(Exception): pass
 class GetReferenceListError(Exception): pass
 class GetAccessorialListError(Exception):pass
+class WtBolApiError(Exception): pass
