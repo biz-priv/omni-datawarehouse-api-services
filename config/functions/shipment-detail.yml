@@ -36,4 +36,4 @@ function:
     db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
     SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
     SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
-    REGION: us-east-1
+    REGION: ${self:provider.region}

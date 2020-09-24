@@ -3,199 +3,235 @@ import os
 import dicttoxml
 import xmltodict
 import requests
-import requests
-from requests.auth import HTTPBasicAuth
 import logging
 import boto3
 client = boto3.client('dynamodb')
 import xml.etree.ElementTree as ET
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-customer_table = os.environ['CUSTOMER_ENTITLEMENT_TABLE']
-filenumber_table = os.environ['FILE_NUMBER_TABLE']
-account_info_table = os.environ['ACCOUNT_INFO_TABLE']
-account_info_table_index = os.environ['ACCOUNT_INFO_TABLE_INDEX']
-shipment_details_table = os.environ['SHIPMENT_DETAILS_TABLE']
-
+from src.common import dynamo_query
+InternalErrorMessage = "Internal Error."
 def handler(event, context):
-    print (event)
+    """Handler Function"""
     try:
-        customerId = event['enhancedAuthContext']['customerId']
-        data = event.get("body")
-        clientData = ['Service Level','Ready Date']
-        if not set(clientData).issubset(data["oShipData"]):
-            return "ONE/ALL of the following parameters are missing in the request: Service Level,Ready Date,Declared Type"
-        customerInfo = validate_dynamoDB(customerId)
-        print("Customer:",customerInfo)
-        if customerInfo == 'Failure':
+        logger.info("Event: {}".format(json.dumps(event)))
+        customer_id = event['enhancedAuthContext']['customerId']
+        data = event['body']
+        client_data = ['Service Level','Ready Date']
+        if not set(client_data).issubset(data["oShipData"]):
+            return "ONE/ALL of the following parameters are missing in the request: \
+            Service Level,Ready Date,Declared Type"
+        customer_info = validate_dynamodb(customer_id)
+        logger.info("Customer: {}".format(customer_info))
+        if customer_info == 'Failure':
             return 'Customer Information doesnot exist. Please raise a support ticket to add the customer'
-        data["oShipData"]["Station"] = customerInfo['Station']['S']
-        data["oShipData"]["CustomerNo"] = customerInfo['CustomerNo']['S']
-        data["oShipData"]["BillToAcct"] = customerInfo['BillToAcct']['S']
-        data["oShipData"]["DeclaredType"] = customerInfo['DeclaredType']['S']
-        tempOShipData = {}
-        tempOShipData["AddNewShipmentV3"] = {}
-        tempOShipData["AddNewShipmentV3"]["oShipData"] = {}
+        data["oShipData"]["Station"] = customer_info['Station']['S']
+        data["oShipData"]["CustomerNo"] = customer_info['CustomerNo']['S']
+        data["oShipData"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        data["oShipData"]["DeclaredType"] = customer_info['DeclaredType']['S']
+        temp_ship_data = {}
+        temp_ship_data["AddNewShipmentV3"] = {}
+        temp_ship_data["AddNewShipmentV3"]["oShipData"] = {}
         for key in data["oShipData"]:
             if type(data["oShipData"][key]) is str:
-                newKey = key.replace(" ", "")
-                tempOShipData["AddNewShipmentV3"]["oShipData"][newKey] = data["oShipData"][key]
-        if "Shipment Line List" in data["oShipData"]:
-            tempShipmentLineList = removeSpaceInListObjectKeys(data["oShipData"]["Shipment Line List"])
-            ShipmentLineList_Item = lambda x: 'NewShipmentDimLineV3'
-            ShipmentLineList=dicttoxml.dicttoxml(tempShipmentLineList, attr_type=False,custom_root='ShipmentLineList',item_func=ShipmentLineList_Item)
-            ShipmentLineList = str(ShipmentLineList).replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").replace("""</ShipmentLineList>'""","""</ShipmentLineList>""")
-        else:
-            ShipmentLineList = ''
-        if "Reference List" in data["oShipData"]:
-            tempReferenceList = removeSpaceInListObjectKeys(data["oShipData"]["Reference List"])
-            for item in tempReferenceList:
-                item.update({"CustomerTypeV3":"BillTo"})
-                item.update({"RefTypeId":"REF"})
-            ReferenceList_Item = lambda x: 'NewShipmentRefsV3'
-            ReferenceList=dicttoxml.dicttoxml(tempReferenceList, attr_type=False,custom_root='ReferenceList',item_func=ReferenceList_Item)
-            ReferenceList = str(ReferenceList).replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").replace("""</ReferenceList>'""","""</ReferenceList>""")
-        else:
-            ReferenceList = ''
-        if "New Shipment Accessorials List" in data["oShipData"]:
-            tempAccessorialsList = removeSpaceInListObjectKeys(data["oShipData"]["New Shipment Accessorials List"])
-            AccessorialList_Item = lambda x: 'NewShipmentAcessorialsV3'
-            AccessorialList=dicttoxml.dicttoxml(tempAccessorialsList, attr_type=False,custom_root='NewShipmentAcessorialsList',item_func=AccessorialList_Item)
-            AccessorialList = str(AccessorialList).replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").replace("""</NewShipmentAcessorialsList>'""","""</NewShipmentAcessorialsList>""")
-        else:
-            AccessorialList = ''
-        ShipData=dicttoxml.dicttoxml(tempOShipData, attr_type=False,custom_root='soap:Body')
-        ShipData = str(ShipData).replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><oShipData>""", """""").replace("""</oShipData></AddNewShipmentV3></soap:Body>'""","""""")
-        Start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"><UserName>biztest</UserName><Password>Api081020</Password></AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 xmlns="http://tempuri.org/"><oShipData>"""
+                new_key = key.replace(" ", "")
+                temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = data["oShipData"][key]
+        shipment_line_list = get_shipment_line_list(data["oShipData"])
+        reference_list = get_reference_list(data["oShipData"])
+        accessorial_list = get_accessorial_list(data["oShipData"])
+        ship_data=dicttoxml.dicttoxml(temp_ship_data, attr_type=False,custom_root='soap:Body')
+        ship_data = str(ship_data).\
+            replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><oShipData>""", """""").\
+            replace("""</oShipData></AddNewShipmentV3></soap:Body>'""","""""")
+        start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
+                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader \
+                    xmlns="http://tempuri.org/"><UserName>biztest</UserName><Password>Api081020</Password>\
+                        </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
+                        xmlns="http://tempuri.org/"><oShipData>"""
         end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
-        Payload = Start+ShipData+ShipmentLineList+ReferenceList+AccessorialList+end
-        print("Payload xml data is :",Payload)
+        payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
+        logger.info("Payload xml data is : {}".format(payload))
         url = 'https://wttest.omnilogistics.com/WTKServices/AirtrakShipment.asmx'
         pars = {'op': 'AddNewShipmentV3'}
-        r = requests.post(url, headers = {'Content-Type': 'text/xml; charset=utf-8'},data = Payload, params = pars)
+        r = requests.post(url, headers = {'Content-Type': 'text/xml; charset=utf-8'},data = payload, params = pars)
         response = r.text
-        print("response is :", response)
-        shipmentData = update_Response(response)
-        update_authorizer_table(shipmentData,customerId)
-        update_fileNbr_authorizer(shipmentData,customerId)
-        HouseBillInfo = tempOShipData["AddNewShipmentV3"]["oShipData"]
-        print("House Bill Details are:",HouseBillInfo)
-        update_shipment_table(shipmentData,HouseBillInfo)
-        return shipmentData
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+        logger.info("Response is : {}".format(response))
+    except Exception as e:
+        logging.exception("HandlerError: {}".format(e))
+        raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+    shipment_data = update_response(response)
+    update_authorizer_table(shipment_data,customer_id)
+    house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
+    logger.info("House Bill Details are: {}".format(house_bill_info))
+    update_shipment_table(shipment_data,house_bill_info)
+    return shipment_data
 
-def removeSpaceInListObjectKeys(array):
+def modify_object_keys(array):
+    """Modify Object Keys"""
     try:
-        newArray = []
+        new_array = []
         for obj in array:
-            newObj = {}
+            new_obj = {}
             for key in obj:
-                newKey = key.replace(" ","")
-                newObj[newKey] = obj[key]
-            newArray.append(newObj)
-        return newArray
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+                new_key = key.replace(" ","")
+                new_obj[new_key] = obj[key]
+            new_array.append(new_obj)
+        return new_array
+    except Exception as e:
+        logging.exception("ModifyObjectError: {}".format(e))
+        raise ModifyObjectError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-def validate_dynamoDB(customerId):
+def validate_dynamodb(customer_id):
+    """DynamoDB Validation"""
     try:
-        response = client.query(
-            TableName=account_info_table,
-            IndexName=account_info_table_index,
-            Select='ALL_ATTRIBUTES',
-            KeyConditionExpression='CustomerID = :CustomerID',
-            ExpressionAttributeValues={":CustomerID": {"S": customerId}}
-        )
-        print("Response is:",response)
+        response = dynamo_query(os.environ['ACCOUNT_INFO_TABLE'], os.environ['ACCOUNT_INFO_TABLE_INDEX'],
+                        'CustomerID = :CustomerID', {":CustomerID": {"S": customer_id}})
         if not response['Items']:
             return 'Failure'
         else:
             return response['Items'][0]
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+    except Exception as e:
+        logging.exception("ValidateDynamoDBError: {}".format(e))
+        raise ValidateDynamoDBError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-def update_Response(response):
+def update_response(response):
+    """Update Response Function"""
     try:
-        shipmentDetails = []
-        tempShipmentDetails = xmltodict.parse(response)
-        tempShipmentDetails = json.dumps(tempShipmentDetails)
-        tempShipmentDetails = json.loads(tempShipmentDetails)
-        shipmentDetails = tempShipmentDetails["soap:Envelope"]["soap:Body"]["AddNewShipmentV3Response"]["AddNewShipmentV3Result"]
-        tempdata = ['ErrorMessage','DestinationAirport']
-        for i in tempdata:
-            shipmentDetails.pop(i)
-        print("Shipment Details are: ",shipmentDetails)
-        return shipmentDetails
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+        shipment_details = []
+        temp_shipment_details = xmltodict.parse(response)
+        temp_shipment_details = json.dumps(temp_shipment_details)
+        temp_shipment_details = json.loads(temp_shipment_details)
+        logger.info("Test Shipment Details are: {}".format(temp_shipment_details))
+        shipment_details = temp_shipment_details["soap:Envelope"]["soap:Body"]["AddNewShipmentV3Response"]["AddNewShipmentV3Result"]
+        temp_data = ['ErrorMessage','DestinationAirport']
+        for i in temp_data:
+            shipment_details.pop(i)
+        logger.info("Shipment Details are: {}".format(shipment_details))
+        return shipment_details
+    except KeyError as e:
+        logging.exception("WtBolApiError: {}".format(e))
+        raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
+    except Exception as e:
+        logging.exception("UpdateResponseError: {}".format(e))
+        raise UpdateResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-def update_authorizer_table(shipmentData,customerId):
+def update_authorizer_table(shipment_data,customer_id):
+    """Update Authorizer Table"""
     try:
-        x = shipmentData['Housebill']
-        print("DynamoX : ", x)
+        house_bill_no = shipment_data['Housebill']
+        file_no = shipment_data['ShipQuoteNo']
         response = client.put_item(
-            TableName = customer_table,
+            TableName = os.environ['CUSTOMER_ENTITLEMENT_TABLE'],
             Item={
-                'CustomerID': {
-                'S': customerId
+                'FileNumber': {
+                'S': file_no
                 },
                 'HouseBillNumber':{
-                'S': x
-                }
-            }
-        )
-        return response
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
-        
-def update_fileNbr_authorizer(shipmentData,customerId):
-    try:
-        x = shipmentData['ShipQuoteNo']
-        print("DynamoX : ", x)
-        response = client.put_item(
-            TableName = filenumber_table,
-            Item={
-                'CustomerID': {
-                'S': customerId
+                'S': house_bill_no
                 },
-                'FileNumber':{
-                'S': x
+                'CustomerID': {
+                'S': customer_id
                 }
             }
         )
         return response
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+    except Exception as e:
+        logging.exception("UpdateAuthorizerTableError: {}".format(e))
+        raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-
-def update_shipment_table(shipmentData,HouseBillInfo):
+def update_shipment_table(shipment_data,house_bill_info):
+    """Update Shipment Table"""
     try:
-        tempData = ['CustomerNo','BillToAcct']
-        for i in tempData:
-            HouseBillInfo.pop(i)
-        HouseBillNo = shipmentData['Housebill']
-        FileNumber = shipmentData['ShipQuoteNo']
-        ShipmentInfo = {}
-        ShipmentInfo['HouseBillNumber'] = {'S': HouseBillNo}
-        ShipmentInfo['File Number'] = {'S': FileNumber}
-        ShipmentInfo['Record Status'] = {'S': 'True'}
-        ShipmentInfo['Shipment Status'] = {'S': 'Pending'}
-        shipmentItems = ['ServiceLevel','ShipperName', 'ConsigneeName']
-        for k,v in HouseBillInfo.items():
-            if k in shipmentItems:
-                ShipmentInfo[k] = {'S': v}
-        print("DynamoDB Data is:", ShipmentInfo)
+        temp_data = ['CustomerNo','BillToAcct']
+        for i in temp_data:
+            house_bill_info.pop(i)
+        house_bill_no = shipment_data['Housebill']
+        file_number = shipment_data['ShipQuoteNo']
+        shipment_info = {}
+        shipment_info['HouseBillNumber'] = {'S': house_bill_no}
+        shipment_info['FileNumber'] = {'S': file_number}
+        shipment_info['RecordStatus'] = {'S': 'True'}
+        shipment_info['ShipmentStatus'] = {'S': 'Pending'}
+        shipment_items = ['ServiceLevel','ShipperName', 'ConsigneeName']
+        for k,v in house_bill_info.items():
+            if k in shipment_items:
+                shipment_info[k] = {'S': v}
+        logger.info("DynamoDB Data is: {}".format(shipment_info))
         response = client.put_item(
-            TableName = shipment_details_table,
-            Item = ShipmentInfo
+            TableName = os.environ['SHIPMENT_DETAILS_TABLE'],
+            Item = shipment_info
         )
         return response
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+    except Exception as e:
+        logging.exception("UpdateShipmentTableError: {}".format(e))
+        raise UpdateShipmentTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-class error(Exception):
-    def __init___(self, message):
-        Exception.__init__(self, "error : {}".format(message))
-        self.message = message
-        #Python inbuilt error class to change the error into stack format
+def get_shipment_line_list(data_obj):
+    """Get Shipment Line List"""
+    try:
+        if "Shipment Line List" in data_obj:
+            temp_shipment_line_list = modify_object_keys(data_obj["Shipment Line List"])
+            shipment_line_list_item = lambda x: 'NewShipmentDimLineV3'
+            shipment_line_list=dicttoxml.dicttoxml(temp_shipment_line_list, \
+                attr_type=False,custom_root='ShipmentLineList',item_func=shipment_line_list_item)
+            shipment_line_list = str(shipment_line_list).\
+                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace("""</ShipmentLineList>'""","""</ShipmentLineList>""")
+        else:
+            shipment_line_list = ''
+        return shipment_line_list
+    except Exception as e:
+        logging.exception("GetShipmentLineListError: {}".format(e))
+        raise GetShipmentLineListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+def get_reference_list(data_obj):
+    """Get Reference List"""
+    try:
+        if "Reference List" in data_obj:
+            temp_reference_list = modify_object_keys(data_obj["Reference List"])
+            for item in temp_reference_list:
+                item.update({"CustomerTypeV3":"BillTo"})
+                item.update({"RefTypeId":"REF"})
+            reference_list_item = lambda x: 'NewShipmentRefsV3'
+            reference_list=dicttoxml.dicttoxml(temp_reference_list, \
+                attr_type=False,custom_root='ReferenceList',item_func=reference_list_item)
+            reference_list = str(reference_list).\
+                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace("""</ReferenceList>'""","""</ReferenceList>""")
+        else:
+            reference_list = ''
+        return reference_list
+    except Exception as e:
+        logging.exception("GetReferenceListError: {}".format(e))
+        raise GetReferenceListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+def get_accessorial_list(data_obj):
+    """Get Accessorial List"""
+    try:
+        if "New Shipment Accessorials List" in data_obj:
+            temp_accessorials_list = modify_object_keys(data_obj["New Shipment Accessorials List"])
+            accessorial_list_item = lambda x: 'NewShipmentAcessorialsV3'
+            accessorial_list=dicttoxml.dicttoxml(temp_accessorials_list, attr_type=False,\
+                custom_root='NewShipmentAcessorialsList',item_func=accessorial_list_item)
+            accessorial_list = str(accessorial_list).\
+                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace("""</NewShipmentAcessorialsList>'""","""</NewShipmentAcessorialsList>""")
+        else:
+            accessorial_list = ''
+        return accessorial_list
+    except Exception as e:
+        logging.exception("GetAccessorialListError: {}".format(e))
+        raise GetAccessorialListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+class HandlerError(Exception): pass
+class ModifyObjectError(Exception): pass
+class ValidateDynamoDBError(Exception): pass
+class UpdateResponseError(Exception): pass
+class UpdateAuthorizerTableError(Exception): pass
+class UpdateShipmentTableError(Exception): pass
+class GetShipmentLineListError(Exception): pass
+class GetReferenceListError(Exception): pass
+class GetAccessorialListError(Exception):pass
+class WtBolApiError(Exception): pass
