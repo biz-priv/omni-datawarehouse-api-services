@@ -28,7 +28,6 @@ function:
     - src/shipmentInfo.py
     - src/common.py
     - psycopg2/*
-    # - psycopg2-2.8.6.dist-info/*
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
     db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}

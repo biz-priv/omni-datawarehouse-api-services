@@ -1,16 +1,14 @@
 import os
-import psycopg2
-import logging
 import json
-import datetime
-from datetime import datetime,timezone
-import requests
-from requests.auth import HTTPBasicAuth
+import logging
+import psycopg2
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 from src.common import dynamo_query
+from src.common import modify_response
+from src.common import modify_date
 
 InternalErrorMessage = "Internal Error."
 
@@ -18,37 +16,16 @@ def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
     try:
         house_bill_nbr = event['query']['house_bill_nbr']
-    except Exception as e:
-        logging.exception("InputError: {}".format(e))
-        raise InputError(json.dumps({"httpStatus": 400, "message": "Query parameter 'house_bill_nbr' not passed."}))
-    
-    try:
         response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_TABLE_INDEX'], 
                         'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
 
         if not response['Items'] or response['Items'][0]['Record Status']['S'] == "False":
             return get_shipment_info(house_bill_nbr)
         else:
-            data = response['Items']
-            return modify_response(data)
+            return {'shipmentInfo': modify_response(response['Items'])}
     except Exception as e:
         logging.exception("HandlerError: {}".format(e))
         raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-
-def modify_response(data):
-    try:
-        response = {}
-        response["Service Level"] = data[0]["ServiceLevel"]["S"]
-        response["House Waybill"] = data[0]["HouseBillNumber"]["S"]
-        response["File Number"] = data[0]["File Number"]["S"]
-        response["Shipper Name"] = data[0]["ShipperName"]["S"]
-        response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
-        response["Current Status"] = data[0]["Shipment Status"]["S"]
-        return {'shipmentInfo': [response]} 
-    except Exception as e:
-        logging.exception("ModifyResponseError: {}".format(e))
-        raise ModifyResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-
 
 def get_shipment_info(house_bill_nbr):
     try:
@@ -69,44 +46,32 @@ def get_shipment_info(house_bill_nbr):
         logging.exception("GetShipmentInfoError: {}".format(e))
         raise GetShipmentInfoError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-def convert_records(y):
+def convert_records(data):
     try:
         record = {}
-        record["File Number"] = y[0]
-        record["File Date"] = modify_date(y[1])
-        record["Handling Station"] = y[2]
-        record["Master Waybill"] = y[3]
-        record["House Waybill"] = y[4]
-        record["Origin Port"] = y[5]
-        record["Destination Port"] = y[6]
-        record["Shipper Name"] = y[7]
-        record["Consignee Name"] = y[8]
-        record["Pod Date"] = modify_date(y[9])
-        record["ETA Date"] = modify_date(y[10])
-        record["ETD Date"] = modify_date(y[11])
-        record["Scheduled Delivery Date"] = modify_date(y[12])
-        record["Mode"] = y[13]
-        record["Current Status"] = y[14]
-        record["Current Status Desc"] = y[15]
-        record["Bill To Customer"] = y[16]
+        record["File Number"] = data[0]
+        record["File Date"] = modify_date(data[1])
+        record["Handling Station"] = data[2]
+        record["Master Waybill"] = data[3]
+        record["House Waybill"] = data[4]
+        record["Origin Port"] = data[5]
+        record["Destination Port"] = data[6]
+        record["Shipper Name"] = data[7]
+        record["Consignee Name"] = data[8]
+        record["Pod Date"] = modify_date(data[9])
+        record["ETA Date"] = modify_date(data[10])
+        record["ETD Date"] = modify_date(data[11])
+        record["Scheduled Delivery Date"] = modify_date(data[12])
+        record["Mode"] = data[13]
+        record["Current Status"] = data[14]
+        record["Current Status Desc"] = data[15]
+        record["Bill To Customer"] = data[16]
         return record
     except Exception as e:
         logging.exception("RecordsConversionError: {}".format(e))
         raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-def modify_date(x):
-    try:
-        if x == None:
-            return 'null'
-        else:
-            return x.isoformat()
-    except Exception as e:
-        logging.exception("DateConversionError: {}".format(e))
-        raise DateConversionError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-
-class ModifyResponseError(Exception): pass
 class HandlerError(Exception): pass
 class RecordsConversionError(Exception): pass
-class DateConversionError(Exception): pass
 class GetShipmentInfoError(Exception): pass
 class InputError(Exception): pass
