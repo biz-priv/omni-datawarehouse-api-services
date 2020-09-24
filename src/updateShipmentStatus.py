@@ -1,24 +1,30 @@
 import os
 import json
 import boto3
-from boto3.dynamodb.conditions import Key
 import psycopg2
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+from src.common import dynamo_query
 
 def handler(event, context):
     try :
+        logger.info("Event: {}".format(json.dumps(event)))
+
         client = boto3.resource('dynamodb')
         table = client.Table(os.environ['SHIPMENT_DETAILS_TABLE'])
         record_status = 'True'
-        response = table.query(
-            IndexName = 'RecordStatusindex',
-            KeyConditionExpression = Key('Record Status').eq(record_status),
-        )
+        response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_RECORDSTATUS_INDEX'], 
+                        'Record Status = :record_status', {":record_status": {"S": record_status}})
+        
         data = response['Items']
         hb_values = [i['HouseBillNumber'] for i in data if 'HouseBillNumber' in i]
         def convert(list): 
             return tuple(list)
         hb_for_sql = convert(hb_values)
-        print("Count of all the hwb's from Dynamodb Table : ", hwb_length)
+        # print("Count of all the hwb's from Dynamodb Table : ", hwb_length)
 
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
         port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
