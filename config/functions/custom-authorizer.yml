@@ -11,6 +11,7 @@ function:
     TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
     CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/houseBillNumber/index}
+    CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/fileNumber/index}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTableIndex}
     FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
     REGION: 'us-east-1'

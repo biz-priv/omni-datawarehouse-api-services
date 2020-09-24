@@ -1,28 +1,33 @@
+import os
+import json
 import requests
-from requests.auth import HTTPBasicAuth
 import logging
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-import os
 
 def handler(event, context):
+    logger.info("Event: {}".format(json.dumps(event)))
     try :
-        print("Event is this : " , event)
-        file_nbr = event.get("query")['file_nbr']
-        bill_key = os.environ['billOfLading_key']
+        if "file_nbr" in event["query"]:
+            num = event["query"]["file_nbr"]
+        elif "house_bill_nbr" in event["query"]:
+            num = event["query"]["house_bill_nbr"]
         
-        url = 'https://websli.omnilogistics.com/wtTest/gethawb/v1/json/'+bill_key+'/'+file_nbr
-        print(url)
+        url = os.environ["URL"]+os.environ["billOfLading_key"]+'/'+num
+        logger.info("URL: {}".format(url))
         r = requests.get(url)
-        response = r.content
-        print("Content Response is : ", response)
-        return response
-
-    except error as e:
-        raise error({"Error": True,"message":str(e)})
+        logger.info("R: {}".format(r.json()))
+    except Exception as e:
+        logging.exception("HandlerError: {}".format(e))
+        raise HandlerError(json.dumps({"httpStatus": 501, "message": "Internal Error."}))
+    
+    if(r.json()["hawb"]["File Number"] == "ERROR"):
+        raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
+    response = r.content
+    logger.info("Response: {}".format(response))
+    logger.info("Content Response: {}".format(response))
+    return response
         
-class error(Exception):
-    def __init___(self, message):
-        Exception.__init__(self, "error : {}".format(message))
-        self.message = message
-        #Python inbuilt error class to change the error into stack format
+class HandlerError(Exception): pass
+class WtBolApiError(Exception): pass

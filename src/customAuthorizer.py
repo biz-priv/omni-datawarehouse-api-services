@@ -11,7 +11,7 @@ from src.common import dynamo_get
 PolicyId="bizCloud|a1b2"
 InternalErrorMessage="Internal Error."
 
-def generate_policy(principal_id, effect, method_arn, customer_id = None, message = None):
+def generate_policy(principal_id, effect, method_arn, customer_id = None):
     try:
         print ("Inserting "+effect+" policy on API Gateway")
         policy = {}
@@ -31,8 +31,6 @@ def generate_policy(principal_id, effect, method_arn, customer_id = None, messag
         policy["context"] = {}
         if customer_id:
             policy["context"]["customerId"] = customer_id
-        if message:
-            policy["context"]["stringKey"] = message
         return policy
     except Exception as e:
         logging.exception("GeneratePolicyError: {}".format(e))
@@ -49,9 +47,7 @@ def handler(event, context):
     try:
         response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"], 
                 'ApiKey = :apikey', {":apikey": {"S": api_key}})
-        if (len(response['Items']) == 0):
-            return generate_policy(None, 'Deny', event["methodArn"])
-        customer_id = response['Items'][0]['CustomerID']['S']
+        customer_id = validate_dynamo_query_response(response, event)
     except Exception as e:
         logging.exception("CustomerIdNotFound: {}".format(e))
         raise CustomerIdNotFound(json.dumps({"httpStatus": 400, "message": "Customer Id not found."}))
@@ -60,22 +56,34 @@ def handler(event, context):
         if "/create/shipment" in event["methodArn"]:
             return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
         elif "/billoflading" in event["methodArn"]:
-            file_nbr = event['queryStringParameters']['file_nbr']
-            if not dynamo_get(os.environ["FILE_NUMBER_TABLE"], {"CustomerID": {"S": customer_id},"FileNumber":{"S": file_nbr}}):
-                return generate_policy(None, 'Deny', event["methodArn"])
-            return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
+            query = "CustomerID = :id AND "
+            if "file_nbr" in event["queryStringParameters"]:
+                num = event["queryStringParameters"]["file_nbr"]
+                index = os.environ["CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX"]
+                query += "FileNumber = :num"
+            elif "house_bill_nbr" in event["queryStringParameters"]:
+                num = event["queryStringParameters"]["house_bill_nbr"]
+                index = os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"]
+                query += "HouseBillNumber = :num"
+            bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query, 
+                            {":id": {"S": customer_id}, ":num": {"S": num}})
+            return validate_dynamo_query_response(bol_response, event, customer_id)
         else:
-            if not 'house_bill_nbr' in event['queryStringParameters']:
-                return generate_policy(None, 'Deny', event["methodArn"], None, "house_bill_nbr query parameter is required.")
             house_bill_nbr = event['queryStringParameters']['house_bill_nbr']
             hb_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"], 
                 'CustomerID = :id AND HouseBillNumber = :num', {":id": {"S": customer_id}, ":num": {"S": house_bill_nbr}})
-            if not hb_response or "Items" not in hb_response or len(hb_response['Items']) == 0:
-                return generate_policy(None, 'Deny', event["methodArn"])
-            return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
+            return validate_dynamo_query_response(hb_response, event, customer_id)
     except Exception as e:
         logging.exception("HandlerError: {}".format(e))
         raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+def validate_dynamo_query_response(response, event, customer_id=None):
+    if not response or "Items" not in response or len(response['Items']) == 0:
+        return generate_policy(None, 'Deny', event["methodArn"])
+    if not customer_id:
+        return response['Items'][0]['CustomerID']['S']
+    else:
+        return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
 
 class ApiKeyError(Exception): pass
 class HandlerError(Exception): pass
