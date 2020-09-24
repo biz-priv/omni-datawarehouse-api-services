@@ -13,6 +13,10 @@ function:
           name: custom-authorizer
           identitySource: method.request.header.x-api-key
           type: request
+        # request:
+        #   parameters:
+        #     querystrings:
+        #       house_bill_nbr: true
         response:
           headers: ${self:custom.standardResponseHeaders}
           statusCodes:

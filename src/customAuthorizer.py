@@ -11,7 +11,7 @@ from src.common import dynamo_get
 PolicyId="bizCloud|a1b2"
 InternalErrorMessage="Internal Error."
 
-def generate_policy(principal_id, effect, method_arn, customer_id = None):
+def generate_policy(principal_id, effect, method_arn, customer_id = None, message = None):
     try:
         print ("Inserting "+effect+" policy on API Gateway")
         policy = {}
@@ -28,9 +28,12 @@ def generate_policy(principal_id, effect, method_arn, customer_id = None):
             ]
         }
         policy["policyDocument"] = policy_document
-        policy["context"] = {}
-        if customer_id:
-            policy["context"]["customerId"] = customer_id
+        if message:
+            policy["context"] = {"message": message}
+        else:
+            if customer_id:
+                policy["context"] = {"customerId": customer_id}
+        logger.info("Policy: {}".format(json.dumps(policy)))
         return policy
     except Exception as e:
         logging.exception("GeneratePolicyError: {}".format(e))
@@ -43,7 +46,11 @@ def handler(event, context):
     except Exception as e:
         logging.exception("ApiKeyError: {}".format(e))
         raise ApiKeyError(json.dumps({"httpStatus": 400, "message": "API Key not passed."}))
-    
+
+    validation_response = validate_input(event)
+    if validation_response["status"] == "error":
+        return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
+
     try:
         response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"], 
                 'ApiKey = :apikey', {":apikey": {"S": api_key}})
@@ -84,6 +91,11 @@ def validate_dynamo_query_response(response, event, customer_id=None):
         return response['Items'][0]['CustomerID']['S']
     else:
         return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
+
+def validate_input(event):
+    if "/shipment/info" in event["methodArn"] and "house_bill_nbr" not in event["queryStringParameters"]:
+        return {"status": "error", "message": "House bill number is required."}
+    return {"status": "success"}
 
 class ApiKeyError(Exception): pass
 class HandlerError(Exception): pass

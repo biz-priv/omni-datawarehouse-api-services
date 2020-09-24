@@ -21,12 +21,13 @@ provider:
     Environment: ${self:provider.stage}
 
 custom: 
+  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # dev:
   #   domainName: api.dev.omnilogistics.com
   #   certificateName: 
-  prod:
-    domainName: api.omnilogistics.com
-    certificateName: api.omnilogistics.com
+  # prod:
+  #   domainName: api.omnilogistics.com
+  #   certificateName: api.omnilogistics.com
   serverless-layers:
     functions:
       - shipment-info
@@ -42,19 +43,20 @@ custom:
     'Access-Control-Allow-Origin': "'*'"
     'Access-Control-Allow-Credentials': "'true'"
     'Access-Control-Allow-Headers': "'*'"
-  customDomain:
-    domainName: ${self:custom.${self:provider.stage}.domainName}
-    stage: ${self:provider.stage}
-    basePath: v1
-    certificateName: ${self:custom.${self:provider.stage}.certificateName}
-    createRoute53Record: true
-    endpointType: 'regional'
-    securityPolicy: tls_1_2
+  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
+  # customDomain:
+  #   domainName: ${self:custom.${self:provider.stage}.domainName}
+  #   stage: ${self:provider.stage}
+  #   basePath: v1
+  #   certificateName: ${self:custom.${self:provider.stage}.certificateName}
+  #   createRoute53Record: true
+  #   endpointType: 'regional'
+  #   securityPolicy: tls_1_2
 
 plugins:
   - serverless-layers
   - serverless-plugin-multiple-responses
-  - serverless-domain-manager
+  # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
   individually: true
@@ -71,3 +73,21 @@ functions:
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+
+resources:
+  Resources:
+    BadRequestResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: ACCESS_DENIED
+        ResponseTemplates:
+          application/json: |
+            {
+              "message":"$context.authorizer.message"
+            }
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '400'
