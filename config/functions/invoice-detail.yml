@@ -13,6 +13,16 @@ function:
           name: custom-authorizer
           identitySource: method.request.header.x-api-key
           type: request
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ''
+            501:
+              pattern: '.*httpStatus\": 501.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
   package:
     include:
     - src/invoiceDetail.py
