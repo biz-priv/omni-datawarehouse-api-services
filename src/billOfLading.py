@@ -11,10 +11,11 @@ def handler(event, context):
     try :
         if "file_nbr" in event["query"]:
             num = event["query"]["file_nbr"]
+            url = os.environ["URL"]+os.environ["billOfLading_key"]+'/'+num
         elif "house_bill_nbr" in event["query"]:
             num = event["query"]["house_bill_nbr"]
+            url = os.environ["URL"]+os.environ["billOfLading_key"]+'/'+num+'/hawb'
         
-        url = os.environ["URL"]+os.environ["billOfLading_key"]+'/'+num
         logger.info("URL: {}".format(url))
         r = requests.get(url)
         logger.info("R: {}".format(r.json()))
