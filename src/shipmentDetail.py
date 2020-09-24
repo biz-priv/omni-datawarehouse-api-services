@@ -14,17 +14,13 @@ InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
-    try:
-        house_bill_nbr = event['query']['house_bill_nbr']
-        response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_TABLE_INDEX'], 
-                        'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
-        if not response['Items'] or response['Items'][0]['RecordStatus']['S'] == "False":
-            return get_shipment_detail(house_bill_nbr)
-        else:
-            return {'shipmentDetails': modify_response(response['Items'])}
-    except Exception as e:
-        logging.exception("HandlerError: {}".format(e))
-        raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+    house_bill_nbr = event['query']['house_bill_nbr']
+    response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_TABLE_INDEX'], 
+                    'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
+    if not response['Items'] or response['Items'][0]['RecordStatus']['S'] == "False":
+        return get_shipment_detail(house_bill_nbr)
+    else:
+        return {'shipmentDetails': modify_response(response['Items'])}
 
 def get_shipment_detail(house_bill_nbr):
     try:        
@@ -35,15 +31,16 @@ def get_shipment_detail(house_bill_nbr):
         records_list = []
         cur.execute(f"select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level ,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where house_bill_nbr = '{house_bill_nbr}'")
         con.commit()
-        for results in cur.fetchall():
-            logger.info("Results before conversion: {}".format(results))
-            records_list.append(convert_records(results))
-        cur.close()
-        con.close()
-        return {'shipmentDetails': records_list}
     except Exception as e:
         logging.exception("GetShipmentDetailError: {}".format(e))
         raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+    for results in cur.fetchall():
+        logger.info("Results before conversion: {}".format(results))
+        records_list.append(convert_records(results))
+    cur.close()
+    con.close()
+    return {'shipmentDetails': records_list}
+    
 
 def convert_records(data):
     try:
@@ -76,7 +73,6 @@ def convert_records(data):
     except Exception as e:
         logging.exception("RecordsConversionError: {}".format(e))
         raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-    
-class HandlerError(Exception): pass
+
 class GetShipmentDetailError(Exception): pass
 class RecordsConversionError(Exception): pass
