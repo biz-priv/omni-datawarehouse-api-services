@@ -14,4 +14,4 @@ function:
     CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/fileNumber/index}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTableIndex}
     FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
-    REGION: 'us-east-1'
+    REGION: ${self:provider.region}
