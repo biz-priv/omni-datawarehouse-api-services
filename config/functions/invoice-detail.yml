@@ -15,8 +15,6 @@ function:
           type: request
   package:
     include:
-    # - psycopg2/**
-    # - requests/**
     - src/invoiceDetail.py
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}

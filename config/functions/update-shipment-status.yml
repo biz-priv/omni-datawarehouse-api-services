@@ -3,6 +3,9 @@ function:
   handler: src/updateShipmentStatus.handler
   name: ${self:service}-update-shipment-status-${self:provider.stage}
   description: update shipment status - cloudwatch trigger - ${self:provider.stage}
+  package:
+    include:
+    - src/updateShipmentStatus.py
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
     db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}

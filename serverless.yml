@@ -40,6 +40,12 @@ plugins:
   - serverless-layers
   - serverless-plugin-multiple-responses
 
+package:
+  individually: true
+  exclude:
+  - '**/*'
+  - serverless.yaml
+
 functions:
   shipment-info: ${file(config/functions/shipment-info.yml):function}
   shipment-detail: ${file(config/functions/shipment-detail.yml):function}
@@ -48,3 +54,5 @@ functions:
   bill-of-lading: ${file(config/functions/bill-of-lading.yml):function}
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
+  customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+

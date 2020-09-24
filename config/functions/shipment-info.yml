@@ -16,8 +16,6 @@ function:
   package:
     include:
     - src/shipmentInfo.py
-    # - psycopg2/**
-    # - requests/**
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
     db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}

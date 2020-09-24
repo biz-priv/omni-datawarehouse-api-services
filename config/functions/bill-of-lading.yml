@@ -15,7 +15,6 @@ function:
           type: request
   package:
     include:
-    # - requests/**
     - src/billOfLading.py
   environment:
     billOfLading_key: ${ssm:/${self:service}/${self:provider.stage}/billofLadingKey~true}

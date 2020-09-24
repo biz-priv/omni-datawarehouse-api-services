@@ -15,7 +15,6 @@ function:
           type: request
   package:
     include:
-    # - requests/**
     - src/createShipment.py
   environment:
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
