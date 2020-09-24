@@ -1,0 +1,93 @@
+service: omni-dw
+
+provider:
+  name: aws
+  runtime: python3.7
+  versionFunctions: false
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  timeout: 30
+  memorySize: 256
+  deploymentBucket: ${ssm:/${self:service}/${self:provider.stage}/slsDeploymentBucket}
+  role: ${ssm:/${self:service}/${self:provider.stage}/lambdaIamVpcRole}
+  apiName: ${self:service}-api-${self:provider.stage}  
+  vpc:
+    securityGroupIds:
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda-sg}
+    subnetIds:
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda-subnetA}
+  stackTags:
+    Project: OmniApi 
+    Environment: ${self:provider.stage}
+
+custom: 
+  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
+  # dev:
+  #   domainName: api.dev.omnilogistics.com
+  #   certificateName: 
+  # prod:
+  #   domainName: api.omnilogistics.com
+  #   certificateName: api.omnilogistics.com
+  serverless-layers:
+    functions:
+      - shipment-info
+      - shipment-detail
+      - invoice-detail
+      - create-shipment
+      - bill-of-lading
+      - custom-authorizer
+      - update-shipment-status
+      - customer-entitlement-sync
+    dependenciesPath: ./requirements.txt
+  standardResponseHeaders:
+    'Access-Control-Allow-Origin': "'*'"
+    'Access-Control-Allow-Credentials': "'true'"
+    'Access-Control-Allow-Headers': "'*'"
+  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
+  # customDomain:
+  #   domainName: ${self:custom.${self:provider.stage}.domainName}
+  #   stage: ${self:provider.stage}
+  #   basePath: v1
+  #   certificateName: ${self:custom.${self:provider.stage}.certificateName}
+  #   createRoute53Record: true
+  #   endpointType: 'regional'
+  #   securityPolicy: tls_1_2
+
+plugins:
+  - serverless-layers
+  - serverless-plugin-multiple-responses
+  # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
+
+package:
+  individually: true
+  exclude:
+  - '**/*'
+  - serverless.yaml
+
+functions:
+  shipment-info: ${file(config/functions/shipment-info.yml):function}
+  shipment-detail: ${file(config/functions/shipment-detail.yml):function}
+  invoice-detail: ${file(config/functions/invoice-detail.yml):function}
+  create-shipment: ${file(config/functions/create-shipment.yml):function}
+  bill-of-lading: ${file(config/functions/bill-of-lading.yml):function}
+  custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
+  update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
+  customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+
+resources:
+  Resources:
+    BadRequestResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: ACCESS_DENIED
+        ResponseTemplates:
+          application/json: |
+            {
+              "message":"$context.authorizer.message"
+            }
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '400'

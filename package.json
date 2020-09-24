@@ -1,0 +1,24 @@
+{
+  "name": "omni-datawarehouse-api-services",
+  "version": "1.0.0",
+  "description": "omni-datawarehouse-api-services",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bizcloud-experts/omni-datawarehouse-api-services.git"
+  },
+  "author": "BizCloud Experts",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services/issues"
+  },
+  "homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
+  "dependencies": {
+    "serverless-domain-manager": "^5.0.0",
+    "serverless-layers": "^2.3.0",
+    "serverless-plugin-multiple-responses": "^1.0.0"
+  }
+}

@@ -1,0 +1,37 @@
+---
+function:
+  handler: src/invoiceDetail.handler
+  name: ${self:service}-invoice-detail-${self:provider.stage}
+  description: invoice detail api service - ${self:provider.stage}
+  events: 
+    - http: 
+        path: /invoice/detail
+        method: GET
+        integration: lambda
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          identitySource: method.request.header.x-api-key
+          type: request
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ''
+            501:
+              pattern: '.*httpStatus\": 501.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+  package:
+    include:
+    - src/invoiceDetail.py
+    - src/common.py
+    - psycopg2/*
+  environment:
+    db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
+    db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
+    db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
+    db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
+    db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort}
+    REGION: ${self:provider.region}

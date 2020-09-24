@@ -1,0 +1,19 @@
+---
+function:
+  handler: src/customerEntitlementSync.handler
+  name: ${self:service}-customer-entitlement-sync-${self:provider.stage}
+  description: customer entitlement sync - ${self:provider.stage}
+  events: 
+    - s3:
+        bucket: dw-datapipeline-dev
+        event: s3:ObjectCreated:*
+        rules:
+          - prefix: Data/
+        existing: true
+  package:
+    include:
+    - src/customerEntitlementSync.py
+  environment:
+    tableName: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
+    bucket: dw-datapipeline-dev
+    s3_key: ${ssm:/omni-dw/${self:provider.stage}/entitlement/table/sync/s3/key}

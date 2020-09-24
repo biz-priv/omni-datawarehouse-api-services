@@ -1,0 +1,37 @@
+---
+function:
+  handler: src/billOfLading.handler
+  name: ${self:service}-bill-of-lading-${self:provider.stage}
+  description: bill of lading api service - ${self:provider.stage}
+  events:
+    - http:
+        path: /billoflading
+        method: GET
+        integration: lambda
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          identitySource: method.request.header.x-api-key
+          type: request
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ''
+            400:
+              pattern: '.*httpStatus\": 400.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+            501:
+              pattern: '.*httpStatus\": 501.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+  package:
+    include:
+    - src/billOfLading.py
+  environment:
+    billOfLading_key: ${ssm:/${self:service}/${self:provider.stage}/billofLadingKey~true}
+    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
+    URL: 'https://websli.omnilogistics.com/wtTest/gethawb/v1/json/'
