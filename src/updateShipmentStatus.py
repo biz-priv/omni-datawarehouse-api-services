@@ -50,6 +50,7 @@ def handler(event, context):
         
         dynamo_update(table_name, key, expression, attribute_names, attribute_values)
     
+    logger.info("Response: {}".format(json.dumps({"httpStatus": 200, "message": "Records updated successfully."})))
     return {"httpStatus": 200, "message": "Records updated successfully."}
 
 def dynamo_update(table_name, key, expression, attribute_names, attribute_values, return_values="UPDATED_NEW"):

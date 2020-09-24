@@ -9,6 +9,10 @@ function:
     - src/updateShipmentStatus.py
     - src/common.py
     - psycopg2/*
+  events:
+    - schedule:
+        rate: rate(30 minutes)
+        enabled: true
   environment:
     db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
     db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
