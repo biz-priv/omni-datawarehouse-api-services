@@ -17,7 +17,7 @@ def handler(event, context):
         table = client.Table(os.environ['SHIPMENT_DETAILS_TABLE'])
         record_status = 'True'
         response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_RECORDSTATUS_INDEX'], 
-                        'Record Status = :record_status', {":record_status": {"S": record_status}})
+                        'RecordStatus = :record_status', {":record_status": {"S": record_status}})
         
         data = response['Items']
         hb_values = [i['HouseBillNumber'] for i in data if 'HouseBillNumber' in i]
