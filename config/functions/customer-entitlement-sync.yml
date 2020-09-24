@@ -16,3 +16,4 @@ function:
   environment:
     tableName: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
     bucket: dw-datapipeline-dev
+    s3_key: ${ssm:/omni-dw/${self:provider.stage}/entitlement/table/sync/s3/key}
