@@ -17,7 +17,7 @@ def handler(event, context):
         logger.info("Event: {}".format(json.dumps(event)))
 
         table_name = os.environ['table']
-        key = "Data/DB_api_cust_housebill_data000"
+        key = os.environ['s3_key']
 
         s3 = boto3.resource('s3')
 
@@ -32,16 +32,11 @@ def handler(event, context):
                     batch.clear()
 
                 batch.append(row)
-
             if batch:
                 write_to_dynamo(batch,table_name)
-
             logger.info("Sucessfully added records to omni-dw-customer-entitlement dynamo table")
-
         else:
             logger.info("No Action Required")
-            
-    
     except Exception as e:
         logging.exception("HandlerError: {}".format(e))
         raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
