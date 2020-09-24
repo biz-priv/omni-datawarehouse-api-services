@@ -40,3 +40,4 @@ function:
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTableIndex}
     FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
     REGION: ${self:provider.region}
+    URL: 'https://wttest.omnilogistics.com/WTKServices/AirtrakShipment.asmx'

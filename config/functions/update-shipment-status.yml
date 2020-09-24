@@ -3,6 +3,7 @@ function:
   handler: src/updateShipmentStatus.handler
   name: ${self:service}-update-shipment-status-${self:provider.stage}
   description: update shipment status - cloudwatch trigger - ${self:provider.stage}
+  timeout: 900
   package:
     include:
     - src/updateShipmentStatus.py

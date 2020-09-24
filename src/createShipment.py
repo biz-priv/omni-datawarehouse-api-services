@@ -7,60 +7,68 @@ import logging
 import boto3
 client = boto3.client('dynamodb')
 import xml.etree.ElementTree as ET
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 from src.common import dynamo_query
+
 InternalErrorMessage = "Internal Error."
+
 def handler(event, context):
-    """Handler Function"""
+    logger.info("Event: {}".format(json.dumps(event)))
+    customer_id = validate_input(event)
+    customer_info = validate_dynamodb(customer_id)
+    logger.info("Customer Info: {}".format(customer_info))
+    if customer_info == 'Failure':
+        return {"httpStatus": 400, "message": "Customer Information doesnot exist. Please raise a support ticket to add the customer"}
     try:
-        logger.info("Event: {}".format(json.dumps(event)))
-        customer_id = event['enhancedAuthContext']['customerId']
-        data = event['body']
-        client_data = ['Service Level','Ready Date']
-        if not set(client_data).issubset(data["oShipData"]):
-            return "ONE/ALL of the following parameters are missing in the request: \
-            Service Level,Ready Date,Declared Type"
-        customer_info = validate_dynamodb(customer_id)
-        logger.info("Customer: {}".format(customer_info))
-        if customer_info == 'Failure':
-            return 'Customer Information doesnot exist. Please raise a support ticket to add the customer'
-        data["oShipData"]["Station"] = customer_info['Station']['S']
-        data["oShipData"]["CustomerNo"] = customer_info['CustomerNo']['S']
-        data["oShipData"]["BillToAcct"] = customer_info['BillToAcct']['S']
-        data["oShipData"]["DeclaredType"] = customer_info['DeclaredType']['S']
+        event["body"]["oShipData"]["Station"] = customer_info['Station']['S']
+        event["body"]["oShipData"]["CustomerNo"] = customer_info['CustomerNo']['S']
+        event["body"]["oShipData"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        event["body"]["oShipData"]["DeclaredType"] = customer_info['DeclaredType']['S']
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
         temp_ship_data["AddNewShipmentV3"]["oShipData"] = {}
-        for key in data["oShipData"]:
-            if type(data["oShipData"][key]) is str:
+        for key in event["body"]["oShipData"]:
+            if type(event["body"]["oShipData"][key]) is str:
                 new_key = key.replace(" ", "")
-                temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = data["oShipData"][key]
-        shipment_line_list = get_shipment_line_list(data["oShipData"])
-        reference_list = get_reference_list(data["oShipData"])
-        accessorial_list = get_accessorial_list(data["oShipData"])
-        ship_data=dicttoxml.dicttoxml(temp_ship_data, attr_type=False,custom_root='soap:Body')
-        ship_data = str(ship_data).\
-            replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><oShipData>""", """""").\
-            replace("""</oShipData></AddNewShipmentV3></soap:Body>'""","""""")
-        start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-            xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
-                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader \
-                    xmlns="http://tempuri.org/"><UserName>biztest</UserName><Password>Api081020</Password>\
-                        </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
-                        xmlns="http://tempuri.org/"><oShipData>"""
-        end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
-        payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
-        logger.info("Payload xml data is : {}".format(payload))
-        url = 'https://wttest.omnilogistics.com/WTKServices/AirtrakShipment.asmx'
-        pars = {'op': 'AddNewShipmentV3'}
+                temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["oShipData"][key]
+    except Exception as e:
+        logging.exception("DataTransformError: {}".format(e))
+        raise DataTransformError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+    shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])
+    reference_list = get_reference_list(event["body"]["oShipData"])
+    accessorial_list = get_accessorial_list(event["body"]["oShipData"])
+    ship_data=dicttoxml.dicttoxml(temp_ship_data, attr_type=False,custom_root='soap:Body')
+    ship_data = str(ship_data).\
+        replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><oShipData>""", """""").\
+        replace("""</oShipData></AddNewShipmentV3></soap:Body>'""","""""")
+    start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
+            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader \
+                xmlns="http://tempuri.org/"><UserName>biztest</UserName><Password>Api081020</Password>\
+                    </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
+                    xmlns="http://tempuri.org/"><oShipData>"""
+    end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
+    payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
+    logger.info("Payload xml data is : {}".format(payload))
+    try:
+        url = os.environ["URL"]
+    except Exception as e:
+        logger.exception("Environment variable URL not set.")
+        raise EnvironmentVariableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+    pars = {'op': 'AddNewShipmentV3'}
+    try:
         r = requests.post(url, headers = {'Content-Type': 'text/xml; charset=utf-8'},data = payload, params = pars)
         response = r.text
         logger.info("Response is : {}".format(response))
     except Exception as e:
-        logging.exception("HandlerError: {}".format(e))
-        raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+        logger.exception("AirtrakShipmentApiError: {}".format(e))
+        raise AirtrakShipmentApiError(json.dumps({"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"}))
+
     shipment_data = update_response(response)
     update_authorizer_table(shipment_data,customer_id)
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
@@ -69,22 +77,16 @@ def handler(event, context):
     return shipment_data
 
 def modify_object_keys(array):
-    """Modify Object Keys"""
-    try:
-        new_array = []
-        for obj in array:
-            new_obj = {}
-            for key in obj:
-                new_key = key.replace(" ","")
-                new_obj[new_key] = obj[key]
-            new_array.append(new_obj)
-        return new_array
-    except Exception as e:
-        logging.exception("ModifyObjectError: {}".format(e))
-        raise ModifyObjectError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+    new_array = []
+    for obj in array:
+        new_obj = {}
+        for key in obj:
+            new_key = key.replace(" ","")
+            new_obj[new_key] = obj[key]
+        new_array.append(new_obj)
+    return new_array
 
 def validate_dynamodb(customer_id):
-    """DynamoDB Validation"""
     try:
         response = dynamo_query(os.environ['ACCOUNT_INFO_TABLE'], os.environ['ACCOUNT_INFO_TABLE_INDEX'],
                         'CustomerID = :CustomerID', {":CustomerID": {"S": customer_id}})
@@ -97,7 +99,6 @@ def validate_dynamodb(customer_id):
         raise ValidateDynamoDBError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def update_response(response):
-    """Update Response Function"""
     try:
         shipment_details = []
         temp_shipment_details = xmltodict.parse(response)
@@ -118,7 +119,6 @@ def update_response(response):
         raise UpdateResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def update_authorizer_table(shipment_data,customer_id):
-    """Update Authorizer Table"""
     try:
         house_bill_no = shipment_data['Housebill']
         file_no = shipment_data['ShipQuoteNo']
@@ -142,7 +142,6 @@ def update_authorizer_table(shipment_data,customer_id):
         raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def update_shipment_table(shipment_data,house_bill_info):
-    """Update Shipment Table"""
     try:
         temp_data = ['CustomerNo','BillToAcct']
         for i in temp_data:
@@ -169,7 +168,6 @@ def update_shipment_table(shipment_data,house_bill_info):
         raise UpdateShipmentTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def get_shipment_line_list(data_obj):
-    """Get Shipment Line List"""
     try:
         if "Shipment Line List" in data_obj:
             temp_shipment_line_list = modify_object_keys(data_obj["Shipment Line List"])
@@ -187,7 +185,6 @@ def get_shipment_line_list(data_obj):
         raise GetShipmentLineListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def get_reference_list(data_obj):
-    """Get Reference List"""
     try:
         if "Reference List" in data_obj:
             temp_reference_list = modify_object_keys(data_obj["Reference List"])
@@ -208,7 +205,6 @@ def get_reference_list(data_obj):
         raise GetReferenceListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def get_accessorial_list(data_obj):
-    """Get Accessorial List"""
     try:
         if "New Shipment Accessorials List" in data_obj:
             temp_accessorials_list = modify_object_keys(data_obj["New Shipment Accessorials List"])
@@ -225,8 +221,16 @@ def get_accessorial_list(data_obj):
         logging.exception("GetAccessorialListError: {}".format(e))
         raise GetAccessorialListError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
+def validate_input(event):
+    if not "enhancedAuthContext" in event or "customerId" not in event["enhancedAuthContext"]:
+        raise InputError(json.dumps({"httpStatus": 400, "message": "CustomerId not found."}))
+    client_data = ['Service Level','Ready Date']
+    if not "body" in event or not "oShipData" in event["body"] or not set(client_data).issubset(event["body"]["oShipData"]):
+        raise InputError(json.dumps({"httpStatus": 400, "message": "One/All of: Service Level, Ready Date, Declared Type parameters are missing in the request body oShipData."}))
+    return event["enhancedAuthContext"]["customerId"]
+
+class InputError(Exception): pass
 class HandlerError(Exception): pass
-class ModifyObjectError(Exception): pass
 class ValidateDynamoDBError(Exception): pass
 class UpdateResponseError(Exception): pass
 class UpdateAuthorizerTableError(Exception): pass
@@ -235,3 +239,6 @@ class GetShipmentLineListError(Exception): pass
 class GetReferenceListError(Exception): pass
 class GetAccessorialListError(Exception):pass
 class WtBolApiError(Exception): pass
+class DataTransformError(Exception): pass
+class EnvironmentVariableError(Exception): pass
+class AirtrakShipmentApiError(Exception): pass
