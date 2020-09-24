@@ -1,11 +1,14 @@
 import os
 import json
 import logging
+from datetime import datetime,timezone
 import botocore.session
 session = botocore.session.get_session()
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+InternalErrorMessage = "Internal Error."
 
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
@@ -20,7 +23,7 @@ def dynamo_query(table_name, index_name, expression, attributes):
         return response
     except Exception as e:
         logging.exception("DynamoQueryError: {}".format(e))
-        raise DynamoQueryError(json.dumps({"httpStatus": 501, "message": "Internal Error."}))
+        raise DynamoQueryError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def dynamo_get(table_name, key):
     try:
@@ -36,7 +39,33 @@ def dynamo_get(table_name, key):
             return None
     except Exception as e:
         logging.exception("DynamoGetError: {}".format(e))
-        raise DynamoGetError(json.dumps({"httpStatus": 501, "message": "Internal Error."}))
+        raise DynamoGetError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+def modify_response(data):
+    try:
+        response = {}
+        response["Service Level"] = data[0]["ServiceLevel"]["S"]
+        response["House Waybill"] = data[0]["HouseBillNumber"]["S"]
+        response["File Number"] = data[0]["File Number"]["S"]
+        response["Shipper Name"] = data[0]["ShipperName"]["S"]
+        response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
+        response["Current Status"] = data[0]["Shipment Status"]["S"]
+        return [response]
+    except Exception as e:
+        logging.exception("ModifyResponseError: {}".format(e))
+        raise ModifyResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+def modify_date(x):
+    try:
+        if x == None:
+            return 'null'
+        else:
+            return x.isoformat()
+    except Exception as e:
+        logging.exception("DateConversionError: {}".format(e))
+        raise DateConversionError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 class DynamoQueryError(Exception): pass
 class DynamoGetError(Exception): pass
+class ModifyResponseError(Exception): pass
+class DateConversionError(Exception): pass
