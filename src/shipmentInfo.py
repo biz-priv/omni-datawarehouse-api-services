@@ -15,7 +15,7 @@ InternalErrorMessage = "Internal Error."
 def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
     house_bill_nbr = event['query']['house_bill_nbr']
-    response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_TABLE_INDEX'], 
+    response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'], 
                     'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
 
     if not response['Items'] or response['Items'][0]['RecordStatus']['S'] == "False":

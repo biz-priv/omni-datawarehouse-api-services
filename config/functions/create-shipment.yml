@@ -33,11 +33,10 @@ function:
     - src/createShipment.py
     - src/common.py
   environment:
-    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
-    ACCOUNT_INFO_TABLE: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTable}
-    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlement/table}
+    ACCOUNT_INFO_TABLE: ${ssm:/${self:service}/${self:provider.stage}/accountInfo/table}
+    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/table}
     CUSTOMER_ENTITLEMENT_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/houseBillNumber/index}
-    ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfoTableIndex}
-    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
+    ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfo/customerId/index}
     REGION: ${self:provider.region}
-    URL: 'https://wttest.omnilogistics.com/WTKServices/AirtrakShipment.asmx'
+    URL: ${ssm:/${self:service}/${self:provider.stage}/createShipment/wt/url}

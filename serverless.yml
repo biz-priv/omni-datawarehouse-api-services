@@ -8,16 +8,18 @@ provider:
   region: us-east-1
   timeout: 30
   memorySize: 256
-  deploymentBucket: ${ssm:/${self:service}/${self:provider.stage}/slsDeploymentBucket}
-  role: ${ssm:/${self:service}/${self:provider.stage}/lambdaIamVpcRole}
+  deploymentBucket: ${ssm:/${self:service}/${self:provider.stage}/sls/deployment/bucket}
+  role: ${ssm:/${self:service}/${self:provider.stage}/lambda/role}
   apiName: ${self:service}-api-${self:provider.stage}  
   vpc:
     securityGroupIds:
-      - ${ssm:/${self:service}/${self:provider.stage}/lambda-sg}
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda/sgId}
     subnetIds:
-      - ${ssm:/${self:service}/${self:provider.stage}/lambda-subnetA}
+      - ${ssm:/${self:service}/${self:provider.stage}/lambda/subnetA}
   stackTags:
-    Project: OmniApi 
+    Application: DataWarehouse
+    CreateBy: BizCloudExperts
+    Version: "1.0"
     Environment: ${self:provider.stage}
 
 custom: 
@@ -25,9 +27,10 @@ custom:
   # dev:
   #   domainName: api.dev.omnilogistics.com
   #   certificateName: 
-  # prod:
-  #   domainName: api.omnilogistics.com
-  #   certificateName: api.omnilogistics.com
+  prod:
+    domainName: api.omnilogistics.com
+    certificateName: api.omnilogistics.com
+  apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
     functions:
       - shipment-info
@@ -55,6 +58,7 @@ custom:
 
 plugins:
   - serverless-layers
+  - serverless-add-api-key
   - serverless-plugin-multiple-responses
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 

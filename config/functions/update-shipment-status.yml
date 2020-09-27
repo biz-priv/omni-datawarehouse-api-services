@@ -14,12 +14,12 @@ function:
         rate: rate(30 minutes)
         enabled: true
   environment:
-    db_username: ${ssm:/${self:service}/${self:provider.stage}/dbUser~true}
-    db_password: ${ssm:/${self:service}/${self:provider.stage}/dbPassword~true}
-    db_name: ${ssm:/${self:service}/${self:provider.stage}/dbName}
-    db_host: ${ssm:/${self:service}/${self:provider.stage}/dbHost~true}
-    db_port: ${ssm:/${self:service}/${self:provider.stage}/dbPort} 
-    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTable}
-    SHIPMENT_DETAILS_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetailsTableIndex}
-    SHIPMENT_DETAILS_RECORDSTATUS_INDEX: RecordStatusIndex
+    db_username: ${ssm:/${self:service}/${self:provider.stage}/db/user~true}
+    db_password: ${ssm:/${self:service}/${self:provider.stage}/db/password~true}
+    db_name: ${ssm:/${self:service}/${self:provider.stage}/db/name}
+    db_host: ${ssm:/${self:service}/${self:provider.stage}/db/host~true}
+    db_port: ${ssm:/${self:service}/${self:provider.stage}/db/port} 
+    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/table}
+    SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/houseBillKey/index}
+    SHIPMENT_DETAILS_RECORDSTATUS_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/recordStatus/index}
     REGION: ${self:provider.region}
