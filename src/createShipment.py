@@ -113,7 +113,7 @@ def update_response(response):
         return shipment_details
     except KeyError as e:
         logging.exception("WtBolApiError: {}".format(e))
-        raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
+        raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Create Shipment API Error."}))
     except Exception as e:
         logging.exception("UpdateResponseError: {}".format(e))
         raise UpdateResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))

@@ -8,10 +8,9 @@ function:
     - src/customAuthorizer.py
     - src/common.py
   environment:
-    TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTable}
-    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable} 
+    TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidator/table}
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlement/table} 
     CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/houseBillNumber/index}
     CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/fileNumber/index}
-    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidatorTableIndex}
-    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidator/apiKey/index}
     REGION: ${self:provider.region}

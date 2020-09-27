@@ -5,7 +5,7 @@ function:
   description: customer entitlement sync - ${self:provider.stage}
   events: 
     - s3:
-        bucket: dw-datapipeline-dev
+        bucket: ${ssm:/${self:service}/${self:provider.stage}/s3/datapipeline/bucket}
         event: s3:ObjectCreated:*
         rules:
           - prefix: Data/
@@ -14,6 +14,6 @@ function:
     include:
     - src/customerEntitlementSync.py
   environment:
-    tableName: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlementTable}
-    bucket: dw-datapipeline-dev
-    s3_key: ${ssm:/omni-dw/${self:provider.stage}/entitlement/table/sync/s3/key}
+    tableName: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlement/table}
+    bucket: ${ssm:/${self:service}/${self:provider.stage}/s3/datapipeline/bucket}
+    s3_key: ${ssm:/${self:service}/${self:provider.stage}/entitlement/table/sync/s3/key}

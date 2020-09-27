@@ -32,6 +32,5 @@ function:
     include:
     - src/billOfLading.py
   environment:
-    billOfLading_key: ${ssm:/${self:service}/${self:provider.stage}/billofLadingKey~true}
-    FILE_NUMBER_TABLE: ${ssm:/${self:service}/${self:provider.stage}/fileNumberTable}
-    URL: 'https://websli.omnilogistics.com/wtTest/gethawb/v1/json/'
+    billOfLading_key: ${ssm:/${self:service}/${self:provider.stage}/bol/API_KEY~true}
+    URL: ${ssm:/${self:service}/${self:provider.stage}/billOfLading/wt/url}

@@ -54,7 +54,10 @@ def handler(event, context):
 
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"], 
             'ApiKey = :apikey', {":apikey": {"S": api_key}})
-    customer_id = validate_dynamo_query_response(response, event)
+    
+    customer_id = validate_dynamo_query_response(response, event, None, "Customer Id not found.")
+    if type(customer_id) != str:
+        return customer_id
     
     if "/create/shipment" in event["methodArn"]:
         return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
