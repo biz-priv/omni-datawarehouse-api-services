@@ -16,7 +16,7 @@ def handler(event, context):
     try:
         logger.info("Event: {}".format(json.dumps(event)))
 
-        table_name = os.environ['table']
+        table_name = os.environ['tableName']
         key = os.environ['s3_key']
 
         s3 = boto3.resource('s3')
