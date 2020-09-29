@@ -226,7 +226,7 @@ def validate_input(event):
         raise InputError(json.dumps({"httpStatus": 400, "message": "CustomerId not found."}))
     client_data = ['Service Level','Ready Date']
     if not "body" in event or not "oShipData" in event["body"] or not set(client_data).issubset(event["body"]["oShipData"]):
-        raise InputError(json.dumps({"httpStatus": 400, "message": "One/All of: Service Level, Ready Date, Declared Type parameters are missing in the request body oShipData."}))
+        raise InputError(json.dumps({"httpStatus": 400, "message": "One/All of: Service Level, Ready Date parameters are missing in the request body oShipData."}))
     return event["enhancedAuthContext"]["customerId"]
 
 class InputError(Exception): pass
