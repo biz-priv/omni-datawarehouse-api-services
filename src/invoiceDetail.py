@@ -40,6 +40,9 @@ def handler(event, context):
         except Exception as e:
             logging.exception("QueryError: {}".format(e))
             raise QueryError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+        if not shipment_details or len(shipment_details) == 0:
+            logger.info("There are not customer charges for: {}".format(house_bill_nbr))
+            raise NoChargesFound(json.dumps({"httpStatus": 202, "message": "There are not customer charges for: "+house_bill_nbr}))
         invoices = convert_records(shipment_details[0], get_charge_code(shipment_details))
         records_list.append(invoices)
         invoice_records = {'invoiceDetails': records_list}
@@ -85,3 +88,4 @@ class HandlerError(Exception): pass
 class RecordsConversionError(Exception): pass
 class ChargeCodeError(Exception): pass 
 class QueryError(Exception): pass 
+class NoChargesFound(Exception): pass

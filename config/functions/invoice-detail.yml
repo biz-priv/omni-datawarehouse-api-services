@@ -18,6 +18,11 @@ function:
           statusCodes:
             200:
               pattern: ''
+            202:
+              pattern: '.*httpStatus\": 202.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
             501:
               pattern: '.*httpStatus\": 501.*'
               headers:

@@ -90,7 +90,7 @@ resources:
         ResponseTemplates:
           application/json: |
             {
-              "message":"$context.authorizer.message"
+              "errorDescription":"$context.authorizer.message"
             }
         RestApiId:
           Ref: 'ApiGatewayRestApi'
