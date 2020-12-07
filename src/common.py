@@ -50,6 +50,7 @@ def modify_response(data):
         response["Shipper Name"] = data[0]["ShipperName"]["S"]
         response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
         response["Current Status"] = data[0]["ShipmentStatus"]["S"]
+        response["Current Status Description"] = data[0]["ShipmentStatusDescription"]["S"]
         return [response]
     except Exception as e:
         logging.exception("ModifyResponseError: {}".format(e))

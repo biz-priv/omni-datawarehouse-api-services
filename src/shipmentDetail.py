@@ -57,8 +57,8 @@ def convert_records(data):
         record["Pieces"] = data[9]
         record["Actual Weight LBS"] = data[10]
         record["Actual Weight KGS"] = data[11]
-        record["Chargable Weight LBS"] = data[12]
-        record["Chargable Weight KGS"] = data[13]
+        record["Chargeable Weight LBS"] = data[12]
+        record["Chargeable Weight KGS"] = data[13]
         record["Pickup Date"] = modify_date(data[14])
         record["Pod Date"] = modify_date(data[15])
         record["ETA Date"] = modify_date(data[16])

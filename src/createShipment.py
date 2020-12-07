@@ -48,8 +48,8 @@ def handler(event, context):
     start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
         xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
-            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader \
-                xmlns="http://tempuri.org/"><UserName>biztest</UserName><Password>Api081020</Password>\
+            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
+                    <UserName>biztest</UserName><Password>Api081020!</Password>\
                     </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
@@ -70,6 +70,7 @@ def handler(event, context):
         raise AirtrakShipmentApiError(json.dumps({"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"}))
 
     shipment_data = update_response(response)
+    print("Shipment data is : " shipment_data)
     update_authorizer_table(shipment_data,customer_id)
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
     logger.info("House Bill Details are: {}".format(house_bill_info))
@@ -153,6 +154,7 @@ def update_shipment_table(shipment_data,house_bill_info):
         shipment_info['FileNumber'] = {'S': file_number}
         shipment_info['RecordStatus'] = {'S': 'True'}
         shipment_info['ShipmentStatus'] = {'S': 'Pending'}
+        shipment_info['ShipmentStatusDescription'] = {'S': 'Pending'}
         shipment_items = ['ServiceLevel','ShipperName', 'ConsigneeName']
         for k,v in house_bill_info.items():
             if k in shipment_items:
