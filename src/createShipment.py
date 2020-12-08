@@ -5,6 +5,7 @@ import xmltodict
 import requests
 import logging
 import boto3
+from ast import literal_eval
 client = boto3.client('dynamodb')
 import xml.etree.ElementTree as ET
 
@@ -16,6 +17,7 @@ from src.common import dynamo_query
 InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
+    event["body"]["oShipData"] = literal_eval(str(event["body"]["oShipData"]).replace("Weight","Weigth"))
     logger.info("Event: {}".format(json.dumps(event)))
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
@@ -70,7 +72,6 @@ def handler(event, context):
         raise AirtrakShipmentApiError(json.dumps({"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"}))
 
     shipment_data = update_response(response)
-    print("Shipment data is : " shipment_data)
     update_authorizer_table(shipment_data,customer_id)
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
     logger.info("House Bill Details are: {}".format(house_bill_info))
