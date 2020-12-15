@@ -16,6 +16,7 @@ from src.common import dynamo_query
 
 InternalErrorMessage = "Internal Error."
 
+
 def handler(event, context):
     event["body"]["oShipData"] = literal_eval(str(event["body"]["oShipData"]).replace("Weight","Weigth"))
     logger.info("Event: {}".format(json.dumps(event)))
@@ -51,7 +52,7 @@ def handler(event, context):
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
         xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
             xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
-                    <UserName>biztest</UserName><Password>Api081020!</Password>\
+                    <UserName>"""+os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
                     </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""

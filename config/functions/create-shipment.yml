@@ -40,3 +40,5 @@ function:
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfo/customerId/index}
     REGION: ${self:provider.region}
     URL: ${ssm:/${self:service}/${self:provider.stage}/createShipment/wt/url}
+    wt_soap_username: ${ssm:/${self:service}/${self:provider.stage}/wt/soap/username~true}
+    wt_soap_password: ${ssm:/${self:service}/${self:provider.stage}/wt/soap/password~true}
