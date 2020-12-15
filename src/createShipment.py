@@ -19,6 +19,7 @@ InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
     event["body"]["oShipData"] = literal_eval(str(event["body"]["oShipData"]).replace("Weight","Weigth"))
+    truncate_description(event["body"]["oShipData"]["Shipment Line List"])
     logger.info("Event: {}".format(json.dumps(event)))
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
@@ -78,6 +79,13 @@ def handler(event, context):
     logger.info("House Bill Details are: {}".format(house_bill_info))
     update_shipment_table(shipment_data,house_bill_info)
     return shipment_data
+
+def truncate_description(value):
+        for i in value:
+                if len(i["Description"]) > 35:
+                        i["Description"] = i["Description"][:35]
+                else:
+                        i["Description"]
 
 def modify_object_keys(array):
     new_array = []
