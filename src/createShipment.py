@@ -6,6 +6,7 @@ import requests
 import logging
 import boto3
 from ast import literal_eval
+from datetime import datetime,timezone
 client = boto3.client('dynamodb')
 import xml.etree.ElementTree as ET
 
@@ -152,6 +153,9 @@ def update_authorizer_table(shipment_data,customer_id):
         logging.exception("UpdateAuthorizerTableError: {}".format(e))
         raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
+now = datetime.now()
+dt_iso = now.isoformat()
+
 def update_shipment_table(shipment_data,house_bill_info):
     try:
         temp_data = ['CustomerNo','BillToAcct']
@@ -165,6 +169,7 @@ def update_shipment_table(shipment_data,house_bill_info):
         shipment_info['RecordStatus'] = {'S': 'True'}
         shipment_info['ShipmentStatus'] = {'S': 'Pending'}
         shipment_info['ShipmentStatusDescription'] = {'S': 'Pending'}
+        shipment_info['File Date'] = {'S': dt_iso}
         shipment_items = ['ServiceLevel','ShipperName', 'ConsigneeName']
         for k,v in house_bill_info.items():
             if k in shipment_items:
