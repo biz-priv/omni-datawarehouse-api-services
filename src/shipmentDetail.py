@@ -10,7 +10,6 @@ from src.common import dynamo_query
 from src.common import modify_response
 from src.common import modify_date
 
-
 InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
