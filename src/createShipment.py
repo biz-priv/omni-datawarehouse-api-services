@@ -86,7 +86,7 @@ def truncate_description(value):
                 if len(i["Description"]) > 35:
                         i["Description"] = i["Description"][:35]
                 else:
-                        i["Description"]
+                        pass
 
 def modify_object_keys(array):
     new_array = []
@@ -154,7 +154,7 @@ def update_authorizer_table(shipment_data,customer_id):
         raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 now = datetime.now()
-dt_iso = now.isoformat()
+dt_iso = now.strftime("%d/%m/%Y")
 
 def update_shipment_table(shipment_data,house_bill_info):
     try:

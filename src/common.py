@@ -61,7 +61,7 @@ def modify_response(data):
 def modify_date(x):
     try:
         if x == None:
-            return 'null'
+            return None
         else:
             return x.isoformat()
     except Exception as e:
