@@ -29,7 +29,7 @@ def get_shipment_detail(house_bill_nbr):
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
         records_list = []
-        cur.execute(f"select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level ,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where house_bill_nbr = '{house_bill_nbr}'")
+        cur.execute(f"select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where house_bill_nbr = '{house_bill_nbr}'")
         con.commit()
     except Exception as e:
         logging.exception("GetShipmentDetailError: {}".format(e))
@@ -64,11 +64,12 @@ def convert_records(data):
         record["ETA Date"] = modify_date(data[16])
         record["ETD Date"] = modify_date(data[17])
         record["Scheduled Delivery Date"] = modify_date(data[18])
-        record["Service Level"] = data[19]
-        record["Current Status"] = data[20]
-        record["Current Status Desc"] = data[21]
-        record["Bill To Customer"] = data[22]
-        record["Control Customer"] = data[23]
+        record["Service Level Description "] = data[19]
+        record["Service Level Code"] = data[20]
+        record["Current Status"] = data[21]
+        record["Current Status Desc"] = data[22]
+        record["Bill To Customer"] = data[23]
+        record["Control Customer"] = data[24]
         return record    
     except Exception as e:
         logging.exception("RecordsConversionError: {}".format(e))
