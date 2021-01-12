@@ -5,6 +5,9 @@ import xmltodict
 import requests
 import logging
 import boto3
+import psycopg2
+from ast import literal_eval
+from datetime import datetime,timezone
 client = boto3.client('dynamodb')
 import xml.etree.ElementTree as ET
 
@@ -15,7 +18,10 @@ from src.common import dynamo_query
 
 InternalErrorMessage = "Internal Error."
 
+
 def handler(event, context):
+    event["body"]["oShipData"] = literal_eval(str(event["body"]["oShipData"]).replace("Weight","Weigth"))
+    truncate_description(event["body"]["oShipData"]["Shipment Line List"])
     logger.info("Event: {}".format(json.dumps(event)))
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
@@ -48,8 +54,8 @@ def handler(event, context):
     start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
         xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
-            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader \
-                xmlns="http://tempuri.org/"><UserName>biztest</UserName><Password>Api081020</Password>\
+            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
+                    <UserName>"""+os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
                     </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
@@ -73,8 +79,37 @@ def handler(event, context):
     update_authorizer_table(shipment_data,customer_id)
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
     logger.info("House Bill Details are: {}".format(house_bill_info))
-    update_shipment_table(shipment_data,house_bill_info)
+    service_level_desc = get_service_level(event["body"]["oShipData"])
+    update_shipment_table(shipment_data,house_bill_info, service_level_desc)
     return shipment_data
+
+def get_service_level(service_level_code):
+    try:        
+        if "Service Level" in service_level_code:
+            service_level_id = service_level_code['Service Level']
+            con = psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
+                                port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
+            con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) 
+            cur = con.cursor()
+            cur.execute(f"select trim(service_level_desc) from public.service_level where service_level_id = '{service_level_id}'")
+            con.commit()
+            service_code = cur.fetchone()
+            service_level_desc = service_code[0]
+            cur.close()
+            con.close()
+            return service_level_desc
+        else:
+            return "NA"
+    except Exception as e:
+            logging.exception("GetServiceLevelError: {}".format(e))
+            raise GetServiceLevelError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+def truncate_description(value):
+        for i in value:
+                if len(i["Description"]) >= 35:
+                        i["Description"] = i["Description"][:35]
+                else:
+                        pass
 
 def modify_object_keys(array):
     new_array = []
@@ -141,7 +176,10 @@ def update_authorizer_table(shipment_data,customer_id):
         logging.exception("UpdateAuthorizerTableError: {}".format(e))
         raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-def update_shipment_table(shipment_data,house_bill_info):
+now = datetime.now()
+dt_iso = now.isoformat()
+
+def update_shipment_table(shipment_data,house_bill_info,service_level_desc):
     try:
         temp_data = ['CustomerNo','BillToAcct']
         for i in temp_data:
@@ -153,6 +191,9 @@ def update_shipment_table(shipment_data,house_bill_info):
         shipment_info['FileNumber'] = {'S': file_number}
         shipment_info['RecordStatus'] = {'S': 'True'}
         shipment_info['ShipmentStatus'] = {'S': 'Pending'}
+        shipment_info['ShipmentStatusDescription'] = {'S': 'Pending'}
+        shipment_info['Service Level Description'] = {'S': service_level_desc}
+        shipment_info['File Date'] = {'S': dt_iso}
         shipment_items = ['ServiceLevel','ShipperName', 'ConsigneeName']
         for k,v in house_bill_info.items():
             if k in shipment_items:
@@ -172,7 +213,7 @@ def get_shipment_line_list(data_obj):
         if "Shipment Line List" in data_obj:
             temp_shipment_line_list = modify_object_keys(data_obj["Shipment Line List"])
             shipment_line_list_item = lambda x: 'NewShipmentDimLineV3'
-            shipment_line_list=dicttoxml.dicttoxml(temp_shipment_line_list, \
+            shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list, \
                 attr_type=False,custom_root='ShipmentLineList',item_func=shipment_line_list_item)
             shipment_line_list = str(shipment_line_list).\
                 replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
@@ -242,3 +283,4 @@ class WtBolApiError(Exception): pass
 class DataTransformError(Exception): pass
 class EnvironmentVariableError(Exception): pass
 class AirtrakShipmentApiError(Exception): pass
+class GetServiceLevelError(Exception): pass

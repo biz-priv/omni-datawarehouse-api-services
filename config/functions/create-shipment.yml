@@ -32,6 +32,7 @@ function:
     include:
     - src/createShipment.py
     - src/common.py
+    - psycopg2/*
   environment:
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlement/table}
     ACCOUNT_INFO_TABLE: ${ssm:/${self:service}/${self:provider.stage}/accountInfo/table}
@@ -40,3 +41,10 @@ function:
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/accountInfo/customerId/index}
     REGION: ${self:provider.region}
     URL: ${ssm:/${self:service}/${self:provider.stage}/createShipment/wt/url}
+    wt_soap_username: ${ssm:/${self:service}/${self:provider.stage}/wt/soap/username~true}
+    wt_soap_password: ${ssm:/${self:service}/${self:provider.stage}/wt/soap/password~true}
+    db_username: ${ssm:/${self:service}/${self:provider.stage}/db/user~true}
+    db_password: ${ssm:/${self:service}/${self:provider.stage}/db/password~true}
+    db_name: ${ssm:/${self:service}/${self:provider.stage}/db/name}
+    db_host: ${ssm:/${self:service}/${self:provider.stage}/db/host~true}
+    db_port: ${ssm:/${self:service}/${self:provider.stage}/db/port} 
