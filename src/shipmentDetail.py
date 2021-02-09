@@ -64,7 +64,7 @@ def convert_records(data):
         record["ETA Date"] = modify_date(data[16])
         record["ETD Date"] = modify_date(data[17])
         record["Scheduled Delivery Date"] = modify_date(data[18])
-        record["Service Level Description "] = data[19]
+        record["Service Level Description"] = data[19]
         record["Service Level Code"] = data[20]
         record["Current Status"] = data[21]
         record["Current Status Desc"] = data[22]

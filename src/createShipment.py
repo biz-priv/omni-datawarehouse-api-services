@@ -44,9 +44,11 @@ def handler(event, context):
         logging.exception("DataTransformError: {}".format(e))
         raise DataTransformError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-    shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])
+    temp_ship_data = ready_date_time(temp_ship_data)
+    shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])    
     reference_list = get_reference_list(event["body"]["oShipData"])
     accessorial_list = get_accessorial_list(event["body"]["oShipData"])
+    
     ship_data=dicttoxml.dicttoxml(temp_ship_data, attr_type=False,custom_root='soap:Body')
     ship_data = str(ship_data).\
         replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><oShipData>""", """""").\
@@ -82,6 +84,28 @@ def handler(event, context):
     service_level_desc = get_service_level(event["body"]["oShipData"])
     update_shipment_table(shipment_data,house_bill_info, service_level_desc)
     return shipment_data
+
+def ready_date_time(a):
+    try:
+        b = {}
+        b["AddNewShipmentV3"] = {}
+        b["AddNewShipmentV3"]["oShipData"] = {}
+        ReadyTime = a["AddNewShipmentV3"]["oShipData"]["ReadyDate"]
+        b["AddNewShipmentV3"]["oShipData"]["ReadyTime"] = ReadyTime
+            
+        if "CloseTime" in a["AddNewShipmentV3"]["oShipData"]:
+            CloseDate = a["AddNewShipmentV3"]["oShipData"]["CloseTime"]
+            b["AddNewShipmentV3"]["oShipData"]["CloseDate"] = CloseDate
+        elif "CloseDate" in a["AddNewShipmentV3"]["oShipData"]:
+            CloseTime = a["AddNewShipmentV3"]["oShipData"]["CloseDate"]
+            b["AddNewShipmentV3"]["oShipData"]["CloseTime"] = CloseTime
+        else:
+            pass           
+        b["AddNewShipmentV3"]["oShipData"].update(a["AddNewShipmentV3"]["oShipData"])    
+        return b
+    except Exception as e:
+        logging.exception("ReadyDateTimeError: {}".format(e))
+        raise ReadyDateTimeError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def get_service_level(service_level_code):
     try:        
@@ -284,3 +308,4 @@ class DataTransformError(Exception): pass
 class EnvironmentVariableError(Exception): pass
 class AirtrakShipmentApiError(Exception): pass
 class GetServiceLevelError(Exception): pass
+class ReadyDateTimeError(Exception): pass
