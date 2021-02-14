@@ -6,6 +6,7 @@ import requests
 import logging
 import boto3
 import psycopg2
+import pydash
 from ast import literal_eval
 from datetime import datetime,timezone
 client = boto3.client('dynamodb')
@@ -44,6 +45,7 @@ def handler(event, context):
         logging.exception("DataTransformError: {}".format(e))
         raise DataTransformError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
+    print("temp ship data is : ", temp_ship_data)    
     temp_ship_data = ready_date_time(temp_ship_data)
     shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])    
     reference_list = get_reference_list(event["body"]["oShipData"])
@@ -85,24 +87,23 @@ def handler(event, context):
     update_shipment_table(shipment_data,house_bill_info, service_level_desc)
     return shipment_data
 
-def ready_date_time(a):
+def ready_date_time(old_shipment_list):
     try:
-        b = {}
-        b["AddNewShipmentV3"] = {}
-        b["AddNewShipmentV3"]["oShipData"] = {}
-        ReadyTime = a["AddNewShipmentV3"]["oShipData"]["ReadyDate"]
-        b["AddNewShipmentV3"]["oShipData"]["ReadyTime"] = ReadyTime
+        updated_shipment_list = {}
+        ReadyTime = old_shipment_list["AddNewShipmentV3"]["oShipData"]["ReadyDate"]
+        updated_shipment_list["ReadyTime"] = ReadyTime
             
-        if "CloseTime" in a["AddNewShipmentV3"]["oShipData"]:
-            CloseDate = a["AddNewShipmentV3"]["oShipData"]["CloseTime"]
-            b["AddNewShipmentV3"]["oShipData"]["CloseDate"] = CloseDate
-        elif "CloseDate" in a["AddNewShipmentV3"]["oShipData"]:
-            CloseTime = a["AddNewShipmentV3"]["oShipData"]["CloseDate"]
-            b["AddNewShipmentV3"]["oShipData"]["CloseTime"] = CloseTime
+        if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
+            CloseDate = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseTime"]
+            updated_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"] = CloseDate
+        elif "CloseDate" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
+            CloseTime = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"]
+            updated_shipment_list["CloseTime"] = CloseTime
         else:
             pass           
-        b["AddNewShipmentV3"]["oShipData"].update(a["AddNewShipmentV3"]["oShipData"])    
-        return b
+        updated_shipment_list.update(old_shipment_list["AddNewShipmentV3"]["oShipData"])    
+        updated_shipment_list = pydash.objects.set_({}, 'AddNewShipmentV3.oShipData', updated_shipment_list)
+        return updated_shipment_list
     except Exception as e:
         logging.exception("ReadyDateTimeError: {}".format(e))
         raise ReadyDateTimeError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
