@@ -6,6 +6,7 @@ import requests
 import logging
 import boto3
 import psycopg2
+import pydash
 from ast import literal_eval
 from datetime import datetime,timezone
 client = boto3.client('dynamodb')
@@ -44,9 +45,12 @@ def handler(event, context):
         logging.exception("DataTransformError: {}".format(e))
         raise DataTransformError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-    shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])
+    print("temp ship data is : ", temp_ship_data)    
+    temp_ship_data = ready_date_time(temp_ship_data)
+    shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])    
     reference_list = get_reference_list(event["body"]["oShipData"])
     accessorial_list = get_accessorial_list(event["body"]["oShipData"])
+    
     ship_data=dicttoxml.dicttoxml(temp_ship_data, attr_type=False,custom_root='soap:Body')
     ship_data = str(ship_data).\
         replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><oShipData>""", """""").\
@@ -82,6 +86,27 @@ def handler(event, context):
     service_level_desc = get_service_level(event["body"]["oShipData"])
     update_shipment_table(shipment_data,house_bill_info, service_level_desc)
     return shipment_data
+
+def ready_date_time(old_shipment_list):
+    try:
+        updated_shipment_list = {}
+        ReadyTime = old_shipment_list["AddNewShipmentV3"]["oShipData"]["ReadyDate"]
+        updated_shipment_list["ReadyTime"] = ReadyTime
+            
+        if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
+            CloseDate = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseTime"]
+            updated_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"] = CloseDate
+        elif "CloseDate" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
+            CloseTime = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"]
+            updated_shipment_list["CloseTime"] = CloseTime
+        else:
+            pass           
+        updated_shipment_list.update(old_shipment_list["AddNewShipmentV3"]["oShipData"])    
+        updated_shipment_list = pydash.objects.set_({}, 'AddNewShipmentV3.oShipData', updated_shipment_list)
+        return updated_shipment_list
+    except Exception as e:
+        logging.exception("ReadyDateTimeError: {}".format(e))
+        raise ReadyDateTimeError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
 def get_service_level(service_level_code):
     try:        
@@ -284,3 +309,4 @@ class DataTransformError(Exception): pass
 class EnvironmentVariableError(Exception): pass
 class AirtrakShipmentApiError(Exception): pass
 class GetServiceLevelError(Exception): pass
+class ReadyDateTimeError(Exception): pass

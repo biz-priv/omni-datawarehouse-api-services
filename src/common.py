@@ -45,7 +45,7 @@ def dynamo_get(table_name, key):
 def modify_response(data):
     try:
         response = {}
-        response["Service Level"] = data[0]["ServiceLevel"]["S"]
+        response["Service Level Code"] = data[0]["ServiceLevel"]["S"]
         response["Service Level Description"] = data[0]["Service Level Description"]["S"]
         response["House Waybill"] = data[0]["HouseBillNumber"]["S"]
         response["File Number"] = data[0]["FileNumber"]["S"]
