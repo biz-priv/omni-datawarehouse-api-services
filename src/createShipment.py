@@ -95,7 +95,7 @@ def ready_date_time(old_shipment_list):
             
         if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
             CloseDate = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseTime"]
-            updated_shipment_list["CloseDate"] = CloseDate
+            updated_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"] = CloseDate
         elif "CloseDate" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
             CloseTime = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"]
             updated_shipment_list["CloseTime"] = CloseTime
