@@ -36,4 +36,5 @@ function:
     db_port: ${ssm:/${self:service}/${self:provider.stage}/db/port} 
     SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/table}
     SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/houseBillKey/index}
+    SHIPMENT_DETAILS_FILENUMBER_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/FileNumber/index}
     REGION: ${self:provider.region}
