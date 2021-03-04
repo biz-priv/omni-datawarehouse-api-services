@@ -21,6 +21,9 @@ def handler(event, context):
             parameter = " shipment_info.file_nbr = "
         execution_parameters = [number, parameter]
         return execution_parameters
+    except Exception as e:
+        logging.exception("ProcessingInputError: {}".format(e))
+        raise ProcessingInputError(json.dumps({"httpStatus": 400, "message": "Input not valid"}))
                 
     try :    
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
@@ -98,3 +101,4 @@ class RecordsConversionError(Exception): pass
 class ChargeCodeError(Exception): pass 
 class QueryError(Exception): pass 
 class NoChargesFound(Exception): pass
+class ProcessingInputError(Exception): pass
