@@ -21,7 +21,7 @@ def handler(event, context):
     if not details[2]['Items'] or details[2]['Items'][0]['RecordStatus']['S'] == "False":
         return get_shipment_detail(details[0],details[1])
     else:
-        return {'shipmentInfo': modify_response(details[2]['Items'])}
+        return {'shipmentDetails': modify_response(details[2]['Items'])}
 
 def get_shipment_detail(hwb_file_nbr,parameter):
     try:        
