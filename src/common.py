@@ -10,6 +10,7 @@ logger.setLevel(logging.INFO)
 
 InternalErrorMessage = "Internal Error."
 
+
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
         client = session.create_client('dynamodb', region_name=os.environ['REGION'])
@@ -44,12 +45,15 @@ def dynamo_get(table_name, key):
 def modify_response(data):
     try:
         response = {}
-        response["Service Level"] = data[0]["ServiceLevel"]["S"]
+        response["Service Level Code"] = data[0]["ServiceLevel"]["S"]
+        response["Service Level Description"] = data[0]["Service Level Description"]["S"]
         response["House Waybill"] = data[0]["HouseBillNumber"]["S"]
         response["File Number"] = data[0]["FileNumber"]["S"]
         response["Shipper Name"] = data[0]["ShipperName"]["S"]
         response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
         response["Current Status"] = data[0]["ShipmentStatus"]["S"]
+        response["Current Status Description"] = data[0]["ShipmentStatusDescription"]["S"]
+        response["File Date"] = data[0]["File Date"]["S"]
         return [response]
     except Exception as e:
         logging.exception("ModifyResponseError: {}".format(e))
@@ -58,7 +62,7 @@ def modify_response(data):
 def modify_date(x):
     try:
         if x == None:
-            return 'null'
+            return None
         else:
             return x.isoformat()
     except Exception as e:

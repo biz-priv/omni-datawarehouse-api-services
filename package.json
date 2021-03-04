@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
   "dependencies": {
+    "serverless": "^2.22.0",
     "serverless-add-api-key": "^4.1.1",
     "serverless-domain-manager": "^5.0.0",
     "serverless-layers": "^2.3.0",
