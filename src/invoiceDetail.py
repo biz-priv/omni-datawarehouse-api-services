@@ -20,10 +20,9 @@ def handler(event, context):
             number = event['query']['file_nbr']
             parameter = " shipment_info.file_nbr = "
         execution_parameters = [number, parameter]
-        return execution_parameters
     except Exception as e:
         logging.exception("ProcessingInputError: {}".format(e))
-        raise ProcessingInputError(json.dumps({"httpStatus": 400, "message": "Input not valid"}))
+        raise ProcessingInputError(json.dumps({"httpStatus": 400, "message": "Input Validation Error"}))
                 
     try :    
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
@@ -53,8 +52,8 @@ def handler(event, context):
             logging.exception("QueryError: {}".format(e))
             raise QueryError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
         if not shipment_details or len(shipment_details) == 0:
-            logger.info("There are not customer charges for: {}".format(house_bill_nbr))
-            raise NoChargesFound(json.dumps({"httpStatus": 202, "message": "There are no customer charges for: "+house_bill_nbr}))
+            logger.info("There are no customer charges for: {}".format(execution_parameters[0]))
+            raise NoChargesFound(json.dumps({"httpStatus": 202, "message": "There are no customer charges for: "+execution_parameters[0]}))
         invoices = convert_records(shipment_details[0], get_charge_code(shipment_details))
         records_list.append(invoices)
         invoice_records = {'invoiceDetails': records_list}
