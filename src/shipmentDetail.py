@@ -9,27 +9,28 @@ logger.setLevel(logging.INFO)
 from src.common import dynamo_query
 from src.common import modify_response
 from src.common import modify_date
+from src.common import process_input
 
 InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
-    house_bill_nbr = event['query']['house_bill_nbr']
-    response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'], 
-                    'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
-    if not response['Items'] or response['Items'][0]['RecordStatus']['S'] == "False":
-        return get_shipment_detail(house_bill_nbr)
+    
+    details = process_input(event['query'])
+    logger.info("Results from processing inputs: {}".format(details))
+    if not details[2]['Items'] or details[2]['Items'][0]['RecordStatus']['S'] == "False":
+        return get_shipment_detail(details[0],details[1])
     else:
-        return {'shipmentDetails': modify_response(response['Items'])}
+        return {'shipmentDetails': modify_response(details[2]['Items'])}
 
-def get_shipment_detail(house_bill_nbr):
+def get_shipment_detail(hwb_file_nbr,parameter):
     try:        
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
                             port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
         records_list = []
-        cur.execute(f"select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where house_bill_nbr = '{house_bill_nbr}'")
+        cur.execute('select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}')
         con.commit()
     except Exception as e:
         logging.exception("GetShipmentDetailError: {}".format(e))
@@ -41,7 +42,6 @@ def get_shipment_detail(house_bill_nbr):
     con.close()
     return {'shipmentDetails': records_list}
     
-
 def convert_records(data):
     try:
         record = {}

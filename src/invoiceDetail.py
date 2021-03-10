@@ -13,7 +13,18 @@ InternalErrorMessage = "Internal Error."
 def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
     try :
-        house_bill_nbr = event['query']['house_bill_nbr']
+        if "house_bill_nbr" in event['query']:
+            number = event['query']['house_bill_nbr']
+            parameter = " shipment_info.house_bill_nbr = "
+        else:
+            number = event['query']['file_nbr']
+            parameter = " shipment_info.file_nbr = "
+        execution_parameters = [number, parameter]
+    except Exception as e:
+        logging.exception("ProcessingInputError: {}".format(e))
+        raise ProcessingInputError(json.dumps({"httpStatus": 400, "message": "Input Validation Error"}))
+                
+    try :    
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
                             port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
      
@@ -22,7 +33,7 @@ def handler(event, context):
 
         records_list = []
 
-        cur.execute(f"SELECT count(*) FROM public.shipment_info where house_bill_nbr = '{house_bill_nbr}'")
+        cur.execute('SELECT count(*) FROM public.shipment_info where'+execution_parameters[1]+f'{execution_parameters[0]}')
         con.commit()
         result = cur.fetchone()
         record_count = result[0]
@@ -30,19 +41,19 @@ def handler(event, context):
         logging.exception("HandlerError: {}".format(e))
         raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
         
-        # record count for house_bill_nbr is >= 1 i,e. Atleast 1 HouseBill exists
+        # record count for house_bill_nbr/file_number is >= 1 i,e. Atleast 1 HouseBill/FileNumber exists
 
     if record_count >= 1:
         try:
-            cur.execute(f"select ar_invoice_receivables.file_nbr,shipment_info.house_bill_nbr, ar_invoice_receivables.revenue_stn,ar_invoice_receivables.invoice_nbr,ar_invoice_receivables.invoice_seq_nbr,customersb.name, customersc.name, ar_invoice_receivables.charge_cd_desc, ar_invoice_receivables.invoice_date, ar_invoice_receivables.due_date, ar_invoice_receivables.total from shipment_info join ar_invoice_receivables on shipment_info.source_system = ar_invoice_receivables.source_system  and shipment_info.file_nbr = ar_invoice_receivables.file_nbr left outer join public.customers customersb  on ar_invoice_receivables.source_system = customersb.source_system and trim(ar_invoice_receivables.bill_to_nbr) = trim(customersb.nbr) left outer join public.customers customersc on ar_invoice_receivables.source_system = customersc.source_system and trim(ar_invoice_receivables.bill_to_nbr) = trim(customersc.nbr) where house_bill_nbr = '{house_bill_nbr}'")
+            cur.execute('select ar_invoice_receivables.file_nbr,shipment_info.house_bill_nbr, ar_invoice_receivables.revenue_stn,ar_invoice_receivables.invoice_nbr,ar_invoice_receivables.invoice_seq_nbr,customersb.name, customersc.name, ar_invoice_receivables.charge_cd_desc, ar_invoice_receivables.invoice_date, ar_invoice_receivables.due_date, ar_invoice_receivables.total from shipment_info join ar_invoice_receivables on shipment_info.source_system = ar_invoice_receivables.source_system  and shipment_info.file_nbr = ar_invoice_receivables.file_nbr left outer join public.customers customersb  on ar_invoice_receivables.source_system = customersb.source_system and trim(ar_invoice_receivables.bill_to_nbr) = trim(customersb.nbr) left outer join public.customers customersc on ar_invoice_receivables.source_system = customersc.source_system and trim(ar_invoice_receivables.bill_to_nbr) = trim(customersc.nbr) where'+execution_parameters[1]+f'{execution_parameters[0]}')
             con.commit()
             shipment_details = cur.fetchall()
         except Exception as e:
             logging.exception("QueryError: {}".format(e))
             raise QueryError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
         if not shipment_details or len(shipment_details) == 0:
-            logger.info("There are not customer charges for: {}".format(house_bill_nbr))
-            raise NoChargesFound(json.dumps({"httpStatus": 202, "message": "There are no customer charges for: "+house_bill_nbr}))
+            logger.info("There are no customer charges for: {}".format(execution_parameters[0]))
+            raise NoChargesFound(json.dumps({"httpStatus": 202, "message": "There are no customer charges for: "+execution_parameters[0]}))
         invoices = convert_records(shipment_details[0], get_charge_code(shipment_details))
         records_list.append(invoices)
         invoice_records = {'invoiceDetails': records_list}
@@ -89,3 +100,4 @@ class RecordsConversionError(Exception): pass
 class ChargeCodeError(Exception): pass 
 class QueryError(Exception): pass 
 class NoChargesFound(Exception): pass
+class ProcessingInputError(Exception): pass

@@ -42,6 +42,25 @@ def dynamo_get(table_name, key):
         logging.exception("DynamoGetError: {}".format(e))
         raise DynamoGetError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
+def process_input(query):
+    try:
+        if "house_bill_nbr" in query:
+            number = query['house_bill_nbr']
+            parameter = " house_bill_nbr = "
+            response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'], 
+                        'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": number}})
+        else:
+            number = query['file_nbr']
+            parameter = " file_nbr = "
+            response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_FILENUMBER_INDEX'], 
+                        'FileNumber = :file_nbr', {":file_nbr": {"S": number}})
+        execution_parameters = [number, parameter, response]
+        return execution_parameters
+    except Exception as e:
+        logging.exception("ProcessingInputError: {}".format(e))
+        raise ProcessingInputError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+
+
 def modify_response(data):
     try:
         response = {}
@@ -73,3 +92,4 @@ class DynamoQueryError(Exception): pass
 class DynamoGetError(Exception): pass
 class ModifyResponseError(Exception): pass
 class DateConversionError(Exception): pass
+class ProcessingInputError(Exception): pass
