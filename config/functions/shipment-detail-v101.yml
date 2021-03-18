@@ -1,7 +1,7 @@
 ---
 function:
   handler: src/shipmentDetailv101.handler
-  name: ${self:service}-shipment-detail-v1.01-${self:provider.stage}
+  name: ${self:service}-shipment-detail-v101-${self:provider.stage}
   description: shipment detail api service - ${self:provider.stage}
   events: 
     - http: 
