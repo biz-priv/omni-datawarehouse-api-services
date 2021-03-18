@@ -63,6 +63,7 @@ plugins:
   - serverless-layers
   - serverless-add-api-key
   - serverless-plugin-multiple-responses
+  - serverless-python-requirements
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:

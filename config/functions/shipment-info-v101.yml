@@ -25,7 +25,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - src/shipmentInfo.py
+    - src/shipmentInfov101.py
     - src/common.py
     - psycopg2/*
   environment:

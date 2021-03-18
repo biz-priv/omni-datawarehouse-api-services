@@ -30,7 +30,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - src/invoiceDetail.py
+    - src/invoiceDetailv101.py
     - src/common.py
     - psycopg2/*
   environment:
