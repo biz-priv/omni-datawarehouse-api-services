@@ -41,6 +41,9 @@ custom:
       - custom-authorizer
       - update-shipment-status
       - customer-entitlement-sync
+      - shipment-info-v1.01
+      - shipment-detail-v1.01
+      - invoice_detail-v1.01
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     'Access-Control-Allow-Origin': "'*'"
@@ -77,6 +80,9 @@ functions:
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+  shipment-info-v1.01 : ${file(config/functions/shipment-info-v1.01.yml):function}
+  shipment-detail-v1.01 : ${file(config/functions/shipment-detail-v1.01.yml):function}
+  invoice_detail-v1.01 : ${file(config/functions/invoice-detail-v1.01.yml):function}
 
 resources:
   Resources:

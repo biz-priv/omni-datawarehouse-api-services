@@ -52,7 +52,7 @@ def handler(event, context):
         logging.exception("ApiKeyError: {}".format(e))
         raise ApiKeyError(json.dumps({"httpStatus": 400, "message": "API Key not passed."}))
 
-    #Validating paerams only for the GET APIs
+    #Validating params only for the GET APIs
     if "/create/shipment" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
