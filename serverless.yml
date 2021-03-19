@@ -25,8 +25,8 @@ provider:
 custom: 
   # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # dev:
-  #   domainName: api.dev.omnilogistics.com
-  #   certificateName: 
+  #   domainName: dev-api.omnilogistics.com
+  #   certificateName: dev-api.omnilogistics.com
   prod:
     domainName: api.omnilogistics.com
     certificateName: api.omnilogistics.com
@@ -39,8 +39,12 @@ custom:
       - create-shipment
       - bill-of-lading
       - custom-authorizer
+      - custom-authorizer-v101
       - update-shipment-status
       - customer-entitlement-sync
+      - shipment-info-v101
+      - shipment-detail-v101
+      - invoice_detail-v101
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     'Access-Control-Allow-Origin': "'*'"
@@ -60,6 +64,7 @@ plugins:
   - serverless-layers
   - serverless-add-api-key
   - serverless-plugin-multiple-responses
+  - serverless-python-requirements
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
@@ -75,8 +80,12 @@ functions:
   create-shipment: ${file(config/functions/create-shipment.yml):function}
   bill-of-lading: ${file(config/functions/bill-of-lading.yml):function}
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
+  custom-authorizer-v101: ${file(config/functions/custom-authorizer-v101.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+  shipment-info-v101 : ${file(config/functions/shipment-info-v101.yml):function}
+  shipment-detail-v101 : ${file(config/functions/shipment-detail-v101.yml):function}
+  invoice_detail-v101 : ${file(config/functions/invoice-detail-v101.yml):function}
 
 resources:
   Resources:
