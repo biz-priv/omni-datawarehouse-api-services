@@ -2,7 +2,7 @@
 function:
   handler: src/shipmentInfov101.handler
   name: ${self:service}-shipment-info-v101-${self:provider.stage}
-  description: shipment info api service - ${self:provider.stage}
+  description: shipment info api service v101- ${self:provider.stage}
   events: 
     - http:  
         path: /shipment/info/v1.01
@@ -10,7 +10,7 @@ function:
         integration: lambda
         private: true
         authorizer: 
-          name: custom-authorizer
+          name: custom-authorizer-v101
           identitySource: method.request.header.x-api-key
           type: request
         response:

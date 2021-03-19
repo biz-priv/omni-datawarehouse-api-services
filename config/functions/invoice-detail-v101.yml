@@ -2,7 +2,7 @@
 function:
   handler: src/invoiceDetailv101.handler
   name: ${self:service}-invoice-detail-v101-${self:provider.stage}
-  description: invoice detail api service - ${self:provider.stage}
+  description: invoice detail api service v101 - ${self:provider.stage}
   events: 
     - http: 
         path: /invoice/detail/v1.01
@@ -10,7 +10,7 @@ function:
         integration: lambda
         private: true
         authorizer: 
-          name: custom-authorizer
+          name: custom-authorizer-v101
           identitySource: method.request.header.x-api-key
           type: request
         response:
