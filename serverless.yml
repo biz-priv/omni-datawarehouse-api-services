@@ -44,7 +44,7 @@ custom:
       - customer-entitlement-sync
       - shipment-info-v101
       - shipment-detail-v101
-      - invoice_detail-v101
+      - invoice-detail-v101
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     'Access-Control-Allow-Origin': "'*'"
@@ -85,7 +85,7 @@ functions:
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   shipment-info-v101 : ${file(config/functions/shipment-info-v101.yml):function}
   shipment-detail-v101 : ${file(config/functions/shipment-detail-v101.yml):function}
-  invoice_detail-v101 : ${file(config/functions/invoice-detail-v101.yml):function}
+  invoice-detail-v101 : ${file(config/functions/invoice-detail-v101.yml):function}
 
 resources:
   Resources:

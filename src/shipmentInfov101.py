@@ -15,22 +15,23 @@ InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
-
+    customerID_parameter = " and api_shipment_info.cust_id = "
+    customer_id = event["enhancedAuthContext"]["customerId"]
     details = process_input(event['query'])
     logger.info("Results from processing inputs: {}".format(details))
     if not details[2]['Items'] or details[2]['Items'][0]['RecordStatus']['S'] == "False":
-        return get_shipment_info(details[0],details[1])
+        return get_shipment_info(details[0],details[1],customerID_parameter,customer_id)
     else:
         return {'shipmentInfo': modify_response(details[2]['Items'])}
     
-def get_shipment_info(hwb_file_nbr,parameter):
+def get_shipment_info(hwb_file_nbr,parameter,customerID_parameter,customer_id):
     try:
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
                             port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
         records_list = []
-        cur.execute('select distinct api_shipment_info.file_nbr,api_shipment_info.file_date ,api_shipment_info.handling_stn,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr ,api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date ,api_shipment_info.shipment_mode ,api_shipment_info.order_status,api_shipment_info.order_status_desc,api_shipment_info.bill_to_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}')
+        cur.execute('select distinct api_shipment_info.file_nbr,api_shipment_info.file_date ,api_shipment_info.handling_stn,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr ,api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date ,api_shipment_info.shipment_mode ,api_shipment_info.order_status,api_shipment_info.order_status_desc,api_shipment_info.bill_to_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}'+customerID_parameter+f'{customer_id}')
         con.commit()
     except Exception as e:
         logging.exception("GetShipmentInfoError: {}".format(e))

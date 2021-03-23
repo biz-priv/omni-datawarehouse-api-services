@@ -5,7 +5,7 @@ function:
   description: shipment info api service v101- ${self:provider.stage}
   events: 
     - http:  
-        path: /v1.01/shipment/info
+        path: /v1.1/shipment/info
         method: GET
         integration: lambda
         private: true

@@ -5,7 +5,7 @@ function:
   description: invoice detail api service v101 - ${self:provider.stage}
   events: 
     - http: 
-        path: /v1.01/invoice/detail
+        path: /v1.1/invoice/detail
         method: GET
         integration: lambda
         private: true

@@ -14,7 +14,6 @@ from src.common import dynamo_get
 PolicyId="bizCloud|a1b2"
 InternalErrorMessage="Internal Error."
 
-
 def generate_policy(principal_id, effect, method_arn, customer_id = None, message = None):
     try:
         print ("Inserting "+effect+" policy on API Gateway")
@@ -63,7 +62,7 @@ def handler(event, context):
             'ApiKey = :apikey', {":apikey": {"S": api_key}})
     
     customer_id = validate_dynamo_query_response(response, event, None, "Customer Id not found.")
-
+    
     #Validate if the given fil_nbr or house_bill_nbr has an entry in the DB and get its customer_id
     if "/create/shipment" in event["methodArn"]:
         return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
@@ -80,9 +79,12 @@ def handler(event, context):
             index = os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"]
             query += "HouseBillNumber = :num"
 
-        bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query,
+        try:
+            bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query, 
                         {":id": {"S": customer_id}, ":num": {"S": num}})
-        return validate_dynamo_query_response(bol_response, event, customer_id)
+            return validate_dynamo_query_response(bol_response, event, customer_id)
+        except Exception as e:
+            logging.exception("Bol_responseError: {}".format(e))
 
 def validate_dynamo_query_response(response, event, customer_id=None, message=None):
     try:

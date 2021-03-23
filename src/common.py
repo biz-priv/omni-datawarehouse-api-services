@@ -41,7 +41,7 @@ def dynamo_get(table_name, key):
     except Exception as e:
         logging.exception("DynamoGetError: {}".format(e))
         raise DynamoGetError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-
+        
 def process_input(query):
     try:
         if "house_bill_nbr" in query:

@@ -15,22 +15,23 @@ InternalErrorMessage = "Internal Error."
 
 def handler(event, context):
     logger.info("Event: {}".format(json.dumps(event)))
-    
+    customerID_parameter = " and api_shipment_info.cust_id = "
+    customer_id = event["enhancedAuthContext"]["customerId"]
     details = process_input(event['query'])
-    logger.info("Results from processing inputs: {}".format(details))
+    logger.info("Results from processing inputs: {}".format(json.dumps(details[2])))
     if not details[2]['Items'] or details[2]['Items'][0]['RecordStatus']['S'] == "False":
-        return get_shipment_detail(details[0],details[1])
+        return get_shipment_detail(details[0],details[1],customerID_parameter,customer_id)
     else:
         return {'shipmentDetails': modify_response(details[2]['Items'])}
 
-def get_shipment_detail(hwb_file_nbr,parameter):
+def get_shipment_detail(hwb_file_nbr,parameter,customerID_parameter,customer_id):
     try:        
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
                             port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
         records_list = []
-        cur.execute('select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.event_date,api_shipment_info.event_date_utc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}')
+        cur.execute('select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.event_date,api_shipment_info.event_date_utc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}'+customerID_parameter+f'{customer_id}')
         con.commit()
     except Exception as e:
         logging.exception("GetShipmentDetailError: {}".format(e))

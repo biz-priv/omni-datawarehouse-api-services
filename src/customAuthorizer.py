@@ -54,9 +54,9 @@ def handler(event, context):
 
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"], 
             'ApiKey = :apikey', {":apikey": {"S": api_key}})
-    
+
     customer_id = validate_dynamo_query_response(response, event, None, "Customer Id not found.")
-    
+
     if "/create/shipment" in event["methodArn"]:
         return generate_policy(PolicyId, 'Allow', event["methodArn"], customer_id)
     elif "/billoflading" in event["methodArn"]:
@@ -71,9 +71,14 @@ def handler(event, context):
             index = os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"]
             query += "HouseBillNumber = :num"
             msg = "House bill number does not exist."
-        bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query, 
+        
+        try:
+            bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query, 
                         {":id": {"S": customer_id}, ":num": {"S": num}})
-        return validate_dynamo_query_response(bol_response, event, customer_id, msg)
+            return validate_dynamo_query_response(bol_response, event, customer_id)
+        except Exception as e:
+            logging.exception("Bol_responseError: {}".format(e))
+            
     else:
         house_bill_nbr = event['queryStringParameters']['house_bill_nbr']
         hb_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"], 
