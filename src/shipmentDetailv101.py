@@ -68,7 +68,7 @@ def convert_records(data):
         record["Service Level Description"] = data[19]
         record["Service Level Code"] = data[20]
         record["Current Status"] = data[21]
-        record["Current Status Desc"] = data[22]
+        record["Current Status Description"] = data[22]
         record["Current Status Date"] = modify_date(data[23])
         record["Current Status Date UTC"] = modify_date(data[24])
         record["Bill To Customer"] = data[25]

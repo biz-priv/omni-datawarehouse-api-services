@@ -8,7 +8,7 @@ import boto3
 import psycopg2
 import pydash
 from ast import literal_eval
-from datetime import datetime,timezone
+from datetime import date
 client = boto3.client('dynamodb')
 import xml.etree.ElementTree as ET
 
@@ -84,7 +84,8 @@ def handler(event, context):
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["oShipData"]
     logger.info("House Bill Details are: {}".format(house_bill_info))
     service_level_desc = get_service_level(event["body"]["oShipData"])
-    update_shipment_table(shipment_data,house_bill_info, service_level_desc)
+    current_date = (date.today()).strftime("%Y-%m-%d")
+    update_shipment_table(shipment_data,house_bill_info, service_level_desc,current_date)
     return shipment_data
 
 def ready_date_time(old_shipment_list):
@@ -201,10 +202,7 @@ def update_authorizer_table(shipment_data,customer_id):
         logging.exception("UpdateAuthorizerTableError: {}".format(e))
         raise UpdateAuthorizerTableError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-now = datetime.now()
-dt_iso = now.isoformat()
-
-def update_shipment_table(shipment_data,house_bill_info,service_level_desc):
+def update_shipment_table(shipment_data,house_bill_info,service_level_desc,current_date):
     try:
         temp_data = ['CustomerNo','BillToAcct']
         for i in temp_data:
@@ -218,7 +216,7 @@ def update_shipment_table(shipment_data,house_bill_info,service_level_desc):
         shipment_info['ShipmentStatus'] = {'S': 'Pending'}
         shipment_info['ShipmentStatusDescription'] = {'S': 'Pending'}
         shipment_info['Service Level Description'] = {'S': service_level_desc}
-        shipment_info['File Date'] = {'S': dt_iso}
+        shipment_info['File Date'] = {'S': current_date}
         shipment_items = ['ServiceLevel','ShipperName', 'ConsigneeName']
         for k,v in house_bill_info.items():
             if k in shipment_items:
