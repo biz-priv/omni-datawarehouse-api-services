@@ -71,7 +71,7 @@ def modify_response(data):
         response["Shipper Name"] = data[0]["ShipperName"]["S"]
         response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
         response["Current Status"] = data[0]["ShipmentStatus"]["S"]
-        response["Current Status Description"] = data[0]["ShipmentStatusDescription"]["S"]
+        response["Current Status Desc"] = data[0]["ShipmentStatusDescription"]["S"]
         response["File Date"] = data[0]["File Date"]["S"]
         return [response]
     except Exception as e:

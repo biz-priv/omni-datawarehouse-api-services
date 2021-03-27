@@ -63,7 +63,7 @@ def convert_records(data):
         record["Service Level Code"] = data[14]
         record["Mode"] = data[15]
         record["Current Status"] = data[16]
-        record["Current Status Description"] = data[17]
+        record["Current Status Desc"] = data[17]
         record["Bill To Customer"] = data[18]
         return record
     except Exception as e:
