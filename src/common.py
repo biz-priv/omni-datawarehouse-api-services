@@ -41,7 +41,7 @@ def dynamo_get(table_name, key):
     except Exception as e:
         logging.exception("DynamoGetError: {}".format(e))
         raise DynamoGetError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-
+        
 def process_input(query):
     try:
         if "house_bill_nbr" in query:
@@ -71,7 +71,7 @@ def modify_response(data):
         response["Shipper Name"] = data[0]["ShipperName"]["S"]
         response["Consignee Name"] = data[0]["ConsigneeName"]["S"]
         response["Current Status"] = data[0]["ShipmentStatus"]["S"]
-        response["Current Status Description"] = data[0]["ShipmentStatusDescription"]["S"]
+        response["Current Status Desc"] = data[0]["ShipmentStatusDescription"]["S"]
         response["File Date"] = data[0]["File Date"]["S"]
         return [response]
     except Exception as e:
