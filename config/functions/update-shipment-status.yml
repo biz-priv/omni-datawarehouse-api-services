@@ -1,12 +1,12 @@
 ---
 function:
-  handler: src/updateShipmentStatus.handler
+  handler: ${self:custom.alias}/src/updateShipmentStatus.handler
   name: ${self:service}-update-shipment-status-${self:provider.stage}
   description: update shipment status - cloudwatch trigger - ${self:provider.stage}
   timeout: 900
   package:
     include:
-    - src/updateShipmentStatus.py
+    - ${self:custom.alias}/src/updateShipmentStatus.py
     - src/common.py
     - psycopg2/*
   events:
@@ -14,12 +14,12 @@ function:
         rate: rate(30 minutes)
         enabled: true
   environment:
-    db_username: ${ssm:/${self:service}/${self:provider.stage}/db/user~true}
-    db_password: ${ssm:/${self:service}/${self:provider.stage}/db/password~true}
-    db_name: ${ssm:/${self:service}/${self:provider.stage}/db/name}
-    db_host: ${ssm:/${self:service}/${self:provider.stage}/db/host~true}
-    db_port: ${ssm:/${self:service}/${self:provider.stage}/db/port} 
-    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/table}
-    SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/houseBillKey/index}
-    SHIPMENT_DETAILS_RECORDSTATUS_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/recordStatus/index}
+    db_username: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
+    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
+    db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
+    db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
+    db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port} 
+    SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
+    SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/houseBillKey/index}
+    SHIPMENT_DETAILS_RECORDSTATUS_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/recordStatus/index}
     REGION: ${self:provider.region}

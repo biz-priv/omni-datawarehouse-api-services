@@ -1,0 +1,127 @@
+{
+    "type": "REQUEST",
+    "methodArn": "arn:aws:execute-api:us-east-1:332281781429:18xrgf3mce/v101/GET/shipment/detail",
+    "resource": "/shipment/detail",
+    "path": "/shipment/detail",
+    "httpMethod": "GET",
+    "headers": {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "CloudFront-Forwarded-Proto": "https",
+        "CloudFront-Is-Desktop-Viewer": "true",
+        "CloudFront-Is-Mobile-Viewer": "false",
+        "CloudFront-Is-SmartTV-Viewer": "false",
+        "CloudFront-Is-Tablet-Viewer": "false",
+        "CloudFront-Viewer-Country": "US",
+        "Host": "18xrgf3mce.execute-api.us-east-1.amazonaws.com",
+        "Postman-Token": "e53f8d13-3cf4-463e-97bb-d9201fdc9cc5",
+        "User-Agent": "PostmanRuntime/7.26.10",
+        "Via": "1.1 988141e0ff778c1ba978caf9801f2649.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Id": "5R7If-zygb2PQ9lLwna7gcj31FCPuIdZti7G85quIcWlldD7TZoDng==",
+        "X-Amzn-Trace-Id": "Root=1-60655f46-2f3f0bee44d03dc76b1e7df6",
+        "x-api-key": "q5MFo1PAYhaKRsZRFK63T58zL5jrF4bJ62ArUJCj00",
+        "X-Forwarded-For": "72.180.10.229, 64.252.131.154",
+        "X-Forwarded-Port": "443",
+        "X-Forwarded-Proto": "https"
+    },
+    "multiValueHeaders": {
+        "Accept": [
+            "*/*"
+        ],
+        "Accept-Encoding": [
+            "gzip, deflate, br"
+        ],
+        "CloudFront-Forwarded-Proto": [
+            "https"
+        ],
+        "CloudFront-Is-Desktop-Viewer": [
+            "true"
+        ],
+        "CloudFront-Is-Mobile-Viewer": [
+            "false"
+        ],
+        "CloudFront-Is-SmartTV-Viewer": [
+            "false"
+        ],
+        "CloudFront-Is-Tablet-Viewer": [
+            "false"
+        ],
+        "CloudFront-Viewer-Country": [
+            "US"
+        ],
+        "Host": [
+            "18xrgf3mce.execute-api.us-east-1.amazonaws.com"
+        ],
+        "Postman-Token": [
+            "e53f8d13-3cf4-463e-97bb-d9201fdc9cc5"
+        ],
+        "User-Agent": [
+            "PostmanRuntime/7.26.10"
+        ],
+        "Via": [
+            "1.1 988141e0ff778c1ba978caf9801f2649.cloudfront.net (CloudFront)"
+        ],
+        "X-Amz-Cf-Id": [
+            "5R7If-zygb2PQ9lLwna7gcj31FCPuIdZti7G85quIcWlldD7TZoDng=="
+        ],
+        "X-Amzn-Trace-Id": [
+            "Root=1-60655f46-2f3f0bee44d03dc76b1e7df6"
+        ],
+        "x-api-key": [
+            "q5MFo1PAYhaKRsZRFK63T58zL5jrF4bJ62ArUJCj00"
+        ],
+        "X-Forwarded-For": [
+            "72.180.10.229, 64.252.131.154"
+        ],
+        "X-Forwarded-Port": [
+            "443"
+        ],
+        "X-Forwarded-Proto": [
+            "https"
+        ]
+    },
+    "queryStringParameters": {
+        "house_bill_nbr": "5854442"
+    },
+    "multiValueQueryStringParameters": {
+        "house_bill_nbr": [
+            "5854442"
+        ]
+    },
+    "pathParameters": {},
+    "stageVariables": {
+        "SERVERLESS_STAGE": "prod",
+        "SERVERLESS_ALIAS": "v101"
+    },
+    "requestContext": {
+        "resourceId": "7q6iqt",
+        "resourcePath": "/shipment/detail",
+        "httpMethod": "GET",
+        "extendedRequestId": "dFvTCGkGIAMFe3w=",
+        "requestTime": "01/Apr/2021:05:51:02 +0000",
+        "path": "/v101/shipment/detail",
+        "accountId": "332281781429",
+        "protocol": "HTTP/1.1",
+        "stage": "v101",
+        "domainPrefix": "18xrgf3mce",
+        "requestTimeEpoch": 1617256262553,
+        "requestId": "d7a4f0c7-c73f-489d-ae20-c0a50d8cf9b6",
+        "identity": {
+            "cognitoIdentityPoolId": null,
+            "cognitoIdentityId": null,
+            "apiKey": "q5MFo1PAYhaKRsZRFK63T58zL5jrF4bJ62ArUJCj00",
+            "principalOrgId": null,
+            "cognitoAuthenticationType": null,
+            "userArn": null,
+            "userAgent": "PostmanRuntime/7.26.10",
+            "accountId": null,
+            "caller": null,
+            "sourceIp": "72.180.10.229",
+            "accessKey": null,
+            "cognitoAuthenticationProvider": null,
+            "user": null
+        },
+        "domainName": "18xrgf3mce.execute-api.us-east-1.amazonaws.com",
+        "apiId": "18xrgf3mce"
+    }
+}

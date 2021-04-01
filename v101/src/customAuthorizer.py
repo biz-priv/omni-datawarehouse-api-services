@@ -16,7 +16,7 @@ InternalErrorMessage="Internal Error."
 
 def generate_policy(principal_id, effect, method_arn, customer_id = None, message = None):
     try:
-        print ("Inserting "+effect+" policy on API Gateway")
+        logger.info("Inserting "+effect+" policy on API Gateway")
         policy = {}
         policy["principalId"] = principal_id
         policy_document = {
