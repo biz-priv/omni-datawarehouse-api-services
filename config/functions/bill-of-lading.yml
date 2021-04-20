@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/billOfLading.handler
+  handler: ${self:custom.alias}/src/bill_of_lading.handler
   name: ${self:service}-bill-of-lading-${self:provider.stage}
   description: bill of lading api service - ${self:provider.stage}
   events:
@@ -30,7 +30,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - ${self:custom.alias}/src/billOfLading.py
+    - ${self:custom.alias}/src/bill_of_lading.py
   environment:
     billOfLading_key: ${ssm:/omni-dw/${self:provider.stage}/bol/API_KEY~true}
     URL: ${ssm:/omni-dw/${self:provider.stage}/billOfLading/wt/url}

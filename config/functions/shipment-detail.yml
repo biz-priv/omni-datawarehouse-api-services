@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/shipmentDetail.handler
+  handler: ${self:custom.alias}/src/shipment_detail.handler
   name: ${self:service}-shipment-detail-${self:provider.stage}
   description: shipment detail api service - ${self:provider.stage}
   events: 
@@ -25,7 +25,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - ${self:custom.alias}/src/shipmentDetail.py
+    - ${self:custom.alias}/src/shipment_detail.py
     - src/common.py
     - psycopg2/*
   environment:

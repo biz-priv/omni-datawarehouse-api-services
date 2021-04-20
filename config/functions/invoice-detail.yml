@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/invoiceDetail.handler
+  handler: ${self:custom.alias}/src/invoice_detail.handler
   name: ${self:service}-invoice-detail-${self:provider.stage}
   description: invoice detail api service - ${self:provider.stage}
   events: 
@@ -30,7 +30,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - ${self:custom.alias}/src/invoiceDetail.py
+    - ${self:custom.alias}/src/invoice_detail.py
     - src/common.py
     - psycopg2/*
   environment:

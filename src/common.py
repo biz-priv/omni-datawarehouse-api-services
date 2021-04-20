@@ -10,7 +10,6 @@ logger.setLevel(logging.INFO)
 
 InternalErrorMessage = "Internal Error."
 
-
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
         client = session.create_client('dynamodb', region_name=os.environ['REGION'])
