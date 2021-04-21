@@ -54,6 +54,7 @@ def process_input(query):
             response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_FILENUMBER_INDEX'], 
                         'FileNumber = :file_nbr', {":file_nbr": {"S": number}})
         execution_parameters = [number, parameter, response]
+        logger.info("Process Input response: {}".format(json.dumps(execution_parameters)))
         return execution_parameters
     except Exception as e:
         logging.exception("ProcessingInputError: {}".format(e))

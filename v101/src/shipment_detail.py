@@ -33,10 +33,10 @@ def get_shipment_detail(hwb_file_nbr,parameter,customer_id_parameter,customer_id
         cur.execute('select api_shipment_info.file_nbr ,api_shipment_info.file_date ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,api_shipment_info.chrg_wght_kgs ,api_shipment_info.pickup_date ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date , api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.order_status ,api_shipment_info.order_status_Desc,api_shipment_info.event_date,api_shipment_info.event_date_utc,api_shipment_info.bill_to_customer, api_shipment_info.cntrl_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}'+customer_id_parameter+f'{customer_id}')
         con.commit()
     except Exception as get_error:
-        logging.exception("GetShipmentDetailError: %s", json.dumps(get_error))
+        logging.exception("GetShipmentDetailError: %s", get_error)
         raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
     for results in cur.fetchall():
-        logger.info("Results before conversion: %s", json.dumps(results))
+        logger.info("Results before conversion: %s", results)
         records_list.append(convert_records(results))
     cur.close()
     con.close()

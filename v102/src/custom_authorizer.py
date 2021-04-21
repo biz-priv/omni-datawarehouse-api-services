@@ -80,9 +80,9 @@ def handler(event, context):
         try:
             bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query,
                         {":id": {"S": customer_id}, ":num": {"S": num}})
-            return validate_dynamo_query_response(bol_response, event, customer_id)
+            return validate_dynamo_query_response(bol_response, event, customer_id,msg)
         except Exception as bol_error:
-            logging.exception("Bol_responseError: %s", json.dumps(bol_error))
+            logging.exception("Bol_responseError: %s", bol_error)
 
 def validate_dynamo_query_response(response, event, customer_id=None, message=None):
     try:

@@ -43,8 +43,7 @@ def handler(event, context):
         invoice_records = {'invoiceDetails': records_list}
         LOGGER.info("invoice details : %s", invoice_records)
         return invoice_records
-    else:
-        return "The provided house_bill_nbr does not exists"
+    return "The provided house_bill_nbr does not exists"
 
 def convert_records(shipment_charges,charge_desc):
     try:

@@ -14,7 +14,7 @@ INTERNAL_ERROR_MESSAGE="Internal Error."
 
 def generate_policy(principal_id, effect, method_arn, customer_id = None, message = None):
     try:
-        LOGGER.info("Inserting policy on API Gateway : %s", json.dumps(effect))
+        LOGGER.info("Inserting policy on API Gateway : %s", effect)
         policy = {}
         policy["principalId"] = principal_id
         policy_document = {
@@ -82,13 +82,14 @@ def handler(event, context):
         try:
             bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query,
                         {":id": {"S": customer_id}, ":num": {"S": num}})
-            return validate_dynamo_query_response(bol_response, event, customer_id)
+            return validate_dynamo_query_response(bol_response, event, customer_id, msg)
         except Exception as bol_error:
-            logging.exception("Bol_responseError: %s", json.dumps(bol_error))
+            logging.exception("Bol_responseError: %s", bol_error)
 
 def validate_dynamo_query_response(response, event, customer_id=None, message=None):
     try:
         if not response or "Items" not in response or len(response['Items']) == 0:
+            LOGGER.info("Inserting policy on API Gateway : %s", effect)
             return generate_policy(None, 'Deny', event["methodArn"], None, message)
         if not customer_id:
             return response['Items'][0]['CustomerID']['S']
@@ -127,3 +128,4 @@ class GeneratePolicyError(Exception):
     pass
 class InputError(Exception):
     pass
+

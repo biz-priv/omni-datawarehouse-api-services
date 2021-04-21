@@ -30,10 +30,10 @@ def get_shipment_info(hwb_file_nbr,parameter,customer_id_parameter,customer_id):
         cur.execute('select distinct api_shipment_info.file_nbr,api_shipment_info.file_date ,api_shipment_info.handling_stn,api_shipment_info.master_bill_nbr ,api_shipment_info.house_bill_nbr ,api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pod_date ,api_shipment_info.eta_date ,api_shipment_info.etd_date ,api_shipment_info.schd_delv_date ,api_shipment_info.service_level, api_shipment_info.service_level_id,api_shipment_info.shipment_mode ,api_shipment_info.order_status,api_shipment_info.order_status_desc,api_shipment_info.bill_to_customer from api_shipment_info where'+parameter+f'{hwb_file_nbr}'+customer_id_parameter+f'{customer_id}')
         con.commit()
     except Exception as get_error:
-        logging.exception("GetShipmentInfoError: %s", json.dumps(get_error))
+        logging.exception("GetShipmentInfoError: %s", get_error)
         raise GetShipmentInfoError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
     for results in cur.fetchall():
-        LOGGER.info("Results before conversion: %s", json.dumps(results))
+        LOGGER.info("Results before conversion: %s", results)
         records_list.append(convert_records(results))
     cur.close()
     con.close()
