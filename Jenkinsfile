@@ -36,9 +36,9 @@ pipeline {
             steps{
                 script {
                     sh '''
-                    eval $(pylint --rcfile=pylint.cfg $(find . -type f -path '*v*/src/*.py')  --output-format=parseable -r y > pylint.log)
+                    eval $(pylint --rcfile=pylint.cfg $(find . -type f -path '*/src/*.py')  --output-format=parseable -r y > pylint.log)
                     cat pylint.log
-                    pylint-fail-under --fail_under 9.0 --rcfile=pylint.cfg $(find . -type f -path '*v*/src/*.py')  --output-format=parseable -r y
+                    pylint-fail-under --fail_under 9.0 --rcfile=pylint.cfg $(find . -type f -path '*/src/*.py')  --output-format=parseable -r y
                     '''
                 }
             }
