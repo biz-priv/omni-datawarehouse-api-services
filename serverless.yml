@@ -42,6 +42,7 @@ custom:
       - custom-authorizer
       - update-shipment-status
       - customer-entitlement-sync
+      - get-rating
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     'Access-Control-Allow-Origin': "'*'"
@@ -80,6 +81,7 @@ functions:
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+  get-rating : ${file(config/functions/get-rating.yml):function} 
 
 resources:
   Resources:

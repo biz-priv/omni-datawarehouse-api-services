@@ -1,0 +1,59 @@
+{
+    "body": {
+        "Rating Input": {
+            "Request ID": "123456",
+            "Origin Country": "US",
+            "Origin City": "Frisco",
+            "Origin State": "TX",
+            "Origin Zip": "75033",
+            "Destination Country": "US",
+            "Destination City": "Waco",
+            "Destination State": "TX",
+            "Destination Zip": "76703",
+            "Shipment Terms": "S",
+            "Liability Type": "LL",
+            "WebTrakUser ID": "biztest",
+            "Pickup Date": "2021-04-21T13:00:01",
+            "Pickup Time": "2021-04-19T13:00:10",
+            "Pickup Location Close Time": "2021-04-20T14:00:02"
+        },
+        "Commodity Input": {
+            "Commodity Pieces": "17",
+            "Commodity Piece Type": "",
+            "Commodity Weight": "11",
+            "Commodity Length": "0",
+            "Commodity Width": "0",
+            "Commodity Height": "0",
+            "Commodity Hazmat": ""
+        }
+    },
+    "method": "POST",
+    "principalId": "",
+    "stage": "test-invoke-stage",
+    "cognitoPoolClaims": {
+        "sub": ""
+    },
+    "enhancedAuthContext": {},
+    "headers": {},
+    "query": {},
+    "path": {},
+    "identity": {
+        "cognitoIdentityPoolId": "",
+        "cognitoIdentityId": "",
+        "apiKey": "test-invoke-api-key",
+        "principalOrgId": "",
+        "cognitoAuthenticationType": "",
+        "userArn": "arn:aws:sts::332281781429:assumed-role/OrganizationAccountAccessRole/ashish.akshantal@bizcloudexperts.com",
+        "apiKeyId": "test-invoke-api-key-id",
+        "userAgent": "aws-internal/3 aws-sdk-java/1.11.984 Linux/5.4.102-52.177.amzn2int.x86_64 OpenJDK_64-Bit_Server_VM/25.282-b08 java/1.8.0_282 vendor/Oracle_Corporation cfg/retry-mode/legacy",
+        "accountId": "332281781429",
+        "caller": "AROAU2XMJTS2T67LQAZTF:ashish.akshantal@bizcloudexperts.com",
+        "sourceIp": "test-invoke-source-ip",
+        "accessKey": "ASIAU2XMJTS2VIJPK7FA",
+        "cognitoAuthenticationProvider": "",
+        "user": "AROAU2XMJTS2T67LQAZTF:ashish.akshantal@bizcloudexperts.com"
+    },
+    "stageVariables": {
+        "SERVERLESS_ALIAS": "v1"
+    }
+}

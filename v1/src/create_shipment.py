@@ -41,7 +41,6 @@ def handler(event, context):
     except Exception as transform_error:
         logging.exception("DataTransformError: %s", json.dumps(transform_error))
         raise DataTransformError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from transform_error
-
     temp_ship_data = ready_date_time(temp_ship_data)
     shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])
     reference_list = get_reference_list(event["body"]["oShipData"])
