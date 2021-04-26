@@ -17,9 +17,13 @@ def handler(event, context):
     logger.info("Event: %s", json.dumps(event))
     customer_id_parameter = " and api_shipment_info.cust_id = "
     customer_id = event["enhancedAuthContext"]["customerId"]
+    
+    #check whether housebill or file nbr exists in shipment details dynamodb table
     details = process_input(event['query'])
     logger.info("Results from processing inputs: {}".format(json.dumps(details[2])))
-    if not details[2]['Items'] or details[2]['Items'][0]['RecordStatus']['S'] == "False":
+    
+    #response from shipment details dynamodb table
+    if not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False":
         return get_shipment_detail(details[0],details[1],customer_id_parameter,customer_id)
     return {'shipmentDetails': modify_response(details[2]['Items'])}
 

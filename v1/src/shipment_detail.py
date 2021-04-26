@@ -15,9 +15,13 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
     house_bill_nbr = event['query']['house_bill_nbr']
+    
+    #check whether housebill exists in shipment details dynamodb table
     response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'],
                     'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
-    if not response['Items'] or response['Items'][0]['RecordStatus']['S'] == "False":
+    
+    #response from shipment details dynamodb table
+    if not response['Items'] or len(response["Items"]) == 0 or response['Items'][0]['RecordStatus']['S'] == "False":
         return get_shipment_detail(house_bill_nbr)
     return {'shipmentDetails': modify_response(response['Items'])}
 

@@ -60,7 +60,6 @@ def process_input(query):
         logging.exception("ProcessingInputError: {}".format(e))
         raise ProcessingInputError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
 
-
 def modify_response(data):
     try:
         response = {}

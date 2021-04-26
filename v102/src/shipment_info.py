@@ -3,8 +3,8 @@ import json
 import logging
 import psycopg2
 
-LOGGER = logging.getLogger()
-LOGGER.setLevel(logging.INFO)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 from src.common import modify_response
 from src.common import modify_date
@@ -13,12 +13,15 @@ from src.common import process_input
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 def handler(event, context):
-    LOGGER.info("Event: %s", json.dumps(event))
+    logger.info("Event: %s", json.dumps(event))
     customer_id_parameter = " and api_shipment_info.cust_id = "
     customer_id = event["enhancedAuthContext"]["customerId"]
+    
+    #check whether housebill or file nbr exists in shipment details dynamodb table
     details = process_input(event['query'])
-    LOGGER.info("Results from processing inputs: %s", json.dumps(details))
-    if not details[2]['Items'] or details[2]['Items'][0]['RecordStatus']['S'] == "False":
+    
+    #response from shipment details dynamodb table
+    if not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False":
         return get_shipment_info(details[0],details[1],customer_id_parameter,customer_id)
     return {'shipmentInfo': modify_response(details[2]['Items'])}
 
@@ -35,7 +38,6 @@ def get_shipment_info(hwb_file_nbr,parameter,customer_id_parameter,customer_id):
         logging.exception("GetShipmentInfoError: %s", json.dumps(get_error))
         raise GetShipmentInfoError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
     for results in cur.fetchall():
-        LOGGER.info("Results before conversion: %s", json.dumps(results))
         records_list.append(convert_records(results))
     cur.close()
     con.close()

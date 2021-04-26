@@ -5,8 +5,8 @@ import xmltodict
 import requests
 import logging
 import pydash
-from ast import literal_eval
-from datetime import date
+import jsonschema
+from jsonschema import validate
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
@@ -15,6 +15,7 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 def handler(event, context):
     print("Event is : ", event)
     
+    validate_input(event["body"])
     rating_data = get_rating_input(event)
     commodity_data = get_commodity_input(event)
     
@@ -24,7 +25,7 @@ def handler(event, context):
             xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"> \
             <soap12:Body><GetRating xmlns="http://tempuri.org/"> \
             <RatingParam><RatingInput>"""
-    mid = """</RatingInput><CommodityInput><CommodityInput>"""
+    mid = """<WebTrakUserID>biztest</WebTrakUserID></RatingInput><CommodityInput><CommodityInput>"""
     end = """</CommodityInput></CommodityInput></RatingParam></GetRating></soap12:Body></soap12:Envelope>"""
     payload = start+rating_data+mid+commodity_data+end
     
@@ -60,6 +61,33 @@ def get_commodity_input(event):
                 replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body>""", """""").\
                 replace("""</soap:Body>'""","""""")
     return commodity_data
+
+def validate_input(payload):
+    if "Rating Input" in payload:
+        schema = { "type" : "object",
+                    "required": [ "Request ID"],
+        "properties" : {
+        "Request ID" : {"type" : "number"}}},
+    schema = {
+    "type" : "object",
+    "required": [ "Commodity Pieces",
+                  "Request ID",
+                  "Commodity Weight",
+                  "Commodity Length",
+                  "Commodity Width",
+                  "Commodity Height"],
+    "properties" : {
+        "Commodity Pieces" : {"type" : "number"},
+        "Request ID" : {"type" : "string"},
+        "Commodity Weight" : {"type" : "number"},
+        "Commodity Length" : {"type" : "number"},
+        "Commodity Width" : {"type" : "number"},
+        "Commodity Height" : {"type" : "number"},}
+        }
+    try:
+        validate(instance=payload,schema=schema)
+    except jsonschema.exceptions.ValidationError as validate_error:
+        raise InputError(json.dumps({"httpStatus": 400, "message":validate_error.message})) from validate_error
 
 class InputError(Exception):
     pass
