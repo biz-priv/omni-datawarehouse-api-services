@@ -9,7 +9,7 @@ function:
         events: 
           - s3:ObjectCreated:*
         rules:
-          - prefix: Data/
+          - prefix: Data/DB_api_cust_housebill_data000
   package:
     include:
     - ${self:custom.alias}/src/customer_entitlement_sync.py

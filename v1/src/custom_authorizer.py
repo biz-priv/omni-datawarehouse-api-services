@@ -92,7 +92,7 @@ def handler(event, context):
 def validate_dynamo_query_response(response, event, customer_id=None, message=None):
     try:
         if not response or "Items" not in response or len(response['Items']) == 0:
-            return generate_policy(None, 'Deny', event["methodArn"], None, message)
+            return generate_policy(None, 'Deny', event["methodArn"], None, "No records found for given input")
         if not customer_id:
             return response['Items'][0]['CustomerID']['S']
         else:

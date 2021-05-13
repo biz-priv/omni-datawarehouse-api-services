@@ -17,6 +17,7 @@ def handler(event, context):
         key = os.environ['s3_key']
         s3_client = boto3.resource('s3')
         if event['Records'][0]['s3']['object']['key'] == key:
+            LOGGER.info("key matches")
             csv_obj = s3_client.Object(os.environ['bucket'], key).get()['Body']
             batch_size = 100
             batch = []
