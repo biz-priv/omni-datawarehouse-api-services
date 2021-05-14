@@ -8,7 +8,7 @@ session = botocore.session.get_session()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-InternalErrorMessage = "Internal Error."
+INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
@@ -23,7 +23,7 @@ def dynamo_query(table_name, index_name, expression, attributes):
         return response
     except Exception as e:
         logging.exception("DynamoQueryError: {}".format(e))
-        raise DynamoQueryError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+        raise DynamoQueryError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE}))
 
 def dynamo_get(table_name, key):
     try:
@@ -39,8 +39,8 @@ def dynamo_get(table_name, key):
             return None
     except Exception as e:
         logging.exception("DynamoGetError: {}".format(e))
-        raise DynamoGetError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-        
+        raise DynamoGetError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE}))
+
 def process_input(query):
     try:
         if "house_bill_nbr" in query:
@@ -58,7 +58,7 @@ def process_input(query):
         return execution_parameters
     except Exception as e:
         logging.exception("ProcessingInputError: {}".format(e))
-        raise ProcessingInputError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+        raise ProcessingInputError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE}))
 
 def modify_response(data):
     try:
@@ -75,7 +75,7 @@ def modify_response(data):
         return [response]
     except Exception as e:
         logging.exception("ModifyResponseError: {}".format(e))
-        raise ModifyResponseError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+        raise ModifyResponseError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE}))
 
 def modify_date(x):
     try:
@@ -85,10 +85,17 @@ def modify_date(x):
             return x.isoformat()
     except Exception as e:
         logging.exception("DateConversionError: {}".format(e))
-        raise DateConversionError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+        raise DateConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE}))
 
-class DynamoQueryError(Exception): pass
-class DynamoGetError(Exception): pass
-class ModifyResponseError(Exception): pass
-class DateConversionError(Exception): pass
-class ProcessingInputError(Exception): pass
+class DynamoQueryError(Exception):
+    pass
+class DynamoGetError(Exception):
+    pass
+class ModifyResponseError(Exception):
+    pass
+class DateConversionError(Exception):
+    pass
+class ProcessingInputError(Exception):
+    pass
+class X12RefError(Exception):
+    pass

@@ -23,9 +23,9 @@ def handler(event, context):
     details = process_input(event['query'])
 
     # response from shipment details dynamodb table
-    if (not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False") and (event['query']['milestone_history'] == 'True'):
+    if (not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False") and ('milestone_history' in event['query'] and event['query']['milestone_history'] in ["True","t","true","T","1"]):
         return get_shipment_detail_history(details[0],details[1],customer_id)
-    if (not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False") and (event['query']['milestone_history'] == 'False'):
+    if (not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False") and ('milestone_history' not in event['query'] or event['query']['milestone_history'] in ["False","f","false","F","0"]):
         return get_shipment_detail(details[0],details[1],customer_id_parameter,customer_id)
     return {'shipmentDetails': modify_response(details[2]['Items'])}
 
@@ -56,18 +56,9 @@ def get_shipment_detail_history(hwb_file_nbr,parameter,customer_id):
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
         records_list = []
-        cur.execute('''select distinct  shipment_info.source_system, shipment_info.file_nbr, shipment_info.file_date ,shipment_info.handling_stn ,shipment_info.master_bill_nbr , \
-            shipment_info.house_bill_nbr,shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,shipment_info.pieces ,\
-            shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs ,shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date ,\
-            shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then shipment_milestone.order_status else shipment_info.current_status end as order_status, \
-            case when shipment_info.source_system = 'WT' then shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc,\
-            shipment_milestone.event_Date,shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer \
-            from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)\
-            left outer join customers customersb on shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr) left outer join customers customersc \
-            on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr) left outer join \
-            shipment_milestone on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y' \
-            left outer join service_level on shipment_info.service_level = service_level.service_level_desc where shipment_quote IN ('S') AND current_status <> 'CAN' \
-            and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}')
+        cur.execute('''select distinct  shipment_info.source_system, shipment_info.file_nbr, shipment_info.file_date ,shipment_info.handling_stn ,shipment_info.master_bill_nbr , shipment_info.house_bill_nbr,shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,shipment_info.pieces ,shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs ,shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date ,\
+            shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then shipment_milestone.order_status else shipment_info.current_status end as order_status, case when shipment_info.source_system = 'WT' then shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc, shipment_milestone.event_Date,shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)\
+            left outer join customers customersb on shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr) left outer join customers customersc on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr) left outer join shipment_milestone on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y' left outer join service_level on shipment_info.service_level = service_level.service_level_desc where shipment_quote IN ('S') AND current_status <> 'CAN' and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}')
         con.commit()
         shipment_details = cur.fetchall()
     except Exception as get_error:
@@ -80,31 +71,14 @@ def get_shipment_detail_history(hwb_file_nbr,parameter,customer_id):
     con.close()
     logger.info("shipment details : %s", shipment_details_records)
     return shipment_details_records
-    
-def x12_ref(current_status_code):
-    try:
-        con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
-            port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
-        con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cur = con.cursor()
-        current_status = '\''+current_status_code+'\''
-        cur.execute(f"select trim(x12_cd), trim(x12_event_desc) from public.x12_cross_ref where omni_cd = {current_status}")
-        con.commit()
-        x12_ref = cur.fetchall()
-        cur.close()
-        con.close()
-        # logger.info("x12 details : %s", x12_ref)
-        return x12_ref[0][0], x12_ref[0][1]
-    except Exception as codes_error:
-        logging.exception("GetX12CodesError: %s",codes_error)
-        raise X12RefError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from codes_error
 
 def get_milestones(shipment_details):
     try:
         milestone_list = []
         for milestones in shipment_details:
             response = {}
-            response["Current Status"] ,response["Current Status Desc"] = x12_ref(milestones[22])
+            response["Current Status"] = milestones[22]
+            response["Current Status Desc"] = milestones[23]
             response["Current Status Date"] = modify_date(milestones[24])
             response["Current Status Date UTC"] = modify_date(milestones[25])
             milestone_list.append(response)
@@ -138,7 +112,8 @@ def convert_records(data):
         record["Scheduled Delivery Date"] = modify_date(data[18])
         record["Service Level Description"] = data[19]
         record["Service Level Code"] = data[20]
-        record["Current Status"],record["Current Status Desc"] = x12_ref(data[21])
+        record["Current Status"] = data[21]
+        record["Current Status Desc"] = data[22]
         record["Current Status Date"] = modify_date(data[23])
         record["Current Status Date UTC"] = modify_date(data[24])
         record["Bill To Customer"] = data[25]
@@ -188,4 +163,5 @@ class MilestoneError(Exception):
     pass
 class X12RefError(Exception):
     pass
+
 

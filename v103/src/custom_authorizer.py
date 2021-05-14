@@ -104,11 +104,13 @@ def validate_input(payload):
         "type": "object",
         "properties": {
             "house_bill_nbr": {"type": "string"},
-            "file_nbr": {"type": "string"}
+            "file_nbr": {"type": "string"},
+            "milestone_history": {"type": "string",
+                                "enum" : ["True","t","true","T","1","False","f","false","F","0"]},
         },
         "additionalProperties": False,
         "minProperties": 1,
-        "maxProperties": 1
+        "maxProperties": 2
     }
     try:
         validate(instance=payload,schema=schema)
