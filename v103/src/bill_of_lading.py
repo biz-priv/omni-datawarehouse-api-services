@@ -16,13 +16,13 @@ def handler(event, context):
             url = os.environ["URL"]+os.environ["billOfLading_key"]+'/'+num+'/hawb'
         url_response = requests.get(url)
     except Exception as handler_error:
-        logging.exception("HandlerError: %s", json.dumps(handler_error))
+        logging.exception("HandlerError: %s", handler_error)
         raise HandlerError(json.dumps({"httpStatus": 501, "message": "Internal Error."})) from handler_error
 
     if url_response.json()["hawb"]["File Number"] == "ERROR":
         raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
     response = url_response.content
-    LOGGER.info("Response: %s", json.dumps(response))
+    LOGGER.info("Response: %s", response)
     return response
 
 class HandlerError(Exception):

@@ -43,7 +43,6 @@ def handler(event, context):
         logging.exception("DataTransformError: %s", json.dumps(transform_error))
         raise DataTransformError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from transform_error
 
-    print("temp ship data is : ", temp_ship_data)
     temp_ship_data = ready_date_time(temp_ship_data)
     shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])
     reference_list = get_reference_list(event["body"]["oShipData"])
@@ -63,7 +62,6 @@ def handler(event, context):
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
     payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
     LOGGER.info("Payload xml data is : %s", json.dumps(payload))
-
     try:
         url = os.environ["URL"]
     except Exception as url_error:
@@ -74,9 +72,9 @@ def handler(event, context):
         req = requests.post(url, headers = {'Content-Type': 'text/xml; charset=utf-8'},data = payload, params = pars)
         response = req.text
         LOGGER.info("Response is : %s", json.dumps(response))
-    except Exception as wt_error:
-        LOGGER.exception("AirtrakShipmentApiError: %s", json.dumps(wt_error))
-        raise AirtrakShipmentApiError(json.dumps({"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from wt_error
+    except Exception as airtrak_error:
+        LOGGER.exception("AirtrakShipmentApiError: %s", json.dumps(airtrak_error))
+        raise AirtrakShipmentApiError(json.dumps({"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
     shipment_data = update_response(response)
     update_authorizer_table(shipment_data,customer_id)
@@ -92,6 +90,7 @@ def ready_date_time(old_shipment_list):
         updated_shipment_list = {}
         ready_time = old_shipment_list["AddNewShipmentV3"]["oShipData"]["ReadyDate"]
         updated_shipment_list["ReadyTime"] = ready_time
+
         if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
             close_date = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseTime"]
             updated_shipment_list["CloseDate"] = close_date

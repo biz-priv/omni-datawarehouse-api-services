@@ -26,6 +26,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
+    - v101/src/shipment_detail.py
     - ${self:custom.alias}/src/shipment_detail.py
     - src/common.py
     - psycopg2/*

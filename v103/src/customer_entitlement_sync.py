@@ -3,27 +3,22 @@ import boto3
 import os
 import csv
 import codecs
-import sys
 import logging
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
-InternalErrorMessage = "Internal Error."
+INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 def handler(event, context):
-
     try:
-        logger.info("Event is: {}".format(json.dumps(event)))
-
+        LOGGER.info("Event: %s", json.dumps(event))
         table_name = os.environ['tableName']
         key = os.environ['s3_key']
-        logger.info("s3 Key is : {}".format(key))
-        logger.info("s3 Key from event is : {}".format(event['Records'][0]['s3']['object']['key']))
-        s3 = boto3.resource('s3')
-
+        s3_client = boto3.resource('s3')
         if event['Records'][0]['s3']['object']['key'] == key:
-            csv_obj = s3.Object(os.environ['bucket'], key).get()['Body']
+            LOGGER.info("key matches")
+            csv_obj = s3_client.Object(os.environ['bucket'], key).get()['Body']
             batch_size = 100
             batch = []
             fieldnames = ['FileNumber','HouseBillNumber','CustomerID']
@@ -34,16 +29,12 @@ def handler(event, context):
                 batch.append(row)
             if batch:
                 write_to_dynamo(batch,table_name)
-            logger.info("Sucessfully added records to omni-dw-customer-entitlement dynamo table")
+            LOGGER.info("Sucessfully added records to omni-dw-customer-entitlement dynamo table")
         else:
-            logger.info("No Action Required")
-
-        
-
-    except Exception as e:
-        logging.exception("HandlerError: {}".format(e))
-        raise HandlerError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
-
+            LOGGER.info("No Action Required")
+    except Exception as handler_error:
+        logging.exception("HandlerError: %s", json.dumps(handler_error))
+        raise HandlerError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from handler_error
 
 def write_to_dynamo(rows,table_name):
     try:
@@ -51,12 +42,12 @@ def write_to_dynamo(rows,table_name):
         table = dynamodb.Table(table_name)
         with table.batch_writer() as batch:
             for i in range(len(rows)):
-                batch.put_item(
-                    Item=rows[i]
-                )
-    except Exception as e:
-        logging.exception("WriteToDynamoError: {}".format(e))
-        raise WriteToDynamoError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage}))
+                batch.put_item(Item=rows[i])
+    except Exception as dynamo_write_error:
+        logging.exception("WriteToDynamoError: %s", json.dumps(dynamo_write_error))
+        raise WriteToDynamoError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_write_error
 
-class HandlerError(Exception): pass
-class WriteToDynamoError(Exception): pass
+class HandlerError(Exception):
+    pass
+class WriteToDynamoError(Exception):
+    pass

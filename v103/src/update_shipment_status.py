@@ -20,7 +20,7 @@ def handler(event, context):
 
     try :
         house_bill_nbr_list = [i['HouseBillNumber']['S'] for i in response["Items"] if 'HouseBillNumber' in i]
-        LOGGER.info("House bill numbers with status True: %s", house_bill_nbr_list)
+        LOGGER.info("House bill numbers with status True: %s", json.dumps(house_bill_nbr_list))
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
                             port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
@@ -29,7 +29,7 @@ def handler(event, context):
         cur.execute(sql, house_bill_nbr_list)
         con.commit()
         result = [item[0] for item in cur.fetchall()]
-        LOGGER.info("House bill numbers in warehouse: %s", result)
+        LOGGER.info("House bill numbers in warehouse: %s", json.dumps(result))
         cur.close()
         con.close()
     except Exception as sql_error:
