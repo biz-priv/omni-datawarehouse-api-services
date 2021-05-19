@@ -1,6 +1,6 @@
 ---
 function:
-  handler: src/invoiceDetail.handler
+  handler: ${self:custom.alias}/src/invoice_detail.handler
   name: ${self:service}-invoice-detail-${self:provider.stage}
   description: invoice detail api service - ${self:provider.stage}
   events: 
@@ -11,6 +11,7 @@ function:
         private: true
         authorizer: 
           name: custom-authorizer
+          resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
         response:
@@ -30,13 +31,13 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - src/invoiceDetail.py
+    - ${self:custom.alias}/src/invoice_detail.py
     - src/common.py
     - psycopg2/*
   environment:
-    db_username: ${ssm:/${self:service}/${self:provider.stage}/db/user~true}
-    db_password: ${ssm:/${self:service}/${self:provider.stage}/db/password~true}
-    db_name: ${ssm:/${self:service}/${self:provider.stage}/db/name}
-    db_host: ${ssm:/${self:service}/${self:provider.stage}/db/host~true}
-    db_port: ${ssm:/${self:service}/${self:provider.stage}/db/port}
+    db_username: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
+    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
+    db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
+    db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
+    db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port}
     REGION: ${self:provider.region}

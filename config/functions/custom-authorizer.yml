@@ -1,16 +1,16 @@
 ---
 function:
-  handler: src/customAuthorizer.handler
+  handler: ${self:custom.alias}/src/custom_authorizer.handler
   name: ${self:service}-custom-authorizer-${self:provider.stage}
   description: custom authorizer - ${self:provider.stage}
   package:
     include:
-    - src/customAuthorizer.py
+    - ${self:custom.alias}/src/custom_authorizer.py
     - src/common.py
   environment:
-    TOKEN_VALIDATION_TABLE: ${ssm:/${self:service}/${self:provider.stage}/tokenValidator/table}
-    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlement/table} 
-    CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/houseBillNumber/index}
-    CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX: ${ssm:/${self:service}/${self:provider.stage}/entitlement/fileNumber/index}
-    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/${self:service}/${self:provider.stage}/tokenValidator/apiKey/index}
+    TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table} 
+    CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
+    CUSTOMER_ENTITLEMENT_FILENUMBER_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/fileNumber/index}
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index}
     REGION: ${self:provider.region}
