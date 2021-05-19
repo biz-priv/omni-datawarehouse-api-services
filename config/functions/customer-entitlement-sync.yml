@@ -1,19 +1,19 @@
 ---
 function:
-  handler: src/customerEntitlementSync.handler
+  handler: ${self:custom.alias}/src/customer_entitlement_sync.handler
   name: ${self:service}-customer-entitlement-sync-${self:provider.stage}
   description: customer entitlement sync - ${self:provider.stage}
   events: 
-    - s3:
-        bucket: ${ssm:/${self:service}/${self:provider.stage}/s3/datapipeline/bucket}
-        event: s3:ObjectCreated:*
+    - existingS3:
+        bucket: ${ssm:/omni-dw/${self:provider.stage}/s3/datapipeline/bucket}
+        events: 
+          - s3:ObjectCreated:*
         rules:
-          - prefix: Data/
-        existing: true
+          - prefix: Data/DB_api_cust_housebill_data000
   package:
     include:
-    - src/customerEntitlementSync.py
+    - ${self:custom.alias}/src/customer_entitlement_sync.py
   environment:
-    tableName: ${ssm:/${self:service}/${self:provider.stage}/customerEntitlement/table}
-    bucket: ${ssm:/${self:service}/${self:provider.stage}/s3/datapipeline/bucket}
-    s3_key: ${ssm:/${self:service}/${self:provider.stage}/entitlement/table/sync/s3/key}
+    tableName: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
+    bucket: ${ssm:/omni-dw/${self:provider.stage}/s3/datapipeline/bucket}
+    s3_key: ${ssm:/omni-dw/${self:provider.stage}/entitlement/table/sync/s3/key}
