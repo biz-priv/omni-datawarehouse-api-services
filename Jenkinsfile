@@ -19,10 +19,10 @@ pipeline {
                         } else if("${CHANGE_TARGET}".contains("master")){
                             env.ENVIRONMENT=env.getProperty("environment_prod")
                         }
-                    } else if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix") || "${GIT_BRANCH}".contains("develop")){
-                        env.ENVIRONMENT=env.getProperty("environment_develop")
-                    } else if("${GIT_BRANCH}".contains("devint")){
+                    } else if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix")) {
                         env.ENVIRONMENT=env.getProperty("environment_devint")
+                    } else if("${GIT_BRANCH}".contains("develop")) {
+                        env.ENVIRONMENT=env.getProperty("environment_develop")
                     } else if ("${GIT_BRANCH}".contains("master") || "${GIT_BRANCH}".contains("hotfix")) {
                         env.ENVIRONMENT=env.getProperty("environment_prod")
                     }
