@@ -288,7 +288,6 @@ def validate_input(event):
         raise InputError(json.dumps({"httpStatus": 400, "message": "One/All of: Service Level, Ready Date parameters are missing in the request body oShipData."}))
     return event["enhancedAuthContext"]["customerId"]
 
-<<<<<<< HEAD:v1/src/create_shipment.py
 class InputError(Exception):
     pass
 class HandlerError(Exception):
@@ -319,20 +318,3 @@ class GetServiceLevelError(Exception):
     pass
 class ReadyDateTimeError(Exception):
     pass
-=======
-class InputError(Exception): pass
-class HandlerError(Exception): pass
-class ValidateDynamoDBError(Exception): pass
-class UpdateResponseError(Exception): pass
-class UpdateAuthorizerTableError(Exception): pass
-class UpdateShipmentTableError(Exception): pass
-class GetShipmentLineListError(Exception): pass
-class GetReferenceListError(Exception): pass
-class GetAccessorialListError(Exception):pass
-class WtBolApiError(Exception): pass
-class DataTransformError(Exception): pass
-class EnvironmentVariableError(Exception): pass
-class AirtrakShipmentApiError(Exception): pass
-class GetServiceLevelError(Exception): pass
-class ReadyDateTimeError(Exception): pass
->>>>>>> origin/master:src/createShipment.py
