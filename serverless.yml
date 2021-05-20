@@ -1,21 +1,21 @@
-service: omni-dw
+service: omni-dw-api-services
 
 provider:
   name: aws
   runtime: python3.7
-  versionFunctions: false
+  versionFunctions: true
   stage: ${opt:stage, 'dev'}
   region: us-east-1
   timeout: 30
   memorySize: 256
-  deploymentBucket: ${ssm:/${self:service}/${self:provider.stage}/sls/deployment/bucket}
-  role: ${ssm:/${self:service}/${self:provider.stage}/lambda/role}
+  deploymentBucket: ${ssm:/omni-dw/${self:provider.stage}/sls/deployment/bucket}
+  role: ${ssm:/omni-dw/${self:provider.stage}/lambda/role}
   apiName: ${self:service}-api-${self:provider.stage}  
   vpc:
     securityGroupIds:
-      - ${ssm:/${self:service}/${self:provider.stage}/lambda/sgId}
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
     subnetIds:
-      - ${ssm:/${self:service}/${self:provider.stage}/lambda/subnetA}
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}
   stackTags:
     Application: DataWarehouse
     CreateBy: BizCloudExperts
@@ -23,10 +23,11 @@ provider:
     Environment: ${self:provider.stage}
 
 custom: 
+  alias: ${opt:alias, 'v1'}
   # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # dev:
-  #   domainName: api.dev.omnilogistics.com
-  #   certificateName: 
+  #   domainName: dev-api.omnilogistics.com
+  #   certificateName: dev-api.omnilogistics.com
   prod:
     domainName: api.omnilogistics.com
     certificateName: api.omnilogistics.com
@@ -60,6 +61,8 @@ plugins:
   - serverless-layers
   - serverless-add-api-key
   - serverless-plugin-multiple-responses
+  - serverless-aws-alias
+  - serverless-plugin-existing-s3
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:

@@ -1,6 +1,6 @@
 ---
 function:
-  handler: src/shipmentDetail.handler
+  handler: ${self:custom.alias}/src/shipment_detail.handler
   name: ${self:service}-shipment-detail-${self:provider.stage}
   description: shipment detail api service - ${self:provider.stage}
   events: 
@@ -11,6 +11,7 @@ function:
         private: true
         authorizer: 
           name: custom-authorizer
+          resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
         response:
@@ -25,15 +26,17 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - src/shipmentDetail.py
+    - v101/src/shipment_detail.py
+    - ${self:custom.alias}/src/shipment_detail.py
     - src/common.py
     - psycopg2/*
   environment:
-    db_username: ${ssm:/${self:service}/${self:provider.stage}/db/user~true}
-    db_password: ${ssm:/${self:service}/${self:provider.stage}/db/password~true}
-    db_name: ${ssm:/${self:service}/${self:provider.stage}/db/name}
-    db_host: ${ssm:/${self:service}/${self:provider.stage}/db/host~true}
-    db_port: ${ssm:/${self:service}/${self:provider.stage}/db/port} 
-    SHIPMENT_DETAILS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/table}
-    SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/${self:service}/${self:provider.stage}/shipmentDetails/houseBillKey/index}
+    db_username: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
+    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
+    db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
+    db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
+    db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port} 
+    SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
+    SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/houseBillKey/index}
+    SHIPMENT_DETAILS_FILENUMBER_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/FileNumber/index}
     REGION: ${self:provider.region}

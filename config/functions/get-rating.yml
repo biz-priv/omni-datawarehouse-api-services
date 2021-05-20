@@ -1,19 +1,14 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/bill_of_lading.handler
-  name: ${self:service}-bill-of-lading-${self:provider.stage}
-  description: bill of lading api service - ${self:provider.stage}
+  handler: ${self:custom.alias}/src/get_rating.handler
+  name: ${self:service}-get-rating-${self:provider.stage}
+  description: get rating api service - ${self:provider.stage}
   events:
     - http:
-        path: /billoflading
-        method: GET
+        path: /rating
+        method: POST
         integration: lambda
         private: true
-        authorizer: 
-          name: custom-authorizer
-          resultTtlInSeconds: 0
-          identitySource: method.request.header.x-api-key
-          type: request
         response:
           headers: ${self:custom.standardResponseHeaders}
           statusCodes:
@@ -31,7 +26,4 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - ${self:custom.alias}/src/bill_of_lading.py
-  environment:
-    billOfLading_key: ${ssm:/omni-dw/${self:provider.stage}/bol/API_KEY~true}
-    URL: ${ssm:/omni-dw/${self:provider.stage}/billOfLading/wt/url}
+    - ${self:custom.alias}/src/get_rating.py
