@@ -56,7 +56,6 @@ def get_shipment_detail_history(hwb_file_nbr,parameter,customer_id):
     except Exception as get_error:
         logging.exception("GetShipmentDetailError: %s", get_error)
         raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
-    LOGGER.info("shipment details before conversion : %s", shipment_details)
     milestones = convert_records_history(shipment_details[0], get_milestones(shipment_details))
     records_list.append(milestones)
     shipment_details_records = {'shipmentDetails': records_list}
@@ -75,7 +74,7 @@ def get_milestones(shipment_details):
             response["Current Status Date"] = modify_date(milestones[24])
             response["Current Status Date UTC"] = modify_date(milestones[25])
             milestone_list.append(response)
-        LOGGER.info("milestone list is : %s", milestone_list)
+        LOGGER.info("milestone list : %s", milestone_list)
         return milestone_list
     except Exception as milestones_error:
         logging.exception("MilestoneError: %s", milestones_error)
