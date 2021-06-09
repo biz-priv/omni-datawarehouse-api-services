@@ -50,9 +50,11 @@ def get_shipment_detail_history(hwb_file_nbr,parameter,customer_id):
                 on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y' \
                 left outer join service_level on shipment_info.service_level = service_level.service_level_desc where shipment_quote IN ('S') AND current_status <> 'CAN' \
                 and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
+        LOGGER.info("shipment details query : %s", query)
         cur.execute(query)
         con.commit()
         shipment_details = cur.fetchall()
+        LOGGER.info("results before processing : %s", shipment_details)
     except Exception as get_error:
         logging.exception("GetShipmentDetailError: %s", get_error)
         raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
@@ -93,10 +95,10 @@ def convert_records_history(data,milestones_details):
         record["Shipper Name"] = data[8]
         record["Consignee Name"] = data[9]
         record["Pieces"] = data[10]
-        record["Actual Weight LBS"] = float(data[11])
-        record["Actual Weight KGS"] = float(data[12])
-        record["Chargeable Weight LBS"] = float(data[13])
-        record["Chargeable Weight KGS"] = float(data[14])
+        record["Actual Weight LBS"] = modify_float(data[11])
+        record["Actual Weight KGS"] = modify_float(data[12])
+        record["Chargeable Weight LBS"] = modify_float(data[13])
+        record["Chargeable Weight KGS"] = modify_float(data[14])
         record["Pickup Date"] = modify_date(data[15])
         record["Pod Date"] = modify_date(data[16])
         record["ETA Date"] = modify_date(data[17])
@@ -112,11 +114,21 @@ def convert_records_history(data,milestones_details):
         logging.exception("RecordsConversionError: %s", conversion_error)
         raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
 
+def modify_float(x):
+    try:
+        if x == None:
+            return None
+        else:
+            return float(x)
+    except Exception as float_conversion_error:
+        logging.exception("FloatConversionError: %s", float_conversion_error)
+        raise FloatConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
+
 class GetShipmentDetailError(Exception):
     pass
 class RecordsConversionError(Exception):
     pass
 class MilestoneError(Exception):
     pass
-class X12RefError(Exception):
+class FloatConversionError(Exception):
     pass
