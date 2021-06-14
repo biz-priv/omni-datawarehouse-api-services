@@ -7,6 +7,7 @@ LOGGER.setLevel(logging.INFO)
 
 from src.common import modify_response
 from src.common import modify_date
+from src.common import modify_float
 from src.common import process_input
 from v101.src.shipment_detail import get_shipment_detail
 
@@ -114,21 +115,10 @@ def convert_records_history(data,milestones_details):
         logging.exception("RecordsConversionError: %s", conversion_error)
         raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
 
-def modify_float(x):
-    try:
-        if x == None:
-            return None
-        else:
-            return float(x)
-    except Exception as float_conversion_error:
-        logging.exception("FloatConversionError: %s", float_conversion_error)
-        raise FloatConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
-
 class GetShipmentDetailError(Exception):
     pass
 class RecordsConversionError(Exception):
     pass
 class MilestoneError(Exception):
     pass
-class FloatConversionError(Exception):
-    pass
+

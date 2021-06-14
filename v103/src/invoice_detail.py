@@ -7,6 +7,7 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 from src.common import modify_date
+from src.common import modify_float
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
@@ -21,7 +22,7 @@ def handler(event, context):
             parameter = " shipment_info.house_bill_nbr = '"
         else:
             number = event['query']['file_nbr']
-            parameter = " shipment_info.file_nbr = "
+            parameter = " shipment_info.file_nbr = '"
         execution_parameters = [number, parameter]
     except Exception as input_error:
         logging.exception("ProcessingInputError: %s",input_error)
@@ -55,6 +56,7 @@ def handler(event, context):
             and  trim(ar_invoice_receivables.bill_to_nbr) = trim(customersb.nbr) left outer join public.customers customersc on \
             ar_invoice_receivables.source_system = customersc.source_system and trim(ar_invoice_receivables.bill_to_nbr) = \
             trim(customersc.nbr) where'+execution_parameters[1]+f'{execution_parameters[0]}'+customer_id_parameter+f'{customer_id}'+"'"
+            LOGGER.info("invoice details query : %s", sql_query)
             cur.execute(sql_query)
             con.commit()
             shipment_details = cur.fetchall()
@@ -96,7 +98,7 @@ def get_charge_code(shipment_details):
         for charges in shipment_details:
             response = {}
             response["Charge Code Desc"] = charges[7]
-            response["Total"] = charges[10]
+            response["Total"] = modify_float(charges[10])
             charges_list.append(response)
         return charges_list
     except Exception as charge_code_error:

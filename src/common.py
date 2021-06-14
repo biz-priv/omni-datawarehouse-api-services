@@ -86,6 +86,16 @@ def modify_date(x):
         logging.exception("DateConversionError: %s", date_conversion_error)
         raise DateConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from date_conversion_error
 
+def modify_float(x):
+    try:
+        if x == None:
+            return None
+        else:
+            return float(x)
+    except Exception as float_conversion_error:
+        logging.exception("FloatConversionError: %s", float_conversion_error)
+        raise FloatConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
+
 class DynamoQueryError(Exception):
     pass
 class DynamoGetError(Exception):
@@ -95,4 +105,6 @@ class ModifyResponseError(Exception):
 class DateConversionError(Exception):
     pass
 class ProcessingInputError(Exception):
+    pass
+class FloatConversionError(Exception):
     pass
