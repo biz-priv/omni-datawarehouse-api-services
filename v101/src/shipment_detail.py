@@ -9,6 +9,7 @@ LOGGER.setLevel(logging.INFO)
 from src.common import modify_response
 from src.common import modify_date
 from src.common import process_input
+from src.common import modify_float
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
@@ -57,10 +58,10 @@ def convert_records(data):
         record["Shipper Name"] = data[7]
         record["Consignee Name"] = data[8]
         record["Pieces"] = data[9]
-        record["Actual Weight LBS"] = data[10]
-        record["Actual Weight KGS"] = data[11]
-        record["Chargeable Weight LBS"] = data[12]
-        record["Chargeable Weight KGS"] = data[13]
+        record["Actual Weight LBS"] = modify_float(data[10])
+        record["Actual Weight KGS"] = modify_float(data[11])
+        record["Chargeable Weight LBS"] = modify_float(data[12])
+        record["Chargeable Weight KGS"] = modify_float(data[13])
         record["Pickup Date"] = modify_date(data[14])
         record["Pod Date"] = modify_date(data[15])
         record["ETA Date"] = modify_date(data[16])

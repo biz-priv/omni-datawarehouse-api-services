@@ -7,6 +7,7 @@ LOGGER.setLevel(logging.INFO)
 
 from src.common import modify_response
 from src.common import modify_date
+from src.common import modify_float
 from src.common import process_input
 from v101.src.shipment_detail import get_shipment_detail
 
@@ -35,11 +36,26 @@ def get_shipment_detail_history(hwb_file_nbr,parameter,customer_id):
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
         cur = con.cursor()
         records_list = []
-        cur.execute('''select distinct  shipment_info.source_system, shipment_info.file_nbr, shipment_info.file_date ,shipment_info.handling_stn ,shipment_info.master_bill_nbr , shipment_info.house_bill_nbr,shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,shipment_info.pieces ,shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs ,shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date ,\
-            shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then shipment_milestone.order_status else shipment_info.current_status end as order_status, case when shipment_info.source_system = 'WT' then shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc, shipment_milestone.event_Date,shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)\
-            left outer join customers customersb on shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr) left outer join customers customersc on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr) left outer join shipment_milestone on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y' left outer join service_level on shipment_info.service_level = service_level.service_level_desc where shipment_quote IN ('S') AND current_status <> 'CAN' and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}')
+        query = '''select distinct shipment_info.source_system, shipment_info.file_nbr, shipment_info.file_date ,shipment_info.handling_stn ,shipment_info.master_bill_nbr , \
+                shipment_info.house_bill_nbr,shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,\
+                shipment_info.pieces ,shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs ,\
+                shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date ,\
+                shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then \
+                shipment_milestone.order_status else shipment_info.current_status end as order_status, case when shipment_info.source_system = 'WT' then\
+                shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc, shipment_milestone.event_Date,\
+                shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer \
+                from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND (TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)\
+                or TRIM(shipment_info.shipper_nbr) = TRIM(api_token.cust_nbr) OR TRIM(shipment_info.cntrl_cust_nbr) = TRIM(api_token.cust_nbr)) left outer join customers customersb \
+                on shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr) left outer join customers customersc \
+                on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr) left outer join shipment_milestone \
+                on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y' \
+                left outer join service_level on shipment_info.service_level = service_level.service_level_desc where shipment_quote IN ('S') AND current_status <> 'CAN' \
+                and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
+        LOGGER.info("shipment details query : %s", query)
+        cur.execute(query)
         con.commit()
         shipment_details = cur.fetchall()
+        LOGGER.info("results before processing : %s", shipment_details)
     except Exception as get_error:
         logging.exception("GetShipmentDetailError: %s", get_error)
         raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
@@ -61,7 +77,7 @@ def get_milestones(shipment_details):
             response["Current Status Date"] = modify_date(milestones[24])
             response["Current Status Date UTC"] = modify_date(milestones[25])
             milestone_list.append(response)
-        # LOGGER.info("milestone list is : %s", milestone_list)
+        LOGGER.info("milestone list : %s", milestone_list)
         return milestone_list
     except Exception as milestones_error:
         logging.exception("MilestoneError: %s", milestones_error)
@@ -80,10 +96,10 @@ def convert_records_history(data,milestones_details):
         record["Shipper Name"] = data[8]
         record["Consignee Name"] = data[9]
         record["Pieces"] = data[10]
-        record["Actual Weight LBS"] = float(data[11])
-        record["Actual Weight KGS"] = float(data[12])
-        record["Chargeable Weight LBS"] = float(data[13])
-        record["Chargeable Weight KGS"] = float(data[14])
+        record["Actual Weight LBS"] = modify_float(data[11])
+        record["Actual Weight KGS"] = modify_float(data[12])
+        record["Chargeable Weight LBS"] = modify_float(data[13])
+        record["Chargeable Weight KGS"] = modify_float(data[14])
         record["Pickup Date"] = modify_date(data[15])
         record["Pod Date"] = modify_date(data[16])
         record["ETA Date"] = modify_date(data[17])
@@ -105,5 +121,4 @@ class RecordsConversionError(Exception):
     pass
 class MilestoneError(Exception):
     pass
-class X12RefError(Exception):
-    pass
+
