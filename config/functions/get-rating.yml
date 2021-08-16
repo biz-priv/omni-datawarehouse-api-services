@@ -26,4 +26,4 @@ function:
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
+    TOKEN_VALIDATOR: ${ssm:/omni/${self:provider.stage}/token/validator/table/name}

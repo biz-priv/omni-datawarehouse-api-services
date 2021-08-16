@@ -22,7 +22,7 @@ provider:
     Version: "1.0"
     Environment: ${self:provider.stage}
 
-custom: 
+custom:
   alias: ${opt:alias, 'v1'}
   # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # dev:
@@ -44,9 +44,9 @@ custom:
       - customer-entitlement-sync
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
-    'Access-Control-Allow-Origin': "'*'"
-    'Access-Control-Allow-Credentials': "'true'"
-    'Access-Control-Allow-Headers': "'*'"
+    "Access-Control-Allow-Origin": "'*'"
+    "Access-Control-Allow-Credentials": "'true'"
+    "Access-Control-Allow-Headers": "'*'"
   # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # customDomain:
   #   domainName: ${self:custom.${self:provider.stage}.domainName}
@@ -68,8 +68,8 @@ plugins:
 package:
   individually: true
   exclude:
-  - '**/*'
-  - serverless.yaml
+    - "**/*"
+    - serverless.yaml
 
 functions:
   shipment-info: ${file(config/functions/shipment-info.yml):function}
@@ -80,11 +80,12 @@ functions:
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
+  get-rating: ${file(config/functions/get-rating.yml):function}
 
 resources:
   Resources:
     BadRequestResponse:
-      Type: 'AWS::ApiGateway::GatewayResponse'
+      Type: "AWS::ApiGateway::GatewayResponse"
       Properties:
         ResponseParameters:
           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
@@ -96,5 +97,5 @@ resources:
               "errorDescription":"$context.authorizer.message"
             }
         RestApiId:
-          Ref: 'ApiGatewayRestApi'
-        StatusCode: '400'
+          Ref: "ApiGatewayRestApi"
+        StatusCode: "400"

@@ -4,7 +4,7 @@
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
     "cache-control": "no-cache",
-    "x-api-key": "9jM8ATQQYB2XmJsETRAq77EuqcY522Xu3pszdmcY"
+    "x-api-key": "OtHU8NlOIf5RL5d2CZSDc9xT8ipP2QNUasK19mF4"
   },
   "body": {
     "RatingInput": {
@@ -17,12 +17,24 @@
       "DestinationCity": "El Paso",
       "DestinationState": "TX",
       "DestinationZip": 79906,
-      "PickupDate": "2021-08-16T17:00:01",
+      "PickupDate": "2021-08-16T15:32:01",
       "PickupTime": "2021-08-16T17:00:01",
       "PickupLocationCloseTime": "2021-08-16T18:00:02"
     },
     "CommodityInput": {
-      "CommodityInput": {}
+      "CommodityInput": [
+        {
+          "CommodityClass": 2.2,
+          "CommodityPieces": 123,
+          "CommodityPieceType": "PCE",
+          "CommodityWeightPerPiece": 123,
+          "CommodityWeight": 123,
+          "CommodityLength": 123,
+          "CommodityWidth": 123,
+          "CommodityHeight": 123,
+          "CommodityHazmat": "0"
+        }
+      ]
     }
   }
 }
