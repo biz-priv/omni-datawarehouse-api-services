@@ -27,3 +27,4 @@ function:
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni/${self:provider.stage}/token/validator/table/name}
+    RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rating}

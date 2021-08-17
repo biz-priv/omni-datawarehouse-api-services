@@ -17,9 +17,9 @@
       "DestinationCity": "El Paso",
       "DestinationState": "TX",
       "DestinationZip": 79906,
-      "PickupDate": "2021-08-16T15:32:01",
-      "PickupTime": "2021-08-16T17:00:01",
-      "PickupLocationCloseTime": "2021-08-16T18:00:02"
+      "PickupDate": "2021-08-20T15:32:01",
+      "PickupTime": "2021-08-20T17:00:01",
+      "PickupLocationCloseTime": "2021-08-20T18:00:02"
     },
     "CommodityInput": {
       "CommodityInput": [
