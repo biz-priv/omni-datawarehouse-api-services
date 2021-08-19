@@ -61,23 +61,14 @@ module.exports.handler = async (event, context, callback) => {
     event.body.RatingInput.PickupLocationCloseTime.toString();
   try {
     const customerData = await getCustomerId(apiKey);
-    if (customerData == null) {
-      return errorMsg(400, "Api key validation error");
-    } else if (
-      !customerData.hasOwnProperty("WebTrackId") ||
-      customerData.WebTrackId == null
-    ) {
-      return errorMsg(400, "No valid WebTrackId");
-    }
     eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
 
     const postData = makeJsonToXml(eventBody);
-    // console.log("postData", postData);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
     return dataObj;
   } catch (error) {
-    return errorMsg(400, "Something went wrong.", error);
+    return errorMsg(400, error != null ? error : "Something went wrong.");
   }
 };
 
@@ -86,7 +77,6 @@ function errorMsg(code, message, error = null) {
     httpStatus: code,
     code,
     message,
-    error,
   };
 }
 
@@ -112,8 +102,8 @@ function makeXmlToJson(data) {
     .RatingOutput;
 }
 
-function getCustomerId(ApiKey) {
-  return new Promise(async (resolve, reject) => {
+async function getCustomerId(ApiKey) {
+  try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
       region: process.env.REGION,
     });
@@ -123,35 +113,42 @@ function getCustomerId(ApiKey) {
       ExpressionAttributeNames: { "#ApiKey": "ApiKey" },
       ExpressionAttributeValues: { ":ApiKey": ApiKey },
     };
-    try {
-      const response = await documentClient.scan(params).promise();
-      if (response.Items && response.Items.length > 0) {
-        resolve(response.Items[0]);
-      } else {
-        resolve(null);
+    const response = await documentClient.scan(params).promise();
+    if (response.Items && response.Items.length > 0) {
+      if (
+        !response.Items[0].hasOwnProperty("WebTrackId") ||
+        response.Items[0].WebTrackId == null
+      ) {
+        throw "getCustomerId Error: No valid WebTrackId";
       }
-    } catch (e) {
-      reject("getCustomerId Error: Request failed with status code 500");
+      return response.Items[0];
+    } else {
+      throw "getCustomerId Error: Api key validation error";
     }
-  });
+  } catch (e) {
+    throw (
+      "getCustomerId Error: " + (e.hasOwnProperty("message") ? e.message : e)
+    );
+  }
 }
 
-function getRating(postData) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const res = await axios.post(process.env.RATING_API, postData, {
-        headers: {
-          Accept: "text/xml",
-          "Content-Type": "text/xml; charset=utf-8",
-        },
-      });
-      if (res.status == 200) {
-        resolve(res.data);
-      } else {
-        reject(e.response.statusText);
-      }
-    } catch (e) {
-      reject("getRating Error: " + e.response.statusText);
+async function getRating(postData) {
+  try {
+    const res = await axios.post(process.env.RATING_API, postData, {
+      headers: {
+        Accept: "text/xml",
+        "Content-Type": "text/xml; charset=utf-8",
+      },
+    });
+    if (res.status == 200) {
+      return res.data;
+    } else {
+      throw "getRating Error: " + e.response.statusText;
     }
-  });
+  } catch (e) {
+    throw (
+      "getRating Error: " +
+      (e.hasOwnProperty("response") ? "Request failed with status code 500" : e)
+    );
+  }
 }
