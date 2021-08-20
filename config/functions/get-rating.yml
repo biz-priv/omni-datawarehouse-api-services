@@ -6,7 +6,7 @@ function:
   runtime: nodejs12.x
   events:
     - http:
-        path: /ratings
+        path: /rating
         method: POST
         integration: lambda
         private: true
@@ -31,5 +31,5 @@ function:
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    TOKEN_VALIDATOR: ${ssm:/omni/${self:provider.stage}/token/validator/table/name}
+    TOKEN_VALIDATOR: ${ssm:/omni/${self:provider.stage}/tokenValidator/table}
     RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rating}

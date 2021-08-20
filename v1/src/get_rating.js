@@ -45,11 +45,11 @@ module.exports.handler = async (event, context, callback) => {
 
   const { error, value } = eventValidation.validate(event.body);
   if (error) {
-    return errorMsg(
-      400,
-      "Please provide all required fields.",
-      error.details[0].path[error.details[0].path.length - 1] + " is required"
-    );
+    let msg = error.details[0].message
+      .split('" ')[1]
+      .replace(new RegExp('"', "g"), "");
+    let key = error.details[0].context.key;
+    return errorMsg(400, key + " " + msg);
   }
   const eventBody = value;
   const PickupTime = event.body.RatingInput.PickupTime.toString();
@@ -72,12 +72,11 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-function errorMsg(code, message, errorMsg = null) {
+function errorMsg(code, message) {
   return {
     httpStatus: code,
     code,
     message,
-    errorMsg,
   };
 }
 
