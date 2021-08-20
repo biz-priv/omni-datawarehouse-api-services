@@ -12,27 +12,23 @@
       "OriginCountry": "US",
       "OriginCity": "Provo",
       "OriginState": "UT",
-      "OriginZip": 84604,
+      "OriginZip": "84604",
       "DestinationCountry": "US",
       "DestinationCity": "El Paso",
       "DestinationState": "TX",
-      "DestinationZip": 79906,
-      "PickupDate": "2021-08-20T15:32:01",
-      "PickupTime": "2021-08-20T17:00:01",
-      "PickupLocationCloseTime": "2021-08-20T18:00:02"
+      "DestinationZip": "79906",
+      "PickupTime": "2021-09-20T17:00:01"
     },
     "CommodityInput": {
       "CommodityInput": [
         {
-          "CommodityClass": 2.2,
           "CommodityPieces": 123,
           "CommodityPieceType": "PCE",
-          "CommodityWeightPerPiece": 123,
           "CommodityWeight": 123,
           "CommodityLength": 123,
           "CommodityWidth": 123,
           "CommodityHeight": 123,
-          "CommodityHazmat": "0"
+          "CommodityHazmat": "Y"
         }
       ]
     }

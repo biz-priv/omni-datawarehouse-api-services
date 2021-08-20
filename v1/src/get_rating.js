@@ -3,34 +3,30 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
-const replaceNull = Joi.allow(null).empty("").default(null);
+const replaceNull = Joi.allow(null).empty("").default(null).required();
 const CommodityInputValidation = {
-  CommodityClass: Joi.number().precision(2).concat(replaceNull),
+  CommodityClass: Joi.any().allow(0).default(0),
   CommodityPieces: Joi.number().integer().concat(replaceNull),
   CommodityPieceType: Joi.string().concat(replaceNull),
-  CommodityWeightPerPiece: Joi.number().integer().concat(replaceNull),
   CommodityWeight: Joi.number().integer().concat(replaceNull),
   CommodityLength: Joi.number().integer().concat(replaceNull),
   CommodityWidth: Joi.number().integer().concat(replaceNull),
   CommodityHeight: Joi.number().integer().concat(replaceNull),
-  CommodityHazmat: Joi.string().concat(replaceNull),
+  CommodityHazmat: Joi.string().valid("0", "1", "Y", "N").insensitive(),
 };
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
     .keys({
-      RequestID: Joi.number().integer(),
-      OriginCountry: Joi.string(),
-      OriginCity: Joi.string(),
-      OriginState: Joi.string(),
-      OriginZip: Joi.number().integer().required(),
-      DestinationCountry: Joi.string(),
-      DestinationCity: Joi.string(),
-      DestinationState: Joi.string(),
-      DestinationZip: Joi.number().integer().required(),
-      ShipmentTerms: Joi.string(),
-      PickupDate: Joi.date().iso().greater("now").required(),
+      RequestID: Joi.number().integer().required(),
+      OriginCountry: Joi.string().required(),
+      OriginCity: Joi.string().required(),
+      OriginState: Joi.string().required(),
+      OriginZip: Joi.string().alphanum().required(),
+      DestinationCountry: Joi.string().required(),
+      DestinationCity: Joi.string().required(),
+      DestinationState: Joi.string().required(),
+      DestinationZip: Joi.string().alphanum().required(),
       PickupTime: Joi.date().iso().greater("now").required(),
-      PickupLocationCloseTime: Joi.date().iso().greater("now").required(),
     })
     .required(),
   CommodityInput: Joi.object()
@@ -45,20 +41,24 @@ const eventValidation = Joi.object().keys({
 
 module.exports.handler = async (event, context, callback) => {
   const LiabilityType = "LL";
+  const apiKey = event.headers["x-api-key"];
 
   const { error, value } = eventValidation.validate(event.body);
   if (error) {
-    return errorMsg(400, "Please provide all required fields.", error.details);
+    return errorMsg(
+      400,
+      "Please provide all required fields.",
+      error.details[0].path[error.details[0].path.length - 1] + " is required"
+    );
   }
-  const apiKey = event.headers["x-api-key"];
   const eventBody = value;
+  const PickupTime = event.body.RatingInput.PickupTime.toString();
+
   eventBody.RatingInput.LiabilityType = LiabilityType;
-  eventBody.RatingInput.PickupDate =
-    event.body.RatingInput.PickupDate.toString();
-  eventBody.RatingInput.PickupTime =
-    event.body.RatingInput.PickupTime.toString();
-  eventBody.RatingInput.PickupLocationCloseTime =
-    event.body.RatingInput.PickupLocationCloseTime.toString();
+  eventBody.RatingInput.PickupDate = PickupTime;
+  eventBody.RatingInput.PickupTime = PickupTime;
+  eventBody.RatingInput.PickupLocationCloseTime = PickupTime;
+
   try {
     const customerData = await getCustomerId(apiKey);
     eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
@@ -72,11 +72,12 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-function errorMsg(code, message, error = null) {
+function errorMsg(code, message, errorMsg = null) {
   return {
     httpStatus: code,
     code,
     message,
+    errorMsg,
   };
 }
 
@@ -148,7 +149,7 @@ async function getRating(postData) {
   } catch (e) {
     throw (
       "getRating Error: " +
-      (e.hasOwnProperty("response") ? "Request failed with status code 500" : e)
+      (e.hasOwnProperty("response") ? "Request failed" : e)
     );
   }
 }
