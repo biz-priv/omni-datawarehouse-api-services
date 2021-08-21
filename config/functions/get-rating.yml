@@ -31,5 +31,5 @@ function:
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    TOKEN_VALIDATOR: ${ssm:/omni/${self:provider.stage}/tokenValidator/table}
+    TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rating}

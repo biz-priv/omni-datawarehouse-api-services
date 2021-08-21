@@ -7,24 +7,22 @@ const replaceNull = Joi.allow(null).empty("").default(null).required();
 const CommodityInputValidation = {
   CommodityClass: Joi.any().allow(0).default(0),
   CommodityPieces: Joi.number().integer().concat(replaceNull),
-  CommodityPieceType: Joi.string().concat(replaceNull),
   CommodityWeight: Joi.number().integer().concat(replaceNull),
   CommodityLength: Joi.number().integer().concat(replaceNull),
   CommodityWidth: Joi.number().integer().concat(replaceNull),
   CommodityHeight: Joi.number().integer().concat(replaceNull),
-  CommodityHazmat: Joi.string().valid("0", "1", "Y", "N").insensitive(),
 };
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
     .keys({
-      RequestID: Joi.number().integer().required(),
-      OriginCountry: Joi.string().required(),
-      OriginCity: Joi.string().required(),
-      OriginState: Joi.string().required(),
+      RequestID: Joi.any().allow(0).default(0),
+      OriginCountry: Joi.string(),
+      OriginCity: Joi.string(),
+      OriginState: Joi.string(),
       OriginZip: Joi.string().alphanum().required(),
-      DestinationCountry: Joi.string().required(),
-      DestinationCity: Joi.string().required(),
-      DestinationState: Joi.string().required(),
+      DestinationCountry: Joi.string(),
+      DestinationCity: Joi.string(),
+      DestinationState: Joi.string(),
       DestinationZip: Joi.string().alphanum().required(),
       PickupTime: Joi.date().iso().greater("now").required(),
     })
@@ -66,15 +64,26 @@ module.exports.handler = async (event, context, callback) => {
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
+
+    if (
+      dataObj.hasOwnProperty("Message") &&
+      dataObj.Message == "WebTrakUserID is invalid."
+    ) {
+      throw "World Trak Get Rating Error";
+    }
     return dataObj;
   } catch (error) {
-    return errorMsg(400, error != null ? error : "Something went wrong.");
+    return callback(
+      null,
+      errorMsg(400, error != null ? error : "Something went wrong.")
+    );
   }
 };
 
 function errorMsg(code, message) {
   return {
     httpStatus: code,
+    statusCode: code,
     code,
     message,
   };
