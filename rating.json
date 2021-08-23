@@ -1,0 +1,70 @@
+{
+    "body": {
+        "RatingInput": {
+            "OriginZip": "75067",
+            "DestinationZip": "79906",
+            "PickupTime": "2021-08-22T17:00:01"
+        },
+        "CommodityInput": {
+            "CommodityInput": [
+                {
+                    "CommodityPieces": 2,
+                    "CommodityWeight": "1",
+                    "CommodityLength": 2,
+                    "CommodityWidth": 3,
+                    "CommodityHeight": 123
+                }
+            ]
+        }
+    },
+    "method": "POST",
+    "principalId": "",
+    "stage": "v1",
+    "cognitoPoolClaims": {
+        "sub": ""
+    },
+    "enhancedAuthContext": {},
+    "headers": {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "CloudFront-Forwarded-Proto": "https",
+        "CloudFront-Is-Desktop-Viewer": "true",
+        "CloudFront-Is-Mobile-Viewer": "false",
+        "CloudFront-Is-SmartTV-Viewer": "false",
+        "CloudFront-Is-Tablet-Viewer": "false",
+        "CloudFront-Viewer-Country": "US",
+        "Content-Type": "application/json",
+        "Host": "il1vzbfr2a.execute-api.us-east-1.amazonaws.com",
+        "Postman-Token": "66267f28-e4bd-4b2b-8c58-639373e1ba0b",
+        "User-Agent": "PostmanRuntime/7.28.3",
+        "Via": "1.1 fa8134343880345db5ac60a10835aa6f.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Id": "ZBG8-Y9JlcDrvyvT4AWQeJCElIDoOECGrrHd_L-2OQ2Np2GskDpc-g==",
+        "X-Amzn-Trace-Id": "Root=1-61214e11-42013fbe08c0b92e34537e3a",
+        "x-api-key": "OtHU8NlOIf5RL5d2CZSDc9xT8ipP2QNUasK19mF4",
+        "X-Forwarded-For": "72.181.17.144, 70.132.39.73",
+        "X-Forwarded-Port": "443",
+        "X-Forwarded-Proto": "https"
+    },
+    "query": {},
+    "path": {},
+    "identity": {
+        "cognitoIdentityPoolId": "",
+        "cognitoIdentityId": "",
+        "apiKey": "OtHU8NlOIf5RL5d2CZSDc9xT8ipP2QNUasK19mF4",
+        "principalOrgId": "",
+        "cognitoAuthenticationType": "",
+        "userArn": "",
+        "apiKeyId": "w2gfx0gnec",
+        "userAgent": "PostmanRuntime/7.28.3",
+        "accountId": "",
+        "caller": "",
+        "sourceIp": "72.181.17.144",
+        "accessKey": "",
+        "cognitoAuthenticationProvider": "",
+        "user": ""
+    },
+    "stageVariables": {
+        "SERVERLESS_STAGE": "devint",
+        "SERVERLESS_ALIAS": "v1"
+    }
+}
