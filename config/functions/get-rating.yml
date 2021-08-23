@@ -10,11 +10,16 @@ function:
         method: POST
         integration: lambda
         private: true
+        authorizer: 
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
         response:
           headers: ${self:custom.standardResponseHeaders}
           statusCodes:
             200:
-              pattern: ""
+              pattern: ''
             400:
               pattern: '.*httpStatus\": 400.*'
               headers:

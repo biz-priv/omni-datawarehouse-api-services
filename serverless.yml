@@ -42,6 +42,7 @@ custom:
       - custom-authorizer
       - update-shipment-status
       - customer-entitlement-sync
+      - get-rating
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"

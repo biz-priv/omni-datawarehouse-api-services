@@ -60,7 +60,6 @@ module.exports.handler = async (event, context, callback) => {
   try {
     const customerData = await getCustomerId(apiKey);
     eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
-
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
@@ -82,10 +81,10 @@ module.exports.handler = async (event, context, callback) => {
 
 function errorMsg(code, message) {
   return {
-    httpStatus: code,
+    "httpStatus": code,
     statusCode: code,
     code,
-    message,
+    "message":message
   };
 }
 
@@ -132,7 +131,7 @@ async function getCustomerId(ApiKey) {
       }
       return response.Items[0];
     } else {
-      throw "getCustomerId Error: Api key validation error";
+      throw "Api key validation error";
     }
   } catch (e) {
     throw (
