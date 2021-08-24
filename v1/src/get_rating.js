@@ -3,26 +3,18 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
-const replaceNull = Joi.allow(null).empty("").default(null).required();
+// const replaceNull = Joi.allow(null).empty("").default(null).required();
 const CommodityInputValidation = {
-  CommodityClass: Joi.any().allow(0).default(0),
-  CommodityPieces: Joi.number().integer().concat(replaceNull),
-  CommodityWeight: Joi.number().integer().concat(replaceNull),
-  CommodityLength: Joi.number().integer().concat(replaceNull),
-  CommodityWidth: Joi.number().integer().concat(replaceNull),
-  CommodityHeight: Joi.number().integer().concat(replaceNull),
+  CommodityPieces: Joi.number().integer().required(),
+  CommodityWeightLB: Joi.number().integer().required(),
+  CommodityLengthIN: Joi.number().integer().required(),
+  CommodityWidthIN: Joi.number().integer().required(),
+  CommodityHeightIN: Joi.number().integer().required(),
 };
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
     .keys({
-      RequestID: Joi.any().allow(0).default(0),
-      OriginCountry: Joi.string(),
-      OriginCity: Joi.string(),
-      OriginState: Joi.string(),
       OriginZip: Joi.string().alphanum().required(),
-      DestinationCountry: Joi.string(),
-      DestinationCity: Joi.string(),
-      DestinationState: Joi.string(),
       DestinationZip: Joi.string().alphanum().required(),
       PickupTime: Joi.date().iso().greater("now").required(),
     })
@@ -47,7 +39,7 @@ module.exports.handler = async (event, context, callback) => {
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    return errorMsg(400, key + " " + msg);
+    return callback(null, errorMsg(400, key + " " + msg));
   }
   const eventBody = value;
   const PickupTime = event.body.RatingInput.PickupTime.toString();
@@ -70,7 +62,11 @@ module.exports.handler = async (event, context, callback) => {
     ) {
       throw "World Trak Get Rating Error";
     }
-    return dataObj;
+    return {
+      ServiceLevelID: dataObj.ServiceLevelID,
+      StandardTotalRate: dataObj.StandardTotalRate,
+      Message: dataObj.Message,
+    };
   } catch (error) {
     return callback(
       null,
@@ -81,10 +77,8 @@ module.exports.handler = async (event, context, callback) => {
 
 function errorMsg(code, message) {
   return {
-    "httpStatus": code,
-    statusCode: code,
-    code,
-    "message":message
+    httpStatus: code,
+    message: message,
   };
 }
 
