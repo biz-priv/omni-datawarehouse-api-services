@@ -29,11 +29,20 @@ const eventValidation = Joi.object().keys({
     .required(),
 });
 
+function isArray(a) {
+  return !!a && a.constructor === Array;
+}
+
 module.exports.handler = async (event, context, callback) => {
+  const body = !event.body ? null : JSON.parse(event.body);
   const LiabilityType = "LL";
+
+  if (!event.headers.hasOwnProperty("x-api-key")) {
+    return callback(null, errorMsg(400, "Invalid API Key"));
+  }
   const apiKey = event.headers["x-api-key"];
 
-  const { error, value } = eventValidation.validate(event.body);
+  const { error, value } = eventValidation.validate(body);
   if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
@@ -42,7 +51,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(null, errorMsg(400, key + " " + msg));
   }
   const eventBody = value;
-  const PickupTime = event.body.RatingInput.PickupTime.toString();
+  const PickupTime = body.RatingInput.PickupTime.toString();
 
   eventBody.RatingInput.LiabilityType = LiabilityType;
   eventBody.RatingInput.PickupDate = PickupTime;
@@ -51,6 +60,7 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     const customerData = await getCustomerId(apiKey);
+
     eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
@@ -62,11 +72,17 @@ module.exports.handler = async (event, context, callback) => {
     ) {
       throw "World Trak Get Rating Error";
     }
-    return {
-      ServiceLevelID: dataObj.ServiceLevelID,
-      StandardTotalRate: dataObj.StandardTotalRate,
-      Message: dataObj.Message,
+    const response = {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "'*'",
+        "Access-Control-Allow-Credentials": "'true'",
+        "Access-Control-Allow-Headers": "'*'",
+      },
+      body: JSON.stringify(dataObj),
     };
+
+    return callback(null, response);
   } catch (error) {
     return callback(
       null,
@@ -77,8 +93,15 @@ module.exports.handler = async (event, context, callback) => {
 
 function errorMsg(code, message) {
   return {
-    httpStatus: code,
-    message: message,
+    statusCode: code,
+    headers: {
+      "Access-Control-Allow-Origin": "'*'",
+      "Access-Control-Allow-Credentials": "'true'",
+      "Access-Control-Allow-Headers": "'*'",
+    },
+    body: JSON.stringify({
+      message: message,
+    }),
   };
 }
 
@@ -100,8 +123,26 @@ function makeJsonToXml(data) {
 
 function makeXmlToJson(data) {
   let obj = convert(data, { format: "object" });
-  return obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
-    .RatingOutput;
+  const modifiedObj =
+    obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
+      .RatingOutput;
+  if (isArray(modifiedObj)) {
+    return modifiedObj.map((e) => {
+      return {
+        ServiceLevelID: e.ServiceLevelID,
+        StandardTotalRate: e.StandardTotalRate,
+        Message: e.Message,
+      };
+    });
+  } else {
+    return [
+      {
+        ServiceLevelID: modifiedObj.ServiceLevelID,
+        StandardTotalRate: modifiedObj.StandardTotalRate,
+        Message: modifiedObj.Message,
+      },
+    ];
+  }
 }
 
 async function getCustomerId(ApiKey) {
@@ -125,7 +166,7 @@ async function getCustomerId(ApiKey) {
       }
       return response.Items[0];
     } else {
-      throw "Api key validation error";
+      throw "Invalid API Key";
     }
   } catch (e) {
     throw (

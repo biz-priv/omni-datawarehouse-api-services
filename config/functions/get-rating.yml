@@ -8,28 +8,14 @@ function:
     - http:
         path: /rating
         method: POST
-        integration: lambda
+        integration: lambda-proxy
         private: true
+        cors: true
         authorizer: 
           name: custom-authorizer
           resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
-        response:
-          headers: ${self:custom.standardResponseHeaders}
-          statusCodes:
-            200:
-              pattern: ''
-            400:
-              pattern: '.*httpStatus\": 400.*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
-            501:
-              pattern: '.*httpStatus\": 501.*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
   package:
     include:
       - ${self:custom.alias}/src/get_rating.js
