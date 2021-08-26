@@ -34,12 +34,9 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  const body = !event.body ? null : JSON.parse(event.body);
+  const { body } = event;
   const LiabilityType = "LL";
 
-  if (!event.headers.hasOwnProperty("x-api-key")) {
-    return callback(null, errorMsg(400, "Invalid API Key"));
-  }
   const apiKey = event.headers["x-api-key"];
 
   const { error, value } = eventValidation.validate(body);
@@ -48,7 +45,7 @@ module.exports.handler = async (event, context, callback) => {
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    return callback(null, errorMsg(400, key + " " + msg));
+    return callback(response("[400]", key + " " + msg));
   }
   const eventBody = value;
   const PickupTime = body.RatingInput.PickupTime.toString();
@@ -70,39 +67,22 @@ module.exports.handler = async (event, context, callback) => {
       dataObj.hasOwnProperty("Message") &&
       dataObj.Message == "WebTrakUserID is invalid."
     ) {
-      throw "World Trak Get Rating Error";
+      return callback(response("[500]", "World Trak Get Rating Error"));
     }
-    const response = {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "'*'",
-        "Access-Control-Allow-Credentials": "'true'",
-        "Access-Control-Allow-Headers": "'*'",
-      },
-      body: JSON.stringify(dataObj),
-    };
 
-    return callback(null, response);
+    return dataObj;
   } catch (error) {
     return callback(
-      null,
-      errorMsg(400, error != null ? error : "Something went wrong.")
+      response("[500]", error != null ? error : "Something went wrong.")
     );
   }
 };
 
-function errorMsg(code, message) {
-  return {
-    statusCode: code,
-    headers: {
-      "Access-Control-Allow-Origin": "'*'",
-      "Access-Control-Allow-Credentials": "'true'",
-      "Access-Control-Allow-Headers": "'*'",
-    },
-    body: JSON.stringify({
-      message: message,
-    }),
-  };
+function response(code, message) {
+  return JSON.stringify({
+    httpStatus: code,
+    message,
+  });
 }
 
 function makeJsonToXml(data) {
