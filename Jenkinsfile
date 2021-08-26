@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'ecs' }
     parameters {
-        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v103')
+        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v1')
     }
     stages {
         stage('Set parameters') {
@@ -42,15 +42,36 @@ pipeline {
                     '''
                 }
             }
+        }           
+        stage('BizDev Deploy'){
+            when {
+                anyOf {
+                    branch 'devint';
+                    branch 'feature/*';
+                    branch 'bugfix/*';
+                }
+                expression {
+                    return true;
+                }
+            }
+            steps {
+                withAWS(credentials: 'bizdev-aws-creds'){
+                    sh """
+                    npm i serverless@1.34.0
+                    npm i
+                    serverless --version
+                    echo ${env.ALIAS_VERSION}
+                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
+                    """
+                }
+            }
         }
-        stage('Code Deploy'){
+        stage('Omni Deploy'){
             when {
                 anyOf {
                     branch 'master';
                     branch 'develop';
-                    branch 'devint';
-                    branch 'feature/*';
-                    branch 'bugfix/*';
+                    branch 'hotfix/*';
                 }
                 expression {
                     return true;

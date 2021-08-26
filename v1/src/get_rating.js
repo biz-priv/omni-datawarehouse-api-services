@@ -3,34 +3,20 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
-const replaceNull = Joi.allow(null).empty("").default(null);
+// const replaceNull = Joi.allow(null).empty("").default(null).required();
 const CommodityInputValidation = {
-  CommodityClass: Joi.number().precision(2).concat(replaceNull),
-  CommodityPieces: Joi.number().integer().concat(replaceNull),
-  CommodityPieceType: Joi.string().concat(replaceNull),
-  CommodityWeightPerPiece: Joi.number().integer().concat(replaceNull),
-  CommodityWeight: Joi.number().integer().concat(replaceNull),
-  CommodityLength: Joi.number().integer().concat(replaceNull),
-  CommodityWidth: Joi.number().integer().concat(replaceNull),
-  CommodityHeight: Joi.number().integer().concat(replaceNull),
-  CommodityHazmat: Joi.string().concat(replaceNull),
+  CommodityPieces: Joi.number().integer().required(),
+  CommodityWeightLB: Joi.number().integer().required(),
+  CommodityLengthIN: Joi.number().integer().required(),
+  CommodityWidthIN: Joi.number().integer().required(),
+  CommodityHeightIN: Joi.number().integer().required(),
 };
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
     .keys({
-      RequestID: Joi.number().integer(),
-      OriginCountry: Joi.string(),
-      OriginCity: Joi.string(),
-      OriginState: Joi.string(),
-      OriginZip: Joi.number().integer().required(),
-      DestinationCountry: Joi.string(),
-      DestinationCity: Joi.string(),
-      DestinationState: Joi.string(),
-      DestinationZip: Joi.number().integer().required(),
-      ShipmentTerms: Joi.string(),
-      PickupDate: Joi.date().iso().greater("now").required(),
+      OriginZip: Joi.string().alphanum().required(),
+      DestinationZip: Joi.string().alphanum().required(),
       PickupTime: Joi.date().iso().greater("now").required(),
-      PickupLocationCloseTime: Joi.date().iso().greater("now").required(),
     })
     .required(),
   CommodityInput: Joi.object()
@@ -43,41 +29,60 @@ const eventValidation = Joi.object().keys({
     .required(),
 });
 
+function isArray(a) {
+  return !!a && a.constructor === Array;
+}
+
 module.exports.handler = async (event, context, callback) => {
+  const { body } = event;
   const LiabilityType = "LL";
 
-  const { error, value } = eventValidation.validate(event.body);
-  if (error) {
-    return errorMsg(400, "Please provide all required fields.", error.details);
-  }
   const apiKey = event.headers["x-api-key"];
+
+  const { error, value } = eventValidation.validate(body);
+  if (error) {
+    let msg = error.details[0].message
+      .split('" ')[1]
+      .replace(new RegExp('"', "g"), "");
+    let key = error.details[0].context.key;
+    return callback(response("[400]", key + " " + msg));
+  }
   const eventBody = value;
+  const PickupTime = body.RatingInput.PickupTime.toString();
+
   eventBody.RatingInput.LiabilityType = LiabilityType;
-  eventBody.RatingInput.PickupDate =
-    event.body.RatingInput.PickupDate.toString();
-  eventBody.RatingInput.PickupTime =
-    event.body.RatingInput.PickupTime.toString();
-  eventBody.RatingInput.PickupLocationCloseTime =
-    event.body.RatingInput.PickupLocationCloseTime.toString();
+  eventBody.RatingInput.PickupDate = PickupTime;
+  eventBody.RatingInput.PickupTime = PickupTime;
+  eventBody.RatingInput.PickupLocationCloseTime = PickupTime;
+
   try {
     const customerData = await getCustomerId(apiKey);
-    eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
 
+    eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
+
+    if (
+      dataObj.hasOwnProperty("Message") &&
+      dataObj.Message == "WebTrakUserID is invalid."
+    ) {
+      return callback(response("[500]", "World Trak Get Rating Error"));
+    }
+
     return dataObj;
   } catch (error) {
-    return errorMsg(400, error != null ? error : "Something went wrong.");
+    return callback(
+      response("[500]", error != null ? error : "Something went wrong.")
+    );
   }
 };
 
-function errorMsg(code, message, error = null) {
-  return {
+function response(code, message) {
+  return JSON.stringify({
     httpStatus: code,
-    code,
     message,
-  };
+  });
 }
 
 function makeJsonToXml(data) {
@@ -98,8 +103,26 @@ function makeJsonToXml(data) {
 
 function makeXmlToJson(data) {
   let obj = convert(data, { format: "object" });
-  return obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
-    .RatingOutput;
+  const modifiedObj =
+    obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
+      .RatingOutput;
+  if (isArray(modifiedObj)) {
+    return modifiedObj.map((e) => {
+      return {
+        ServiceLevelID: e.ServiceLevelID,
+        StandardTotalRate: e.StandardTotalRate,
+        Message: e.Message,
+      };
+    });
+  } else {
+    return [
+      {
+        ServiceLevelID: modifiedObj.ServiceLevelID,
+        StandardTotalRate: modifiedObj.StandardTotalRate,
+        Message: modifiedObj.Message,
+      },
+    ];
+  }
 }
 
 async function getCustomerId(ApiKey) {
@@ -123,7 +146,7 @@ async function getCustomerId(ApiKey) {
       }
       return response.Items[0];
     } else {
-      throw "getCustomerId Error: Api key validation error";
+      throw "Invalid API Key";
     }
   } catch (e) {
     throw (
@@ -148,7 +171,7 @@ async function getRating(postData) {
   } catch (e) {
     throw (
       "getRating Error: " +
-      (e.hasOwnProperty("response") ? "Request failed with status code 500" : e)
+      (e.hasOwnProperty("response") ? "Request failed" : e)
     );
   }
 }
