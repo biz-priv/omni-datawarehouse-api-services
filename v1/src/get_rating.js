@@ -67,7 +67,7 @@ module.exports.handler = async (event, context, callback) => {
       dataObj.hasOwnProperty("Message") &&
       dataObj.Message == "WebTrakUserID is invalid."
     ) {
-      return callback(response("[500]", "World Trak Get Rating Error"));
+      return callback(response("[500]", "WebTrakUserID is invalid"));
     }
 
     return dataObj;
@@ -142,16 +142,14 @@ async function getCustomerId(ApiKey) {
         !response.Items[0].hasOwnProperty("WebTrackId") ||
         response.Items[0].WebTrackId == null
       ) {
-        throw "getCustomerId Error: No valid WebTrackId";
+        throw "No valid WebTrackId";
       }
       return response.Items[0];
     } else {
       throw "Invalid API Key";
     }
   } catch (e) {
-    throw (
-      "getCustomerId Error: " + (e.hasOwnProperty("message") ? e.message : e)
-    );
+    throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
 
@@ -166,12 +164,9 @@ async function getRating(postData) {
     if (res.status == 200) {
       return res.data;
     } else {
-      throw "getRating Error: " + e.response.statusText;
+      throw e.response.statusText;
     }
   } catch (e) {
-    throw (
-      "getRating Error: " +
-      (e.hasOwnProperty("response") ? "Request failed" : e)
-    );
+    throw e.hasOwnProperty("response") ? "Request failed" : e;
   }
 }
