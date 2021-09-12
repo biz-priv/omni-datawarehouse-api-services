@@ -3,7 +3,6 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
-// const replaceNull = Joi.allow(null).empty("").default(null).required();
 const CommodityInputValidation = {
   CommodityPieces: Joi.number().integer().required(),
   CommodityWeightLB: Joi.number().integer().required(),
@@ -78,13 +77,6 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-function response(code, message) {
-  return JSON.stringify({
-    httpStatus: code,
-    message,
-  });
-}
-
 function makeJsonToXml(data) {
   return convert({
     "soap12:Envelope": {
@@ -102,27 +94,56 @@ function makeJsonToXml(data) {
 }
 
 function makeXmlToJson(data) {
-  let obj = convert(data, { format: "object" });
-  const modifiedObj =
-    obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
-      .RatingOutput;
-  if (isArray(modifiedObj)) {
-    return modifiedObj.map((e) => {
-      return {
-        ServiceLevelID: e.ServiceLevelID,
-        StandardTotalRate: e.StandardTotalRate,
-        Message: e.Message,
-      };
-    });
-  } else {
-    return [
-      {
-        ServiceLevelID: modifiedObj.ServiceLevelID,
-        StandardTotalRate: modifiedObj.StandardTotalRate,
-        Message: modifiedObj.Message,
-      },
-    ];
+  try {
+    let obj = convert(data, { format: "object" });
+    if (
+      obj["soap:Envelope"][
+        "soap:Body"
+      ].GetRatingResponse.GetRatingResult.hasOwnProperty("RatingOutput")
+    ) {
+      const modifiedObj =
+        obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
+          .RatingOutput;
+      if (isArray(modifiedObj)) {
+        return modifiedObj.map((e) => {
+          if (isEmpty(e.Message)) {
+            e.Message = "";
+          }
+          return {
+            ServiceLevelID: e.ServiceLevelID,
+            StandardTotalRate: e.StandardTotalRate,
+            Message: e.Message,
+          };
+        });
+      } else {
+        if (isEmpty(modifiedObj.Message)) {
+          modifiedObj.Message = "";
+        }
+        return [
+          {
+            ServiceLevelID: modifiedObj.ServiceLevelID,
+            StandardTotalRate: modifiedObj.StandardTotalRate,
+            Message: modifiedObj.Message,
+          },
+        ];
+      }
+    } else {
+      return response("[400]", "Rate not found.");
+    }
+  } catch (error) {
+    return response("[500]", error.message || "Something Went wrong");
   }
+}
+
+function isEmpty(obj) {
+  return Object.keys(obj).length === 0;
+}
+
+function response(code, message) {
+  return JSON.stringify({
+    httpStatus: code,
+    message,
+  });
 }
 
 async function getCustomerId(ApiKey) {
