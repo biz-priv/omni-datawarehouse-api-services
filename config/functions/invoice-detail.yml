@@ -7,6 +7,7 @@ function:
     - http: 
         path: /invoice/detail
         method: GET
+        cors: true
         integration: lambda
         private: true
         authorizer: 
