@@ -54,9 +54,8 @@ module.exports.handler = async (event, context, callback) => {
   eventBody.RatingInput.PickupLocationCloseTime = PickupTime;
 
   try {
-    // const customerData = await getCustomerId(apiKey);
-    // eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
-    eventBody.RatingInput.WebTrakUserID = "psav";
+    const customerData = await getCustomerId(apiKey);
+    eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
 
     eventBody.CommodityInput = addCommodityWeightPerPiece(
       eventBody.CommodityInput
@@ -67,12 +66,6 @@ module.exports.handler = async (event, context, callback) => {
       ),
     };
     delete eventBody["New Shipment Accessorials List"];
-    // console.log(
-    //   eventBody,
-    //   eventBody.CommodityInput.CommodityInput,
-    //   eventBody.AccessorialInput.AccessorialInput
-    // );
-    // return {};
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
