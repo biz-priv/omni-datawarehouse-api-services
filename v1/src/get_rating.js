@@ -5,13 +5,13 @@ const { convert } = require("xmlbuilder2");
 
 const CommodityInputValidation = {
   CommodityPieces: Joi.number().integer().required(),
-  CommodityWeight: Joi.number().integer().required(),
-  CommodityLength: Joi.number().integer().required(),
-  CommodityWidth: Joi.number().integer().required(),
-  CommodityHeight: Joi.number().integer().required(),
+  CommodityWeightLB: Joi.number().integer().required(),
+  CommodityLengthIN: Joi.number().integer().required(),
+  CommodityWidthIN: Joi.number().integer().required(),
+  CommodityHeightIN: Joi.number().integer().required(),
 };
 const AccessorialInputValidation = {
-  AccessorialCode: Joi.string().alphanum().required(),
+  Code: Joi.string().alphanum().required(),
 };
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
@@ -21,21 +21,9 @@ const eventValidation = Joi.object().keys({
       PickupTime: Joi.date().iso().greater("now").required(),
     })
     .required(),
-  CommodityInput: Joi.object()
-    .keys({
-      CommodityInput: Joi.alternatives(
-        Joi.object().keys(CommodityInputValidation),
-        Joi.array().items(CommodityInputValidation)
-      ).required(),
-    })
-    .required(),
-  AccessorialInput: Joi.object()
-    .keys({
-      AccessorialInput: Joi.alternatives(
-        Joi.object().keys(AccessorialInputValidation),
-        Joi.array().items(AccessorialInputValidation)
-      ).required(),
-    })
+  CommodityInput: Joi.array().items(CommodityInputValidation).required(),
+  "New Shipment Accessorials List": Joi.array()
+    .items(AccessorialInputValidation)
     .required(),
 });
 
@@ -57,7 +45,7 @@ module.exports.handler = async (event, context, callback) => {
     let key = error.details[0].context.key;
     return callback(response("[400]", key + " " + msg));
   }
-  const eventBody = value;
+  let eventBody = value;
   const PickupTime = body.RatingInput.PickupTime.toString();
 
   eventBody.RatingInput.LiabilityType = LiabilityType;
@@ -66,10 +54,25 @@ module.exports.handler = async (event, context, callback) => {
   eventBody.RatingInput.PickupLocationCloseTime = PickupTime;
 
   try {
-    const customerData = await getCustomerId(apiKey);
-    eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
-    await addCommodityWeightPerPiece(eventBody.CommodityInput.CommodityInput);
+    // const customerData = await getCustomerId(apiKey);
+    // eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
+    eventBody.RatingInput.WebTrakUserID = "psav";
 
+    eventBody.CommodityInput = addCommodityWeightPerPiece(
+      eventBody.CommodityInput
+    );
+    eventBody.AccessorialInput = {
+      AccessorialInput: eventBody["New Shipment Accessorials List"].map(
+        (e) => ({ AccessorialCode: e.Code })
+      ),
+    };
+    delete eventBody["New Shipment Accessorials List"];
+    // console.log(
+    //   eventBody,
+    //   eventBody.CommodityInput.CommodityInput,
+    //   eventBody.AccessorialInput.AccessorialInput
+    // );
+    // return {};
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
@@ -88,11 +91,16 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-function addCommodityWeightPerPiece(array) {
-  array.map((obj) => {
-    obj.CommodityWeightPerPiece = +obj.CommodityWeight / +obj.CommodityPieces;
-  });
-  return array;
+function addCommodityWeightPerPiece(inputData) {
+  return {
+    CommodityInput: inputData.map((obj) => ({
+      CommodityWeightPerPiece: obj.CommodityWeightLB / obj.CommodityPieces,
+      CommodityWeight: obj.CommodityWeightLB,
+      CommodityLength: obj.CommodityLengthIN,
+      CommodityWidth: obj.CommodityWidthIN,
+      CommodityHeight: obj.CommodityHeightIN,
+    })),
+  };
 }
 
 function makeJsonToXml(data) {
