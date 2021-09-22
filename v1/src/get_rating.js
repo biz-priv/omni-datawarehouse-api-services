@@ -5,10 +5,13 @@ const { convert } = require("xmlbuilder2");
 
 const CommodityInputValidation = {
   CommodityPieces: Joi.number().integer().required(),
-  CommodityWeightLB: Joi.number().integer().required(),
-  CommodityLengthIN: Joi.number().integer().required(),
-  CommodityWidthIN: Joi.number().integer().required(),
-  CommodityHeightIN: Joi.number().integer().required(),
+  CommodityWeight: Joi.number().integer().required(),
+  CommodityLength: Joi.number().integer().required(),
+  CommodityWidth: Joi.number().integer().required(),
+  CommodityHeight: Joi.number().integer().required(),
+};
+const AccessorialInputValidation = {
+  AccessorialCode: Joi.string().alphanum().required(),
 };
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
@@ -23,6 +26,14 @@ const eventValidation = Joi.object().keys({
       CommodityInput: Joi.alternatives(
         Joi.object().keys(CommodityInputValidation),
         Joi.array().items(CommodityInputValidation)
+      ).required(),
+    })
+    .required(),
+  AccessorialInput: Joi.object()
+    .keys({
+      AccessorialInput: Joi.alternatives(
+        Joi.object().keys(AccessorialInputValidation),
+        Joi.array().items(AccessorialInputValidation)
       ).required(),
     })
     .required(),
@@ -56,12 +67,12 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     const customerData = await getCustomerId(apiKey);
-
     eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
+    await addCommodityWeightPerPiece(eventBody.CommodityInput.CommodityInput);
+
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
-
     if (
       dataObj.hasOwnProperty("Message") &&
       dataObj.Message == "WebTrakUserID is invalid."
@@ -76,6 +87,13 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 };
+
+function addCommodityWeightPerPiece(array) {
+  array.map((obj) => {
+    obj.CommodityWeightPerPiece = +obj.CommodityWeight / +obj.CommodityPieces;
+  });
+  return array;
+}
 
 function makeJsonToXml(data) {
   return convert({
@@ -109,9 +127,17 @@ function makeXmlToJson(data) {
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
+          if (e.AccessorialOutput.AccessorialOutput[0] == null) {
+            const arry = [];
+            arry.push(e.AccessorialOutput.AccessorialOutput);
+            e.AccessorialOutput.AccessorialOutput = arry;
+          }
+
           return {
             ServiceLevelID: e.ServiceLevelID,
             StandardTotalRate: e.StandardTotalRate,
+            StandardFreightCharge: e.StandardFreightCharge,
+            AccessorialOutput: e.AccessorialOutput,
             Message: e.Message,
           };
         });
