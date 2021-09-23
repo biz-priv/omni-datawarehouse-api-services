@@ -10,6 +10,9 @@ const CommodityInputValidation = {
   CommodityWidthIN: Joi.number().integer().required(),
   CommodityHeightIN: Joi.number().integer().required(),
 };
+const AccessorialInputValidation = {
+  Code: Joi.string().alphanum().required(),
+};
 const eventValidation = Joi.object().keys({
   RatingInput: Joi.object()
     .keys({
@@ -18,13 +21,9 @@ const eventValidation = Joi.object().keys({
       PickupTime: Joi.date().iso().greater("now").required(),
     })
     .required(),
-  CommodityInput: Joi.object()
-    .keys({
-      CommodityInput: Joi.alternatives(
-        Joi.object().keys(CommodityInputValidation),
-        Joi.array().items(CommodityInputValidation)
-      ).required(),
-    })
+  CommodityInput: Joi.array().items(CommodityInputValidation).required(),
+  "New Shipment Accessorials List": Joi.array()
+    .items(AccessorialInputValidation)
     .required(),
 });
 
@@ -46,7 +45,7 @@ module.exports.handler = async (event, context, callback) => {
     let key = error.details[0].context.key;
     return callback(response("[400]", key + " " + msg));
   }
-  const eventBody = value;
+  let eventBody = value;
   const PickupTime = body.RatingInput.PickupTime.toString();
 
   eventBody.RatingInput.LiabilityType = LiabilityType;
@@ -56,12 +55,20 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     const customerData = await getCustomerId(apiKey);
-
     eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
+
+    eventBody.CommodityInput = addCommodityWeightPerPiece(
+      eventBody.CommodityInput
+    );
+    eventBody.AccessorialInput = {
+      AccessorialInput: eventBody["New Shipment Accessorials List"].map(
+        (e) => ({ AccessorialCode: e.Code })
+      ),
+    };
+    delete eventBody["New Shipment Accessorials List"];
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
-
     if (
       dataObj.hasOwnProperty("Message") &&
       dataObj.Message == "WebTrakUserID is invalid."
@@ -76,6 +83,18 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 };
+
+function addCommodityWeightPerPiece(inputData) {
+  return {
+    CommodityInput: inputData.map((obj) => ({
+      CommodityWeightPerPiece: obj.CommodityWeightLB / obj.CommodityPieces,
+      CommodityWeight: obj.CommodityWeightLB,
+      CommodityLength: obj.CommodityLengthIN,
+      CommodityWidth: obj.CommodityWidthIN,
+      CommodityHeight: obj.CommodityHeightIN,
+    })),
+  };
+}
 
 function makeJsonToXml(data) {
   return convert({
@@ -109,9 +128,17 @@ function makeXmlToJson(data) {
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
+          if (e.AccessorialOutput.AccessorialOutput[0] == null) {
+            const arry = [];
+            arry.push(e.AccessorialOutput.AccessorialOutput);
+            e.AccessorialOutput.AccessorialOutput = arry;
+          }
+
           return {
             ServiceLevelID: e.ServiceLevelID,
             StandardTotalRate: e.StandardTotalRate,
+            StandardFreightCharge: e.StandardFreightCharge,
+            AccessorialOutput: e.AccessorialOutput,
             Message: e.Message,
           };
         });
