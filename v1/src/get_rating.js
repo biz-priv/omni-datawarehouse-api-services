@@ -67,7 +67,6 @@ module.exports.handler = async (event, context, callback) => {
     };
     delete eventBody["New Shipment Accessorials List"];
     const postData = makeJsonToXml(eventBody);
-    console.log(postData);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
     if (
