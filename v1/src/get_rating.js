@@ -22,9 +22,9 @@ const eventValidation = Joi.object().keys({
     })
     .required(),
   CommodityInput: Joi.array().items(CommodityInputValidation).required(),
-  "New Shipment Accessorials List": Joi.array()
-    .items(AccessorialInputValidation)
-    .required(),
+  "New Shipment Accessorials List": Joi.array().items(
+    AccessorialInputValidation
+  ),
 });
 
 function isArray(a) {
@@ -60,12 +60,15 @@ module.exports.handler = async (event, context, callback) => {
     eventBody.CommodityInput = addCommodityWeightPerPiece(
       eventBody.CommodityInput
     );
-    eventBody.AccessorialInput = {
-      AccessorialInput: eventBody["New Shipment Accessorials List"].map(
-        (e) => ({ AccessorialCode: e.Code })
-      ),
-    };
-    delete eventBody["New Shipment Accessorials List"];
+    if (eventBody.hasOwnProperty("New Shipment Accessorials List")) {
+      eventBody.AccessorialInput = {
+        AccessorialInput: eventBody["New Shipment Accessorials List"].map(
+          (e) => ({ AccessorialCode: e.Code })
+        ),
+      };
+      delete eventBody["New Shipment Accessorials List"];
+    }
+
     const postData = makeJsonToXml(eventBody);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
@@ -129,17 +132,22 @@ function makeXmlToJson(data) {
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
-          if (e.AccessorialOutput.AccessorialOutput[0] == null) {
-            const arry = [];
-            arry.push(e.AccessorialOutput.AccessorialOutput);
-            e.AccessorialOutput.AccessorialOutput = arry;
+          let AccessorialOutput = null;
+          if (
+            e.AccessorialOutput &&
+            e.AccessorialOutput.AccessorialOutput &&
+            e.AccessorialOutput.AccessorialOutput[0] == null
+          ) {
+            const list = [];
+            list.push(e.AccessorialOutput.AccessorialOutput);
+            AccessorialOutput = list;
           }
 
           return {
             ServiceLevelID: e.ServiceLevelID,
             StandardTotalRate: e.StandardTotalRate,
             StandardFreightCharge: e.StandardFreightCharge,
-            AccessorialOutput: e.AccessorialOutput,
+            AccessorialOutput: AccessorialOutput,
             Message: e.Message,
           };
         });
