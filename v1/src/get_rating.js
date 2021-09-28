@@ -70,6 +70,7 @@ module.exports.handler = async (event, context, callback) => {
     }
 
     const postData = makeJsonToXml(eventBody);
+    console.log(postData);
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
     if (
@@ -91,7 +92,9 @@ function addCommodityWeightPerPiece(inputData) {
   return {
     CommodityInput: inputData.map((obj) => ({
       CommodityPieces: obj.CommodityPieces,
-      CommodityWeightPerPiece: obj.CommodityWeightLB / obj.CommodityPieces,
+      CommodityWeightPerPiece: Math.round(
+        obj.CommodityWeightLB / obj.CommodityPieces
+      ),
       CommodityWeight: obj.CommodityWeightLB,
       CommodityLength: obj.CommodityLengthIN,
       CommodityWidth: obj.CommodityWidthIN,
