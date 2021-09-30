@@ -143,6 +143,8 @@ function makeXmlToJson(data) {
             const list = [];
             list.push(e.AccessorialOutput.AccessorialOutput);
             AccessorialOutput = list;
+          } else {
+            AccessorialOutput = e.AccessorialOutput.AccessorialOutput;
           }
 
           return {
