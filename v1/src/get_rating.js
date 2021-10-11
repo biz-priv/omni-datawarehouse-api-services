@@ -91,7 +91,9 @@ function addCommodityWeightPerPiece(inputData) {
   return {
     CommodityInput: inputData.map((obj) => ({
       CommodityPieces: obj.CommodityPieces,
-      CommodityWeightPerPiece: obj.CommodityWeightLB / obj.CommodityPieces,
+      CommodityWeightPerPiece: Math.round(
+        obj.CommodityWeightLB / obj.CommodityPieces
+      ),
       CommodityWeight: obj.CommodityWeightLB,
       CommodityLength: obj.CommodityLengthIN,
       CommodityWidth: obj.CommodityWidthIN,
@@ -141,6 +143,8 @@ function makeXmlToJson(data) {
             const list = [];
             list.push(e.AccessorialOutput.AccessorialOutput);
             AccessorialOutput = list;
+          } else {
+            AccessorialOutput = e.AccessorialOutput.AccessorialOutput;
           }
 
           return {
