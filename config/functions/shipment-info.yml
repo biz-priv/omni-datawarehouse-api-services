@@ -7,6 +7,7 @@ function:
     - http:  
         path: /shipment/info
         method: GET
+        cors: true
         integration: lambda
         private: true
         authorizer: 
