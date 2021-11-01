@@ -32,12 +32,14 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
+  console.log("Event is : %d", JSON.stringify(event));
   const { body } = event;
   const LiabilityType = "LL";
 
   const apiKey = event.headers["x-api-key"];
 
   const { error, value } = eventValidation.validate(body);
+  console.log("Error is : %d", JSON.stringify(error));
   if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
@@ -159,11 +161,31 @@ function makeXmlToJson(data) {
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
         }
+
+        let AccessorialOutput = null;
+        if (
+          modifiedObj.AccessorialOutput &&
+          modifiedObj.AccessorialOutput.AccessorialOutput &&
+          modifiedObj.AccessorialOutput.AccessorialOutput[0] == null
+        ) {
+          const list = [];
+          list.push(modifiedObj.AccessorialOutput.AccessorialOutput);
+          AccessorialOutput = list;
+        } else {
+          AccessorialOutput = modifiedObj.AccessorialOutput.AccessorialOutput;
+        }
         return [
           {
             ServiceLevelID: modifiedObj.ServiceLevelID,
             StandardTotalRate: modifiedObj.StandardTotalRate,
             Message: modifiedObj.Message,
+            StandardFreightCharge: modifiedObj.hasOwnProperty(
+              "StandardFreightCharge"
+            )
+              ? modifiedObj.StandardFreightCharge
+              : "",
+            AccessorialOutput:
+              AccessorialOutput == null ? "" : AccessorialOutput,
           },
         ];
       }
