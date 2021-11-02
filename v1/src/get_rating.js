@@ -32,14 +32,12 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  console.log("Event is : %d", JSON.stringify(event));
   const { body } = event;
   const LiabilityType = "LL";
 
   const apiKey = event.headers["x-api-key"];
 
   const { error, value } = eventValidation.validate(body);
-  console.log("Error is : %d", JSON.stringify(error));
   if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
@@ -84,7 +82,10 @@ module.exports.handler = async (event, context, callback) => {
     return dataObj;
   } catch (error) {
     return callback(
-      response("[500]", error != null ? error : "Something went wrong.")
+      response(
+        "[500]",
+        error != null && error.hasOwnProperty("message") ? error.message : error
+      )
     );
   }
 };
@@ -153,7 +154,8 @@ function makeXmlToJson(data) {
             ServiceLevelID: e.ServiceLevelID,
             StandardTotalRate: e.StandardTotalRate,
             StandardFreightCharge: e.StandardFreightCharge,
-            AccessorialOutput: AccessorialOutput,
+            AccessorialOutput:
+              AccessorialOutput == null ? "" : AccessorialOutput,
             Message: e.Message,
           };
         });
@@ -161,7 +163,6 @@ function makeXmlToJson(data) {
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
         }
-
         let AccessorialOutput = null;
         if (
           modifiedObj.AccessorialOutput &&
@@ -190,10 +191,10 @@ function makeXmlToJson(data) {
         ];
       }
     } else {
-      return response("[400]", "Rate not found.");
+      throw "Rate not found.";
     }
-  } catch (error) {
-    return response("[500]", error.message || "Something Went wrong");
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
 
