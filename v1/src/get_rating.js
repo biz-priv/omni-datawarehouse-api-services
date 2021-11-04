@@ -70,6 +70,8 @@ module.exports.handler = async (event, context, callback) => {
     }
 
     const postData = makeJsonToXml(eventBody);
+    console.log("postData", postData);
+    // return {};
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
     if (
@@ -132,6 +134,8 @@ function makeXmlToJson(data) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
           .RatingOutput;
+      console.log("modifiedObj", modifiedObj);
+
       if (isArray(modifiedObj)) {
         return modifiedObj.map((e) => {
           if (isEmpty(e.Message)) {
@@ -162,6 +166,8 @@ function makeXmlToJson(data) {
       } else {
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
+        } else if (modifiedObj.Message.search("WebTrakUserID") != -1) {
+          throw "Internal error message";
         }
         let AccessorialOutput = null;
         if (
