@@ -62,7 +62,7 @@ plugins:
   - serverless-layers
   - serverless-add-api-key
   - serverless-plugin-multiple-responses
-  - serverless-aws-alias
+  - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
