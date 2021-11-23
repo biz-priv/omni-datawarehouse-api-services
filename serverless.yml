@@ -82,6 +82,7 @@ functions:
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
+  wd-api: ${file(config/functions/wd-api.yml):function}
 
 resources:
   Resources:
