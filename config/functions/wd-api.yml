@@ -6,7 +6,7 @@ function:
   runtime: nodejs12.x
   events:
     - http:
-        path: /rating
+        path: /wd
         method: POST
         integration: lambda
         private: true
@@ -38,9 +38,12 @@ function:
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
-    RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rating}
-    DBNAME: ${ssm:/omni-dw/${self:provider.stage}/db/name}
+    WD_API: ${ssm:/omni-dw/${self:provider.stage}/api/wd}
+    WD_API_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/api/wd/username}
+    WD_API_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/api/wd/password}
+    WD_SHIPMENT_STATUS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/wdShipmentStatus/table}
+    WD_DBNAME: ${ssm:/omni-dw/${self:provider.stage}/wd/db/name}
     USER: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
-    HOST: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
+    HOST_URL: ${ssm:/omni-dw/${self:provider.stage}/db/host/url~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
