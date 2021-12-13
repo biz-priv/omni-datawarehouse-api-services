@@ -26,18 +26,14 @@ function:
               headers:
                 Content-Type: "'application/json'"
               template: ${file(responseTemplate.vtl)}
-        authorizer:
-          name: custom-authorizer
-          resultTtlInSeconds: 0
-          identitySource: method.request.header.x-api-key
-          type: request
   package:
     include:
-      - ${self:custom.alias}/src/get_rating.js
+      - ${self:custom.alias}/src/wd_api.js
       - node_modules/**
+  events:
+    - schedule: rate(30 minutes)
   environment:
     REGION: ${self:provider.region}
-    TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     WD_API: ${ssm:/omni-dw/${self:provider.stage}/api/wd}
     WD_API_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/api/wd/username}
     WD_API_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/api/wd/password}
