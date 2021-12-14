@@ -5,6 +5,7 @@ function:
   description: WD api service - ${self:provider.stage}
   runtime: nodejs12.x
   events:
+    - schedule: rate(30 minutes)
     - http:
         path: /wd
         method: POST
@@ -31,8 +32,6 @@ function:
       - ${self:custom.alias}/src/wd_api.js
       - Helpers/**
       - node_modules/**
-  events:
-    - schedule: rate(30 minutes)
   environment:
     REGION: ${self:provider.region}
     WD_API: ${ssm:/omni-dw/${self:provider.stage}/api/wd}
