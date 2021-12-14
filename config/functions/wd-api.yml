@@ -6,8 +6,8 @@ function:
   runtime: nodejs12.x
   events:
     - schedule:
-        name: wd lambda event ${self:provider.stage}
-        description: Schedule event for every 30 minutes to invoke the wd lambda
+        # name: wd lambda event ${self:provider.stage}
+        # description: Schedule event for every 30 minutes to invoke the wd lambda
         rate: rate(30 minutes)
     - http:
         path: /wd
