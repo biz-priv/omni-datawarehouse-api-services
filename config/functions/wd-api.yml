@@ -5,7 +5,10 @@ function:
   description: WD api service - ${self:provider.stage}
   runtime: nodejs12.x
   events:
-    - schedule: rate(30 minutes)
+    - schedule:
+        name: wd lambda event-${self:provider.stage}
+        description: Schedule event for every 30 minutes to invoke the wd lambda
+        rate: rate(30 minutes)
     - http:
         path: /wd
         method: POST
