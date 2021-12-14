@@ -43,6 +43,6 @@ function:
     WD_SHIPMENT_STATUS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/wdShipmentStatus/table}
     WD_DBNAME: ${ssm:/omni-dw/${self:provider.stage}/wd/db/name}
     USER: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
-    HOST_URL: ${ssm:/omni-dw/${self:provider.stage}/db/host/url~true}
+    HOST_URL: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
