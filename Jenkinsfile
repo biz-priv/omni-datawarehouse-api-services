@@ -14,14 +14,10 @@ pipeline {
                     if ("${GIT_BRANCH}".startsWith("PR-")){
                         if("${CHANGE_TARGET}".contains("develop")){
                             env.ENVIRONMENT=env.getProperty("environment_develop")
-                        } else if("${CHANGE_TARGET}".contains("devint")){
-                            env.ENVIRONMENT=env.getProperty("environment_devint")
-                        } else if("${CHANGE_TARGET}".contains("master")){
+                        }  else if("${CHANGE_TARGET}".contains("master")){
                             env.ENVIRONMENT=env.getProperty("environment_prod")
                         }
-                    } else if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix") || "${GIT_BRANCH}".contains("devint")) {
-                        env.ENVIRONMENT=env.getProperty("environment_devint")
-                    } else if("${GIT_BRANCH}".contains("develop")) {
+                    } else if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix") || "${GIT_BRANCH}".contains("devint") || "${GIT_BRANCH}".contains("develop")) {
                         env.ENVIRONMENT=env.getProperty("environment_develop")
                     } else if ("${GIT_BRANCH}".contains("master") || "${GIT_BRANCH}".contains("hotfix")) {
                         env.ENVIRONMENT=env.getProperty("environment_prod")
@@ -43,35 +39,37 @@ pipeline {
                 }
             }
         }           
-        stage('BizDev Deploy'){
-            when {
-                anyOf {
-                    branch 'devint';
-                    branch 'feature/*';
-                    branch 'bugfix/*';
-                }
-                expression {
-                    return true;
-                }
-            }
-            steps {
-                withAWS(credentials: 'bizdev-aws-creds'){
-                    sh """
-                    npm i serverless@1.34.0
-                    npm i
-                    serverless --version
-                    echo ${env.ALIAS_VERSION}
-                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
-                    """
-                }
-            }
-        }
+        // stage('BizDev Deploy'){
+        //     when {
+        //         anyOf {
+        //             branch 'devint';
+        //             branch 'feature/*';
+        //             branch 'bugfix/*';
+        //         }
+        //         expression {
+        //             return true;
+        //         }
+        //     }
+        //     steps {
+        //         withAWS(credentials: 'bizdev-aws-creds'){
+        //             sh """
+        //             npm i serverless@1.34.0
+        //             npm i
+        //             serverless --version
+        //             echo ${env.ALIAS_VERSION}
+        //             sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
+        //             """
+        //         }
+        //     }
+        // }
         stage('Omni Deploy'){
             when {
                 anyOf {
                     branch 'master';
                     branch 'develop';
                     branch 'hotfix/*';
+                    branch 'feature/*';
+                    branch 'bugfix/*';
                 }
                 expression {
                     return true;
