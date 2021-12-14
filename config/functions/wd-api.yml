@@ -29,6 +29,7 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/wd_api.js
+      - Helpers/**
       - node_modules/**
   events:
     - schedule: rate(30 minutes)
