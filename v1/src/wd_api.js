@@ -12,7 +12,7 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const shipmentData = await getDataFromDB();
-    // return;
+
     /**
      * Check shipment data in dynamo db
      */
