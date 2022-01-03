@@ -4,32 +4,7 @@ function:
   name: ${self:service}-wd-${self:provider.stage}
   description: WD api service - ${self:provider.stage}
   runtime: nodejs12.x
-  events:
-    - schedule:
-        name: wd lambda event ${self:provider.stage}
-        description: Schedule event for every 30 minutes to invoke the wd lambda
-        rate: rate(30 minutes)
-    - http:
-        path: /wd
-        method: POST
-        integration: lambda
-        private: true
-        cors: true
-        response:
-          headers: ${self:custom.standardResponseHeaders}
-          statusCodes:
-            200:
-              pattern: ""
-            400:
-              pattern: '[\s\S]*\[400\][\s\S]*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
-            500:
-              pattern: '[\s\S]*\[500\][\s\S]*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
+
   package:
     include:
       - ${self:custom.alias}/src/wd_api.js
@@ -38,7 +13,7 @@ function:
   environment:
     REGION: ${self:provider.region}
     USER: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
-    HOST_URL: ${ssm:/omni-dw/${self:provider.stage}/db/host/url~true}
+    HOST_URL: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
     WD_DBNAME: ${ssm:/omni-dw/${self:provider.stage}/wd/db/name}
@@ -48,3 +23,6 @@ function:
     WD_SHIPMENT_STATUS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/wdShipmentStatus/table}
     WD_PDF_API_URL: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiUrl}
     WD_PDF_API_KEY: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiKey}
+
+  events:
+    - schedule: rate(30 minutes)
