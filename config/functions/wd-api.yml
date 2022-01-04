@@ -4,7 +4,7 @@ function:
   name: ${self:service}-wd-${self:provider.stage}
   description: WD api service - ${self:provider.stage}
   runtime: nodejs12.x
-  
+
   package:
     include:
       - ${self:custom.alias}/src/wd_api.js
@@ -12,14 +12,17 @@ function:
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    WD_API: ${ssm:/omni-dw/${self:provider.stage}/api/wd}
-    WD_API_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/api/wd/username}
-    WD_API_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/api/wd/password}
-    WD_SHIPMENT_STATUS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/wdShipmentStatus/table}
-    WD_DBNAME: ${ssm:/omni-dw/${self:provider.stage}/db/name}
     USER: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
     HOST_URL: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
+    WD_DBNAME: ${ssm:/omni-dw/${self:provider.stage}/wd/db/name}
+    WD_API: ${ssm:/omni-dw/${self:provider.stage}/api/wd}
+    WD_API_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/api/wd/username}
+    WD_API_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/api/wd/password}
+    WD_SHIPMENT_STATUS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/wdShipmentStatus/table}
+    WD_PDF_API_URL: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiUrl}
+    WD_PDF_API_KEY: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiKey}
+
   events:
     - schedule: rate(30 minutes)
