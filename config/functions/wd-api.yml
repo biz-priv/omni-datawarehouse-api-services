@@ -3,7 +3,7 @@ function:
   handler: ${self:custom.alias}/src/wd_api.handler
   name: ${self:service}-wd-${self:provider.stage}
   description: WD api service - ${self:provider.stage}
-  runtime: nodejs12.x
+  runtime: nodejs14.x
 
   package:
     include:
