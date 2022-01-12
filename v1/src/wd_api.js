@@ -20,22 +20,26 @@ module.exports.handler = async (event, context, callback) => {
 
     await Promise.all(
       newData.map(async (item) => {
-        /**
-         * Make Json to Xml payload
-         */
-        const xmlPayload = await makeJsonToXml(payload, item);
-        /**
-         * Get response from WD api
-         */
-        const xmlResponse = await getXmlResponse(xmlPayload);
-        /**
-         * make Xml to Json response
-         */
-        const refTransmissionNo = makeXmlToJson(xmlResponse);
-        /**
-         * Update shipment data to dynamo db
-         */
-        await updateStatus(item, xmlPayload, xmlResponse, refTransmissionNo);
+        try {
+          /**
+           * Make Json to Xml payload
+           */
+          const xmlPayload = await makeJsonToXml(payload, item);
+          /**
+           * Get response from WD api
+           */
+          const xmlResponse = await getXmlResponse(xmlPayload);
+          /**
+           * make Xml to Json response
+           */
+          const refTransmissionNo = makeXmlToJson(xmlResponse);
+          /**
+           * Update shipment data to dynamo db
+           */
+          await updateStatus(item, xmlPayload, xmlResponse, refTransmissionNo);
+        } catch (error) {
+          console.info("item error", error);
+        }
       })
     );
 
@@ -143,104 +147,114 @@ async function checkStatus(shipmentData) {
 }
 
 async function makeJsonToXml(payload, inputData) {
-  /**
-   * set auth details
-   */
-  payload["soapenv:Envelope"]["soapenv:Header"]["wsse:Security"][
-    "wsse:UsernameToken"
-  ]["wsse:Username"] = process.env.WD_API_USERNAME;
-  payload["soapenv:Envelope"]["soapenv:Header"]["wsse:Security"][
-    "wsse:UsernameToken"
-  ]["wsse:Password"]["#"] = process.env.WD_API_PASSWORD;
-
-  /**
-   * TransmissionHeader
-   */
-  let transHeader =
-    payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-      "otm:Transmission"
-    ]["otm:TransmissionHeader"];
-  /**
-   * TransmissionBody values
-   */
-
-  let transBodyWithValues = null;
-
-  // PUP => BOL
-  // POD => POD
-
-  if (inputData.order_status != "PUP" && inputData.order_status != "POD") {
+  try {
     /**
-     * without pdf
+     * set auth details
      */
-    let transBody =
+    payload["soapenv:Envelope"]["soapenv:Header"]["wsse:Security"][
+      "wsse:UsernameToken"
+    ]["wsse:Username"] = process.env.WD_API_USERNAME;
+    payload["soapenv:Envelope"]["soapenv:Header"]["wsse:Security"][
+      "wsse:UsernameToken"
+    ]["wsse:Password"]["#"] = process.env.WD_API_PASSWORD;
+
+    /**
+     * TransmissionHeader
+     */
+    let transHeader =
       payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
         "otm:Transmission"
-      ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
-    transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0]["otm:ArgValue"] =
-      inputData.house_bill_nbr;
-
-    transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1]["otm:ArgValue"] =
-      inputData.house_bill_nbr;
-
-    transBody["otm:ShipmentRefnum"][0]["otm:ShipmentRefnumValue"] =
-      "H" + inputData.ref_nbr;
-    transBody["otm:ShipmentRefnum"][1]["otm:ShipmentRefnumValue"] =
-      inputData.chrg_wght_kgs;
-
-    transBody["otm:ShipmentRefnum"][2]["otm:ShipmentRefnumValue"] =
-      inputData.pieces;
-    transBody["otm:WeightVolume"]["otm:Weight"]["otm:WeightValue"] =
-      inputData.chrg_wght_kgs;
-
-    transBody["otm:EventDt"]["otm:GLogDate"] = formatDate(
-      inputData.event_date_utc
-    );
-
-    transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCity"] =
-      inputData.event_city;
-    transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCountry"] =
-      inputData.event_country;
-
-    transBody["otm:TrackingNumber"] = "H" + inputData.ref_nbr;
-
-    transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] =
-      inputData.house_bill_nbr;
-
-    transBodyWithValues = { "otm:ShipmentStatus": null };
-    transBodyWithValues["otm:ShipmentStatus"] = transBody;
-  } else {
+      ]["otm:TransmissionHeader"];
     /**
-     * with pdf
+     * TransmissionBody values
      */
-    wd_pdf["otm:Document"]["otm:DocumentDefinitionGid"]["otm:Gid"]["otm:Xid"] =
-      inputData.order_status == "POD" ? "PROOF_OF_DELIVERY" : "BILL_OF_LADING";
 
-    wd_pdf["otm:Document"]["otm:DocumentOwner"]["otm:ObjectGid"]["otm:Gid"][
-      "otm:Xid"
-    ] = inputData.house_bill_nbr;
+    let transBodyWithValues = null;
+
+    // PUP => BOL
+    // POD => POD
+
+    if (inputData.order_status != "PUP" && inputData.order_status != "POD") {
+      /**
+       * without pdf
+       */
+      let transBody =
+        payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
+          "otm:Transmission"
+        ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
+      transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0][
+        "otm:ArgValue"
+      ] = inputData.house_bill_nbr;
+
+      transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1][
+        "otm:ArgValue"
+      ] = inputData.house_bill_nbr;
+
+      transBody["otm:ShipmentRefnum"][0]["otm:ShipmentRefnumValue"] =
+        "H" + inputData.ref_nbr;
+      transBody["otm:ShipmentRefnum"][1]["otm:ShipmentRefnumValue"] =
+        inputData.chrg_wght_kgs;
+
+      transBody["otm:ShipmentRefnum"][2]["otm:ShipmentRefnumValue"] =
+        inputData.pieces;
+      transBody["otm:WeightVolume"]["otm:Weight"]["otm:WeightValue"] =
+        inputData.chrg_wght_kgs;
+
+      transBody["otm:EventDt"]["otm:GLogDate"] = formatDate(
+        inputData.event_date_utc
+      );
+
+      transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCity"] =
+        inputData.event_city;
+      transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCountry"] =
+        inputData.event_country;
+
+      transBody["otm:TrackingNumber"] = "H" + inputData.ref_nbr;
+
+      transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] =
+        inputData.house_bill_nbr;
+
+      transBodyWithValues = { "otm:ShipmentStatus": null };
+      transBodyWithValues["otm:ShipmentStatus"] = transBody;
+    } else {
+      /**
+       * with pdf
+       */
+      wd_pdf["otm:Document"]["otm:DocumentDefinitionGid"]["otm:Gid"][
+        "otm:Xid"
+      ] =
+        inputData.order_status == "POD"
+          ? "PROOF_OF_DELIVERY"
+          : "BILL_OF_LADING";
+
+      wd_pdf["otm:Document"]["otm:DocumentOwner"]["otm:ObjectGid"]["otm:Gid"][
+        "otm:Xid"
+      ] = inputData.house_bill_nbr;
+
+      /**
+       * get base64 pdf
+       */
+      const base64Pdf = await getBase64Pdf(inputData.file_nbr);
+      wd_pdf["otm:Document"]["otm:DocumentContent"]["otm:DocContentBinary"] =
+        base64Pdf;
+
+      transBodyWithValues = wd_pdf;
+    }
 
     /**
-     * get base64 pdf
+     * set the header and body data
      */
-    const base64Pdf = await getBase64Pdf(inputData.file_nbr);
-    wd_pdf["otm:Document"]["otm:DocumentContent"]["otm:DocContentBinary"] =
-      base64Pdf;
+    payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
+      "otm:Transmission"
+    ]["otm:TransmissionHeader"] = transHeader;
 
-    transBodyWithValues = wd_pdf;
+    payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
+      "otm:Transmission"
+    ]["otm:TransmissionBody"]["otm:GLogXMLElement"] = transBodyWithValues;
+    return convert(payload);
+  } catch (error) {
+    throw error;
   }
-
-  /**
-   * set the header and body data
-   */
-  payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-    "otm:Transmission"
-  ]["otm:TransmissionHeader"] = transHeader;
-
-  payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-    "otm:Transmission"
-  ]["otm:TransmissionBody"]["otm:GLogXMLElement"] = transBodyWithValues;
-  return convert(payload);
 }
 
 async function getXmlResponse(postData) {
@@ -309,16 +323,16 @@ async function updateStatus(
 async function getBase64Pdf(file_nbr) {
   try {
     const res = await axios.get(
-      `${process.env.WD_PDF_API_URL}/${process.env.WD_PDF_API_KEY}/${file_nbr}`,
-      {
-        headers: {
-          Accept: "text/xml",
-          "Content-Type": "text/xml; charset=utf-8",
-        },
-      }
+      `${process.env.WD_PDF_API_URL}/${process.env.WD_PDF_API_KEY}/${file_nbr}`
     );
-    return res.data?.hawb?.b64str;
-  } catch (e) {}
+    if (res?.data?.hawb?.b64str) {
+      return res.data.hawb.b64str;
+    } else {
+      throw "No Pdf";
+    }
+  } catch (e) {
+    throw "No Pdf";
+  }
 }
 
 function formatDate(dateObj) {
