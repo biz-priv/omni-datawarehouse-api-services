@@ -83,6 +83,7 @@ functions:
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
+  netsuite: ${file(config/functions/netsuite.yml):function}
 
 resources:
   Resources:
@@ -102,12 +103,12 @@ resources:
           Ref: "ApiGatewayRestApi"
         StatusCode: "400"
     AuthFailureGatewayResponse:
-      Type: 'AWS::ApiGateway::GatewayResponse'
+      Type: "AWS::ApiGateway::GatewayResponse"
       Properties:
         ResponseParameters:
           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
         ResponseType: UNAUTHORIZED
         RestApiId:
-          Ref: 'ApiGatewayRestApi'
-        StatusCode: '401'
+          Ref: "ApiGatewayRestApi"
+        StatusCode: "401"
