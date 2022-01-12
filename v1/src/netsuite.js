@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 const { create, convert } = require("xmlbuilder2");
 const crypto = require("crypto");
 const axios = require("axios");
 const pgp = require("pg-promise");
 
 const payload = require("../../Helpers/netsuit_AR.json");
+=======
+const NetSuite = require("node-suitetalk");
+const { create, convert } = require("xmlbuilder2");
+const crypto = require("crypto");
+const axios = require("axios");
+>>>>>>> 5f696cd62f1712b298e7180cabff97f787f5293b
 
 const API_ENDPOINT =
   "https://1238234-sb1.suitetalk.api.netsuite.com/services/NetSuitePort_2021_2";
@@ -25,6 +32,7 @@ const userConfig = {
     "https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl",
 };
 
+<<<<<<< HEAD
 module.exports.handler = async (event, context, callback) => {
   try {
     /**
@@ -99,6 +107,8 @@ async function getDataInvoiceNbr(connections, invoice_nbr) {
   }
 }
 
+=======
+>>>>>>> 5f696cd62f1712b298e7180cabff97f787f5293b
 function getOAuthKeys(configuration) {
   const res = {};
   res.account = configuration.account;
@@ -132,6 +142,7 @@ function getOAuthKeys(configuration) {
   return res;
 }
 
+<<<<<<< HEAD
 function makeJsonToXml(payload, auth, data) {
   const singleItem = data[0];
   payload["soap:Envelope"]["soap:Header"] = {
@@ -233,3 +244,154 @@ function formatDate(dateObj) {
     ("00" + date.getSeconds()).slice(-2)
   );
 }
+=======
+const toXml = (auth) => {
+  const payloadJson = {
+    "soap:Envelope": {
+      "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+      "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+      "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+      "soap:Header": {
+        tokenPassport: {
+          account: auth.account,
+          consumerKey: auth.consumerKey,
+          nonce: auth.nonce,
+          timestamp: auth.timeStamp,
+          token: auth.tokenKey,
+          version: "1.0",
+          signature: {
+            "@algorithm": "HMAC_SHA256",
+            "#": auth.base64hash,
+          },
+        },
+      },
+      "soap:Body": {
+        add: {
+          "@xmlns": "urn:messages_2021_2.platform.webservices.netsuite.com",
+          "#": {
+            record: {
+              "@xsi:type": "q1:Invoice",
+              "@xmlns:q1":
+                "urn:sales_2021_2.transactions.webservices.netsuite.com",
+              "#": {
+                "q1:entity": {
+                  "@internalId": "34129",
+                },
+                "q1:tranDate": "2021-11-08T00:00:00",
+                "q1:department": {
+                  "@internalId": "15",
+                },
+                "q1:class": {
+                  "@internalId": "9",
+                },
+                "q1:location": {
+                  "@internalId": "18",
+                },
+                "q1:subsidiary": {
+                  "@internalId": "12",
+                },
+                "q1:currency": {
+                  "@internalId": "1",
+                },
+                "q1:otherRefNum": "CIRRUS",
+                "q1:memo": "01*Air Import (LAX)",
+                "q1:itemList": {
+                  "q1:item": [
+                    {
+                      "q1:item": {
+                        "@externalId": "AIR FREIGHT",
+                      },
+                      "q1:description": "",
+                      "q1:amount": "1012.87",
+                      "q1:rate": "1012.87",
+                      "q1:department": {
+                        "@internalId": "1",
+                      },
+                      "q1:class": {
+                        "@internalId": "3",
+                      },
+                      "q1:location": {
+                        "@externalId": "LAX",
+                      },
+                      "q1:customFieldList": {
+                        customField: [
+                          {
+                            "@internalId": "1727",
+                            "@xsi:type": "StringCustomFieldRef",
+                            "@xmlns":
+                              "urn:core_2021_2.platform.webservices.netsuite.com",
+                            value: "618-3912 1364",
+                          },
+                          {
+                            "@internalId": "1728",
+                            "@xsi:type": "StringCustomFieldRef",
+                            "@xmlns":
+                              "urn:core_2021_2.platform.webservices.netsuite.com",
+                            value: "LAX",
+                          },
+                          {
+                            "@internalId": "760",
+                            "@xsi:type": "StringCustomFieldRef",
+                            "@xmlns":
+                              "urn:core_2021_2.platform.webservices.netsuite.com",
+                            value: "SIN-5024 0016",
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+                "q1:customFieldList": {
+                  customField: [
+                    {
+                      "@internalId": "1735",
+                      "@xsi:type": "StringCustomFieldRef",
+                      "@xmlns":
+                        "urn:core_2021_2.platform.webservices.netsuite.com",
+                      value: "05512122",
+                    },
+                    ,
+                    {
+                      "@internalId": "1745",
+                      "@xsi:type": "DateCustomFieldRef",
+                      "@xmlns":
+                        "urn:core_2021_2.platform.webservices.netsuite.com",
+                      value: "2021-12-13T16:46:45",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const doc = create(payloadJson);
+  return doc.end({ prettyPrint: true });
+};
+
+const callSoapApi = async (payload) => {
+  const res = await axios.post(API_ENDPOINT, payload, {
+    headers: {
+      Accept: "text/xml",
+      "Content-Type": "text/xml; charset=utf-8",
+      SOAPAction: "add",
+    },
+  });
+  // console.log("res", res);
+  const obj = convert(res.data, { format: "object" });
+  console.log("obj", obj["soapenv:Envelope"]["soapenv:Body"]);
+};
+
+// module.exports.handler = async (event, context, callback) => {
+try {
+  const auth = getOAuthKeys(userConfig);
+  const payload = toXml(auth);
+  // console.log(payload);
+  callSoapApi(payload);
+} catch (error) {
+  console.log("error", error);
+}
+// };
+>>>>>>> 5f696cd62f1712b298e7180cabff97f787f5293b
