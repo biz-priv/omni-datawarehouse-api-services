@@ -4,6 +4,7 @@ function:
   name: ${self:service}-wd-${self:provider.stage}
   description: WD api service - ${self:provider.stage}
   runtime: nodejs14.x
+  timeout: 500
 
   package:
     include:
