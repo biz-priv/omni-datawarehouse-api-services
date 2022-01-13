@@ -1,5 +1,4 @@
 const AWS = require("aws-sdk");
-const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 const pgp = require("pg-promise");
