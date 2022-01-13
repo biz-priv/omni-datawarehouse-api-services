@@ -3,7 +3,7 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 const pgp = require("pg-promise");
-const payload = require("../../Helpers/wd_payload.json");
+const wd_payload = require("../../Helpers/wd_payload.json");
 const wd_pdf = require("../../Helpers/wd_pdf.json");
 
 module.exports.handler = async (event, context, callback) => {
@@ -12,19 +12,24 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const shipmentData = await getDataFromDB();
-
+    console.info("Total shipment data count", shipmentData.length);
     /**
-     * Check shipment data in dynamo db
+     * Check ETA shipment data process
      */
-    const newData = await checkStatus(shipmentData);
-
     await Promise.all(
-      newData.map(async (item) => {
+      shipmentData.map(async (item) => {
         try {
+          const newData = await checkStatus(item);
+          let itemData = newData.data;
+          let is_update = newData.is_update;
+
           /**
            * Make Json to Xml payload
            */
-          const xmlPayload = await makeJsonToXml(payload, item);
+          const xmlPayload = await makeJsonToXml(
+            Object.assign({}, wd_payload),
+            itemData
+          );
           /**
            * Get response from WD api
            */
@@ -36,9 +41,15 @@ module.exports.handler = async (event, context, callback) => {
           /**
            * Update shipment data to dynamo db
            */
-          await updateStatus(item, xmlPayload, xmlResponse, refTransmissionNo);
+          await updateStatus(
+            itemData,
+            xmlPayload,
+            xmlResponse,
+            refTransmissionNo,
+            is_update
+          );
         } catch (error) {
-          console.info("item error", error);
+          console.info("item info:", error);
         }
       })
     );
@@ -72,17 +83,21 @@ async function getDataFromDB(data = null) {
     when 'PUP' then 'AF'
     when 'COB' then 'AN'
     when 'DEL'then 'D1'
+    when 'OSD' then 'A9'
+    when 'REF' then 'A7'
     else order_Status
     end order_Status,
     case b.order_status
     when 'PUP' then 'Pick Up Confirmed'
     when 'COB' then 'Confirmed On Board'
     when 'DEL'then 'Delivered - No Exception'
+    when 'REF'then 'Delivery - Refused'
+    when 'OSD'then 'Delivered - With Exception'
     else order_Status_desc
     end order_Status_Desc,
-    case when b.order_status in ('PUP','COB','DEL') then b.event_date_utc else null end as Event_Date_utc,
+    case when b.order_status in ('PUP','COB','DEL','REF','OSD') then b.event_date_utc else null end as Event_Date_utc,
     case when b.order_status in ('PUP','COB') then A.ORIGIN_PORT_IATA
-    when b.order_status in ('DEL') then A.DESTINATION_PORT_IATA
+    when b.order_status in ('DEL','REF','OSD') then A.DESTINATION_PORT_IATA
     else '' end as event_city,
     case when b.order_status in ('PUP','COB','DEL') then  'US' else '' end as Event_country,
     c.ref_nbr
@@ -96,7 +111,24 @@ async function getDataFromDB(data = null) {
         on a.source_system = c.source_system
         and a.file_nbr = c.file_nbr
         where a.bill_to_nbr = '17833'
-        and b.order_status in ('PUP','COB','DEL','POD')`;
+        and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
+        union 
+    select distinct
+      a.file_nbr ,a.house_bill_nbr ,
+      a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
+      'AG' order_Status,
+      'ETA for final delivery' order_Status_desc,
+      eta_date as Event_Date_utc,
+      A.DESTINATION_PORT_IATA as event_city,
+      'US' as Event_country,
+      c.ref_nbr
+          from
+          shipment_info a
+          left outer join
+          (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'REF') c
+          on a.source_system = c.source_system
+          and a.file_nbr = c.file_nbr
+          where a.bill_to_nbr = '17833'`;
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {
@@ -108,42 +140,84 @@ async function getDataFromDB(data = null) {
   }
 }
 
-async function checkStatus(shipmentData) {
+async function checkStatus(data) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
       region: process.env.REGION,
     });
-    let idList = {};
-    shipmentData.map((e, i) => {
-      idList[":" + i] = e.file_nbr.toString() + e.order_status;
-    });
-    const idMaping = Object.keys(idList);
+
+    /**
+     * check if AG exists.
+     */
     const params = {
       TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
-      FilterExpression: "#id IN (" + idMaping.join(",") + ")",
-      ExpressionAttributeNames: { "#id": "id" },
-      ExpressionAttributeValues: idList,
+      FilterExpression:
+        "#file_nbr = :file_nbr AND #order_status = :order_status",
+      ExpressionAttributeNames: {
+        "#file_nbr": "file_nbr",
+        "#order_status": "order_status",
+      },
+      ExpressionAttributeValues: {
+        ":file_nbr": data.file_nbr.toString(),
+        ":order_status": data.order_status,
+      },
     };
     const res = await documentClient.scan(params).promise();
-    let newData = [];
-    if (res && res.Count != 0) {
-      const oldIds = res.Items.map(
-        (e) => e.file_nbr.toString() + e.order_status
-      );
-      newData = shipmentData.filter((e) => {
-        let idKey = e.file_nbr.toString() + e.order_status;
-        if (oldIds.indexOf(idKey) != -1) {
-          return false;
+
+    //check data exists.
+    if (res && res.Count && res.Count == 1) {
+      if (data.order_status != "AG" && data.order_status != "AH") {
+        throw "No new data";
+      }
+      /**
+       * check if event_date_utc not same
+       */
+      if (
+        res.Items[0].event_date_utc !=
+        new Date(data.event_date_utc).toLocaleString()
+      ) {
+        /**
+         * check if AH exists
+         */
+        const paramsAh = {
+          TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
+          FilterExpression:
+            "#file_nbr = :file_nbr AND #order_status = :order_status",
+          ExpressionAttributeNames: {
+            "#file_nbr": "file_nbr",
+            "#order_status": "order_status",
+          },
+          ExpressionAttributeValues: {
+            ":file_nbr": data.file_nbr.toString(),
+            ":order_status": "AH",
+          },
+        };
+        const resAh = await documentClient.scan(paramsAh).promise();
+        //if AH exists
+        if (resAh && resAh.Count && resAh.Count == 1) {
+          //check if AH event date not same
+          if (
+            resAh.Items[0].event_date_utc !=
+            new Date(data.event_date_utc).toLocaleString()
+          ) {
+            //update AH
+            return { data: { ...data, order_status: "AH" }, is_update: true };
+          } else {
+            throw "No new AH data";
+          }
         } else {
-          return true;
+          //Insert AH
+          return { data: { ...data, order_status: "AH" }, is_update: false };
         }
-      });
+      } else {
+        throw "No new data";
+      }
     } else {
-      newData = shipmentData;
+      return { data, is_update: false };
     }
-    console.info("shipment data", newData);
-    return newData;
-  } catch (e) {}
+  } catch (e) {
+    throw e;
+  }
 }
 
 async function makeJsonToXml(payload, inputData) {
@@ -290,36 +364,46 @@ async function updateStatus(
   record,
   xmlPayload,
   xmlResponse,
-  refTransmissionNo
+  refTransmissionNo,
+  is_update = false
 ) {
   let documentClient = new AWS.DynamoDB.DocumentClient({
     region: process.env.DEFAULT_AWS,
   });
-  const params = {
-    TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
-    Item: {
-      ...record,
-      id: record.file_nbr.toString() + record.order_status,
-      ReferenceTransmissionNo: refTransmissionNo,
-      xml_payload: xmlPayload,
-      ...xmlResponse,
-      status:
-        refTransmissionNo == -1 || refTransmissionNo == null
-          ? "failed"
-          : xmlResponse.status,
-      event_date_utc: new Date(record.event_date_utc).toLocaleString(),
-      created_at: new Date().toLocaleString(),
-    },
+  const data = {
+    ...record,
+    id: record.file_nbr.toString() + record.order_status,
+    ReferenceTransmissionNo: refTransmissionNo,
+    xml_payload: xmlPayload,
+    ...xmlResponse,
+    status:
+      refTransmissionNo == -1 || refTransmissionNo == null
+        ? "failed"
+        : xmlResponse.status,
+    event_date_utc: new Date(record.event_date_utc).toLocaleString(),
+    created_at: new Date().toLocaleString(),
   };
+
   try {
+    if (is_update) {
+      const paramsDT = {
+        TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
+        Key: {
+          id: data.file_nbr.toString() + data.order_status,
+          file_nbr: data.file_nbr.toString(),
+        },
+      };
+      await documentClient.delete(paramsDT).promise();
+    }
+
+    const params = {
+      TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
+      Item: data,
+    };
     await documentClient.put(params).promise();
   } catch (e) {}
 }
 
-/**
- * @param {*} file_nbr
- * @returns
- */
 async function getBase64Pdf(file_nbr) {
   try {
     const res = await axios.get(
