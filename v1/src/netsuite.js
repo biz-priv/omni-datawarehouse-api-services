@@ -136,20 +136,50 @@ function makeJsonToXml(payload, auth, data) {
   const singleItem = data[0];
   payload["soap:Envelope"]["soap:Header"] = {
     tokenPassport: {
-      account: auth.account,
-      consumerKey: auth.consumerKey,
-      nonce: auth.nonce,
-      timestamp: auth.timeStamp,
-      token: auth.tokenKey,
-      version: "1.0",
+      "@xmlns": "urn:messages_2018_2.platform.webservices.netsuite.com",
+      account: {
+        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+        "#": auth.account,
+      },
+      consumerKey: {
+        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+        "#": auth.consumerKey,
+      },
+      token: {
+        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+        "#": auth.tokenKey,
+      },
+      nonce: {
+        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+        "#": auth.nonce,
+      },
+      timestamp: {
+        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+        "#": auth.timeStamp,
+      },
       signature: {
         "@algorithm": "HMAC_SHA256",
+        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
         "#": auth.base64hash,
       },
     },
   };
+  // {
+  //   tokenPassport: {
+  //     account: auth.account,
+  //     consumerKey: auth.consumerKey,
+  //     nonce: auth.nonce,
+  //     timestamp: auth.timeStamp,
+  //     token: auth.tokenKey,
+  //     version: "1.0",
+  //     signature: {
+  //       "@algorithm": "HMAC_SHA256",
+  //       "#": auth.base64hash,
+  //     },
+  //   },
+  // };
 
-  let recode = payload["soap:Envelope"]["soap:Body"]["add"]["#"]["record"]["#"];
+  let recode = payload["soap:Envelope"]["soap:Body"]["add"]["record"];
   // recode["q1:entity"]["@internalId"] = singleItem.customer_id; //This is internal ID for the customer.  I believe you can send the customer code instead.
   recode["q1:tranDate"] = singleItem.invoice_date.toISOString(); //invoice date
 
@@ -167,10 +197,10 @@ function makeJsonToXml(payload, auth, data) {
       "@internalId": "1", //hardcode 1 (revenue)
     },
     "q1:class": {
-      "@internalId": "2", //hardcode 2 (freight domestic) for worldtrak
+      "@internalId": "3", //hardcode 2 (freight domestic) for worldtrak
     },
     "q1:location": {
-      "@externalId": e.handling_stn, // ?? This is internal ID for billing station, I believe you can send the code instead.
+      "@externalId": e.controlling_stn, // ?? This is internal ID for billing station, I believe you can send the code instead.
       // "@externalId": "LAX",
       // "@externalId": singleItem.customer_id,
     },
@@ -180,7 +210,7 @@ function makeJsonToXml(payload, auth, data) {
           "@internalId": "1727",
           "@xsi:type": "StringCustomFieldRef",
           "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-          value: "MAWB",
+          value: "CULVSHA21040316",
         },
         {
           "@internalId": "1728",
@@ -198,7 +228,7 @@ function makeJsonToXml(payload, auth, data) {
     },
   }));
 
-  payload["soap:Envelope"]["soap:Body"]["add"]["#"]["record"]["#"] = recode;
+  payload["soap:Envelope"]["soap:Body"]["add"]["record"] = recode;
   console.log("payload", JSON.stringify(payload));
   const doc = create(payload);
   return doc.end({ prettyPrint: true });
