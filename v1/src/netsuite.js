@@ -3,6 +3,11 @@ const crypto = require("crypto");
 const axios = require("axios");
 const pgp = require("pg-promise");
 
+const NetSuite = require("node-suitetalk");
+const Configuration = NetSuite.Configuration;
+const Service = NetSuite.Service;
+const Search = NetSuite.Search;
+
 const payload = require("../../Helpers/netsuit_AR.json");
 
 const API_ENDPOINT =
@@ -28,14 +33,22 @@ const userConfig = {
 module.exports.handler = async (event, context, callback) => {
   try {
     /**
-     * Get data from db
+     * Get connections
      */
     const connections = getConnection();
+
+    /**
+     * Get data from db
+     */
     // const orderData = await getDataGroupBy(connections);
     // console.log("orderData", orderData);
-    const orderDataById = await getDataInvoiceNbr(connections, "DFW1076678-00");
+    const itemId = "DFW1076678-00";
+    const orderDataById = await getInvoiceNbrData(connections, itemId);
     console.log("orderDataById", orderDataById);
-    // return {};
+
+    const customerData = await getcustomer(orderDataById[0].customer_id);
+    console.log("customerData", customerData);
+
     /**
      * get auth keys
      */
@@ -44,14 +57,29 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * Make Json to Xml payload
      */
-    const xmlPayload = makeJsonToXml(payload, auth, orderDataById);
+    const xmlPayload = makeJsonToXml(
+      payload,
+      auth,
+      orderDataById,
+      customerData
+    );
     console.log(xmlPayload);
+    return {};
 
-    // await callSoapApi(xmlPayload);
+    /**
+     * create Netsuit Invoice
+     */
+    const invoiceId = await createInvoice(xmlPayload);
+    console.log("invoiceId", invoiceId);
+
+    /**
+     * update invoice id
+     */
+    await updateInvoiceId(connections, itemId, invoiceId);
     // connections.end();
     return {};
   } catch (error) {
-    console.log("error", error);
+    console.info("ERROR INFO", error);
   }
 };
 
@@ -86,7 +114,7 @@ async function getDataGroupBy(connections) {
   }
 }
 
-async function getDataInvoiceNbr(connections, invoice_nbr) {
+async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
     const query = `SELECT * FROM interface_ar_new where invoice_nbr = '${invoice_nbr}'`;
     const result = await connections.query(query);
@@ -97,6 +125,50 @@ async function getDataInvoiceNbr(connections, invoice_nbr) {
   } catch (error) {
     throw "No data found.";
   }
+}
+
+function getcustomer(entityId) {
+  return new Promise((resolve, reject) => {
+    const config = new Configuration(userConfig);
+    const service = new Service(config);
+    service
+      .init()
+      .then((/**/) => {
+        // Set search preferences
+        const searchPreferences = new Search.SearchPreferences();
+        searchPreferences.pageSize = 5;
+        service.setSearchPreferences(searchPreferences);
+
+        // Create basic search
+        const search = new Search.Basic.CustomerSearchBasic();
+
+        const nameStringField = new Search.Fields.SearchStringField();
+        nameStringField.field = "entityId";
+        nameStringField.operator = "is";
+        nameStringField.searchValue = entityId; //"COMSP27";
+
+        search.searchFields.push(nameStringField);
+
+        return service.search(search);
+      })
+      .then((result, raw, soapHeader) => {
+        // console.log(JSON.stringify(result));
+        if (result && result?.searchResult?.recordList?.record.length > 0) {
+          const record = result.searchResult.recordList.record[0];
+          resolve({
+            entityId: record.entityId,
+            entityInternalId: record["$attributes"].internalId,
+            currency: record.currency.name,
+            currencyInternalId: record.currency["$attributes"].internalId,
+          });
+        } else {
+          reject("Customer not found");
+        }
+      })
+      .catch((err) => {
+        reject("Customer not found");
+      });
+  });
 }
 
 function getOAuthKeys(configuration) {
@@ -132,7 +204,7 @@ function getOAuthKeys(configuration) {
   return res;
 }
 
-function makeJsonToXml(payload, auth, data) {
+function makeJsonToXml(payload, auth, data, customerData) {
   const singleItem = data[0];
   payload["soap:Envelope"]["soap:Header"] = {
     tokenPassport: {
@@ -164,23 +236,9 @@ function makeJsonToXml(payload, auth, data) {
       },
     },
   };
-  // {
-  //   tokenPassport: {
-  //     account: auth.account,
-  //     consumerKey: auth.consumerKey,
-  //     nonce: auth.nonce,
-  //     timestamp: auth.timeStamp,
-  //     token: auth.tokenKey,
-  //     version: "1.0",
-  //     signature: {
-  //       "@algorithm": "HMAC_SHA256",
-  //       "#": auth.base64hash,
-  //     },
-  //   },
-  // };
 
   let recode = payload["soap:Envelope"]["soap:Body"]["add"]["record"];
-  // recode["q1:entity"]["@internalId"] = singleItem.customer_id; //This is internal ID for the customer.  I believe you can send the customer code instead.
+  recode["q1:entity"]["@internalId"] = customerData.entityInternalId; //This is internal ID for the customer.
   recode["q1:tranDate"] = singleItem.invoice_date.toISOString(); //invoice date
 
   recode["q1:otherRefNum"] = "CIRRUS"; //customer reference
@@ -192,7 +250,7 @@ function makeJsonToXml(payload, auth, data) {
     },
     "q1:description": e.charge_cd_desc,
     "q1:amount": e.total,
-    "q1:rate": e.rate,
+    "q1:rate": e.total,
     "q1:department": {
       "@internalId": "1", //hardcode 1 (revenue)
     },
@@ -200,9 +258,7 @@ function makeJsonToXml(payload, auth, data) {
       "@internalId": "3", //hardcode 2 (freight domestic) for worldtrak
     },
     "q1:location": {
-      "@externalId": e.controlling_stn, // ?? This is internal ID for billing station, I believe you can send the code instead.
-      // "@externalId": "LAX",
-      // "@externalId": singleItem.customer_id,
+      "@externalId": e.controlling_stn, // This is internal ID for billing station
     },
     "q1:customFieldList": {
       customField: [
@@ -229,28 +285,45 @@ function makeJsonToXml(payload, auth, data) {
   }));
 
   payload["soap:Envelope"]["soap:Body"]["add"]["record"] = recode;
-  console.log("payload", JSON.stringify(payload));
+  // console.log("payload", JSON.stringify(payload));
   const doc = create(payload);
   return doc.end({ prettyPrint: true });
-  // return doc;
 }
 
-const callSoapApi = async (payload) => {
+const createInvoice = async (soapPayload) => {
   try {
-    const res = await axios.post(API_ENDPOINT, payload, {
+    const res = await axios.post(API_ENDPOINT, soapPayload, {
       headers: {
         Accept: "text/xml",
         "Content-Type": "text/xml; charset=utf-8",
         SOAPAction: "add",
       },
     });
-    console.log("res", res.data?.data);
-    // const obj = convert(res.data, { format: "object" });
-    // console.log("obj", obj["soapenv:Envelope"]["soapenv:Body"]);
+    // console.info("res", res.data);
+    if (res.status == 200) {
+      const obj = convert(res.data, { format: "object" });
+      return obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"][
+        "writeResponse"
+      ]["baseRef"]["@internalId"];
+    } else {
+      throw "Unable to create invoice";
+    }
   } catch (error) {
     console.log("error", error);
+    throw "Unable to create invoice";
   }
 };
+
+async function updateInvoiceId(connections, invoice_nbr, invoiceId) {
+  const id = "6582893";
+  try {
+    const query = `UPDATE interface_ar_new SET internal_id = '${invoiceId}' WHERE invoice_nbr = '${invoice_nbr}'`;
+    const result = await connections.query(query);
+    return result;
+  } catch (error) {
+    throw "No data found.";
+  }
+}
 
 function formatDate(dateObj) {
   var date = new Date(dateObj);
@@ -262,4 +335,23 @@ function formatDate(dateObj) {
     ("00" + date.getMinutes()).slice(-2) +
     ("00" + date.getSeconds()).slice(-2)
   );
+}
+
+function getHardcodeData(source_system = "WT") {
+  try {
+    const data = {
+      WT: {
+        class: { head: "9", line: "2" },
+        department: { head: "15", line: "1" },
+        location: { head: "18", line: "EXT ID" },
+      },
+    };
+    if (data[source_system]) {
+      return data[source_system];
+    } else {
+      throw "source_system not exists";
+    }
+  } catch (error) {
+    throw "source_system not exists";
+  }
 }
