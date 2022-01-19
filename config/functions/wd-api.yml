@@ -22,7 +22,8 @@ function:
     WD_API_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/api/wd/username}
     WD_API_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/api/wd/password}
     WD_SHIPMENT_STATUS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/wdShipmentStatus/table}
-    WD_PDF_API_URL: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiUrl}
+    WD_PDF_BOL_API_URL: ${ssm:/omni-dw/${self:provider.stage}/wdPdfBolApiUrl}
+    WD_PDF_POD_API_URL: ${ssm:/omni-dw/${self:provider.stage}/wdPdfPodApiUrl}
     WD_PDF_API_KEY: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiKey}
 
   events:
