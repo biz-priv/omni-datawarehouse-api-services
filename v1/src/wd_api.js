@@ -262,7 +262,7 @@ async function makeJsonToXml(payload, inputData) {
         ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0][
         "otm:ArgValue"
-      ] = inputData.house_bill_nbr;
+      ] = inputData.ref_nbr;
 
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1][
         "otm:ArgValue"
@@ -289,8 +289,7 @@ async function makeJsonToXml(payload, inputData) {
 
       transBody["otm:TrackingNumber"] = "H" + inputData.ref_nbr;
 
-      transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] =
-        inputData.house_bill_nbr;
+      transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] = inputData.ref_nbr;
 
       transBodyWithValues = { "otm:ShipmentStatus": null };
       transBodyWithValues["otm:ShipmentStatus"] = transBody;
