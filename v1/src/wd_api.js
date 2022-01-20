@@ -12,6 +12,7 @@ module.exports.handler = async (event, context, callback) => {
      */
     const shipmentData = await getDataFromDB();
     console.info("Total shipment data count", shipmentData.length);
+
     /**
      * Check ETA shipment data process
      */
@@ -29,14 +30,17 @@ module.exports.handler = async (event, context, callback) => {
             Object.assign({}, wd_payload),
             itemData
           );
+
           /**
            * Get response from WD api
            */
           const xmlResponse = await getXmlResponse(xmlPayload);
+
           /**
            * make Xml to Json response
            */
           const refTransmissionNo = makeXmlToJson(xmlResponse);
+
           /**
            * Update shipment data to dynamo db
            */
@@ -49,6 +53,7 @@ module.exports.handler = async (event, context, callback) => {
           );
         } catch (error) {
           console.info("item info:", error);
+          console.info("item info:", item);
         }
       })
     );
@@ -257,7 +262,7 @@ async function makeJsonToXml(payload, inputData) {
         ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0][
         "otm:ArgValue"
-      ] = inputData.house_bill_nbr;
+      ] = inputData.ref_nbr;
 
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1][
         "otm:ArgValue"
@@ -284,8 +289,7 @@ async function makeJsonToXml(payload, inputData) {
 
       transBody["otm:TrackingNumber"] = "H" + inputData.ref_nbr;
 
-      transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] =
-        inputData.house_bill_nbr;
+      transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] = inputData.ref_nbr;
 
       transBodyWithValues = { "otm:ShipmentStatus": null };
       transBodyWithValues["otm:ShipmentStatus"] = transBody;
@@ -307,7 +311,10 @@ async function makeJsonToXml(payload, inputData) {
       /**
        * get base64 pdf
        */
-      const base64Pdf = await getBase64Pdf(inputData.file_nbr);
+      const base64Pdf = await getBase64Pdf(
+        inputData.file_nbr,
+        inputData.order_status
+      );
       wd_pdf["otm:Document"]["otm:DocumentContent"]["otm:DocContentBinary"] =
         base64Pdf;
 
@@ -403,13 +410,22 @@ async function updateStatus(
   } catch (e) {}
 }
 
-async function getBase64Pdf(file_nbr) {
+async function getBase64Pdf(file_nbr, type) {
   try {
+    const pdfApi =
+      type == "POD"
+        ? process.env.WD_PDF_POD_API_URL
+        : process.env.WD_PDF_BOL_API_URL;
+
     const res = await axios.get(
-      `${process.env.WD_PDF_API_URL}/${process.env.WD_PDF_API_KEY}/${file_nbr}`
+      `${pdfApi}/${process.env.WD_PDF_API_KEY}/${file_nbr}`
     );
     if (res?.data?.hawb?.b64str) {
+      //BOL
       return res.data.hawb.b64str;
+    } else if (res?.data?.hcpod?.b64str) {
+      //POD
+      return res.data.hcpod.b64str;
     } else {
       throw "No Pdf";
     }
