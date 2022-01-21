@@ -116,7 +116,8 @@ async function getDataFromDB(data = null) {
         and a.file_nbr = c.file_nbr
         where a.bill_to_nbr = '17833'
         and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
-        union 
+        and c.ref_nbr <> ''
+        union
     select distinct
       a.file_nbr ,a.house_bill_nbr ,
       a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
@@ -132,13 +133,18 @@ async function getDataFromDB(data = null) {
           (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'REF') c
           on a.source_system = c.source_system
           and a.file_nbr = c.file_nbr
-          where a.bill_to_nbr = '17833'`;
+          where a.bill_to_nbr = '17833'
+          and c.ref_nbr is not null`;
 
     const result = await connections.query(query);
-    if (!result || result.length == 0) {
-      throw "No data found.";
+
+    if (result && Array.isArray(result) && result.length > 0) {
+      const validatedData = result.filter((e) => validateRefNbr(e.ref_nbr));
+      if (validatedData.length > 0) {
+        return validatedData;
+      }
     }
-    return result;
+    throw "No data found.";
   } catch (error) {
     throw "No data found.";
   }
@@ -444,6 +450,29 @@ function formatDate(dateObj) {
     ("00" + date.getMinutes()).slice(-2) +
     ("00" + date.getSeconds()).slice(-2)
   );
+}
+
+function validateRefNbr(ref_nbr = null) {
+  try {
+    const split =
+      ref_nbr != null
+        ? ref_nbr.split("-")
+        : (() => {
+            throw "error null";
+          })();
+    const dateStr = parseInt(split[0]);
+    const isdate =
+      split.length == 2
+        ? new Date(dateStr) !== "Invalid Date" && !isNaN(new Date(dateStr))
+        : false;
+    if (isdate && split[1].length > 4) {
+      return true;
+    } else {
+      throw "error1";
+    }
+  } catch (error) {
+    return false;
+  }
 }
 
 function response(code, message) {
