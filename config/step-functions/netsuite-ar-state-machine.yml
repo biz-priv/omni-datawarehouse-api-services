@@ -1,0 +1,27 @@
+---
+stateMachine:
+  name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
+  events:
+    - http:
+        path: netsuit/ar
+        method: GET
+    - schedule: rate(2 hours)
+  definition:
+    Comment: "State machine to create netsuit invoice"
+    StartAt: PublishEvents
+    States:
+      PublishEvents:
+        Type: Task
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-netsuite-ar-${self:provider.stage}:${self:custom.alias}"
+        Next: EndChoice
+      EndChoice:
+        Type: Choice
+        Choices:
+          - Variable: $.hasMoreData
+            StringEquals: "false"
+            Next: SuccessState
+          - Variable: $.hasMoreData
+            StringEquals: "true"
+            Next: PublishEvents
+      SuccessState:
+        Type: Succeed
