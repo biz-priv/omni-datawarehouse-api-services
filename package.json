@@ -30,5 +30,9 @@
     "serverless-plugin-existing-s3": "^2.4.0",
     "serverless-plugin-multiple-responses": "^1.0.0",
     "xmlbuilder2": "^3.0.2"
+  },
+  "devDependencies": {
+    "serverless-pseudo-parameters": "^2.6.1",
+    "serverless-step-functions": "^3.5.1"
   }
 }

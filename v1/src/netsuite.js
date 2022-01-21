@@ -29,9 +29,12 @@ const userConfig = {
   wsdlPath:
     "https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl",
 };
+const totalCount = 5;
 
 module.exports.handler = async (event, context, callback) => {
   try {
+    let hasMoreData = "false";
+
     /**
      * Get connections
      */
@@ -40,46 +43,66 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * Get data from db
      */
-    // const orderData = await getDataGroupBy(connections);
-    // console.log("orderData", orderData);
-    const itemId = "DFW1076678-00";
-    const orderDataById = await getInvoiceNbrData(connections, itemId);
-    console.log("orderDataById", orderDataById);
+    const orderData = await getDataGroupBy(connections);
+    console.log("orderData", orderData.length, orderData[0]);
+    if (orderData.length > totalCount - 1) {
+      hasMoreData = "true";
+    }
+    // return {};
+    await Promise.all(
+      orderData.map(async (item) => {
+        try {
+          // const itemId = "DFW7789410-00";
+          const itemId = item.invoice_nbr;
+          /**
+           * get invoice obj from DB
+           */
+          const orderDataById = await getInvoiceNbrData(connections, itemId);
+          console.log("orderDataById", orderDataById);
 
-    const customerData = await getcustomer(orderDataById[0].customer_id);
-    console.log("customerData", customerData);
+          /**
+           * get customer from netsuit
+           */
+          const customerData = await getcustomer(orderDataById[0].customer_id);
+          // console.log("customerData", customerData);
 
-    /**
-     * get auth keys
-     */
-    const auth = getOAuthKeys(userConfig);
+          /**
+           * get auth keys
+           */
+          const auth = getOAuthKeys(userConfig);
 
-    /**
-     * Make Json to Xml payload
-     */
-    const xmlPayload = makeJsonToXml(
-      payload,
-      auth,
-      orderDataById,
-      customerData
+          /**
+           * Make Json to Xml payload
+           */
+          const xmlPayload = makeJsonToXml(
+            payload,
+            auth,
+            orderDataById,
+            customerData
+          );
+          // console.log(xmlPayload);
+
+          /**
+           * create Netsuit Invoice
+           */
+          const invoiceId = await createInvoice(xmlPayload);
+          console.log("invoiceId", invoiceId);
+
+          /**
+           * update invoice id
+           */
+          await updateInvoiceId(connections, itemId, invoiceId);
+          // connections.end();
+        } catch (error) {
+          console.info("error");
+        }
+      })
     );
-    console.log(xmlPayload);
-    return {};
 
-    /**
-     * create Netsuit Invoice
-     */
-    const invoiceId = await createInvoice(xmlPayload);
-    console.log("invoiceId", invoiceId);
-
-    /**
-     * update invoice id
-     */
-    await updateInvoiceId(connections, itemId, invoiceId);
-    // connections.end();
-    return {};
+    return { hasMoreData };
   } catch (error) {
     console.info("ERROR INFO", error);
+    return { hasMoreData: false };
   }
 };
 
@@ -103,7 +126,9 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT invoice_nbr FROM interface_ar_new GROUP BY invoice_nbr limit 2`;
+    // const query = `SELECT invoice_nbr FROM interface_ar_new GROUP BY invoice_nbr limit 10 offset 0`;
+    const query = `SELECT invoice_nbr FROM interface_ar_new where internal_id is null 
+                    GROUP BY invoice_nbr limit ${totalCount}`;
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
@@ -118,7 +143,7 @@ async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
     const query = `SELECT * FROM interface_ar_new where invoice_nbr = '${invoice_nbr}'`;
     const result = await connections.query(query);
-    if (!result || result.length == 0) {
+    if (!result || result.length == 0 || !result[0].customer_id) {
       throw "No data found.";
     }
     return result;
@@ -205,89 +230,98 @@ function getOAuthKeys(configuration) {
 }
 
 function makeJsonToXml(payload, auth, data, customerData) {
-  const singleItem = data[0];
-  payload["soap:Envelope"]["soap:Header"] = {
-    tokenPassport: {
-      "@xmlns": "urn:messages_2018_2.platform.webservices.netsuite.com",
-      account: {
-        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
-        "#": auth.account,
-      },
-      consumerKey: {
-        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
-        "#": auth.consumerKey,
-      },
-      token: {
-        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
-        "#": auth.tokenKey,
-      },
-      nonce: {
-        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
-        "#": auth.nonce,
-      },
-      timestamp: {
-        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
-        "#": auth.timeStamp,
-      },
-      signature: {
-        "@algorithm": "HMAC_SHA256",
-        "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
-        "#": auth.base64hash,
-      },
-    },
-  };
+  try {
+    const hardcode = getHardcodeData();
 
-  let recode = payload["soap:Envelope"]["soap:Body"]["add"]["record"];
-  recode["q1:entity"]["@internalId"] = customerData.entityInternalId; //This is internal ID for the customer.
-  recode["q1:tranDate"] = singleItem.invoice_date.toISOString(); //invoice date
-
-  recode["q1:otherRefNum"] = "CIRRUS"; //customer reference
-  recode["q1:memo"] = ""; //this is for EE only (leave out for worldtrak)
-
-  recode["q1:itemList"]["q1:item"] = data.map((e) => ({
-    "q1:item": {
-      "@externalId": "AIR FREIGHT",
-    },
-    "q1:description": e.charge_cd_desc,
-    "q1:amount": e.total,
-    "q1:rate": e.total,
-    "q1:department": {
-      "@internalId": "1", //hardcode 1 (revenue)
-    },
-    "q1:class": {
-      "@internalId": "3", //hardcode 2 (freight domestic) for worldtrak
-    },
-    "q1:location": {
-      "@externalId": e.controlling_stn, // This is internal ID for billing station
-    },
-    "q1:customFieldList": {
-      customField: [
-        {
-          "@internalId": "1727",
-          "@xsi:type": "StringCustomFieldRef",
-          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-          value: "CULVSHA21040316",
+    const singleItem = data[0];
+    payload["soap:Envelope"]["soap:Header"] = {
+      tokenPassport: {
+        "@xmlns": "urn:messages_2018_2.platform.webservices.netsuite.com",
+        account: {
+          "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+          "#": auth.account,
         },
-        {
-          "@internalId": "1728",
-          "@xsi:type": "StringCustomFieldRef",
-          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-          value: e.controlling_stn,
+        consumerKey: {
+          "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+          "#": auth.consumerKey,
         },
-        {
-          "@internalId": "760",
-          "@xsi:type": "StringCustomFieldRef",
-          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-          value: e.housebill_nbr,
+        token: {
+          "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+          "#": auth.tokenKey,
         },
-      ],
-    },
-  }));
+        nonce: {
+          "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+          "#": auth.nonce,
+        },
+        timestamp: {
+          "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+          "#": auth.timeStamp,
+        },
+        signature: {
+          "@algorithm": "HMAC_SHA256",
+          "@xmlns": "urn:core_2018_2.platform.webservices.netsuite.com",
+          "#": auth.base64hash,
+        },
+      },
+    };
 
-  payload["soap:Envelope"]["soap:Body"]["add"]["record"] = recode;
-  // console.log("payload", JSON.stringify(payload));
-  const doc = create(payload);
-  return doc.end({ prettyPrint: true });
+    let recode = payload["soap:Envelope"]["soap:Body"]["add"]["record"];
+    recode["q1:entity"]["@internalId"] = customerData.entityInternalId; //This is internal ID for the customer.
+    recode["q1:tranDate"] = singleItem.invoice_date.toISOString(); //invoice date
+    recode["q1:class"]["@internalId"] = hardcode.class.head;
+    recode["q1:department"]["@internalId"] = hardcode.department.head;
+    recode["q1:location"]["@internalId"] = hardcode.location.head;
+    recode["q1:currency"]["@internalId"] = customerData.currencyInternalId;
+
+    recode["q1:otherRefNum"] = "CIRRUS"; //customer reference
+    recode["q1:memo"] = ""; //this is for EE only (leave out for worldtrak)
+
+    recode["q1:itemList"]["q1:item"] = data.map((e) => ({
+      "q1:item": {
+        "@externalId": "AIR FREIGHT",
+      },
+      "q1:description": e.charge_cd_desc,
+      "q1:amount": e.total,
+      "q1:rate": e.rate,
+      "q1:department": {
+        "@internalId": hardcode.department.line, //"1", //hardcode 1 (revenue)
+      },
+      "q1:class": {
+        "@internalId": hardcode.class.line, //"3", //hardcode 2 (freight domestic) for worldtrak
+      },
+      "q1:location": {
+        "@externalId": e.handling_stn, // This is internal ID for billing station
+      },
+      "q1:customFieldList": {
+        customField: [
+          {
+            "@internalId": "1727",
+            "@xsi:type": "StringCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: "CULVSHA21040316",
+          },
+          {
+            "@internalId": "1728",
+            "@xsi:type": "StringCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: e.controlling_stn,
+          },
+          {
+            "@internalId": "760",
+            "@xsi:type": "StringCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: e.housebill_nbr,
+          },
+        ],
+      },
+    }));
+
+    payload["soap:Envelope"]["soap:Body"]["add"]["record"] = recode;
+    const doc = create(payload);
+    return doc.end({ prettyPrint: true });
+  } catch (error) {
+    throw "Unable to make xml";
+  }
 }
 
 const createInvoice = async (soapPayload) => {
@@ -315,7 +349,6 @@ const createInvoice = async (soapPayload) => {
 };
 
 async function updateInvoiceId(connections, invoice_nbr, invoiceId) {
-  const id = "6582893";
   try {
     const query = `UPDATE interface_ar_new SET internal_id = '${invoiceId}' WHERE invoice_nbr = '${invoice_nbr}'`;
     const result = await connections.query(query);
@@ -343,7 +376,7 @@ function getHardcodeData(source_system = "WT") {
       WT: {
         class: { head: "9", line: "2" },
         department: { head: "15", line: "1" },
-        location: { head: "18", line: "EXT ID" },
+        location: { head: "18", line: "EXT ID: Take from DB" },
       },
     };
     if (data[source_system]) {

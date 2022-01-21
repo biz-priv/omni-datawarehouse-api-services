@@ -39,24 +39,24 @@
         "record": {
           "@xsi:type": "q1:Invoice",
           "@xmlns:q1": "urn:sales_2021_2.transactions.webservices.netsuite.com",
-          "q1:entity": { "@internalId": "34380" },
-          "q1:tranDate": "2021-08-02T00:00:00",
-          "q1:department": { "@internalId": "15" },
-          "q1:class": { "@internalId": "9" },
-          "q1:location": { "@internalId": "18" },
+          "q1:entity": { "@internalId": "" },
+          "q1:tranDate": "",
+          "q1:department": { "@internalId": "" },
+          "q1:class": { "@internalId": "" },
+          "q1:location": { "@internalId": "" },
           "q1:subsidiary": { "@internalId": "3" },
-          "q1:currency": { "@internalId": "1" },
-          "q1:otherRefNum": "HUB-2107000097",
-          "q1:memo": "41*",
+          "q1:currency": { "@internalId": "" },
+          "q1:otherRefNum": "",
+          "q1:memo": "",
           "q1:itemList": {
             "q1:item": {
               "q1:item": { "@externalId": "AIR FREIGHT" },
               "q1:description": {},
-              "q1:amount": "101",
-              "q1:rate": "101",
-              "q1:department": { "@internalId": "1" },
-              "q1:class": { "@internalId": "3" },
-              "q1:location": { "@externalId": "DFW" },
+              "q1:amount": "",
+              "q1:rate": "",
+              "q1:department": { "@internalId": "" },
+              "q1:class": { "@internalId": "" },
+              "q1:location": { "@externalId": "" },
               "q1:customFieldList": {
                 "customField": [
                   {
