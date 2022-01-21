@@ -3,7 +3,7 @@ stateMachine:
   name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
   events:
     - http:
-        path: hello
+        path: netsuit/ar
         method: GET
     - schedule: rate(2 hours)
   definition:
