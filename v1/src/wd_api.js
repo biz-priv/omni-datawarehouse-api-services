@@ -71,22 +71,14 @@ module.exports.handler = async (event, context, callback) => {
 
 async function getDataFromDB(data = null) {
   try {
-    // const dbUser = process.env.USER;
-    // const dbPassword = process.env.PASS;
-    // const dbHost = process.env.HOST_URL;
-    // const dbPort = process.env.PORT;
-    // const dbName = process.env.WD_DBNAME;
-
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    // const dbHost = process.env.HOST_URL;
-    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    const dbHost = process.env.HOST_URL;
     const dbPort = process.env.PORT;
     const dbName = process.env.WD_DBNAME;
 
     const dbc = pgp({ capSQL: true });
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
-    console.log("connectionString", connectionString);
     const connections = dbc(connectionString);
     const query = `select distinct
     a.file_nbr ,a.house_bill_nbr ,
