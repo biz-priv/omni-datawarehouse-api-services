@@ -12,6 +12,7 @@ module.exports.handler = async (event, context, callback) => {
      */
     const shipmentData = await getDataFromDB();
     console.info("Total shipment data count", shipmentData.length);
+
     /**
      * Check ETA shipment data process
      */
