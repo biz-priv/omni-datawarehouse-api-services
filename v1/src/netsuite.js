@@ -33,11 +33,13 @@ const totalCount = 5;
 
 module.exports.handler = async (event, context, callback) => {
   try {
-    let hasMoreData = "false";
-    hasMoreData = event.hasMoreData == "false" ? "true" : "false";
+    let hasMoreData = "true";
+    if (event && event.hasMoreData && event.hasMoreData == "false") {
+      hasMoreData = "true";
+    }
 
-    return hasMoreData;
-    let hasMoreData = "false";
+    return { hasMoreData };
+    // let hasMoreData = "false";
 
     /**
      * Get connections
