@@ -69,7 +69,7 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-async function getDataFromDB(data = null) {
+async function getDataFromDB() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
@@ -284,6 +284,9 @@ async function makeJsonToXml(payload, inputData) {
       transBody["otm:WeightVolume"]["otm:Weight"]["otm:WeightValue"] =
         inputData.chrg_wght_kgs;
 
+      transBody["otm:StatusCodeGid"]["otm:Gid"]["otm:Xid"] =
+        "W" + inputData.order_status;
+
       transBody["otm:EventDt"]["otm:GLogDate"] = formatDate(
         inputData.event_date_utc
       );
@@ -312,7 +315,7 @@ async function makeJsonToXml(payload, inputData) {
 
       wd_pdf["otm:Document"]["otm:DocumentOwner"]["otm:ObjectGid"]["otm:Gid"][
         "otm:Xid"
-      ] = inputData.house_bill_nbr;
+      ] = inputData.ref_nbr;
 
       /**
        * get base64 pdf
