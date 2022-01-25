@@ -87,9 +87,9 @@ functions:
   wd-api: ${file(config/functions/wd-api.yml):function}
   netsuite: ${file(config/functions/netsuite.yml):function}
 
-stepFunctions:
-  stateMachines:
-    netsuite-ar-state-machine: ${file(config/step-functions/netsuite-ar-state-machine.yml):stateMachine}
+# stepFunctions:
+#   stateMachines:
+#     netsuite-ar-state-machine: ${file(config/step-functions/netsuite-ar-state-machine.yml):stateMachine}
 
 resources:
   Resources:

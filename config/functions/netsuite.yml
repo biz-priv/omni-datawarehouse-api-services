@@ -44,3 +44,6 @@ function:
     HOST: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
+
+  events:
+    - schedule: rate(30 minutes)
