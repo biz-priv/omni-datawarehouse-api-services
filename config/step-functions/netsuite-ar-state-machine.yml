@@ -1,11 +1,11 @@
 ---
 stateMachine:
   name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
-  events:
-    - http:
-        path: netsuit/ar
-        method: GET
-    - schedule: rate(2 hours)
+  # events:
+  #   - http:
+  #       path: netsuit/ar
+  #       method: GET
+  #   - schedule: rate(2 hours)
   definition:
     Comment: "State machine to create netsuit invoice"
     StartAt: PublishEvents
