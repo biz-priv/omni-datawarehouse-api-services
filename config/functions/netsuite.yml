@@ -3,7 +3,7 @@ function:
   handler: ${self:custom.alias}/src/netsuite.handler
   name: ${self:service}-netsuite-ar-${self:provider.stage}
   description: Netsuite AR api service - ${self:provider.stage}
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   memorySize: 2048
   timeout: 900
   # events:
@@ -36,6 +36,7 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/netsuite.js
+      - Helpers/**
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
