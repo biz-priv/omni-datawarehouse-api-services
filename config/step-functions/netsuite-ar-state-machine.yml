@@ -5,13 +5,13 @@ stateMachine:
     # - http:
     #     path: gofunction
     #     method: GET
-    - schedule:
-        rate: rate(15 minutes)
-        enabled: true
-        input:
-          hasMoreData: false
-          stageParams:
-            stage: ${self:provider.stage}
+    # - schedule:
+    #     rate: rate(15 minutes)
+    #     enabled: true
+    #     input:
+    #       hasMoreData: false
+    #       stageParams:
+    #         stage: ${self:provider.stage}
   definition:
     Comment: "State machine to create netsuit invoice"
     StartAt: PublishEvents

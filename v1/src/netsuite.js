@@ -1,3 +1,4 @@
+const AWS = require("aws-sdk");
 const { create, convert } = require("xmlbuilder2");
 const crypto = require("crypto");
 const axios = require("axios");
@@ -30,27 +31,15 @@ const userConfig = {
     "https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl",
 };
 const totalCount = 5;
-const loopCount = 4;
+let loopCount = 4;
 
 module.exports.handler = async (event, context, callback) => {
   let hasMoreData = "false";
   let currentLoopCount = event.hasOwnProperty("currentLoopCount")
     ? event.currentLoopCount
-    : 0;
+    : 1;
+  loopCount = event.hasOwnProperty("loopCount") ? event.loopCount : loopCount;
   try {
-    // let hasMoreData = "true";
-    // console.log("event", event);
-    // if (
-    //   event &&
-    //   event.hasOwnProperty("hasMoreData") &&
-    //   event.hasMoreData == "true"
-    // ) {
-    //   hasMoreData = "false";
-    // } else {
-    //   hasMoreData = "true";
-    // }
-    // return { hasMoreData };
-
     /**
      * Get connections
      */
@@ -60,22 +49,17 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const orderData = await getDataGroupBy(connections);
-    console.log("orderData", orderData.length, orderData[0]);
-    if (orderData.length > totalCount - 1 && loopCount >= currentLoopCount) {
-      hasMoreData = "true";
-      currentLoopCount = currentLoopCount + 1;
-    }
-    // return {};
+    console.log("orderData", orderData.length);
+
     await Promise.all(
-      orderData.map(async (item) => {
+      orderData.slice(0, 1).map(async (item) => {
         try {
-          // const itemId = "DFW7789410-00";
           const itemId = item.invoice_nbr;
           /**
            * get invoice obj from DB
            */
           const orderDataById = await getInvoiceNbrData(connections, itemId);
-          // console.log("orderDataById", orderDataById);
+          console.log("orderDataById", orderDataById[0]);
           /**
            * get customer from netsuit
            */
@@ -94,7 +78,9 @@ module.exports.handler = async (event, context, callback) => {
             orderDataById,
             customerData
           );
-          // console.log(xmlPayload);
+          console.log(xmlPayload);
+          throw "ee";
+
           /**
            * create Netsuit Invoice
            */
@@ -107,11 +93,22 @@ module.exports.handler = async (event, context, callback) => {
           await updateInvoiceId(connections, itemId, invoiceId);
           // connections.end();
         } catch (error) {
-          console.info("error");
+          // console.info("error");
+          // console.log("error***", error);
+          if (error.hasOwnProperty("customError")) {
+            await recordErrorResponse(item, error);
+          }
         }
       })
     );
-    return { hasMoreData, currentLoopCount };
+
+    if (loopCount > currentLoopCount) {
+      hasMoreData = "true";
+      currentLoopCount = currentLoopCount + 1;
+    } else {
+      hasMoreData = "false";
+    }
+    return { hasMoreData, currentLoopCount, loopCount };
   } catch (error) {
     // console.info("ERROR INFO", error);
     return { hasMoreData: false, currentLoopCount };
@@ -122,8 +119,8 @@ function getConnection() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    const dbHost = process.env.HOST;
-    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    // const dbHost = process.env.HOST;
+    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -199,11 +196,11 @@ function getcustomer(entityId) {
             currencyInternalId: record.currency["$attributes"].internalId,
           });
         } else {
-          reject("Customer not found");
+          reject({ customError: true, msg: "Customer not found" });
         }
       })
       .catch((err) => {
-        reject("Customer not found");
+        reject({ customError: true, msg: "Customer Api failed" });
       });
   });
 }
@@ -345,18 +342,24 @@ const createInvoice = async (soapPayload) => {
         SOAPAction: "add",
       },
     });
-    // console.info("res", res.data);
+
+    console.log("res", res.data);
+
     if (res.status == 200) {
       const obj = convert(res.data, { format: "object" });
       return obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"][
         "writeResponse"
       ]["baseRef"]["@internalId"];
     } else {
-      throw "Unable to create invoice";
+      throw {
+        customError: true,
+        msg: "Unable to create invoice",
+        payload: soapPayload,
+        response: res.data,
+      };
     }
   } catch (error) {
-    console.log("error", error);
-    throw "Unable to create invoice";
+    throw error;
   }
 };
 
@@ -367,20 +370,8 @@ async function updateInvoiceId(connections, invoice_nbr, invoiceId) {
     const result = await connections.query(query);
     return result;
   } catch (error) {
-    throw "No data found.";
+    throw { customError: true, msg: "Unable to update internal_id", invoiceId };
   }
-}
-
-function formatDate(dateObj) {
-  var date = new Date(dateObj);
-  return (
-    date.getFullYear() +
-    ("00" + (date.getMonth() + 1)).slice(-2) +
-    ("00" + date.getDate()).slice(-2) +
-    ("00" + date.getHours()).slice(-2) +
-    ("00" + date.getMinutes()).slice(-2) +
-    ("00" + date.getSeconds()).slice(-2)
-  );
 }
 
 function getHardcodeData(source_system = "WT") {
@@ -399,5 +390,29 @@ function getHardcodeData(source_system = "WT") {
     }
   } catch (error) {
     throw "source_system not exists";
+  }
+}
+
+async function recordErrorResponse(item, error) {
+  let documentClient = new AWS.DynamoDB.DocumentClient({
+    region: process.env.REGION,
+  });
+  const data = {
+    id: item.invoice_nbr,
+    ...item,
+    ...error,
+    status: "error",
+    created_at: new Date().toLocaleString(),
+  };
+  console.log("data", data);
+
+  try {
+    const params = {
+      TableName: "omni-dw-netsuit-ar-error-response-dev",
+      Item: data,
+    };
+    await documentClient.put(params).promise();
+  } catch (e) {
+    console.log("db err", e);
   }
 }
