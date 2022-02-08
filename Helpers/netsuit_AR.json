@@ -60,16 +60,10 @@
               "q1:customFieldList": {
                 "customField": [
                   {
-                    "@internalId": "1727",
+                    "@internalId": "1166",
                     "@xsi:type": "StringCustomFieldRef",
                     "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": "CULVSHA21040316"
-                  },
-                  {
-                    "@internalId": "1728",
-                    "@xsi:type": "StringCustomFieldRef",
-                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": "USLGB"
+                    "value": { "@externalId": "" }
                   },
                   {
                     "@internalId": "760",
@@ -84,22 +78,10 @@
           "q1:customFieldList": {
             "customField": [
               {
-                "@internalId": "1735",
-                "@xsi:type": "StringCustomFieldRef",
-                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "13001475"
-              },
-              {
                 "@internalId": "1745",
                 "@xsi:type": "DateCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
                 "value": "2022-01-11T23:07:57"
-              },
-              {
-                "@internalId": "1732",
-                "@xsi:type": "DateCustomFieldRef",
-                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "2021-07-14T00:00:00"
               },
               {
                 "@internalId": "1730",
