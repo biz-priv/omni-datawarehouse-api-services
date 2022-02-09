@@ -11,52 +11,101 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const shipmentData = await getDataFromDB();
-    console.info("Total shipment data count", shipmentData.length);
+    console.info(
+      "Total shipment data count",
+      shipmentData.length,
+      shipmentData[0]
+    );
+    // return {};
 
     /**
      * Check ETA shipment data process
      */
-    await Promise.all(
-      shipmentData.map(async (item) => {
-        try {
-          const newData = await checkStatus(item);
-          let itemData = newData.data;
-          let is_update = newData.is_update;
+    for (let i = 0; i < shipmentData.length; i++) {
+      let item = shipmentData[i];
+      console.log("item", item);
+      //Do something
+      try {
+        const newData = await checkStatus(item);
+        let itemData = newData.data;
+        let is_update = newData.is_update;
 
-          /**
-           * Make Json to Xml payload
-           */
-          const xmlPayload = await makeJsonToXml(
-            Object.assign({}, wd_payload),
-            itemData
-          );
+        /**
+         * Make Json to Xml payload
+         */
+        const xmlPayload = await makeJsonToXml(
+          Object.assign({}, wd_payload),
+          itemData
+        );
+        console.log("xmlPayload", xmlPayload);
 
-          /**
-           * Get response from WD api
-           */
-          const xmlResponse = await getXmlResponse(xmlPayload);
+        /**
+         * Get response from WD api
+         */
+        const xmlResponse = await getXmlResponse(xmlPayload);
 
-          /**
-           * make Xml to Json response
-           */
-          const refTransmissionNo = makeXmlToJson(xmlResponse);
+        /**
+         * make Xml to Json response
+         */
+        const refTransmissionNo = makeXmlToJson(xmlResponse);
+        console.log("refTransmissionNo", refTransmissionNo);
 
-          /**
-           * Update shipment data to dynamo db
-           */
-          await updateStatus(
-            itemData,
-            xmlPayload,
-            xmlResponse,
-            refTransmissionNo,
-            is_update
-          );
-        } catch (error) {
-          console.info("item info:", error);
-          console.info("item info:", item);
-        }
-      })
-    );
+        /**
+         * Update shipment data to dynamo db
+         */
+        await updateStatus(
+          itemData,
+          xmlPayload,
+          xmlResponse,
+          refTransmissionNo,
+          is_update
+        );
+      } catch (error) {
+        console.info("item info:", error);
+        // console.info("item info:", item);
+      }
+    }
+    // await Promise.all(
+    //   shipmentData.map(async (item) => {
+    //     try {
+    //       const newData = await checkStatus(item);
+    //       let itemData = newData.data;
+    //       let is_update = newData.is_update;
+
+    //       /**
+    //        * Make Json to Xml payload
+    //        */
+    //       const xmlPayload = await makeJsonToXml(
+    //         Object.assign({}, wd_payload),
+    //         itemData
+    //       );
+
+    //       /**
+    //        * Get response from WD api
+    //        */
+    //       const xmlResponse = await getXmlResponse(xmlPayload);
+
+    //       /**
+    //        * make Xml to Json response
+    //        */
+    //       const refTransmissionNo = makeXmlToJson(xmlResponse);
+
+    //       /**
+    //        * Update shipment data to dynamo db
+    //        */
+    //       await updateStatus(
+    //         itemData,
+    //         xmlPayload,
+    //         xmlResponse,
+    //         refTransmissionNo,
+    //         is_update
+    //       );
+    //     } catch (error) {
+    //       console.info("item info:", error);
+    //       console.info("item info:", item);
+    //     }
+    //   })
+    // );
 
     return "Completed";
   } catch (error) {
@@ -73,7 +122,9 @@ async function getDataFromDB() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    const dbHost = process.env.HOST_URL;
+    // const dbHost = process.env.HOST_URL;
+    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+
     const dbPort = process.env.PORT;
     const dbName = process.env.WD_DBNAME;
 
@@ -81,7 +132,7 @@ async function getDataFromDB() {
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
     const connections = dbc(connectionString);
     const query = `select distinct
-    a.file_nbr ,a.house_bill_nbr ,
+    a.file_nbr ,a.house_bill_nbr ,pod_name,
     a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
     case b.order_status
     when 'PUP' then 'AF'
@@ -119,7 +170,7 @@ async function getDataFromDB() {
         and c.ref_nbr <> ''
         union
     select distinct
-      a.file_nbr ,a.house_bill_nbr ,
+      a.file_nbr ,a.house_bill_nbr ,pod_name,
       a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
       'AG' order_Status,
       'ETA for final delivery' order_Status_desc,
