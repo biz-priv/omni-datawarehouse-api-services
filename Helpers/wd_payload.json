@@ -37,7 +37,7 @@
                     "otm:Xid": "INTERFACE_TYPE"
                   }
                 },
-                "otm:RefnumValue": "EFSJ_API_214"
+                "otm:RefnumValue": "OMNG_API_214"
               }
             },
             "otm:DataQueueGid": {

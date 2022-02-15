@@ -3,7 +3,7 @@ const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 const pgp = require("pg-promise");
 const wd_payload = require("../../Helpers/wd_payload.json");
-const wd_pdf = require("../../Helpers/wd_pdf.json");
+const wd_pdf_payload = require("../../Helpers/wd_pdf.json");
 
 module.exports.handler = async (event, context, callback) => {
   try {
@@ -11,19 +11,14 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const shipmentData = await getDataFromDB();
-    console.info(
-      "Total shipment data count",
-      shipmentData.length,
-      shipmentData[0]
-    );
-    // return {};
+    console.info("Total shipment data count", shipmentData.length);
 
     /**
      * Check ETA shipment data process
      */
     for (let i = 0; i < shipmentData.length; i++) {
       let item = shipmentData[i];
-      console.log("item", item);
+
       //Do something
       try {
         const newData = await checkStatus(item);
@@ -33,11 +28,11 @@ module.exports.handler = async (event, context, callback) => {
         /**
          * Make Json to Xml payload
          */
+
         const xmlPayload = await makeJsonToXml(
-          Object.assign({}, wd_payload),
+          JSON.parse(JSON.stringify(wd_payload)),
           itemData
         );
-        console.log("xmlPayload", xmlPayload);
 
         /**
          * Get response from WD api
@@ -61,51 +56,12 @@ module.exports.handler = async (event, context, callback) => {
           is_update
         );
       } catch (error) {
-        console.info("item info:", error);
-        // console.info("item info:", item);
+        if (error != "No new data" && error != "No new AH data") {
+          console.info("item:", item);
+          console.info("error info:", error);
+        }
       }
     }
-    // await Promise.all(
-    //   shipmentData.map(async (item) => {
-    //     try {
-    //       const newData = await checkStatus(item);
-    //       let itemData = newData.data;
-    //       let is_update = newData.is_update;
-
-    //       /**
-    //        * Make Json to Xml payload
-    //        */
-    //       const xmlPayload = await makeJsonToXml(
-    //         Object.assign({}, wd_payload),
-    //         itemData
-    //       );
-
-    //       /**
-    //        * Get response from WD api
-    //        */
-    //       const xmlResponse = await getXmlResponse(xmlPayload);
-
-    //       /**
-    //        * make Xml to Json response
-    //        */
-    //       const refTransmissionNo = makeXmlToJson(xmlResponse);
-
-    //       /**
-    //        * Update shipment data to dynamo db
-    //        */
-    //       await updateStatus(
-    //         itemData,
-    //         xmlPayload,
-    //         xmlResponse,
-    //         refTransmissionNo,
-    //         is_update
-    //       );
-    //     } catch (error) {
-    //       console.info("item info:", error);
-    //       console.info("item info:", item);
-    //     }
-    //   })
-    // );
 
     return "Completed";
   } catch (error) {
@@ -283,6 +239,7 @@ async function checkStatus(data) {
 
 async function makeJsonToXml(payload, inputData) {
   try {
+    // let payload = getPAY();
     /**
      * set auth details
      */
@@ -357,6 +314,7 @@ async function makeJsonToXml(payload, inputData) {
       /**
        * with pdf
        */
+      let wd_pdf = JSON.parse(JSON.stringify(wd_pdf_payload));
       wd_pdf["otm:Document"]["otm:DocumentDefinitionGid"]["otm:Gid"][
         "otm:Xid"
       ] =
