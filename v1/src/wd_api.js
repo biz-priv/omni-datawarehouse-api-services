@@ -28,7 +28,6 @@ module.exports.handler = async (event, context, callback) => {
         /**
          * Make Json to Xml payload
          */
-
         const xmlPayload = await makeJsonToXml(
           JSON.parse(JSON.stringify(wd_payload)),
           itemData
@@ -78,9 +77,7 @@ async function getDataFromDB() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    // const dbHost = process.env.HOST_URL;
-    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
-
+    const dbHost = process.env.HOST_URL;
     const dbPort = process.env.PORT;
     const dbName = process.env.WD_DBNAME;
 
@@ -289,6 +286,8 @@ async function makeJsonToXml(payload, inputData) {
 
       transBody["otm:ShipmentRefnum"][2]["otm:ShipmentRefnumValue"] =
         inputData.pieces;
+      transBody["otm:ShipmentRefnum"][4]["otm:ShipmentRefnumValue"] =
+        inputData.pod_name;
       transBody["otm:WeightVolume"]["otm:Weight"]["otm:WeightValue"] =
         inputData.chrg_wght_kgs;
 
