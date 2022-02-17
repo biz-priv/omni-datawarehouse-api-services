@@ -87,13 +87,13 @@
                 "@internalId": "1730",
                 "@xsi:type": "StringCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "91404469"
+                "value": ""
               },
               {
                 "@internalId": "1744",
                 "@xsi:type": "StringCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "wwaller@omnilogistics.com"
+                "value": ""
               },
               {
                 "@internalId": "2327",

@@ -9,6 +9,8 @@ const Configuration = NetSuite.Configuration;
 const Service = NetSuite.Service;
 const Search = NetSuite.Search;
 
+//apply latest stash**********
+
 const payload = require("../../Helpers/netsuit_AR.json");
 
 const API_ENDPOINT =
@@ -30,7 +32,7 @@ const userConfig = {
   wsdlPath:
     "https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl",
 };
-let totalCountPerLoop = 10;
+let totalCountPerLoop = 1;
 let loopCount = 4;
 
 module.exports.handler = async (event, context, callback) => {
@@ -61,7 +63,7 @@ module.exports.handler = async (event, context, callback) => {
     for (let i = 0; i < orderData.length; i++) {
       // console.log(orderData[i]);
       let item = orderData[i];
-      console.log("count", count);
+      // console.log("count", count);
       count++;
       let singleItem = null;
       try {
@@ -71,8 +73,9 @@ module.exports.handler = async (event, context, callback) => {
          * get invoice obj from DB
          */
         const dataById = await getInvoiceNbrData(connections, itemId);
-        // console.log("dataById", dataById);
+        // console.log("dataById", dataById[0]);
         singleItem = dataById[0];
+
         /**
          * group data by invoice_type IN/CM
          */
@@ -92,6 +95,7 @@ module.exports.handler = async (event, context, callback) => {
          */
         const customerData = await getcustomer(dataById[0].customer_id);
         // console.log("customerData", customerData);
+        console.log("customerData");
 
         for (let e of Object.keys(dataGroup)) {
           singleItem = dataGroup[e][0];
@@ -110,8 +114,9 @@ module.exports.handler = async (event, context, callback) => {
             dataGroup[e],
             customerData
           );
-          // console.log(xmlPayload);
-          // throw "ee";
+          console.log(dataGroup[e]);
+          console.log(xmlPayload);
+          throw "ee";
 
           /**
            * create Netsuit Invoice
@@ -155,8 +160,8 @@ function getConnection() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    const dbHost = process.env.HOST;
-    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    // const dbHost = process.env.HOST;
+    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -187,7 +192,13 @@ async function getDataGroupBy(connections) {
 
 async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
-    const query = `SELECT * FROM interface_ar_new where invoice_nbr = '${invoice_nbr}'`;
+    const query = `select
+    a.source_system,a.id,a.file_nbr,a.customer_id,a.subsidiary,a.master_bill_nbr,a.invoice_nbr,a.invoice_date,a.ready_date,a.period,a.housebill_nbr,
+    a.customer_po,a.business_segment,a.invoice_type,a.handling_stn,a.controlling_stn,a.finalized_date,a.charge_cd,a.charge_cd_desc,x.internal_id ,
+    a.curr_cd,a.rate,a.total,a.sales_person,a.posted_date,a.email,a.processed,a.load_create_date ,a.load_update_date
+    from interface_ar_new a left outer join xref_charge_code x
+    on a.source_system = x.source_system
+    and a.charge_cd = x.charge_cd where a.invoice_nbr = '${invoice_nbr}'`;
     const result = await connections.query(query);
     if (!result || result.length == 0 || !result[0].customer_id) {
       throw "No data found.";
@@ -319,33 +330,28 @@ function makeJsonToXml(payload, auth, data, customerData) {
     recode["q1:location"]["@internalId"] = hardcode.location.head;
     recode["q1:currency"]["@internalId"] = customerData.currencyInternalId;
 
-    recode["q1:otherRefNum"] = singleItem.housebill_nbr; //customer reference
-    recode["q1:memo"] = ""; //this is for EE only (leave out for worldtrak)
+    recode["q1:otherRefNum"] = singleItem.customer_po; //customer_po is the bill to ref nbr
+    recode["q1:memo"] = ""; // (leave out for worldtrak)
 
     recode["q1:itemList"]["q1:item"] = data.map((e) => ({
       "q1:item": {
-        "@externalId": "AIR FREIGHT", //e.id.trim(),
+        // "@externalId": e.internal_id,
+        "@internalId": e.internal_id,
       },
       "q1:description": e.charge_cd_desc,
       "q1:amount": e.total,
       "q1:rate": e.rate,
       "q1:department": {
-        "@internalId": hardcode.department.line, //"1", //hardcode 1 (revenue)
+        "@internalId": hardcode.department.line,
       },
       "q1:class": {
-        "@internalId": hardcode.class.line, //"3", //hardcode 2 (freight domestic) for worldtrak
+        "@internalId": hardcode.class.line,
       },
       "q1:location": {
-        "@externalId": e.handling_stn, // This is internal ID for billing station
+        "@externalId": e.handling_stn,
       },
       "q1:customFieldList": {
         customField: [
-          // {
-          //   "@internalId": "1166",
-          //   "@xsi:type": "StringCustomFieldRef",
-          //   "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-          //   value: { "@externalId": e.controlling_stn },
-          // },
           {
             "@internalId": "760",
             "@xsi:type": "StringCustomFieldRef",
@@ -361,19 +367,19 @@ function makeJsonToXml(payload, auth, data, customerData) {
         "@internalId": "1745",
         "@xsi:type": "DateCustomFieldRef",
         "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-        value: "2022-01-11T23:07:57",
+        value: singleItem.finalized_date.toISOString(),
       },
       {
         "@internalId": "1730",
         "@xsi:type": "StringCustomFieldRef",
         "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-        value: "91404469", //please replace this with the worldtrak file number ??
+        value: singleItem.file_nbr,
       },
       {
         "@internalId": "1744",
         "@xsi:type": "StringCustomFieldRef",
         "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-        value: "wwaller@omnilogistics.com", //this should be the email of the user who finalized the invoice ??
+        value: singleItem.email,
       },
       {
         "@internalId": "2327",
@@ -479,7 +485,7 @@ function getHardcodeData(source_system = "WT") {
         location: { head: "18", line: "EXT ID: Take from DB" },
       },
     };
-    if (data[source_system]) {
+    if (data.hasOwnProperty(source_system)) {
       return data[source_system];
     } else {
       throw "source_system not exists";
