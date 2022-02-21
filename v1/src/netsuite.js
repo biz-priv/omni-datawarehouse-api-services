@@ -3,18 +3,18 @@ const { create, convert } = require("xmlbuilder2");
 const crypto = require("crypto");
 const axios = require("axios");
 const pgp = require("pg-promise");
+const nodemailer = require("nodemailer");
 
 const NetSuite = require("node-suitetalk");
 const Configuration = NetSuite.Configuration;
 const Service = NetSuite.Service;
 const Search = NetSuite.Search;
 
-//apply latest stash**********
-
 const payload = require("../../Helpers/netsuit_AR.json");
 
 const API_ENDPOINT =
   "https://1238234-sb1.suitetalk.api.netsuite.com/services/NetSuitePort_2021_2";
+
 const userConfig = {
   account: "1238234_SB1",
   apiVersion: "2021_2",
@@ -32,7 +32,7 @@ const userConfig = {
   wsdlPath:
     "https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl",
 };
-let totalCountPerLoop = 1;
+let totalCountPerLoop = 10;
 let loopCount = 4;
 
 module.exports.handler = async (event, context, callback) => {
@@ -54,17 +54,14 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * Get data from db
      */
-    //LAX3662949-00
     const orderData = await getDataGroupBy(connections);
     console.log("orderData", orderData.length);
+    // console.log("orderData", orderData.length, orderData);
     // return {};
-    let count = 1;
-
+    let count = 0;
     for (let i = 0; i < orderData.length; i++) {
       // console.log(orderData[i]);
       let item = orderData[i];
-      // console.log("count", count);
-      count++;
       let singleItem = null;
       try {
         const itemId = item.invoice_nbr;
@@ -73,8 +70,9 @@ module.exports.handler = async (event, context, callback) => {
          * get invoice obj from DB
          */
         const dataById = await getInvoiceNbrData(connections, itemId);
-        // console.log("dataById", dataById[0]);
         singleItem = dataById[0];
+        // console.log("singleItem", singleItem);
+        // throw "ee";
 
         /**
          * group data by invoice_type IN/CM
@@ -93,11 +91,27 @@ module.exports.handler = async (event, context, callback) => {
         /**
          * get customer from netsuit
          */
-        const customerData = await getcustomer(dataById[0].customer_id);
-        // console.log("customerData", customerData);
-        console.log("customerData");
+        let customerData = null;
+        if (
+          singleItem.customer_internal_id == null ||
+          singleItem.customer_internal_id.length > 0
+        ) {
+          customerData = await getcustomer(dataById[0].customer_id);
+          // customerData = await getcustomer("abcd");
+          // console.log("customerData", customerData);
+        } else {
+          customerData = {
+            entityId: singleItem.customer_id,
+            entityInternalId: singleItem.customer_internal_id,
+            currency: singleItem.curr_cd,
+            currencyInternalId: singleItem.currency_internal_id,
+          };
+        }
+
+        // throw "ee";
 
         for (let e of Object.keys(dataGroup)) {
+          count++;
           singleItem = dataGroup[e][0];
 
           /**
@@ -114,9 +128,9 @@ module.exports.handler = async (event, context, callback) => {
             dataGroup[e],
             customerData
           );
-          console.log(dataGroup[e]);
-          console.log(xmlPayload);
-          throw "ee";
+          // console.log(dataGroup[e]);
+          // console.log(xmlPayload);
+          // throw "ee";
 
           /**
            * create Netsuit Invoice
@@ -134,6 +148,7 @@ module.exports.handler = async (event, context, callback) => {
         }
       } catch (error) {
         if (error.hasOwnProperty("customError")) {
+          // console.log("error", error);
           try {
             await updateInvoiceId(connections, singleItem, null, false);
             await recordErrorResponse(singleItem, error);
@@ -142,6 +157,7 @@ module.exports.handler = async (event, context, callback) => {
           }
         }
       }
+      console.log("count", count);
     }
 
     if (loopCount > currentLoopCount) {
@@ -160,8 +176,8 @@ function getConnection() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    // const dbHost = process.env.HOST;
-    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -176,10 +192,17 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT invoice_nbr FROM interface_ar_new where internal_id is null and processed !='P' 
-                    and processed !='F' GROUP BY invoice_nbr limit ${totalCountPerLoop}`;
-    // const query = `SELECT invoice_nbr FROM interface_ar_new where invoice_type != 'IN' and internal_id is null and customer_id != 'MONGLOPHL'
-    //                 GROUP BY invoice_nbr limit ${totalCountPerLoop}`;
+    // const query = `SELECT invoice_nbr FROM interface_ar where internal_id is null and processed !='P'
+    //                 and processed !='F' GROUP BY invoice_nbr limit ${totalCountPerLoop}`;
+
+    // const query = `SELECT distinct invoice_nbr FROM interface_ar where customer_internal_id is null
+    //                 and internal_id is null and processed !='P' and processed !='F' limit ${totalCountPerLoop}`;
+
+    const query = `SELECT distinct invoice_nbr FROM interface_ar where internal_id is null and processed !='P' 
+                    and processed !='F' limit ${totalCountPerLoop}`;
+
+    // const query = `SELECT invoice_nbr FROM interface_ar where invoice_type != 'IN' and internal_id is null and customer_id != 'MONGLOPHL'
+    //                 limit ${totalCountPerLoop}`;
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
@@ -195,8 +218,9 @@ async function getInvoiceNbrData(connections, invoice_nbr) {
     const query = `select
     a.source_system,a.id,a.file_nbr,a.customer_id,a.subsidiary,a.master_bill_nbr,a.invoice_nbr,a.invoice_date,a.ready_date,a.period,a.housebill_nbr,
     a.customer_po,a.business_segment,a.invoice_type,a.handling_stn,a.controlling_stn,a.finalized_date,a.charge_cd,a.charge_cd_desc,x.internal_id ,
-    a.curr_cd,a.rate,a.total,a.sales_person,a.posted_date,a.email,a.processed,a.load_create_date ,a.load_update_date
-    from interface_ar_new a left outer join xref_charge_code x
+    a.curr_cd,a.rate,a.total,a.sales_person,a.posted_date,a.email,a.processed,a.load_create_date ,a.load_update_date,
+    a.customer_internal_id,a.currency_internal_id 
+    from interface_ar a left outer join xref_charge_code x
     on a.source_system = x.source_system
     and a.charge_cd = x.charge_cd where a.invoice_nbr = '${invoice_nbr}'`;
     const result = await connections.query(query);
@@ -328,6 +352,7 @@ function makeJsonToXml(payload, auth, data, customerData) {
     recode["q1:class"]["@internalId"] = hardcode.class.head;
     recode["q1:department"]["@internalId"] = hardcode.department.head;
     recode["q1:location"]["@internalId"] = hardcode.location.head;
+    recode["q1:subsidiary"]["@internalId"] = singleItem.subsidiary;
     recode["q1:currency"]["@internalId"] = customerData.currencyInternalId;
 
     recode["q1:otherRefNum"] = singleItem.customer_po; //customer_po is the bill to ref nbr
@@ -335,7 +360,6 @@ function makeJsonToXml(payload, auth, data, customerData) {
 
     recode["q1:itemList"]["q1:item"] = data.map((e) => ({
       "q1:item": {
-        // "@externalId": e.internal_id,
         "@internalId": e.internal_id,
       },
       "q1:description": e.charge_cd_desc,
@@ -421,19 +445,36 @@ async function createInvoice(soapPayload, type) {
       },
     });
 
-    // console.log("res", res.data);
-    if (res.status == 200) {
-      const obj = convert(res.data, { format: "object" });
+    // console.log("res", res.data, res.status);
+    const obj = convert(res.data, { format: "object" });
+
+    if (
+      res.status == 200 &&
+      obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"]["writeResponse"][
+        "platformCore:status"
+      ]["@isSuccess"] == "true"
+    ) {
       return obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"][
         "writeResponse"
       ]["baseRef"]["@internalId"];
+    } else if (res.status == 200) {
+      throw {
+        customError: true,
+        msg: obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"][
+          "writeResponse"
+        ]["platformCore:status"]["platformCore:statusDetail"][
+          "platformCore:message"
+        ],
+        payload: soapPayload,
+        response: res.data,
+      };
     } else {
       throw {
         customError: true,
         msg:
           type == "IN"
-            ? "Unable to create invoice"
-            : "Unable to create CreditMemo",
+            ? "Unable to create invoice. Internal Server Error"
+            : "Unable to create CreditMemo. Internal Server Error",
         payload: soapPayload,
         response: res.data,
       };
@@ -458,7 +499,7 @@ async function updateInvoiceId(connections, item, invoiceId, isSuccess = true) {
       item.invoice_nbr,
       invoiceId
     );
-    let query = `UPDATE interface_ar_new `;
+    let query = `UPDATE interface_ar `;
     if (isSuccess) {
       query += ` SET internal_id = '${invoiceId}', processed = 'P' `;
     } else {
@@ -503,6 +544,7 @@ async function recordErrorResponse(item, error) {
     const data = {
       id: item.invoice_nbr + item.invoice_type,
       invoice_nbr: item.invoice_nbr,
+      customer_id: item.customer_id,
       source_system: item.source_system,
       invoice_type: item.invoice_type,
       invoice_date: item.invoice_date.toLocaleString(),
@@ -519,7 +561,65 @@ async function recordErrorResponse(item, error) {
       Item: data,
     };
     await documentClient.put(params).promise();
+    await sendMail(data);
   } catch (e) {
     console.log("db err", e);
   }
+}
+
+function sendMail(data) {
+  return new Promise((resolve, reject) => {
+    try {
+      let errorObj = JSON.parse(JSON.stringify(data));
+      delete errorObj["payload"];
+      delete errorObj["response"];
+
+      const transporter = nodemailer.createTransport({
+        host: "email-smtp.us-east-1.amazonaws.com",
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: "AKIAXLP624BLJQ5JICVQ",
+          pass: "BFzlzKrkZAIdRqFu3BoxO1uGRNCjqGUfEeZN/JpTaIuV",
+        },
+      });
+
+      const message = {
+        from: "Netsuite <reports@omnilogistics.com>",
+        to: "kazi.ali@bizcloudexperts.com",
+        subject: `Netsuite Error`,
+        html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Netsuite Error</title>
+        </head>
+        <body>
+          <h3>Error msg:- ${errorObj.errorDescription} </h3>
+          <p> Error Obj:- <code> ${JSON.stringify(
+            errorObj,
+            null,
+            4
+          )} </code></p>
+          <p> Payload:- <code>${data?.payload ?? "No Payload"}</code></p>
+          <p> Response:- <code>${data.response ?? "No Response"}</code></p>
+        </body>
+        </html>
+        `,
+      };
+
+      transporter.sendMail(message, function (err, info) {
+        if (err) {
+          resolve(true);
+        } else {
+          resolve(true);
+        }
+      });
+    } catch (error) {
+      resolve(true);
+    }
+  });
 }

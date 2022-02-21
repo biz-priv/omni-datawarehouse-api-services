@@ -44,7 +44,7 @@
           "q1:department": { "@internalId": "" },
           "q1:class": { "@internalId": "" },
           "q1:location": { "@internalId": "" },
-          "q1:subsidiary": { "@internalId": "3" },
+          "q1:subsidiary": { "@internalId": "" },
           "q1:currency": { "@internalId": "" },
           "q1:otherRefNum": "",
           "q1:memo": "",
