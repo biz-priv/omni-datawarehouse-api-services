@@ -236,7 +236,6 @@ async function checkStatus(data) {
 
 async function makeJsonToXml(payload, inputData) {
   try {
-    // let payload = getPAY();
     /**
      * set auth details
      */
@@ -309,7 +308,7 @@ async function makeJsonToXml(payload, inputData) {
 
       transBodyWithValues = { "otm:ShipmentStatus": null };
       transBodyWithValues["otm:ShipmentStatus"] = transBody;
-    } else {
+
       /**
        * with pdf
        */
