@@ -308,7 +308,7 @@ async function makeJsonToXml(payload, inputData) {
 
       transBodyWithValues = { "otm:ShipmentStatus": null };
       transBodyWithValues["otm:ShipmentStatus"] = transBody;
-
+    } else {
       /**
        * with pdf
        */
