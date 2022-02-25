@@ -41,6 +41,7 @@
           "@xmlns:q1": "urn:sales_2021_2.transactions.webservices.netsuite.com",
           "q1:entity": { "@internalId": "" },
           "q1:tranDate": "",
+          "q1:tranId": "",
           "q1:department": { "@internalId": "" },
           "q1:class": { "@internalId": "" },
           "q1:location": { "@internalId": "" },
@@ -50,7 +51,7 @@
           "q1:memo": "",
           "q1:itemList": {
             "q1:item": {
-              "q1:item": { "@externalId": "AIR FREIGHT" },
+              "q1:item": { "@internalId": "" },
               "q1:description": {},
               "q1:amount": "",
               "q1:rate": "",
@@ -60,16 +61,22 @@
               "q1:customFieldList": {
                 "customField": [
                   {
-                    "@internalId": "1166",
-                    "@xsi:type": "StringCustomFieldRef",
-                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": { "@externalId": "" }
-                  },
-                  {
                     "@internalId": "760",
                     "@xsi:type": "StringCustomFieldRef",
                     "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": {}
+                    "value": ""
+                  },
+                  {
+                    "@internalId": "1166",
+                    "@xsi:type": "StringCustomFieldRef",
+                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                    "value": ""
+                  },
+                  {
+                    "@internalId": "1167",
+                    "@xsi:type": "StringCustomFieldRef",
+                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                    "value": ""
                   }
                 ]
               }
@@ -81,7 +88,7 @@
                 "@internalId": "1745",
                 "@xsi:type": "DateCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "2022-01-11T23:07:57"
+                "value": ""
               },
               {
                 "@internalId": "1730",
@@ -99,7 +106,7 @@
                 "@internalId": "2327",
                 "@xsi:type": "SelectCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": { "@typeId": "752", "@internalId": "4" }
+                "value": { "@typeId": "752", "@internalId": "" }
               }
             ]
           }
