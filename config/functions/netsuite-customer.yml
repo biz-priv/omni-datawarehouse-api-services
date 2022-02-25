@@ -18,22 +18,15 @@ function:
     HOST: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
-    NETSUIT_AR_ACCOUNT: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/account} #"1238234_SB1"
-    NETSUIT_AR_CONSUMER_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerKey} #"cc2b4d76232dbcb49f8678aa968b2c61989683ac8b094db962dc7a56a099768f"
-    NETSUIT_AR_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerSecret} #"5620fcb78dd156f28ac2a9804d3f2d06df3f957297b6b8a9e6a1aaa13f55362b"
-    NETSUIT_AR_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/tokenKey} #"7a9da21f09bd1ff3911a4699a923ba37a424ad7c9ebf1d44906dfcfdcdbe483e"
-    NETSUIT_AR_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/tokenSecret} #"6a159f86931aa2ae894bdc7abcc9055f48f254af8ee41cad7e86fd21ba07d5e3"
-    NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath} #"https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl"
-    NETSUIT_AR_ERROR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/dynamo/errorTable} #"omni-dw-netsuit-ar-error-response-dev"
-    NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host} # errorEmail-smtp.us-east-1.amazonaws.com
-    NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user} # AKIAXLP624BLJQ5JICVQ
-    NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass} # BFzlzKrkZAIdRqFu3BoxO1uGRNCjqGUfEeZN/JpTaIuV
-    NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from} # reports@omnilogistics.com
-    NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to} # kazi.ali@bizcloudexperts.com
-
-
-    # /omni-dw/dev/netsuitAR/errorEmail/host # email-smtp.us-east-1.amazonaws.com
-    # /omni-dw/dev/netsuitAR/errorEmail/user # AKIAXLP624BLJQ5JICVQ
-    # /omni-dw/dev/netsuitAR/errorEmail/pass # BFzlzKrkZAIdRqFu3BoxO1uGRNCjqGUfEeZN/JpTaIuV
-    # /omni-dw/dev/netsuitAR/errorEmail/from # reports@omnilogistics.com
-    # /omni-dw/dev/netsuitAR/errorEmail/to # kazi.ali@bizcloudexperts.com
+    NETSUIT_AR_ACCOUNT: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/account}
+    NETSUIT_AR_CONSUMER_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerKey}
+    NETSUIT_AR_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerSecret}
+    NETSUIT_AR_TOKEN_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/tokenKey}
+    NETSUIT_AR_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/tokenSecret}
+    NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath}
+    NETSUIT_AR_ERROR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/dynamo/errorTable}
+    NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host}
+    NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user}
+    NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass}
+    NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
+    NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}

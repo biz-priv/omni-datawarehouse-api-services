@@ -26,18 +26,8 @@ function:
     NETSUIT_AR_TOKEN_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/tokenSecret}
     NETSUIT_AR_WDSLPATH: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/wdslPath}
     NETSUIT_AR_ERROR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/dynamo/errorTable}
-    NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host} # errorEmail-smtp.us-east-1.amazonaws.com
-    NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user} # AKIAXLP624BLJQ5JICVQ
-    NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass} # BFzlzKrkZAIdRqFu3BoxO1uGRNCjqGUfEeZN/JpTaIuV
-    NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from} # reports@omnilogistics.com
-    NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to} # kazi.ali@bizcloudexperts.com
-
-
-    # /omni-dw/dev/netsuitAR/apiEndpoint https://1238234-sb1.suitetalk.api.netsuite.com/services/NetSuitePort_2021_2
-    # /omni-dw/dev/netsuitAR/authConfig/account 1238234_SB1
-    # /omni-dw/dev/netsuitAR/authConfig/consumerKey dc5a854e86c5bd48417c26ec1287cb5577f19d147acb48415e95ceb475ce04a5
-    # /omni-dw/dev/netsuitAR/authConfig/consumerSecret 4c53c17215ace3a0d0cb2530685c3609488ab7b8a2e3c3c0fe499779bd6c108a
-    # /omni-dw/dev/netsuitAR/authConfig/tokenKey f61cd294be68ee81be399292fc8df43cad3ac5d3e3c97878c69a08af8b5d3473
-    # /omni-dw/dev/netsuitAR/authConfig/tokenSecret 83bba47e64990cdb3133472e01bff2a0b9150fb303cecdf4f9ed7f754424ddfb
-    # /omni-dw/dev/netsuitAR/authConfig/wdslPath https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl
-    # /omni-dw/dev/netsuitAR/dynamo/errorTable omni-dw-netsuit-ar-error-response-dev
+    NETSUIT_AR_ERROR_EMAIL_HOST: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/host}
+    NETSUIT_AR_ERROR_EMAIL_USER: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/user}
+    NETSUIT_AR_ERROR_EMAIL_PASS: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/pass}
+    NETSUIT_AR_ERROR_EMAIL_FROM: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/from}
+    NETSUIT_AR_ERROR_EMAIL_TO: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/errorEmail/to}
