@@ -41,16 +41,17 @@
           "@xmlns:q1": "urn:sales_2021_2.transactions.webservices.netsuite.com",
           "q1:entity": { "@internalId": "" },
           "q1:tranDate": "",
+          "q1:tranId": "",
           "q1:department": { "@internalId": "" },
           "q1:class": { "@internalId": "" },
           "q1:location": { "@internalId": "" },
-          "q1:subsidiary": { "@internalId": "3" },
+          "q1:subsidiary": { "@internalId": "" },
           "q1:currency": { "@internalId": "" },
           "q1:otherRefNum": "",
           "q1:memo": "",
           "q1:itemList": {
             "q1:item": {
-              "q1:item": { "@externalId": "AIR FREIGHT" },
+              "q1:item": { "@internalId": "" },
               "q1:description": {},
               "q1:amount": "",
               "q1:rate": "",
@@ -60,22 +61,22 @@
               "q1:customFieldList": {
                 "customField": [
                   {
-                    "@internalId": "1727",
-                    "@xsi:type": "StringCustomFieldRef",
-                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": "CULVSHA21040316"
-                  },
-                  {
-                    "@internalId": "1728",
-                    "@xsi:type": "StringCustomFieldRef",
-                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": "USLGB"
-                  },
-                  {
                     "@internalId": "760",
                     "@xsi:type": "StringCustomFieldRef",
                     "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                    "value": {}
+                    "value": ""
+                  },
+                  {
+                    "@internalId": "1166",
+                    "@xsi:type": "StringCustomFieldRef",
+                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                    "value": ""
+                  },
+                  {
+                    "@internalId": "1167",
+                    "@xsi:type": "StringCustomFieldRef",
+                    "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                    "value": ""
                   }
                 ]
               }
@@ -84,40 +85,28 @@
           "q1:customFieldList": {
             "customField": [
               {
-                "@internalId": "1735",
-                "@xsi:type": "StringCustomFieldRef",
-                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "13001475"
-              },
-              {
                 "@internalId": "1745",
                 "@xsi:type": "DateCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "2022-01-11T23:07:57"
-              },
-              {
-                "@internalId": "1732",
-                "@xsi:type": "DateCustomFieldRef",
-                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "2021-07-14T00:00:00"
+                "value": ""
               },
               {
                 "@internalId": "1730",
                 "@xsi:type": "StringCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "91404469"
+                "value": ""
               },
               {
                 "@internalId": "1744",
                 "@xsi:type": "StringCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": "wwaller@omnilogistics.com"
+                "value": ""
               },
               {
                 "@internalId": "2327",
                 "@xsi:type": "SelectCustomFieldRef",
                 "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-                "value": { "@typeId": "752", "@internalId": "4" }
+                "value": { "@typeId": "752", "@internalId": "" }
               }
             ]
           }
