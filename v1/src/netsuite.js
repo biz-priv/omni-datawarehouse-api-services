@@ -529,12 +529,12 @@ function sendMail(data) {
       delete errorObj["response"];
 
       const transporter = nodemailer.createTransport({
-        host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST, //"email-smtp.us-east-1.amazonaws.com",
+        host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
         port: 587,
         secure: false, // true for 465, false for other ports
         auth: {
-          user: process.env.NETSUIT_AR_ERROR_EMAIL_USER, //"AKIAXLP624BLJQ5JICVQ",
-          pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS, //"BFzlzKrkZAIdRqFu3BoxO1uGRNCjqGUfEeZN/JpTaIuV",
+          user: process.env.NETSUIT_AR_ERROR_EMAIL_USER,
+          pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
         },
       });
 
