@@ -19,7 +19,7 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
-let totalCountPerLoop = 1;
+let totalCountPerLoop = 10;
 
 module.exports.handler = async (event, context, callback) => {
   let hasMoreData = "false";

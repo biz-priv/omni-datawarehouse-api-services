@@ -2,16 +2,10 @@
 stateMachine:
   name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
   events:
-    # - http:
-    #     path: gofunction
-    #     method: GET
+    - schedule: cron(59 23 * * *)
     # - schedule:
     #     rate: rate(15 minutes)
     #     enabled: true
-    #     input:
-    #       hasMoreData: false
-    #       stageParams:
-    #         stage: ${self:provider.stage}
   definition:
     Comment: "State machine to create netsuit invoice"
     StartAt: PublishEvents
