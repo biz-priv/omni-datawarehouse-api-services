@@ -57,11 +57,11 @@ pipeline {
             steps {
                 withAWS(credentials: 'bizdev-aws-creds'){
                     sh """
-                    npm i serverless@1.34.0
+                    npm i serverless@2.11.1
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
+                    sls deploy --alias v1 -s ${env.ENVIRONMENT}
                     """
                 }
             }
@@ -80,11 +80,11 @@ pipeline {
             steps {
                 withAWS(credentials: 'omni-aws-creds'){
                     sh """
-                    npm i serverless@1.34.0
+                    npm i serverless@2.11.1
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
+                    sls deploy --alias v1 -s ${env.ENVIRONMENT}
                     """
                 }
             }
