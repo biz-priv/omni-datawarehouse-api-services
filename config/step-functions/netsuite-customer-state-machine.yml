@@ -1,18 +1,15 @@
 ---
 stateMachine:
-  name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
+  name: ${self:service}-netsuite-customer-state-machine-${self:provider.stage}
   events:
-    # - schedule: cron(59 23 * * *)
-    # - schedule:
-    #     rate: rate(15 minutes)
-    #     enabled: true
+    # - schedule: cron(0 22 * * *)
   definition:
     Comment: "State machine to create netsuit invoice"
     StartAt: PublishEvents
     States:
       PublishEvents:
         Type: Task
-        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-netsuite-ar-${self:provider.stage}"
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-netsuite-customer-${self:provider.stage}"
         Next: EndChoice
       EndChoice:
         Type: Choice

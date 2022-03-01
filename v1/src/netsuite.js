@@ -1,56 +1,34 @@
+const AWS = require("aws-sdk");
 const { create, convert } = require("xmlbuilder2");
 const crypto = require("crypto");
 const axios = require("axios");
 const pgp = require("pg-promise");
-
-const NetSuite = require("node-suitetalk");
-const Configuration = NetSuite.Configuration;
-const Service = NetSuite.Service;
-const Search = NetSuite.Search;
-
+const nodemailer = require("nodemailer");
 const payload = require("../../Helpers/netsuit_AR.json");
 
-const API_ENDPOINT =
-  "https://1238234-sb1.suitetalk.api.netsuite.com/services/NetSuitePort_2021_2";
 const userConfig = {
-  account: "1238234_SB1",
+  account: process.env.NETSUIT_AR_ACCOUNT,
   apiVersion: "2021_2",
   accountSpecificUrl: true,
   token: {
-    consumer_key:
-      "cc2b4d76232dbcb49f8678aa968b2c61989683ac8b094db962dc7a56a099768f",
-    consumer_secret:
-      "5620fcb78dd156f28ac2a9804d3f2d06df3f957297b6b8a9e6a1aaa13f55362b",
-    token_key:
-      "7a9da21f09bd1ff3911a4699a923ba37a424ad7c9ebf1d44906dfcfdcdbe483e",
-    token_secret:
-      "6a159f86931aa2ae894bdc7abcc9055f48f254af8ee41cad7e86fd21ba07d5e3",
+    consumer_key: process.env.NETSUIT_AR_CONSUMER_KEY,
+    consumer_secret: process.env.NETSUIT_AR_CONSUMER_SECRET,
+    token_key: process.env.NETSUIT_AR_TOKEN_KEY,
+    token_secret: process.env.NETSUIT_AR_TOKEN_SECRET,
   },
-  wsdlPath:
-    "https://1238234-sb1.restlets.api.netsuite.com/wsdl/v2021_2_0/netsuite.wsdl",
+  wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
-const totalCount = 5;
-const loopCount = 4;
+
+let totalCountPerLoop = 10;
 
 module.exports.handler = async (event, context, callback) => {
   let hasMoreData = "false";
-  let currentLoopCount = event.hasOwnProperty("currentLoopCount")
-    ? event.currentLoopCount
-    : 0;
-  try {
-    // let hasMoreData = "true";
-    // console.log("event", event);
-    // if (
-    //   event &&
-    //   event.hasOwnProperty("hasMoreData") &&
-    //   event.hasMoreData == "true"
-    // ) {
-    //   hasMoreData = "false";
-    // } else {
-    //   hasMoreData = "true";
-    // }
-    // return { hasMoreData };
+  let currentCount = 0;
+  totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
+    ? event.totalCountPerLoop
+    : totalCountPerLoop;
 
+  try {
     /**
      * Get connections
      */
@@ -60,61 +38,98 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const orderData = await getDataGroupBy(connections);
-    console.log("orderData", orderData.length, orderData[0]);
-    if (orderData.length > totalCount - 1 && loopCount >= currentLoopCount) {
-      hasMoreData = "true";
-      currentLoopCount = currentLoopCount + 1;
-    }
-    // return {};
-    await Promise.all(
-      orderData.map(async (item) => {
-        try {
-          // const itemId = "DFW7789410-00";
-          const itemId = item.invoice_nbr;
-          /**
-           * get invoice obj from DB
-           */
-          const orderDataById = await getInvoiceNbrData(connections, itemId);
-          // console.log("orderDataById", orderDataById);
-          /**
-           * get customer from netsuit
-           */
-          const customerData = await getcustomer(orderDataById[0].customer_id);
-          // console.log("customerData", customerData);
+    console.log("orderData", orderData.length);
+    currentCount = orderData.length;
+    let count = 0;
+    for (let i = 0; i < orderData.length; i++) {
+      let item = orderData[i];
+      let singleItem = null;
+      try {
+        const itemId = item.invoice_nbr;
+
+        /**
+         * get invoice obj from DB
+         */
+        const dataById = await getInvoiceNbrData(connections, itemId);
+        singleItem = dataById[0];
+
+        /**
+         * group data by invoice_type IN/CM
+         */
+        const dataGroup = dataById.reduce(
+          (result, item) => ({
+            ...result,
+            [item["invoice_type"]]: [
+              ...(result[item["invoice_type"]] || []),
+              item,
+            ],
+          }),
+          {}
+        );
+
+        /**
+         * get customer from netsuit
+         */
+        let customerData = {
+          entityId: singleItem.customer_id,
+          entityInternalId: singleItem.customer_internal_id,
+          currency: singleItem.curr_cd,
+          currencyInternalId: singleItem.currency_internal_id,
+        };
+
+        for (let e of Object.keys(dataGroup)) {
+          count++;
+          singleItem = dataGroup[e][0];
+
           /**
            * get auth keys
            */
           const auth = getOAuthKeys(userConfig);
+
           /**
            * Make Json to Xml payload
            */
           const xmlPayload = makeJsonToXml(
             payload,
             auth,
-            orderDataById,
+            dataGroup[e],
             customerData
           );
-          // console.log(xmlPayload);
+
           /**
            * create Netsuit Invoice
            */
-          const invoiceId = await createInvoice(xmlPayload);
-          // console.log("invoiceId", invoiceId);
+          const invoiceId = await createInvoice(
+            xmlPayload,
+            singleItem.invoice_type
+          );
 
           /**
            * update invoice id
            */
-          await updateInvoiceId(connections, itemId, invoiceId);
-          // connections.end();
-        } catch (error) {
-          console.info("error");
+          await updateInvoiceId(connections, singleItem, invoiceId);
         }
-      })
-    );
-    return { hasMoreData, currentLoopCount };
+      } catch (error) {
+        if (error.hasOwnProperty("customError")) {
+          try {
+            await updateInvoiceId(connections, singleItem, null, false);
+            await recordErrorResponse(singleItem, error);
+          } catch (error) {
+            await recordErrorResponse(singleItem, error);
+          }
+        }
+      }
+      console.log("count", count);
+    }
+
+    if (currentCount > totalCountPerLoop) {
+      hasMoreData = "true";
+    } else {
+      hasMoreData = "false";
+    }
+    return { hasMoreData };
   } catch (error) {
-    // console.info("ERROR INFO", error);
-    return { hasMoreData: false, currentLoopCount };
+    return { hasMoreData: "false" };
   }
 };
 
@@ -123,13 +138,11 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
-    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
     const dbc = pgp({ capSQL: true });
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
-    console.log("connectionString", connectionString);
     return dbc(connectionString);
   } catch (error) {
     throw "DB Connection Error";
@@ -138,9 +151,11 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    // const query = `SELECT invoice_nbr FROM interface_ar_new GROUP BY invoice_nbr limit 10 offset 0`;
-    const query = `SELECT invoice_nbr FROM interface_ar_new where internal_id is null
-                    GROUP BY invoice_nbr limit ${totalCount}`;
+    const query = `SELECT distinct invoice_nbr FROM interface_ar where internal_id is null and processed != 'P' 
+                    and processed != 'F' and customer_internal_id is not null limit ${
+                      totalCountPerLoop + 1
+                    }`;
+
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
@@ -153,7 +168,13 @@ async function getDataGroupBy(connections) {
 
 async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
-    const query = `SELECT * FROM interface_ar_new where invoice_nbr = '${invoice_nbr}'`;
+    const query = `select
+    a.source_system,a.id,a.file_nbr,a.customer_id,a.subsidiary,a.master_bill_nbr,a.invoice_nbr,a.invoice_date,a.ready_date,a.period,a.housebill_nbr,
+    a.customer_po,a.business_segment,a.invoice_type,a.handling_stn,a.controlling_stn,a.finalized_date,a.charge_cd,a.charge_cd_desc,charge_cd_internal_id,
+    a.curr_cd,a.rate,a.total,a.sales_person,a.posted_date,a.email,a.processed,a.load_create_date ,a.load_update_date,
+    a.customer_internal_id,a.currency_internal_id
+    from interface_ar a where a.invoice_nbr = '${invoice_nbr}'`;
+
     const result = await connections.query(query);
     if (!result || result.length == 0 || !result[0].customer_id) {
       throw "No data found.";
@@ -162,50 +183,6 @@ async function getInvoiceNbrData(connections, invoice_nbr) {
   } catch (error) {
     throw "No data found.";
   }
-}
-
-function getcustomer(entityId) {
-  return new Promise((resolve, reject) => {
-    const config = new Configuration(userConfig);
-    const service = new Service(config);
-    service
-      .init()
-      .then((/**/) => {
-        // Set search preferences
-        const searchPreferences = new Search.SearchPreferences();
-        searchPreferences.pageSize = 5;
-        service.setSearchPreferences(searchPreferences);
-
-        // Create basic search
-        const search = new Search.Basic.CustomerSearchBasic();
-
-        const nameStringField = new Search.Fields.SearchStringField();
-        nameStringField.field = "entityId";
-        nameStringField.operator = "is";
-        nameStringField.searchValue = entityId; //"COMSP27";
-
-        search.searchFields.push(nameStringField);
-
-        return service.search(search);
-      })
-      .then((result, raw, soapHeader) => {
-        // console.log(JSON.stringify(result));
-        if (result && result?.searchResult?.recordList?.record.length > 0) {
-          const record = result.searchResult.recordList.record[0];
-          resolve({
-            entityId: record.entityId,
-            entityInternalId: record["$attributes"].internalId,
-            currency: record.currency.name,
-            currencyInternalId: record.currency["$attributes"].internalId,
-          });
-        } else {
-          reject("Customer not found");
-        }
-      })
-      .catch((err) => {
-        reject("Customer not found");
-      });
-  });
 }
 
 function getOAuthKeys(configuration) {
@@ -279,54 +256,110 @@ function makeJsonToXml(payload, auth, data, customerData) {
 
     let recode = payload["soap:Envelope"]["soap:Body"]["add"]["record"];
     recode["q1:entity"]["@internalId"] = customerData.entityInternalId; //This is internal ID for the customer.
-    recode["q1:tranDate"] = singleItem.invoice_date.toISOString(); //invoice date
+    recode["q1:tranId"] = singleItem.invoice_nbr; //invoice ID
+    recode["q1:tranDate"] = dateFormat(singleItem.invoice_date); //invoice date
+
     recode["q1:class"]["@internalId"] = hardcode.class.head;
     recode["q1:department"]["@internalId"] = hardcode.department.head;
     recode["q1:location"]["@internalId"] = hardcode.location.head;
+    recode["q1:subsidiary"]["@internalId"] = singleItem.subsidiary;
     recode["q1:currency"]["@internalId"] = customerData.currencyInternalId;
 
-    recode["q1:otherRefNum"] = "CIRRUS"; //customer reference
-    recode["q1:memo"] = ""; //this is for EE only (leave out for worldtrak)
+    recode["q1:otherRefNum"] = singleItem.customer_po; //customer_po is the bill to ref nbr
+    recode["q1:memo"] = ""; // (leave out for worldtrak)
 
     recode["q1:itemList"]["q1:item"] = data.map((e) => ({
       "q1:item": {
-        "@externalId": "AIR FREIGHT",
+        "@internalId": e.charge_cd_internal_id,
       },
       "q1:description": e.charge_cd_desc,
       "q1:amount": e.total,
       "q1:rate": e.rate,
       "q1:department": {
-        "@internalId": hardcode.department.line, //"1", //hardcode 1 (revenue)
+        "@internalId": hardcode.department.line,
       },
       "q1:class": {
-        "@internalId": hardcode.class.line, //"3", //hardcode 2 (freight domestic) for worldtrak
+        "@internalId": hardcode.class.line,
       },
       "q1:location": {
-        "@externalId": e.handling_stn, // This is internal ID for billing station
+        "@externalId": e.handling_stn,
       },
       "q1:customFieldList": {
         customField: [
-          {
-            "@internalId": "1727",
-            "@xsi:type": "StringCustomFieldRef",
-            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-            value: "CULVSHA21040316",
-          },
-          {
-            "@internalId": "1728",
-            "@xsi:type": "StringCustomFieldRef",
-            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-            value: e.controlling_stn,
-          },
           {
             "@internalId": "760",
             "@xsi:type": "StringCustomFieldRef",
             "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
             value: e.housebill_nbr,
           },
+          {
+            "@internalId": "1167",
+            "@xsi:type": "StringCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: e.sales_person,
+          },
+          {
+            "@internalId": "1727",
+            "@xsi:type": "StringCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: e.master_bill_nbr,
+          },
+          {
+            "@internalId": "1166",
+            "@xsi:type": "SelectCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: { "@externalId": e.controlling_stn },
+          },
+          {
+            "@internalId": "1164",
+            "@xsi:type": "DateCustomFieldRef",
+            "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+            value: dateFormat(e.ready_date),
+          },
         ],
       },
     }));
+
+    recode["q1:customFieldList"]["customField"] = [
+      {
+        "@internalId": "1745",
+        "@xsi:type": "DateCustomFieldRef",
+        "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+        value: dateFormat(singleItem.finalized_date),
+      },
+      {
+        "@internalId": "1730",
+        "@xsi:type": "StringCustomFieldRef",
+        "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+        value: singleItem.file_nbr,
+      },
+      {
+        "@internalId": "1744",
+        "@xsi:type": "StringCustomFieldRef",
+        "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+        value: singleItem.email,
+      },
+      {
+        "@internalId": "2327",
+        "@xsi:type": "SelectCustomFieldRef",
+        "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+        value: {
+          "@typeId": "752",
+          "@internalId": hardcode.source_system,
+        },
+      },
+    ];
+
+    /**
+     * check if IN or CM (IN => invoice , CM => credit)
+     */
+
+    recode["@xsi:type"] =
+      singleItem.invoice_type == "IN" ? "q1:Invoice" : "q1:CreditMemo";
+    recode["@xmlns:q1"] =
+      singleItem.invoice_type == "IN"
+        ? "urn:sales_2021_2.transactions.webservices.netsuite.com"
+        : "urn:customers_2021_2.transactions.webservices.netsuite.com";
 
     payload["soap:Envelope"]["soap:Body"]["add"]["record"] = recode;
     const doc = create(payload);
@@ -336,63 +369,120 @@ function makeJsonToXml(payload, auth, data, customerData) {
   }
 }
 
-const createInvoice = async (soapPayload) => {
+async function createInvoice(soapPayload, type) {
   try {
-    const res = await axios.post(API_ENDPOINT, soapPayload, {
-      headers: {
-        Accept: "text/xml",
-        "Content-Type": "text/xml; charset=utf-8",
-        SOAPAction: "add",
-      },
-    });
-    // console.info("res", res.data);
-    if (res.status == 200) {
-      const obj = convert(res.data, { format: "object" });
+    const res = await axios.post(
+      process.env.NETSUIT_AR_API_ENDPOINT,
+      soapPayload,
+      {
+        headers: {
+          Accept: "text/xml",
+          "Content-Type": "text/xml; charset=utf-8",
+          SOAPAction: "add",
+        },
+      }
+    );
+
+    const obj = convert(res.data, { format: "object" });
+
+    if (
+      res.status == 200 &&
+      obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"]["writeResponse"][
+        "platformCore:status"
+      ]["@isSuccess"] == "true"
+    ) {
       return obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"][
         "writeResponse"
       ]["baseRef"]["@internalId"];
+    } else if (res.status == 200) {
+      throw {
+        customError: true,
+        msg: obj["soapenv:Envelope"]["soapenv:Body"]["addResponse"][
+          "writeResponse"
+        ]["platformCore:status"]["platformCore:statusDetail"][
+          "platformCore:message"
+        ],
+        payload: soapPayload,
+        response: res.data,
+      };
     } else {
-      throw "Unable to create invoice";
+      throw {
+        customError: true,
+        msg:
+          type == "IN"
+            ? "Unable to create invoice. Internal Server Error"
+            : "Unable to create CreditMemo. Internal Server Error",
+        payload: soapPayload,
+        response: res.data,
+      };
     }
   } catch (error) {
-    console.log("error", error);
-    throw "Unable to create invoice";
-  }
-};
-
-async function updateInvoiceId(connections, invoice_nbr, invoiceId) {
-  try {
-    console.log("invoice_nbr, invoiceId", invoice_nbr, invoiceId);
-    const query = `UPDATE interface_ar_new SET internal_id = '${invoiceId}' WHERE invoice_nbr = '${invoice_nbr}'`;
-    const result = await connections.query(query);
-    return result;
-  } catch (error) {
-    throw "No data found.";
+    if (error.hasOwnProperty("customError")) {
+      throw error;
+    } else {
+      throw {
+        customError: true,
+        msg: "Invoice api failed",
+        payload: soapPayload,
+      };
+    }
   }
 }
 
-function formatDate(dateObj) {
-  var date = new Date(dateObj);
-  return (
-    date.getFullYear() +
-    ("00" + (date.getMonth() + 1)).slice(-2) +
-    ("00" + date.getDate()).slice(-2) +
-    ("00" + date.getHours()).slice(-2) +
-    ("00" + date.getMinutes()).slice(-2) +
-    ("00" + date.getSeconds()).slice(-2)
-  );
+async function updateInvoiceId(connections, item, invoiceId, isSuccess = true) {
+  try {
+    console.log(
+      "invoice_nbr " + item.invoice_type,
+      item.invoice_nbr,
+      invoiceId
+    );
+    let query = `UPDATE interface_ar `;
+    if (isSuccess) {
+      query += ` SET internal_id = '${invoiceId}', processed = 'P' `;
+    } else {
+      query += ` SET internal_id = null, processed = 'F' `;
+    }
+    query += `WHERE invoice_nbr = '${item.invoice_nbr}' and invoice_type = '${item.invoice_type}'`;
+    const result = await connections.query(query);
+    return result;
+  } catch (error) {
+    throw {
+      customError: true,
+      msg: "Invoice is created But failed to update internal_id",
+      invoiceId,
+    };
+  }
 }
 
 function getHardcodeData(source_system = "WT") {
   try {
     const data = {
       WT: {
+        source_system: "3",
+        class: { head: "9", line: "2" },
+        department: { head: "15", line: "1" },
+        location: { head: "18", line: "EXT ID: Take from DB" },
+      },
+      CW: {
+        source_system: "1",
+        class: { head: "9", line: "2" },
+        department: { head: "15", line: "1" },
+        location: { head: "18", line: "EXT ID: Take from DB" },
+      },
+      EE: {
+        source_system: "4",
+        class: { head: "9", line: "2" },
+        department: { head: "15", line: "1" },
+        location: { head: "18", line: "EXT ID: Take from DB" },
+      },
+      M1: {
+        source_system: "2",
         class: { head: "9", line: "2" },
         department: { head: "15", line: "1" },
         location: { head: "18", line: "EXT ID: Take from DB" },
       },
     };
-    if (data[source_system]) {
+    if (data.hasOwnProperty(source_system)) {
       return data[source_system];
     } else {
       throw "source_system not exists";
@@ -400,4 +490,108 @@ function getHardcodeData(source_system = "WT") {
   } catch (error) {
     throw "source_system not exists";
   }
+}
+
+async function recordErrorResponse(item, error) {
+  try {
+    let documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const data = {
+      id: item.invoice_nbr + item.invoice_type,
+      invoice_nbr: item.invoice_nbr,
+      customer_id: item.customer_id,
+      source_system: item.source_system,
+      invoice_type: item.invoice_type,
+      invoice_date: item.invoice_date.toLocaleString(),
+      charge_cd_internal_id: item.charge_cd_internal_id,
+      errorDescription: error?.msg,
+      payload: error?.payload,
+      response: error?.response,
+      invoiceId: error?.invoiceId,
+      status: "error",
+      created_at: new Date().toLocaleString(),
+    };
+    const params = {
+      TableName: process.env.NETSUIT_AR_ERROR_TABLE,
+      Item: data,
+    };
+    await documentClient.put(params).promise();
+    await sendMail(data);
+  } catch (e) {}
+}
+
+function sendMail(data) {
+  return new Promise((resolve, reject) => {
+    try {
+      let errorObj = JSON.parse(JSON.stringify(data));
+      delete errorObj["payload"];
+      delete errorObj["response"];
+
+      const transporter = nodemailer.createTransport({
+        host: process.env.NETSUIT_AR_ERROR_EMAIL_HOST,
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.NETSUIT_AR_ERROR_EMAIL_USER,
+          pass: process.env.NETSUIT_AR_ERROR_EMAIL_PASS,
+        },
+      });
+
+      const message = {
+        from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
+        to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+        subject: `Netsuite Error`,
+        html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Netsuite Error</title>
+        </head>
+        <body>
+          <h3>Error msg:- ${errorObj.errorDescription} </h3>
+          <p> Error Obj:- </p> <pre> ${JSON.stringify(errorObj, null, 4)} </pre>
+          <p> Payload:- </p> <pre>${
+            data?.payload ? htmlEncode(data?.payload) : "No Payload"
+          }</pre>
+          <p> Response:- </p> <pre>${
+            data?.response ? htmlEncode(data?.response) : "No Response"
+          }</pre>
+        </body>
+        </html>
+        `,
+      };
+
+      transporter.sendMail(message, function (err, info) {
+        if (err) {
+          resolve(true);
+        } else {
+          resolve(true);
+        }
+      });
+    } catch (error) {
+      resolve(true);
+    }
+  });
+}
+
+function htmlEncode(data) {
+  return data.replace(/[\u00A0-\u9999<>\&]/g, function (i) {
+    return "&#" + i.charCodeAt(0) + ";";
+  });
+}
+
+function dateFormat(param) {
+  const date = new Date(param);
+  return (
+    date.getFullYear() +
+    "-" +
+    ("00" + (date.getMonth() + 1)).slice(-2) +
+    "-" +
+    ("00" + date.getDate()).slice(-2) +
+    "T11:05:03.000Z"
+  );
 }

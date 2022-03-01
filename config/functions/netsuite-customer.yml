@@ -1,14 +1,14 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/netsuite.handler
-  name: ${self:service}-netsuite-ar-${self:provider.stage}
-  description: Netsuite AR api service - ${self:provider.stage}
+  handler: ${self:custom.alias}/src/netsuite_customer.handler
+  name: ${self:service}-netsuite-customer-${self:provider.stage}
+  description: Netsuite customer AR api service - ${self:provider.stage}
   runtime: nodejs14.x
   memorySize: 2048
   timeout: 900
   package:
     include:
-      - ${self:custom.alias}/src/netsuite.js
+      - ${self:custom.alias}/src/netsuite_customer.js
       - Helpers/**
       - node_modules/**
   environment:
@@ -18,7 +18,6 @@ function:
     HOST: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     PASS: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
     PORT: ${ssm:/omni-dw/${self:provider.stage}/db/port}
-    NETSUIT_AR_API_ENDPOINT: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/apiEndpoint}
     NETSUIT_AR_ACCOUNT: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/account}
     NETSUIT_AR_CONSUMER_KEY: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerKey}
     NETSUIT_AR_CONSUMER_SECRET: ${ssm:/omni-dw/${self:provider.stage}/netsuitAR/authConfig/consumerSecret}
