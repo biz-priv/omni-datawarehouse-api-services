@@ -2,7 +2,7 @@
 stateMachine:
   name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
   events:
-    - schedule: cron(59 23 * * *)
+    # - schedule: cron(59 23 * * *)
     # - schedule:
     #     rate: rate(15 minutes)
     #     enabled: true
