@@ -1,11 +1,8 @@
 ---
 stateMachine:
   name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
-  # events:
-  # - schedule: cron(59 23 * * *)
-  # - schedule:
-  #     rate: rate(15 minutes)
-  #     enabled: true
+  events:
+    - schedule: cron(59 23 * * *)
   definition:
     Comment: "State machine to create netsuit invoice"
     StartAt: PublishEvents
