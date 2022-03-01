@@ -1,11 +1,8 @@
 ---
 stateMachine:
   name: ${self:service}-netsuite-customer-state-machine-${self:provider.stage}
-  crawl:
-    events:
-      - schedule: cron(0 21 * * *)
   definition:
-    Comment: "State machine to create netsuit invoice"
+    Comment: "State machine to update netsuit customer internal details"
     StartAt: PublishEvents
     States:
       PublishEvents:
@@ -23,3 +20,8 @@ stateMachine:
             Next: PublishEvents
       SuccessState:
         Type: Succeed
+  events:
+    - schedule:
+        name: ${self:service}-netsuite-customer-${self:provider.stage}
+        description: "schedule cloud watch event at 9PM every day for customers state machine"
+        rate: cron(0 21 * * *)
