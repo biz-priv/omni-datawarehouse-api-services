@@ -151,10 +151,10 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr FROM interface_ar where internal_id is null and processed != 'P' 
-                    and processed != 'F' and customer_internal_id is not null limit ${
-                      totalCountPerLoop + 1
-                    }`;
+    const query = `SELECT distinct invoice_nbr FROM interface_ar where internal_id is null and processed != 'P'
+                     and customer_internal_id is not null limit ${
+                       totalCountPerLoop + 1
+                     }`;
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {
@@ -541,7 +541,7 @@ function sendMail(data) {
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
         to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-        subject: `Netsuite Error`,
+        subject: `Test - Dev Netsuite Error `,
         html: `
         <!DOCTYPE html>
         <html lang="en">
