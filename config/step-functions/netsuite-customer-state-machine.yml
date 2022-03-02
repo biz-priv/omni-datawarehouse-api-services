@@ -22,6 +22,6 @@ stateMachine:
         Type: Succeed
   events:
     - schedule:
-        name: ${self:service}-netsuite-customer-cron-${self:provider.stage}
+        name: ${self:service}-netsuite-customer-state-machine-${self:provider.stage}
         description: "schedule cloud watch event at 9PM every day for customers state machine"
         rate: cron(0 21 * * ? *)
