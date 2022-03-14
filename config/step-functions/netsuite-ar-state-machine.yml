@@ -20,8 +20,8 @@ stateMachine:
             Next: PublishEvents
       SuccessState:
         Type: Succeed
-  events:
-    - schedule:
-        name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
-        description: "schedule cloud watch event at 10:30PM every day for netsuite Ar state machine"
-        rate: cron(30 22 * * ? *)
+  # events:
+  #   - schedule:
+  #       name: ${self:service}-netsuite-ar-state-machine-${self:provider.stage}
+  #       description: "schedule cloud watch event at 10:30PM every day for netsuite Ar state machine"
+  #       rate: cron(30 22 * * ? *)

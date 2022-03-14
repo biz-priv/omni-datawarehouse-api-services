@@ -20,6 +20,7 @@ const userConfig = {
 };
 
 let totalCountPerLoop = 10;
+const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
   let hasMoreData = "false";
@@ -27,7 +28,6 @@ module.exports.handler = async (event, context, callback) => {
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
     : totalCountPerLoop;
-
   try {
     /**
      * Get connections
@@ -38,6 +38,7 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const customerList = await getCustomerData(connections);
+
     console.log("customerList", customerList.length);
     currentCount = customerList.length;
 
@@ -56,12 +57,23 @@ module.exports.handler = async (event, context, callback) => {
       } catch (error) {
         try {
           if (error.hasOwnProperty("customError")) {
+            /**
+             * update error
+             */
             const singleItem = await getDataByCustomerId(
               connections,
               customer_id
             );
             await updateFailedRecords(connections, customer_id);
-            await recordErrorResponse(singleItem, error);
+            /**
+             * check if same error from dynamo db
+             * true if already notification sent
+             * false if it is new
+             */
+            const checkError = await checkSameError(singleItem);
+            if (!checkError) {
+              await recordErrorResponse(singleItem, error);
+            }
           }
         } catch (error) {}
       }
@@ -72,9 +84,17 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       hasMoreData = "false";
     }
-    return { hasMoreData };
   } catch (error) {
-    return { hasMoreData: "false" };
+    hasMoreData = "false";
+  }
+
+  if (hasMoreData == "false") {
+    try {
+      await startNetsuitInvoiceStep();
+    } catch (error) {}
+    return { hasMoreData };
+  } else {
+    return { hasMoreData };
   }
 };
 
@@ -83,6 +103,7 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -96,7 +117,8 @@ function getConnection() {
 
 async function getCustomerData(connections) {
   try {
-    const query = `SELECT distinct customer_id FROM interface_ar where customer_internal_id is null 
+    const query = `SELECT distinct customer_id FROM interface_ar where (customer_internal_id = '' and processed_date is null) or
+                    (customer_internal_id = '' and processed_date < '${today}')
                     limit ${totalCountPerLoop + 1}`;
 
     const result = await connections.query(query);
@@ -124,14 +146,17 @@ async function getDataByCustomerId(connections, cus_id) {
 
 async function putCustomer(connections, customerData, customer_id) {
   try {
-    // const query = `INSERT INTO netsuit_customer
-    //               (entityId, entityInternalId, currency, currencyInternalId)
-    //               VALUES ('${customerData.entityId}', '${customerData.entityInternalId}',
-    //                       '${customerData.currency}', '${customerData.currencyInternalId}')`;
-    const query = `UPDATE interface_ar SET 
+    let query = `INSERT INTO netsuit_customer
+                  (customer_id, customer_internal_id, curr_cd, currency_internal_id)
+                  VALUES ('${customerData.entityId}', '${customerData.entityInternalId}',
+                          '${customerData.currency}', '${customerData.currencyInternalId}');`;
+    // await connections.query(query1);
+
+    query += `UPDATE interface_ar SET 
                     customer_internal_id = '${customerData.entityInternalId}', 
-                    currency_internal_id = '${customerData.currencyInternalId}' 
-                    WHERE customer_id = '${customer_id}' `;
+                    currency_internal_id = '${customerData.currencyInternalId}', 
+                    processed_date = '${today}' 
+                    WHERE customer_id = '${customer_id}' ;`;
     await connections.query(query);
   } catch (error) {
     throw "Customer Update Failed";
@@ -189,7 +214,10 @@ function getcustomer(entityId) {
 
 async function updateFailedRecords(connections, cus_id) {
   try {
-    let query = `UPDATE interface_ar  SET processed = 'F' WHERE customer_id = '${cus_id}' and processed != 'P'`;
+    let query = `UPDATE interface_ar  
+                  SET processed = 'F',
+                  processed_date = '${today}' 
+                  WHERE customer_id = '${cus_id}'`;
     const result = await connections.query(query);
     return result;
   } catch (error) {}
@@ -243,8 +271,9 @@ function sendMail(data) {
 
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-        to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-        subject: `Netsuite Error`,
+        // to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+        to: "kazi.ali@bizcloudexperts.com,kiranv@bizcloudexperts.com,swillingham@omnilogistics.com,psotelo@omnilogistics.com,bcastilleja@omnilogistics.com",
+        subject: `Netsuite AR - Dev Error`,
         html: `
         <!DOCTYPE html>
         <html lang="en">
@@ -268,6 +297,72 @@ function sendMail(data) {
       });
     } catch (error) {
       resolve(true);
+    }
+  });
+}
+
+function getCustomDate() {
+  const date = new Date();
+  let ye = new Intl.DateTimeFormat("en", { year: "numeric" }).format(date);
+  let mo = new Intl.DateTimeFormat("en", { month: "2-digit" }).format(date);
+  let da = new Intl.DateTimeFormat("en", { day: "2-digit" }).format(date);
+  return `${ye}-${mo}-${da}`;
+}
+
+/**
+ * check error already exists or not.
+ * @param {*} singleItem
+ * @returns
+ */
+async function checkSameError(singleItem) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+
+    const params = {
+      TableName: process.env.NETSUIT_AR_ERROR_TABLE,
+      FilterExpression:
+        "#customer_id = :customer_id AND #errorDescription = :errorDescription",
+      ExpressionAttributeNames: {
+        "#customer_id": "customer_id",
+        "#errorDescription": "errorDescription",
+      },
+      ExpressionAttributeValues: {
+        ":customer_id": singleItem.customer_id,
+        ":errorDescription": `Customer Api failed. (customer_id: ${singleItem.customer_id})`,
+      },
+    };
+    const res = await documentClient.scan(params).promise();
+    if (res && res.Count && res.Count == 1) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+async function startNetsuitInvoiceStep() {
+  return new Promise((resolve, reject) => {
+    try {
+      const params = {
+        stateMachineArn: process.env.NETSUITE_STEP_ARN,
+        input: JSON.stringify({}),
+      };
+      const stepfunctions = new AWS.StepFunctions();
+      stepfunctions.startExecution(params, (err, data) => {
+        if (err) {
+          console.log("Netsuit Ar api trigger failed");
+          resolve(false);
+        } else {
+          console.log("Netsuit Ar started");
+          resolve(true);
+        }
+      });
+    } catch (error) {
+      resolve(false);
     }
   });
 }

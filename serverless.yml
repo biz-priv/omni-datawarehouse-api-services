@@ -87,6 +87,7 @@ functions:
   wd-api: ${file(config/functions/wd-api.yml):function}
   netsuite: ${file(config/functions/netsuite.yml):function}
   netsuite-customer: ${file(config/functions/netsuite-customer.yml):function}
+  netsuite-customer-step-trigger: ${file(config/functions/netsuite-customer-step-trigger.yml):function}
 
 stepFunctions:
   stateMachines:
