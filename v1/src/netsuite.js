@@ -460,7 +460,7 @@ async function createInvoice(soapPayload, type) {
       throw error;
     } else {
       throw {
-        customError: false,
+        // customError: false,
         msg: "Invoice api failed",
       };
     }
