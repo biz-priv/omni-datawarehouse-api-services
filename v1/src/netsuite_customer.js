@@ -150,11 +150,11 @@ async function putCustomer(connections, customerData, customer_id) {
                   (customer_id, customer_internal_id, curr_cd, currency_internal_id)
                   VALUES ('${customerData.entityId}', '${customerData.entityInternalId}',
                           '${customerData.currency}', '${customerData.currencyInternalId}');`;
-    // await connections.query(query1);
 
     query += `UPDATE interface_ar SET 
                     customer_internal_id = '${customerData.entityInternalId}', 
                     currency_internal_id = '${customerData.currencyInternalId}', 
+                    processed = 'F', 
                     processed_date = '${today}' 
                     WHERE customer_id = '${customer_id}' ;`;
     await connections.query(query);
