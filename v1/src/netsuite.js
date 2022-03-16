@@ -506,7 +506,7 @@ function getHardcodeData(source_system = "WT") {
         source_system: "3",
         class: {
           head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 4 },
+          line: { International: 3, Domestic: 2, Warehouse: 16 },
         },
         department: { head: "15", line: "1" },
         location: { head: "18", line: "EXT ID: Take from DB" },
@@ -515,7 +515,7 @@ function getHardcodeData(source_system = "WT") {
         source_system: "1",
         class: {
           head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 4 },
+          line: { International: 3, Domestic: 2, Warehouse: 16 },
         },
         department: { head: "15", line: "1" },
         location: { head: "18", line: "EXT ID: Take from DB" },
@@ -524,7 +524,7 @@ function getHardcodeData(source_system = "WT") {
         source_system: "4",
         class: {
           head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 4 },
+          line: { International: 3, Domestic: 2, Warehouse: 16 },
         },
         department: { head: "15", line: "1" },
         location: { head: "18", line: "EXT ID: Take from DB" },
@@ -533,7 +533,7 @@ function getHardcodeData(source_system = "WT") {
         source_system: "2",
         class: {
           head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 4 },
+          line: { International: 3, Domestic: 2, Warehouse: 16 },
         },
         department: { head: "15", line: "1" },
         location: { head: "18", line: "EXT ID: Take from DB" },
