@@ -91,6 +91,7 @@ functions:
 
 stepFunctions:
   stateMachines:
+    netsuite-ar-state-machine: ${file(config/step-functions/netsuite-ar-state-machine.yml):stateMachine}
     netsuite-customer-state-machine: ${file(config/step-functions/netsuite-customer-state-machine.yml):stateMachine}
 
 resources:
