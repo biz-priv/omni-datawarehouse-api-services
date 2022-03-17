@@ -86,10 +86,13 @@ functions:
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
   netsuite: ${file(config/functions/netsuite.yml):function}
+  netsuite-customer: ${file(config/functions/netsuite-customer.yml):function}
+  netsuite-customer-step-trigger: ${file(config/functions/netsuite-customer-step-trigger.yml):function}
 
 stepFunctions:
   stateMachines:
     netsuite-ar-state-machine: ${file(config/step-functions/netsuite-ar-state-machine.yml):stateMachine}
+    netsuite-customer-state-machine: ${file(config/step-functions/netsuite-customer-state-machine.yml):stateMachine}
 
 resources:
   Resources:
