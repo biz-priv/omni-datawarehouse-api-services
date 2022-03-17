@@ -70,6 +70,8 @@ module.exports.handler = async (event, context, callback) => {
     }
 
     const postData = makeJsonToXml(eventBody);
+    console.log("postData", postData);
+    // return {};
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
     if (
@@ -82,7 +84,10 @@ module.exports.handler = async (event, context, callback) => {
     return dataObj;
   } catch (error) {
     return callback(
-      response("[500]", error != null ? error : "Something went wrong.")
+      response(
+        "[500]",
+        error != null && error.hasOwnProperty("message") ? error.message : error
+      )
     );
   }
 };
@@ -129,6 +134,8 @@ function makeXmlToJson(data) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
           .RatingOutput;
+      console.log("modifiedObj", modifiedObj);
+
       if (isArray(modifiedObj)) {
         return modifiedObj.map((e) => {
           if (isEmpty(e.Message)) {
@@ -151,27 +158,49 @@ function makeXmlToJson(data) {
             ServiceLevelID: e.ServiceLevelID,
             StandardTotalRate: e.StandardTotalRate,
             StandardFreightCharge: e.StandardFreightCharge,
-            AccessorialOutput: AccessorialOutput,
+            AccessorialOutput:
+              AccessorialOutput == null ? "" : AccessorialOutput,
             Message: e.Message,
           };
         });
       } else {
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
+        } else if (modifiedObj.Message.search("WebTrakUserID") != -1) {
+          throw "Internal error message";
+        }
+        let AccessorialOutput = null;
+        if (
+          modifiedObj.AccessorialOutput &&
+          modifiedObj.AccessorialOutput.AccessorialOutput &&
+          modifiedObj.AccessorialOutput.AccessorialOutput[0] == null
+        ) {
+          const list = [];
+          list.push(modifiedObj.AccessorialOutput.AccessorialOutput);
+          AccessorialOutput = list;
+        } else {
+          AccessorialOutput = modifiedObj.AccessorialOutput.AccessorialOutput;
         }
         return [
           {
             ServiceLevelID: modifiedObj.ServiceLevelID,
             StandardTotalRate: modifiedObj.StandardTotalRate,
             Message: modifiedObj.Message,
+            StandardFreightCharge: modifiedObj.hasOwnProperty(
+              "StandardFreightCharge"
+            )
+              ? modifiedObj.StandardFreightCharge
+              : "",
+            AccessorialOutput:
+              AccessorialOutput == null ? "" : AccessorialOutput,
           },
         ];
       }
     } else {
-      return response("[400]", "Rate not found.");
+      throw "Rate not found.";
     }
-  } catch (error) {
-    return response("[500]", error.message || "Something Went wrong");
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
 

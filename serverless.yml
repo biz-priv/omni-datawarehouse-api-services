@@ -62,8 +62,10 @@ plugins:
   - serverless-layers
   - serverless-add-api-key
   - serverless-plugin-multiple-responses
-  - serverless-aws-alias
+  - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
+  - serverless-step-functions
+  - serverless-pseudo-parameters
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
@@ -82,6 +84,15 @@ functions:
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
+  wd-api: ${file(config/functions/wd-api.yml):function}
+  netsuite: ${file(config/functions/netsuite.yml):function}
+  netsuite-customer: ${file(config/functions/netsuite-customer.yml):function}
+  netsuite-customer-step-trigger: ${file(config/functions/netsuite-customer-step-trigger.yml):function}
+
+stepFunctions:
+  stateMachines:
+    netsuite-ar-state-machine: ${file(config/step-functions/netsuite-ar-state-machine.yml):stateMachine}
+    netsuite-customer-state-machine: ${file(config/step-functions/netsuite-customer-state-machine.yml):stateMachine}
 
 resources:
   Resources:
@@ -100,3 +111,13 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "400"
+    AuthFailureGatewayResponse:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: UNAUTHORIZED
+        RestApiId:
+          Ref: "ApiGatewayRestApi"
+        StatusCode: "401"
