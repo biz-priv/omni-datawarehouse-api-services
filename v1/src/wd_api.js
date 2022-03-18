@@ -3,7 +3,7 @@ const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 const pgp = require("pg-promise");
 const wd_payload = require("../../Helpers/wd_payload.json");
-const wd_pdf = require("../../Helpers/wd_pdf.json");
+const wd_pdf_payload = require("../../Helpers/wd_pdf.json");
 
 module.exports.handler = async (event, context, callback) => {
   try {
@@ -16,47 +16,51 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * Check ETA shipment data process
      */
-    await Promise.all(
-      shipmentData.map(async (item) => {
-        try {
-          const newData = await checkStatus(item);
-          let itemData = newData.data;
-          let is_update = newData.is_update;
+    for (let i = 0; i < shipmentData.length; i++) {
+      let item = shipmentData[i];
 
-          /**
-           * Make Json to Xml payload
-           */
-          const xmlPayload = await makeJsonToXml(
-            Object.assign({}, wd_payload),
-            itemData
-          );
+      //Do something
+      try {
+        const newData = await checkStatus(item);
+        let itemData = newData.data;
+        let is_update = newData.is_update;
 
-          /**
-           * Get response from WD api
-           */
-          const xmlResponse = await getXmlResponse(xmlPayload);
+        /**
+         * Make Json to Xml payload
+         */
+        const xmlPayload = await makeJsonToXml(
+          JSON.parse(JSON.stringify(wd_payload)),
+          itemData
+        );
 
-          /**
-           * make Xml to Json response
-           */
-          const refTransmissionNo = makeXmlToJson(xmlResponse);
+        /**
+         * Get response from WD api
+         */
+        const xmlResponse = await getXmlResponse(xmlPayload);
 
-          /**
-           * Update shipment data to dynamo db
-           */
-          await updateStatus(
-            itemData,
-            xmlPayload,
-            xmlResponse,
-            refTransmissionNo,
-            is_update
-          );
-        } catch (error) {
-          console.info("item info:", error);
-          console.info("item info:", item);
+        /**
+         * make Xml to Json response
+         */
+        const refTransmissionNo = makeXmlToJson(xmlResponse);
+        console.log("refTransmissionNo", refTransmissionNo);
+
+        /**
+         * Update shipment data to dynamo db
+         */
+        await updateStatus(
+          itemData,
+          xmlPayload,
+          xmlResponse,
+          refTransmissionNo,
+          is_update
+        );
+      } catch (error) {
+        if (error != "No new data" && error != "No new AH data") {
+          console.info("item:", item);
+          console.info("error info:", error);
         }
-      })
-    );
+      }
+    }
 
     return "Completed";
   } catch (error) {
@@ -73,15 +77,15 @@ async function getDataFromDB() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    const dbHost = process.env.HOST_URL;
+    const dbHost = process.env.HOST;
     const dbPort = process.env.PORT;
-    const dbName = process.env.WD_DBNAME;
+    const dbName = process.env.DBNAME;
 
     const dbc = pgp({ capSQL: true });
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
     const connections = dbc(connectionString);
     const query = `select distinct
-    a.file_nbr ,a.house_bill_nbr ,
+    a.file_nbr ,a.house_bill_nbr ,pod_name,
     a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
     case b.order_status
     when 'PUP' then 'AF'
@@ -111,15 +115,15 @@ async function getDataFromDB() {
         on a.file_nbr = b.file_nbr
         and a.source_system = b.source_system
         left outer join
-        (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'REF') c
+        (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'PO') c
         on a.source_system = c.source_system
         and a.file_nbr = c.file_nbr
         where a.bill_to_nbr = '17833'
         and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
-        and c.ref_nbr <> ''
+        and a.file_date >= '2022-03-16'
         union
     select distinct
-      a.file_nbr ,a.house_bill_nbr ,
+      a.file_nbr ,a.house_bill_nbr ,pod_name,
       a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
       'AG' order_Status,
       'ETA for final delivery' order_Status_desc,
@@ -130,19 +134,16 @@ async function getDataFromDB() {
           from
           shipment_info a
           left outer join
-          (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'REF') c
+          (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'PO') c
           on a.source_system = c.source_system
           and a.file_nbr = c.file_nbr
           where a.bill_to_nbr = '17833'
-          and c.ref_nbr is not null`;
+          and a.file_date >= '2022-03-16'`;
 
     const result = await connections.query(query);
 
     if (result && Array.isArray(result) && result.length > 0) {
-      const validatedData = result.filter((e) => validateRefNbr(e.ref_nbr));
-      if (validatedData.length > 0) {
-        return validatedData;
-      }
+      return result;
     }
     throw "No data found.";
   } catch (error) {
@@ -281,6 +282,8 @@ async function makeJsonToXml(payload, inputData) {
 
       transBody["otm:ShipmentRefnum"][2]["otm:ShipmentRefnumValue"] =
         inputData.pieces;
+      transBody["otm:ShipmentRefnum"][4]["otm:ShipmentRefnumValue"] =
+        inputData.pod_name;
       transBody["otm:WeightVolume"]["otm:Weight"]["otm:WeightValue"] =
         inputData.chrg_wght_kgs;
 
@@ -306,6 +309,7 @@ async function makeJsonToXml(payload, inputData) {
       /**
        * with pdf
        */
+      let wd_pdf = JSON.parse(JSON.stringify(wd_pdf_payload));
       wd_pdf["otm:Document"]["otm:DocumentDefinitionGid"]["otm:Gid"][
         "otm:Xid"
       ] =
@@ -453,29 +457,6 @@ function formatDate(dateObj) {
     ("00" + date.getMinutes()).slice(-2) +
     ("00" + date.getSeconds()).slice(-2)
   );
-}
-
-function validateRefNbr(ref_nbr = null) {
-  try {
-    const split =
-      ref_nbr != null
-        ? ref_nbr.split("-")
-        : (() => {
-            throw "error null";
-          })();
-    const dateStr = parseInt(split[0]);
-    const isdate =
-      split.length == 2
-        ? new Date(dateStr) !== "Invalid Date" && !isNaN(new Date(dateStr))
-        : false;
-    if (isdate && split[1].length > 4) {
-      return true;
-    } else {
-      throw "error1";
-    }
-  } catch (error) {
-    return false;
-  }
 }
 
 function response(code, message) {

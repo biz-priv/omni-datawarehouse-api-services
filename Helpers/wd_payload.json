@@ -27,7 +27,7 @@
               "otm:ContactGid": {
                 "otm:Gid": {
                   "otm:DomainName": "WDC",
-                  "otm:Xid": "TRANSMISSION_REPORT_EFSJ"
+                  "otm:Xid": "TRANSMISSION_REPORT_OMNG"
                 }
               },
               "otm:Refnum": {
@@ -37,7 +37,7 @@
                     "otm:Xid": "INTERFACE_TYPE"
                   }
                 },
-                "otm:RefnumValue": "EFSJ_API_214"
+                "otm:RefnumValue": "OMNG_API_214"
               }
             },
             "otm:DataQueueGid": {
@@ -52,7 +52,7 @@
                   "otm:ServiceProviderAliasQualifierGid": {
                     "otm:Gid": { "otm:Xid": "GLOG" }
                   },
-                  "otm:ServiceProviderAliasValue": "WDC.EFSJ"
+                  "otm:ServiceProviderAliasValue": "WDC.OMNG"
                 },
                 "otm:IntSavedQuery": {
                   "otm:IntSavedQueryGid": {
@@ -107,6 +107,15 @@
                       }
                     },
                     "otm:ShipmentRefnumValue": "STD"
+                  },
+                  {
+                    "otm:ShipmentRefnumQualifierGid": {
+                      "otm:Gid": {
+                        "otm:DomainName": "WDC",
+                        "otm:Xid": "POD_NAME"
+                      }
+                    },
+                    "otm:ShipmentRefnumValue": ""
                   }
                 ],
                 "otm:StatusLevel": "SHIPMENT",
