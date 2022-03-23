@@ -108,19 +108,19 @@ async function getDataFromDB() {
     when b.order_status in ('DEL','REF','OSD') then A.DESTINATION_PORT_IATA
     else '' end as event_city,
     case when b.order_status in ('PUP','COB','DEL') then  'US' else '' end as Event_country,
-    c.ref_nbr
+    coalesce(c.ref_nbr,a.house_bill_nbr)ref_nbr
         from
         shipment_info a
         left outer join shipment_milestone b
         on a.file_nbr = b.file_nbr
         and a.source_system = b.source_system
         left outer join
-        (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'PO') c
+        (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
         on a.source_system = c.source_system
         and a.file_nbr = c.file_nbr
         where a.bill_to_nbr = '17833'
         and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
-        and a.file_date >= '2022-03-16'
+        and a.file_date >= '2022-03-22'
         union
     select distinct
       a.file_nbr ,a.house_bill_nbr ,pod_name,
@@ -130,15 +130,15 @@ async function getDataFromDB() {
       eta_date as Event_Date_utc,
       A.DESTINATION_PORT_IATA as event_city,
       'US' as Event_country,
-      c.ref_nbr
+      coalesce(c.ref_nbr,a.house_bill_nbr ) ref_nbr
           from
           shipment_info a
           left outer join
-          (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'PO') c
+          (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
           on a.source_system = c.source_system
           and a.file_nbr = c.file_nbr
           where a.bill_to_nbr = '17833'
-          and a.file_date >= '2022-03-16'`;
+          and a.file_date >= '2022-03-22'`;
 
     const result = await connections.query(query);
 
