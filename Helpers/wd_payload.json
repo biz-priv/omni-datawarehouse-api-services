@@ -145,13 +145,7 @@
                 "otm:ResponsiblePartyGid": {
                   "otm:Gid": { "otm:DomainName": "WDC", "otm:Xid": "CARRIER" }
                 },
-                "otm:TrackingNumber": "",
-                "otm:ShipmentGid": {
-                  "otm:Gid": {
-                    "otm:DomainName": "WDC",
-                    "otm:Xid": ""
-                  }
-                }
+                "otm:TrackingNumber": ""
               }
             }
           }

@@ -269,7 +269,9 @@ async function makeJsonToXml(payload, inputData) {
         ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0][
         "otm:ArgValue"
-      ] = inputData.ref_nbr;
+      ] = validateRefNbr(inputData.ref_nbr)
+        ? inputData.ref_nbr
+        : inputData.house_bill_nbr;
 
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1][
         "otm:ArgValue"
@@ -300,8 +302,6 @@ async function makeJsonToXml(payload, inputData) {
         inputData.event_country;
 
       transBody["otm:TrackingNumber"] = "H" + inputData.ref_nbr;
-
-      transBody["otm:ShipmentGid"]["otm:Gid"]["otm:Xid"] = inputData.ref_nbr;
 
       transBodyWithValues = { "otm:ShipmentStatus": null };
       transBodyWithValues["otm:ShipmentStatus"] = transBody;
@@ -457,6 +457,29 @@ function formatDate(dateObj) {
     ("00" + date.getMinutes()).slice(-2) +
     ("00" + date.getSeconds()).slice(-2)
   );
+}
+
+function validateRefNbr(ref_nbr = null) {
+  try {
+    const split =
+      ref_nbr != null
+        ? ref_nbr.split("-")
+        : (() => {
+            throw "error null";
+          })();
+    const dateStr = parseInt(split[0]);
+    const isdate =
+      split.length == 2
+        ? new Date(dateStr) !== "Invalid Date" && !isNaN(new Date(dateStr))
+        : false;
+    if (isdate && split[1].length > 4) {
+      return true;
+    } else {
+      throw "error1";
+    }
+  } catch (error) {
+    return false;
+  }
 }
 
 function response(code, message) {
