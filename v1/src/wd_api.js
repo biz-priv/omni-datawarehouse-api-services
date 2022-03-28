@@ -120,7 +120,7 @@ async function getDataFromDB() {
         and a.file_nbr = c.file_nbr
         where a.bill_to_nbr = '17833'
         and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
-        and a.file_date >= '2022-03-22'
+        and a.file_date >= '2022-03-25'
         union
     select distinct
       a.file_nbr ,a.house_bill_nbr ,pod_name,
@@ -138,7 +138,7 @@ async function getDataFromDB() {
           on a.source_system = c.source_system
           and a.file_nbr = c.file_nbr
           where a.bill_to_nbr = '17833'
-          and a.file_date >= '2022-03-22'`;
+          and a.file_date >= '2022-03-25'`;
 
     const result = await connections.query(query);
 
@@ -284,8 +284,19 @@ async function makeJsonToXml(payload, inputData) {
 
       transBody["otm:ShipmentRefnum"][2]["otm:ShipmentRefnumValue"] =
         inputData.pieces;
-      transBody["otm:ShipmentRefnum"][4]["otm:ShipmentRefnumValue"] =
-        inputData.pod_name;
+
+      if (inputData?.pod_name && inputData.pod_name.length > 0) {
+        transBody["otm:ShipmentRefnum"].push({
+          "otm:ShipmentRefnumQualifierGid": {
+            "otm:Gid": {
+              "otm:DomainName": "WDC",
+              "otm:Xid": "POD_NAME",
+            },
+          },
+          "otm:ShipmentRefnumValue": inputData.pod_name,
+        });
+      }
+
       transBody["otm:WeightVolume"]["otm:Weight"]["otm:WeightValue"] =
         inputData.chrg_wght_kgs;
 
