@@ -107,15 +107,6 @@
                       }
                     },
                     "otm:ShipmentRefnumValue": "STD"
-                  },
-                  {
-                    "otm:ShipmentRefnumQualifierGid": {
-                      "otm:Gid": {
-                        "otm:DomainName": "WDC",
-                        "otm:Xid": "POD_NAME"
-                      }
-                    },
-                    "otm:ShipmentRefnumValue": ""
                   }
                 ],
                 "otm:StatusLevel": "SHIPMENT",
