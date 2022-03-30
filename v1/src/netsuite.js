@@ -577,6 +577,11 @@ async function recordErrorResponse(item, error) {
   } catch (e) {}
 }
 
+/**
+ * Send Error Mails
+ * @param {*} data
+ * @returns
+ */
 function sendMail(data) {
   return new Promise((resolve, reject) => {
     try {
