@@ -312,7 +312,7 @@ async function makeJsonToXml(payload, inputData) {
       transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCountry"] =
         inputData.event_country;
 
-      transBody["otm:TrackingNumber"] = "H" + inputData.ref_nbr;
+      transBody["otm:TrackingNumber"] = inputData.ref_nbr;
 
       transBodyWithValues = { "otm:ShipmentStatus": null };
       transBodyWithValues["otm:ShipmentStatus"] = transBody;
