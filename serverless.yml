@@ -89,10 +89,16 @@ functions:
   netsuite-customer: ${file(config/functions/netsuite-customer.yml):function}
   netsuite-customer-step-trigger: ${file(config/functions/netsuite-customer-step-trigger.yml):function}
 
+  netsuite-ap: ${file(config/functions/netsuite-ap.yml):function}
+  netsuite-ap-vendor: ${file(config/functions/netsuite-ap-vendor.yml):function}
+  netsuite-ap-vendor-step-trigger: ${file(config/functions/netsuite-ap-vendor-step-trigger.yml):function}
+
 stepFunctions:
   stateMachines:
     netsuite-ar-state-machine: ${file(config/step-functions/netsuite-ar-state-machine.yml):stateMachine}
     netsuite-customer-state-machine: ${file(config/step-functions/netsuite-customer-state-machine.yml):stateMachine}
+    netsuite-ap-state-machine: ${file(config/step-functions/netsuite-ap-state-machine.yml):stateMachine}
+    netsuite-ap-vendor-state-machine: ${file(config/step-functions/netsuite-ap-vendor-state-machine.yml):stateMachine}
 
 resources:
   Resources:
