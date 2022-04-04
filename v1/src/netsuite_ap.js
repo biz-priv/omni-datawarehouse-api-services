@@ -625,7 +625,7 @@ function sendMail(data) {
 
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-        to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+        to: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
         subject: `Netsuite AP - Dev Error`,
         html: `
         <!DOCTYPE html>
