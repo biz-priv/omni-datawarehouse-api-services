@@ -37,11 +37,10 @@
       "add": {
         "@xmlns": "urn:messages_2021_2.platform.webservices.netsuite.com",
         "record": {
-          "@xsi:type": "q1:VendorBill",
+          "@xsi:type": "",
           "@xmlns:q1": "urn:purchases_2021_2.transactions.webservices.netsuite.com",
           "q1:entity": { "@internalId": "" },
           "q1:subsidiary": { "@internalId": "" },
-          "q1:approvalStatus": { "@internalId": "2" },
           "q1:tranDate": "",
           "q1:tranId": "",
           "q1:memo": "",
