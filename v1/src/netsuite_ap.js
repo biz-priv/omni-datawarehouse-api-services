@@ -303,6 +303,10 @@ function makeJsonToXml(payload, auth, data, customerData) {
     recode["q1:otherRefNum"] = singleItem.customer_po; //customer_po is the bill to ref nbr
     recode["q1:memo"] = ""; // (leave out for worldtrak)
 
+    if (singleItem.invoice_type == "IN") {
+      recode["q1:approvalStatus"] = { "@internalId": "2" };
+    }
+
     recode["q1:itemList"]["q1:item"] = data.map((e) => {
       return {
         "q1:item": {
@@ -401,15 +405,11 @@ function makeJsonToXml(payload, auth, data, customerData) {
     ];
 
     /**
-     * check if IN or CM (IN => invoice , CM => credit)
+     * check if IN or CM (IN => Bill , CM => credit)
      */
 
-    // recode["@xsi:type"] =
-    //   singleItem.invoice_type == "IN" ? "q1:Invoice" : "q1:CreditMemo";
-    // recode["@xmlns:q1"] =
-    //   singleItem.invoice_type == "IN"
-    //     ? "urn:sales_2021_2.transactions.webservices.netsuite.com"
-    //     : "urn:customers_2021_2.transactions.webservices.netsuite.com";
+    recode["@xsi:type"] =
+      singleItem.invoice_type == "IN" ? "q1:VendorBill" : "q1:VendorCredit";
 
     payload["soap:Envelope"]["soap:Body"]["add"]["record"] = recode;
     const doc = create(payload);
@@ -626,7 +626,6 @@ function sendMail(data) {
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
         to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
-        // to: "kazi.ali@bizcloudexperts.com,kiranv@bizcloudexperts.com,priyanka@bizcloudexperts.com",
         subject: `Netsuite AP - Dev Error`,
         html: `
         <!DOCTYPE html>
