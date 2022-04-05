@@ -460,7 +460,7 @@ async function createInvoice(soapPayload, type) {
     } else {
       throw {
         // customError: false,
-        msg: "Invoice api failed",
+        msg: "Netsuit AR Api Failed",
       };
     }
   }
