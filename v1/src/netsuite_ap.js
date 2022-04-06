@@ -2,8 +2,9 @@ const AWS = require("aws-sdk");
 const { create, convert } = require("xmlbuilder2");
 const crypto = require("crypto");
 const axios = require("axios");
-const pgp = require("pg-promise");
 const nodemailer = require("nodemailer");
+const pgp = require("pg-promise");
+const dbc = pgp({ capSQL: true });
 const payload = require("../../Helpers/netsuit_AP.json");
 
 const userConfig = {
@@ -74,9 +75,10 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       hasMoreData = "false";
     }
-
+    dbc.end();
     return { hasMoreData };
   } catch (error) {
+    dbc.end();
     return { hasMoreData: "false" };
   }
 };
@@ -179,7 +181,6 @@ function getConnection() {
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
-    const dbc = pgp({ capSQL: true });
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
     return dbc(connectionString);
   } catch (error) {
