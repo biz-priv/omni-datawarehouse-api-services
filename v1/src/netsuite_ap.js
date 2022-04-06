@@ -20,7 +20,7 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
-let totalCountPerLoop = 10;
+let totalCountPerLoop = 15;
 const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
@@ -42,7 +42,7 @@ module.exports.handler = async (event, context, callback) => {
     const orderData = await getDataGroupBy(connections);
 
     const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-    console.log("orderData", orderData.length);
+    console.log("orderData", orderData, orderData.length);
     currentCount = orderData.length;
 
     const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
@@ -178,6 +178,7 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -190,7 +191,7 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr FROM interface_ap where charge_cd_internal_id is not null and (internal_id is null and processed is null and
+    const query = `SELECT distinct invoice_nbr FROM interface_ap where (internal_id is null and processed != 'F' and
                   vendor_internal_id !='') or (vendor_internal_id !='' and processed ='F' and processed_date < '${today}') limit ${
       totalCountPerLoop + 1
     }`;
