@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
-const pgp = require("pg-promise");
 const nodemailer = require("nodemailer");
+const pgp = require("pg-promise");
+const dbc = pgp({ capSQL: true });
 const NetSuite = require("node-suitetalk");
 const Configuration = NetSuite.Configuration;
 const Service = NetSuite.Service;
@@ -89,8 +90,10 @@ module.exports.handler = async (event, context, callback) => {
     try {
       await startNetsuitInvoiceStep();
     } catch (error) {}
+    dbc.end();
     return { hasMoreData };
   } else {
+    dbc.end();
     return { hasMoreData };
   }
 };
@@ -103,7 +106,6 @@ function getConnection() {
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
-    const dbc = pgp({ capSQL: true });
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
     return dbc(connectionString);
   } catch (error) {
