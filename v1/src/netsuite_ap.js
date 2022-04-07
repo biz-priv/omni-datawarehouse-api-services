@@ -20,7 +20,7 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
-let totalCountPerLoop = 15;
+let totalCountPerLoop = 20;
 const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
@@ -50,7 +50,7 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * 15 simultaneous process
      */
-    const perLoop = 10;
+    const perLoop = 15;
     let queryData = "";
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
