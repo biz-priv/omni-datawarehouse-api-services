@@ -20,7 +20,7 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
-let totalCountPerLoop = 15;
+let totalCountPerLoop = 20;
 const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
@@ -50,7 +50,7 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * 15 simultaneous process
      */
-    const perLoop = 10;
+    const perLoop = 15;
     let queryData = "";
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
@@ -136,7 +136,7 @@ async function mainProcess(item, invoiceDataList) {
        * Make Json to Xml payload
        */
       const xmlPayload = makeJsonToXml(
-        payload,
+        JSON.parse(JSON.stringify(payload)),
         auth,
         dataGroup[e],
         customerData
@@ -159,8 +159,9 @@ async function mainProcess(item, invoiceDataList) {
     return getUpdateQueryList;
   } catch (error) {
     if (error.hasOwnProperty("customError")) {
+      let getQuery = "";
       try {
-        const getQuery = await getUpdateQuery(singleItem, null, false);
+        getQuery = await getUpdateQuery(singleItem, null, false);
         const checkError = await checkSameError(singleItem, error);
         if (!checkError) {
           await recordErrorResponse(singleItem, error);
@@ -168,6 +169,7 @@ async function mainProcess(item, invoiceDataList) {
         return getQuery;
       } catch (error) {
         await recordErrorResponse(singleItem, error);
+        return getQuery;
       }
     }
   }
