@@ -2,8 +2,9 @@ const AWS = require("aws-sdk");
 const { create, convert } = require("xmlbuilder2");
 const crypto = require("crypto");
 const axios = require("axios");
-const pgp = require("pg-promise");
 const nodemailer = require("nodemailer");
+const pgp = require("pg-promise");
+const dbc = pgp({ capSQL: true });
 const payload = require("../../Helpers/netsuit_AP.json");
 
 const userConfig = {
@@ -41,7 +42,7 @@ module.exports.handler = async (event, context, callback) => {
     const orderData = await getDataGroupBy(connections);
 
     const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-    console.log("orderData", orderData.length);
+    console.log("orderData", orderData, orderData.length);
     currentCount = orderData.length;
 
     const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
@@ -74,9 +75,10 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       hasMoreData = "false";
     }
-
+    dbc.end();
     return { hasMoreData };
   } catch (error) {
+    dbc.end();
     return { hasMoreData: "false" };
   }
 };
@@ -134,7 +136,7 @@ async function mainProcess(item, invoiceDataList) {
        * Make Json to Xml payload
        */
       const xmlPayload = makeJsonToXml(
-        payload,
+        JSON.parse(JSON.stringify(payload)),
         auth,
         dataGroup[e],
         customerData
@@ -157,8 +159,9 @@ async function mainProcess(item, invoiceDataList) {
     return getUpdateQueryList;
   } catch (error) {
     if (error.hasOwnProperty("customError")) {
+      let getQuery = "";
       try {
-        const getQuery = await getUpdateQuery(singleItem, null, false);
+        getQuery = await getUpdateQuery(singleItem, null, false);
         const checkError = await checkSameError(singleItem, error);
         if (!checkError) {
           await recordErrorResponse(singleItem, error);
@@ -166,6 +169,7 @@ async function mainProcess(item, invoiceDataList) {
         return getQuery;
       } catch (error) {
         await recordErrorResponse(singleItem, error);
+        return getQuery;
       }
     }
   }
@@ -176,10 +180,10 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
-    const dbc = pgp({ capSQL: true });
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
     return dbc(connectionString);
   } catch (error) {
@@ -189,7 +193,7 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr FROM interface_ap where charge_cd_internal_id is not null and (internal_id is null and processed is null and
+    const query = `SELECT distinct invoice_nbr FROM interface_ap where (internal_id is null and processed != 'F' and
                   vendor_internal_id !='') or (vendor_internal_id !='' and processed ='F' and processed_date < '${today}') limit ${
       totalCountPerLoop + 1
     }`;
@@ -460,7 +464,7 @@ async function createInvoice(soapPayload, type) {
         msg:
           type == "IN"
             ? "Unable to create Vendor Bill. Internal Server Error"
-            : "Unable to create CreditMemo. Internal Server Error",
+            : "Unable to create Vendor Credit. Internal Server Error",
         payload: soapPayload,
         response: res.data,
       };
@@ -470,8 +474,8 @@ async function createInvoice(soapPayload, type) {
       throw error;
     } else {
       throw {
-        customError: false,
-        msg: "Netsuit AP Api failed",
+        // customError: false,
+        msg: "Netsuit AP Api Failed",
       };
     }
   }
@@ -625,7 +629,7 @@ function sendMail(data) {
 
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-        to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+        to: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
         subject: `Netsuite AP - Dev Error`,
         html: `
         <!DOCTYPE html>
