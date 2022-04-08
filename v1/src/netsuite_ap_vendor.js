@@ -115,7 +115,7 @@ function getConnection() {
 
 async function getVendorData(connections) {
   try {
-    const query = `SELECT distinct vendor_id FROM interface_ap where charge_cd_internal_id is not null and (vendor_internal_id = '' and processed_date is null) or
+    const query = `SELECT distinct vendor_id FROM interface_ap where (vendor_internal_id = '' and processed_date is null) or
                   (vendor_internal_id = '' and processed_date < '${today}') limit ${
       totalCountPerLoop + 1
     }`;
