@@ -152,7 +152,7 @@ async function putVendor(connections, vendorData, vendor_id) {
     query += `UPDATE interface_ap SET 
                     vendor_internal_id = '${vendorData.entityInternalId}', 
                     currency_internal_id = '${vendorData.currencyInternalId}', 
-                    processed = null ,
+                    processed = 'P' ,
                     processed_date = '${today}' 
                     WHERE vendor_id = '${vendor_id}' ;`;
     await connections.query(query);
