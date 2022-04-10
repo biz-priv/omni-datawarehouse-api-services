@@ -20,7 +20,7 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
-let totalCountPerLoop = 10;
+let totalCountPerLoop = 20;
 const today = getCustomDate();
 
 module.exports.handler = async (event, context, callback) => {
@@ -40,9 +40,10 @@ module.exports.handler = async (event, context, callback) => {
      * Get data from db
      */
     const orderData = await getDataGroupBy(connections);
+    // const orderData = [{ invoice_nbr: "DFW04042022" }];
 
     const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-    console.log("orderData", orderData, orderData.length);
+    console.log("orderData", orderData.length);
     currentCount = orderData.length;
 
     const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
@@ -50,7 +51,7 @@ module.exports.handler = async (event, context, callback) => {
     /**
      * 15 simultaneous process
      */
-    const perLoop = 6;
+    const perLoop = 15;
     let queryData = "";
     for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
       let newArray = orderData.slice(
@@ -180,7 +181,6 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
-    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -193,7 +193,7 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr FROM interface_ap where (internal_id is null and processed != 'F' and
+    const query = `SELECT distinct invoice_nbr FROM interface_ap_master where (internal_id is null and processed != 'F' and
                   vendor_internal_id !='') or (vendor_internal_id !='' and processed ='F' and processed_date < '${today}') limit ${
       totalCountPerLoop + 1
     }`;
@@ -482,7 +482,7 @@ async function createInvoice(soapPayload, type) {
 }
 
 /**
- * prepear the query for update interface_ap
+ * prepear the query for update interface_ap_master
  * @param {*} item
  * @param {*} invoiceId
  * @param {*} isSuccess
@@ -491,7 +491,7 @@ async function createInvoice(soapPayload, type) {
 async function getUpdateQuery(item, invoiceId, isSuccess = true) {
   try {
     console.log("invoice_nbr ", item.invoice_nbr, invoiceId);
-    let query = `UPDATE interface_ap `;
+    let query = `UPDATE interface_ap_master `;
     if (isSuccess) {
       query += ` SET internal_id = '${invoiceId}', processed = 'P', `;
     } else {
