@@ -26,7 +26,7 @@
     "serverless-add-api-key": "^4.2.0",
     "serverless-aws-alias-fixed": "^2.0.1",
     "serverless-domain-manager": "^5.0.0",
-    "serverless-layers": "^2.3.3",
+    "serverless-layers": "^2.5.4",
     "serverless-plugin-existing-s3": "^2.4.0",
     "serverless-plugin-multiple-responses": "^1.0.0",
     "serverless-pseudo-parameters": "^2.6.1",
