@@ -115,7 +115,7 @@ function getConnection() {
 
 async function getVendorData(connections) {
   try {
-    const query = `SELECT distinct vendor_id FROM interface_ap where charge_cd_internal_id is not null and (vendor_internal_id = '' and processed_date is null) or
+    const query = `SELECT distinct vendor_id FROM interface_ap_master where (vendor_internal_id = '' and processed_date is null) or
                   (vendor_internal_id = '' and processed_date < '${today}') limit ${
       totalCountPerLoop + 1
     }`;
@@ -132,7 +132,7 @@ async function getVendorData(connections) {
 
 async function getDataByVendorId(connections, vendor_id) {
   try {
-    const query = `SELECT * FROM interface_ap where vendor_id = '${vendor_id}' limit 1`;
+    const query = `SELECT * FROM interface_ap_master where vendor_id = '${vendor_id}' limit 1`;
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
@@ -149,12 +149,11 @@ async function putVendor(connections, vendorData, vendor_id) {
                   (vendor_id, vendor_internal_id, curr_cd, currency_internal_id)
                   VALUES ('${vendorData.entityId}', '${vendorData.entityInternalId}',
                           '${vendorData.currency}', '${vendorData.currencyInternalId}');`;
-    query += `UPDATE interface_ap SET 
+    query += `UPDATE interface_ap_master SET 
                     vendor_internal_id = '${vendorData.entityInternalId}', 
                     currency_internal_id = '${vendorData.currencyInternalId}', 
-                    processed = null ,
                     processed_date = '${today}' 
-                    WHERE vendor_id = '${vendor_id}' ;`;
+                    WHERE vendor_id = '${vendor_id}' and processed = '';`;
     await connections.query(query);
   } catch (error) {
     throw "Vendor Update Failed";
@@ -213,10 +212,10 @@ function getVendor(entityId) {
 
 async function updateFailedRecords(connections, vendor_id) {
   try {
-    let query = `UPDATE interface_ap  
-                  SET processed = 'F',
+    let query = `UPDATE interface_ap_master  
+                  SET 
                   processed_date = '${today}' 
-                  WHERE vendor_id = '${vendor_id}'`;
+                  WHERE vendor_id = '${vendor_id}' and processed = ''`;
     const result = await connections.query(query);
     return result;
   } catch (error) {}
@@ -231,14 +230,10 @@ async function recordErrorResponse(item, error) {
       id: item.invoice_nbr + item.invoice_type,
       invoice_nbr: item.invoice_nbr,
       vendor_id: item.vendor_id,
-      source_system: item.source_system,
       invoice_type: item.invoice_type,
-      invoice_date: item.invoice_date ? item.invoice_date.toLocaleString() : "",
-      charge_cd_internal_id: item.charge_cd_internal_id,
       errorDescription: error?.msg,
       payload: error?.payload,
       response: error?.response,
-      invoiceId: error?.invoiceId,
       status: "error",
       created_at: new Date().toLocaleString(),
     };
@@ -328,7 +323,7 @@ async function checkSameError(singleItem) {
       },
       ExpressionAttributeValues: {
         ":vendor_id": singleItem.vendor_id,
-        ":errorDescription": `Vendor Api failed. (vendor_id: ${singleItem.vendor_id})`,
+        ":errorDescription": `Vendor not found. (vendor_id: ${singleItem.vendor_id})`,
       },
     };
     const res = await documentClient.scan(params).promise();

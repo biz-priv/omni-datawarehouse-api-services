@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'ecs' }
     parameters {
-        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v1')
+        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v101')
     }
     stages {
         stage('Set parameters') {
@@ -21,9 +21,9 @@ pipeline {
                         }
                     } else if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix") || "${GIT_BRANCH}".contains("devint")) {
                         env.ENVIRONMENT=env.getProperty("environment_devint")
-                    } else if("${GIT_BRANCH}".contains("develop")) {
+                    } else if ("${GIT_BRANCH}".contains("develop")) {
                         env.ENVIRONMENT=env.getProperty("environment_develop")
-                    } else if ("${GIT_BRANCH}".contains("master") || "${GIT_BRANCH}".contains("hotfix")) {
+                    } else if ("${GIT_BRANCH}".contains("master") || "${GIT_BRANCH}".contains("hotfix")){
                         env.ENVIRONMENT=env.getProperty("environment_prod")
                     }
                     sh """
@@ -61,7 +61,7 @@ pipeline {
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias v1 -s ${env.ENVIRONMENT}
+                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
                     """
                 }
             }
@@ -84,7 +84,7 @@ pipeline {
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias v1 -s ${env.ENVIRONMENT}
+                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
                     """
                 }
             }
