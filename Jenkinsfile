@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'ecs' }
     parameters {
-        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v1')
+        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v101')
     }
     stages {
         stage('Set parameters') {
