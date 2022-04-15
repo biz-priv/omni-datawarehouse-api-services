@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/wd_api.handler
+  handler: v1/src/wd_api.handler
   name: ${self:service}-wd-${self:provider.stage}
   description: WD api service - ${self:provider.stage}
   runtime: nodejs14.x
@@ -8,7 +8,7 @@ function:
 
   package:
     include:
-      - ${self:custom.alias}/src/wd_api.js
+      - v1/src/wd_api.js
       - Helpers/**
       - node_modules/**
   environment:
