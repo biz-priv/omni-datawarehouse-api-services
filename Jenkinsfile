@@ -11,7 +11,15 @@ pipeline {
                     echo "ALIAS_VERSION: ${ALIAS_VERSION}"
                     env.ALIAS_VERSION="${ALIAS_VERSION}"
                     echo sh(script: 'env|sort', returnStdout: true)
-                    if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix") || "${GIT_BRANCH}".contains("devint")) {
+                    if ("${GIT_BRANCH}".startsWith("PR-")){
+                        if("${CHANGE_TARGET}".contains("develop")){
+                            env.ENVIRONMENT=env.getProperty("environment_develop")
+                        } else if("${CHANGE_TARGET}".contains("devint")){
+                            env.ENVIRONMENT=env.getProperty("environment_devint")
+                        } else if("${CHANGE_TARGET}".contains("master")){
+                            env.ENVIRONMENT=env.getProperty("environment_prod")
+                        }
+                    } else if ("${GIT_BRANCH}".contains("feature") || "${GIT_BRANCH}".contains("bugfix") || "${GIT_BRANCH}".contains("devint")) {
                         env.ENVIRONMENT=env.getProperty("environment_devint")
                     } else if ("${GIT_BRANCH}".contains("develop")) {
                         env.ENVIRONMENT=env.getProperty("environment_develop")
