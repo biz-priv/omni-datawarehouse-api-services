@@ -6,6 +6,7 @@ const nodemailer = require("nodemailer");
 const pgp = require("pg-promise");
 const dbc = pgp({ capSQL: true });
 const payload = require("../../Helpers/netsuit_AP.json");
+const lineItemPayload = require("../../Helpers/netsuit_line_items_AP.json");
 
 const userConfig = {
   account: process.env.NETSUIT_AR_ACCOUNT,
@@ -20,8 +21,15 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
-let totalCountPerLoop = 20;
 const today = getCustomDate();
+const lineItemPerProcess = 500;
+let totalCountPerLoop = 20;
+let queryOffset = 0;
+let queryinvoiceType = "IN"; // IN / CM
+let queryOperator = "<=";
+// let queryOperator = ">";
+let queryInvoiceId = null;
+let queryInvoiceNbr = null;
 
 module.exports.handler = async (event, context, callback) => {
   let hasMoreData = "false";
@@ -29,6 +37,25 @@ module.exports.handler = async (event, context, callback) => {
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
     : totalCountPerLoop;
+  queryOperator = event.hasOwnProperty("queryOperator")
+    ? event.queryOperator
+    : queryOperator;
+
+  queryInvoiceId = event.hasOwnProperty("queryInvoiceId")
+    ? event.queryInvoiceId
+    : queryInvoiceId;
+
+  queryInvoiceNbr = event.hasOwnProperty("queryInvoiceNbr")
+    ? event.queryInvoiceNbr
+    : queryInvoiceNbr;
+
+  queryOffset = event.hasOwnProperty("queryOffset")
+    ? event.queryOffset
+    : queryOffset;
+
+  queryinvoiceType = event.hasOwnProperty("queryinvoiceType")
+    ? event.queryinvoiceType
+    : queryinvoiceType;
 
   try {
     /**
@@ -36,48 +63,163 @@ module.exports.handler = async (event, context, callback) => {
      */
     const connections = getConnection();
 
-    /**
-     * Get data from db
-     */
-    const orderData = await getDataGroupBy(connections);
-    // const orderData = [{ invoice_nbr: "DFW04042022" }];
+    if (queryOperator == ">") {
+      totalCountPerLoop = 0;
+      console.log("> start");
+      if (queryInvoiceId != null && queryInvoiceId.length > 0) {
+        try {
+          const invoiceDataList = await getInvoiceNbrData(
+            connections,
+            queryInvoiceNbr,
+            true
+          );
+          await createInvoiceAndUpdateLineItems(
+            queryInvoiceId,
+            invoiceDataList
+          );
 
-    const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-    console.log("orderData", orderData.length);
-    currentCount = orderData.length;
+          //after IN process end check for CM process
+          if (lineItemPerProcess >= invoiceDataList.length) {
+            if (queryinvoiceType == "IN") {
+              return {
+                hasMoreData: "true",
+                queryOperator,
+                queryInvoiceNbr: queryInvoiceNbr,
+                queryinvoiceType: "CM",
+              };
+            } else {
+              return {
+                hasMoreData: "true",
+                queryOperator,
+              };
+            }
+          } else {
+            // process rest of the data
+            return {
+              hasMoreData: "true",
+              queryOperator,
+              queryOffset: queryOffset + lineItemPerProcess + 1,
+              queryInvoiceId,
+              queryInvoiceNbr,
+              queryinvoiceType,
+            };
+          }
+        } catch (error) {
+          return {
+            hasMoreData: "true",
+            queryOperator,
+          };
+        }
+      } else {
+        console.log("> else");
 
-    const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+        try {
+          let invoiceDataList = [];
+          let orderData = [];
+          if (queryInvoiceNbr == null && queryinvoiceType == "IN") {
+            try {
+              orderData = await getDataGroupBy(connections);
+              console.log("orderData", orderData.length);
+            } catch (error) {
+              return { hasMoreData: "false" };
+            }
+            queryInvoiceNbr = orderData[0].invoice_nbr;
+          }
 
-    /**
-     * 15 simultaneous process
-     */
-    const perLoop = 15;
-    let queryData = "";
-    for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
-      let newArray = orderData.slice(
-        index * perLoop,
-        index * perLoop + perLoop
-      );
-      const data = await Promise.all(
-        newArray.map(async (item) => {
-          return await mainProcess(item, invoiceDataList);
-        })
-      );
-      queryData += data.join("");
-    }
+          try {
+            invoiceDataList = await getInvoiceNbrData(
+              connections,
+              queryInvoiceNbr,
+              true
+            );
+            console.log("orderData", invoiceDataList.length);
+          } catch (error) {
+            if (queryinvoiceType == "IN") {
+              return {
+                hasMoreData: "true",
+                queryOperator,
+                queryInvoiceNbr: queryInvoiceNbr,
+                queryinvoiceType: "CM",
+              };
+            } else {
+              throw error;
+            }
+          }
+          const queryData = await mainProcess(
+            invoiceDataList[0],
+            invoiceDataList
+          );
+          console.log("queryData", queryData);
+          await updateInvoiceId(connections, queryData);
 
-    /**
-     * Updating total 20 invoices at once
-     */
-    await updateInvoiceId(connections, queryData);
-
-    if (currentCount > totalCountPerLoop) {
-      hasMoreData = "true";
+          if (invoiceDataList.length <= lineItemPerProcess) {
+            return {
+              hasMoreData: "true",
+              queryOperator,
+              queryInvoiceNbr: queryInvoiceNbr,
+              queryinvoiceType: "CM",
+            };
+          } else {
+            return {
+              hasMoreData: "true",
+              queryOperator,
+              queryOffset: queryOffset + lineItemPerProcess + 1,
+              queryInvoiceId,
+              queryInvoiceNbr: queryInvoiceNbr,
+              queryinvoiceType,
+            };
+          }
+        } catch (error) {
+          console.log("error", error);
+          return {
+            hasMoreData: "true",
+            queryOperator,
+          };
+        }
+      }
     } else {
-      hasMoreData = "false";
+      //normal process
+      /**
+       * Get data from db
+       */
+      const orderData = await getDataGroupBy(connections);
+
+      const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
+      console.log("orderData", orderData.length);
+      currentCount = orderData.length;
+
+      const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+      /**
+       * 15 simultaneous process
+       */
+      const perLoop = 15;
+      let queryData = "";
+      for (let index = 0; index < (orderData.length + 1) / perLoop; index++) {
+        let newArray = orderData.slice(
+          index * perLoop,
+          index * perLoop + perLoop
+        );
+        const data = await Promise.all(
+          newArray.map(async (item) => {
+            return await mainProcess(item, invoiceDataList);
+          })
+        );
+        queryData += data.join("");
+      }
+
+      /**
+       * Updating total 20 invoices at once
+       */
+      await updateInvoiceId(connections, queryData);
+
+      if (currentCount < totalCountPerLoop) {
+        queryOperator = ">";
+      }
+      console.log("1st step completed");
+
+      dbc.end();
+      return { hasMoreData: "true", queryOperator };
     }
-    dbc.end();
-    return { hasMoreData };
   } catch (error) {
     dbc.end();
     return { hasMoreData: "false" };
@@ -127,29 +269,22 @@ async function mainProcess(item, invoiceDataList) {
 
     for (let e of Object.keys(dataGroup)) {
       singleItem = dataGroup[e][0];
-
-      /**
-       * get auth keys
-       */
-      const auth = getOAuthKeys(userConfig);
-
       /**
        * Make Json to Xml payload
        */
       const xmlPayload = makeJsonToXml(
         JSON.parse(JSON.stringify(payload)),
-        auth,
         dataGroup[e],
         customerData
       );
-
       /**
-       * create Netsuit Vendor Bill
+       * create invoice
        */
       const invoiceId = await createInvoice(
         xmlPayload,
         singleItem.invoice_type
       );
+      queryInvoiceId = invoiceId;
 
       /**
        * update invoice id
@@ -181,6 +316,7 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -193,8 +329,11 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr FROM interface_ap_master where (internal_id is null and processed != 'F' and
-                  vendor_internal_id !='') or (vendor_internal_id !='' and processed ='F' and processed_date < '${today}') limit ${
+    const query = `SELECT invoice_nbr FROM interface_ap where 
+                  (internal_id is null and processed != 'F' and vendor_internal_id !='') or 
+                  (vendor_internal_id !='' and processed ='F' and processed_date < '${today}') 
+                  group by invoice_nbr 
+                  having count(*) ${queryOperator} ${lineItemPerProcess} limit ${
       totalCountPerLoop + 1
     }`;
 
@@ -208,11 +347,17 @@ async function getDataGroupBy(connections) {
   }
 }
 
-async function getInvoiceNbrData(connections, invoice_nbr) {
+async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
   try {
-    const query = `select * from interface_ap where invoice_nbr in (${invoice_nbr.join(
-      ","
-    )})`;
+    let query = "";
+    if (isBigData) {
+      query = `SELECT * FROM interface_ap where invoice_nbr = ${invoice_nbr} and invoice_type ='${queryinvoiceType}' 
+      order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
+    } else {
+      query = `select * from interface_ap where invoice_nbr in (${invoice_nbr.join(
+        ","
+      )})`;
+    }
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {
@@ -257,8 +402,9 @@ function getOAuthKeys(configuration) {
   return res;
 }
 
-function makeJsonToXml(payload, auth, data, customerData) {
+function makeJsonToXml(payload, data, customerData) {
   try {
+    const auth = getOAuthKeys(userConfig);
     const hardcode = getHardcodeData();
 
     const singleItem = data[0];
@@ -423,6 +569,128 @@ function makeJsonToXml(payload, auth, data, customerData) {
   }
 }
 
+/**
+ * Line Item XML
+ * @param {*} internalId
+ * @param {*} payload
+ * @param {*} data
+ * @returns
+ */
+function makeJsonToXmlForLineItems(internalId, linePayload, data) {
+  try {
+    const auth = getOAuthKeys(userConfig);
+    const hardcode = getHardcodeData();
+
+    const singleItem = data[0];
+    linePayload["soap:Envelope"]["soap:Header"] = {
+      tokenPassport: {
+        "@xmlns": "urn:messages_2021_2.platform.webservices.netsuite.com",
+        account: {
+          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+          "#": auth.account,
+        },
+        consumerKey: {
+          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+          "#": auth.consumerKey,
+        },
+        token: {
+          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+          "#": auth.tokenKey,
+        },
+        nonce: {
+          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+          "#": auth.nonce,
+        },
+        timestamp: {
+          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+          "#": auth.timeStamp,
+        },
+        signature: {
+          "@algorithm": "HMAC_SHA256",
+          "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+          "#": auth.base64hash,
+        },
+      },
+    };
+
+    let recode = linePayload["soap:Envelope"]["soap:Body"]["update"]["record"];
+
+    recode["q1:itemList"]["q1:item"] = data.map((e) => {
+      return {
+        "q1:item": {
+          "@internalId": e.charge_cd_internal_id,
+        },
+        "q1:description": e.charge_cd_desc,
+        "q1:amount": e.total,
+        "q1:rate": e.rate,
+        "q1:department": {
+          "@internalId": hardcode.department.line,
+        },
+        "q1:class": {
+          "@internalId":
+            hardcode.class.line[e.business_segment.split(":")[1].trim()], //hardcode.class.line, // class International - 3, Domestic - 2, Warehouse - 4,
+        },
+        "q1:location": {
+          "@externalId": e.handling_stn,
+        },
+        "q1:customFieldList": {
+          customField: [
+            {
+              "@internalId": "760",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.housebill_nbr,
+            },
+            {
+              "@internalId": "1167",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.sales_person,
+            },
+            {
+              "@internalId": "1727",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.master_bill_nbr ?? "",
+            },
+            {
+              "@internalId": "1166",
+              "@xsi:type": "SelectCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: { "@externalId": e.controlling_stn },
+            },
+            {
+              "@internalId": "1168",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.ref_nbr,
+            },
+          ],
+        },
+      };
+    });
+
+    /**
+     * check if IN or CM (IN => Bill , CM => credit)
+     */
+    recode["@internalId"] = internalId;
+    recode["@xsi:type"] =
+      singleItem.invoice_type == "IN" ? "q1:VendorBill" : "q1:VendorCredit";
+
+    linePayload["soap:Envelope"]["soap:Body"]["update"]["record"] = recode;
+    const doc = create(linePayload);
+    return doc.end({ prettyPrint: true });
+  } catch (error) {
+    throw "Unable to make xml";
+  }
+}
+
+/**
+ * Create Invoice
+ * @param {*} soapPayload
+ * @param {*} type
+ * @returns
+ */
 async function createInvoice(soapPayload, type) {
   try {
     const res = await axios.post(
@@ -479,6 +747,27 @@ async function createInvoice(soapPayload, type) {
       };
     }
   }
+}
+
+async function createInvoiceAndUpdateLineItems(invoiceId, data) {
+  try {
+    const lineItemXml = makeJsonToXmlForLineItems(
+      invoiceId,
+      JSON.parse(JSON.stringify(lineItemPayload)),
+      data
+    );
+    const res = await axios.post(
+      process.env.NETSUIT_AR_API_ENDPOINT,
+      lineItemXml,
+      {
+        headers: {
+          Accept: "text/xml",
+          "Content-Type": "text/xml; charset=utf-8",
+          SOAPAction: "update",
+        },
+      }
+    );
+  } catch (error) {}
 }
 
 /**
