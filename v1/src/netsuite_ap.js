@@ -81,6 +81,7 @@ module.exports.handler = async (event, context, callback) => {
           //after IN process end check for CM process
           if (lineItemPerProcess >= invoiceDataList.length) {
             if (queryinvoiceType == "IN") {
+              dbc.end();
               return {
                 hasMoreData: "true",
                 queryOperator,
@@ -88,6 +89,7 @@ module.exports.handler = async (event, context, callback) => {
                 queryinvoiceType: "CM",
               };
             } else {
+              dbc.end();
               return {
                 hasMoreData: "true",
                 queryOperator,
@@ -95,6 +97,7 @@ module.exports.handler = async (event, context, callback) => {
             }
           } else {
             // process rest of the data
+            dbc.end();
             return {
               hasMoreData: "true",
               queryOperator,
@@ -105,6 +108,7 @@ module.exports.handler = async (event, context, callback) => {
             };
           }
         } catch (error) {
+          dbc.end();
           return {
             hasMoreData: "true",
             queryOperator,
@@ -121,6 +125,7 @@ module.exports.handler = async (event, context, callback) => {
               orderData = await getDataGroupBy(connections);
               console.log("orderData", orderData.length);
             } catch (error) {
+              dbc.end();
               return { hasMoreData: "false" };
             }
             queryInvoiceNbr = orderData[0].invoice_nbr;
@@ -135,6 +140,7 @@ module.exports.handler = async (event, context, callback) => {
             console.log("orderData", invoiceDataList.length);
           } catch (error) {
             if (queryinvoiceType == "IN") {
+              dbc.end();
               return {
                 hasMoreData: "true",
                 queryOperator,
@@ -153,6 +159,7 @@ module.exports.handler = async (event, context, callback) => {
           await updateInvoiceId(connections, queryData);
 
           if (invoiceDataList.length <= lineItemPerProcess) {
+            dbc.end();
             return {
               hasMoreData: "true",
               queryOperator,
@@ -160,6 +167,7 @@ module.exports.handler = async (event, context, callback) => {
               queryinvoiceType: "CM",
             };
           } else {
+            dbc.end();
             return {
               hasMoreData: "true",
               queryOperator,
@@ -171,6 +179,7 @@ module.exports.handler = async (event, context, callback) => {
           }
         } catch (error) {
           console.log("error", error);
+          dbc.end();
           return {
             hasMoreData: "true",
             queryOperator,
@@ -329,13 +338,40 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT invoice_nbr FROM interface_ap where 
-                  (internal_id is null and processed != 'F' and vendor_internal_id !='') or 
-                  (vendor_internal_id !='' and processed ='F' and processed_date < '${today}') 
-                  group by invoice_nbr 
-                  having count(*) ${queryOperator} ${lineItemPerProcess} limit ${
-      totalCountPerLoop + 1
-    }`;
+    let query = "";
+    if (queryOperator == "<=") {
+      // query = `SELECT ia.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
+      //           LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr
+      //           WHERE (ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
+      //           OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}')
+      //           GROUP BY ia.invoice_nbr having tc ${queryOperator} ${lineItemPerProcess} limit ${
+      //   totalCountPerLoop + 1
+      // }`;
+
+      query = `SELECT ia.invoice_nbr ,count(ia.*) as tc, ia.invoice_type FROM interface_ap_master iam
+                  LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
+                  WHERE ((ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
+                  OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}')) 
+                  and ia.invoice_nbr not in (
+	                  SELECT ia.invoice_nbr FROM interface_ap_master iam
+	                  LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
+	                  WHERE (ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
+	                  OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}') 
+	                  GROUP BY ia.invoice_nbr, ia.invoice_type
+	                  having tc > ${lineItemPerProcess}
+                  )
+                  GROUP BY ia.invoice_nbr, ia.invoice_type having tc <= ${lineItemPerProcess} limit ${
+        totalCountPerLoop + 1
+      }`;
+    } else {
+      query = `SELECT ia.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
+                  LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
+                  WHERE (ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
+                  OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}')
+                  GROUP BY ia.invoice_nbr, ia.invoice_type having tc > ${lineItemPerProcess} limit ${
+        totalCountPerLoop + 1
+      }`;
+    }
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {

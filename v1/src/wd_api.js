@@ -278,7 +278,7 @@ async function makeJsonToXml(payload, inputData) {
       ] = inputData.house_bill_nbr;
 
       transBody["otm:ShipmentRefnum"][0]["otm:ShipmentRefnumValue"] =
-        "H" + inputData.ref_nbr;
+        inputData.ref_nbr; //"2nd H"
       transBody["otm:ShipmentRefnum"][1]["otm:ShipmentRefnumValue"] =
         inputData.chrg_wght_kgs;
 
