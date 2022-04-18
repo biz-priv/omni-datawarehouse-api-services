@@ -164,8 +164,6 @@ module.exports.handler = async (event, context, callback) => {
             return {
               hasMoreData: "true",
               queryOperator,
-              queryInvoiceNbr: queryInvoiceNbr,
-              queryinvoiceType: "CM",
             };
           } else {
             dbc.end();
