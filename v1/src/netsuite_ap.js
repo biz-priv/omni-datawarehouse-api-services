@@ -340,39 +340,30 @@ async function getDataGroupBy(connections) {
   try {
     let query = "";
     if (queryOperator == "<=") {
-      // query = `SELECT ia.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
-      //           LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr
-      //           WHERE (ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
-      //           OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}')
-      //           GROUP BY ia.invoice_nbr having tc ${queryOperator} ${lineItemPerProcess} limit ${
-      //   totalCountPerLoop + 1
-      // }`;
-
-      query = `SELECT ia.invoice_nbr ,count(ia.*) as tc, ia.invoice_type FROM interface_ap_master iam
+      query = `SELECT iam.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
                   LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
-                  WHERE ((ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
-                  OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}')) 
-                  and ia.invoice_nbr not in (
-	                  SELECT ia.invoice_nbr FROM interface_ap_master iam
-	                  LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
-	                  WHERE (ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
-	                  OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}') 
-	                  GROUP BY ia.invoice_nbr, ia.invoice_type
-	                  having tc > ${lineItemPerProcess}
+                  WHERE ((iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
+                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '2022-04-18')) 
+                  and iam.invoice_nbr not in (
+	                  SELECT iap.invoice_nbr FROM interface_ap_master iap
+	                  LEFT JOIN interface_ap ia ON iap.invoice_nbr = ia.invoice_nbr and iap.invoice_type = ia.invoice_type
+                      WHERE (iap.internal_id is null and iap.processed != 'F' and iap.vendor_internal_id !='')
+                      OR (iap.vendor_internal_id !='' and iap.processed ='F' and iap.processed_date < '${today}')
+                      GROUP BY iap.invoice_nbr, iap.invoice_type
+                      having tc > ${lineItemPerProcess}
                   )
-                  GROUP BY ia.invoice_nbr, ia.invoice_type having tc <= ${lineItemPerProcess} limit ${
+                  GROUP BY iam.invoice_nbr, iam.invoice_type having tc <= ${lineItemPerProcess} limit ${
         totalCountPerLoop + 1
       }`;
     } else {
-      query = `SELECT ia.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
-                  LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
-                  WHERE (ia.internal_id is null and ia.processed != 'F' and ia.vendor_internal_id !='')
-                  OR (ia.vendor_internal_id !='' and ia.processed ='F' and ia.processed_date < '${today}')
-                  GROUP BY ia.invoice_nbr, ia.invoice_type having tc > ${lineItemPerProcess} limit ${
+      query = `SELECT iam.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
+                LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
+                WHERE (iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
+                OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '${today}')
+                GROUP BY iam.invoice_nbr, iam.invoice_type having tc > ${lineItemPerProcess} limit ${
         totalCountPerLoop + 1
       }`;
     }
-
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
