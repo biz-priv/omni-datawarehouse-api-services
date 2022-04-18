@@ -32,7 +32,7 @@ let queryInvoiceId = null;
 let queryInvoiceNbr = null;
 
 module.exports.handler = async (event, context, callback) => {
-  let hasMoreData = "false";
+  // let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
@@ -293,7 +293,10 @@ async function mainProcess(item, invoiceDataList) {
         xmlPayload,
         singleItem.invoice_type
       );
-      queryInvoiceId = invoiceId;
+
+      if (queryOperator == ">") {
+        queryInvoiceId = invoiceId;
+      }
 
       /**
        * update invoice id
