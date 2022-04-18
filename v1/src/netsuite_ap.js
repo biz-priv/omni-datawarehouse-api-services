@@ -32,6 +32,7 @@ let queryInvoiceId = null;
 let queryInvoiceNbr = null;
 
 module.exports.handler = async (event, context, callback) => {
+  console.log("event", event);
   // let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
@@ -67,6 +68,8 @@ module.exports.handler = async (event, context, callback) => {
       totalCountPerLoop = 0;
       console.log("> start");
       if (queryInvoiceId != null && queryInvoiceId.length > 0) {
+        console.log(">if");
+
         try {
           const invoiceDataList = await getInvoiceNbrData(
             connections,
@@ -137,7 +140,7 @@ module.exports.handler = async (event, context, callback) => {
               queryInvoiceNbr,
               true
             );
-            console.log("orderData", invoiceDataList.length);
+            console.log("invoiceDataList", invoiceDataList.length);
           } catch (error) {
             if (queryinvoiceType == "IN") {
               dbc.end();
@@ -191,13 +194,20 @@ module.exports.handler = async (event, context, callback) => {
       /**
        * Get data from db
        */
+      let invoiceDataList = [];
       const orderData = await getDataGroupBy(connections);
 
       const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
       console.log("orderData", orderData.length);
       currentCount = orderData.length;
-
-      const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+      try {
+        invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+      } catch (error) {
+        return {
+          hasMoreData: "true",
+          queryOperator: ">",
+        };
+      }
       /**
        * 15 simultaneous process
        */
@@ -386,7 +396,7 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
   try {
     let query = "";
     if (isBigData) {
-      query = `SELECT * FROM interface_ap where invoice_nbr = ${invoice_nbr} and invoice_type ='${queryinvoiceType}' 
+      query = `SELECT * FROM interface_ap where invoice_nbr = '${invoice_nbr}' and invoice_type ='${queryinvoiceType}' 
       order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
     } else {
       query = `select * from interface_ap where invoice_nbr in (${invoice_nbr.join(
@@ -394,12 +404,15 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
       )})`;
     }
 
+    console.log("query", query);
+
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
     }
     return result;
   } catch (error) {
+    console.log("error", error);
     throw "getInvoiceNbrData: No data found.";
   }
 }
