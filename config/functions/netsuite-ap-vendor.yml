@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/netsuite_ap_vendor.handler
+  handler: v1/src/netsuite_ap_vendor.handler
   name: ${self:service}-netsuite-ap-vendor-${self:provider.stage}
   description: Netsuite AP vendor AR api service - ${self:provider.stage}
   runtime: nodejs14.x
@@ -8,7 +8,7 @@ function:
   timeout: 900
   package:
     include:
-      - ${self:custom.alias}/src/netsuite_ap_vendor.js
+      - v1/src/netsuite_ap_vendor.js
       - Helpers/**
       - node_modules/**
   environment:

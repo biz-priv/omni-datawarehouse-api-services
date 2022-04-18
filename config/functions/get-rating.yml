@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/get_rating.handler
+  handler: v1/src/get_rating.handler
   name: ${self:service}-get-rating-${self:provider.stage}
   description: Rating detail api service - ${self:provider.stage}
   runtime: nodejs12.x
@@ -15,7 +15,7 @@ function:
           headers: ${self:custom.standardResponseHeaders}
           statusCodes:
             200:
-              pattern: ''
+              pattern: ""
             400:
               pattern: '[\s\S]*\[400\][\s\S]*'
               headers:
@@ -25,15 +25,15 @@ function:
               pattern: '[\s\S]*\[500\][\s\S]*'
               headers:
                 Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}  
-        authorizer: 
+              template: ${file(responseTemplate.vtl)}
+        authorizer:
           name: custom-authorizer
           resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
   package:
     include:
-      - ${self:custom.alias}/src/get_rating.js
+      - v1/src/get_rating.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
