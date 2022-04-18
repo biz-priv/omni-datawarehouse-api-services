@@ -37,26 +37,24 @@ module.exports.handler = async (event, context, callback) => {
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : totalCountPerLoop;
+    : 20;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
-    : queryOperator;
+    : "<=";
 
   queryInvoiceId = event.hasOwnProperty("queryInvoiceId")
     ? event.queryInvoiceId
-    : queryInvoiceId;
+    : null;
 
   queryInvoiceNbr = event.hasOwnProperty("queryInvoiceNbr")
     ? event.queryInvoiceNbr
-    : queryInvoiceNbr;
+    : null;
 
-  queryOffset = event.hasOwnProperty("queryOffset")
-    ? event.queryOffset
-    : queryOffset;
+  queryOffset = event.hasOwnProperty("queryOffset") ? event.queryOffset : 0;
 
   queryinvoiceType = event.hasOwnProperty("queryinvoiceType")
     ? event.queryinvoiceType
-    : queryinvoiceType;
+    : "IN";
 
   try {
     /**
