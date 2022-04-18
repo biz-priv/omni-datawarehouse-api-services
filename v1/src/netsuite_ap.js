@@ -336,6 +336,11 @@ function getConnection() {
   }
 }
 
+/**
+ * get data
+ * @param {*} connections
+ * @returns
+ */
 async function getDataGroupBy(connections) {
   try {
     let query = "";
