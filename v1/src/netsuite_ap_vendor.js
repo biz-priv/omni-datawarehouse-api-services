@@ -150,6 +150,7 @@ async function putVendor(connections, vendorData, vendor_id) {
                   VALUES ('${vendorData.entityId}', '${vendorData.entityInternalId}',
                           '${vendorData.currency}', '${vendorData.currencyInternalId}');`;
     query += `UPDATE interface_ap_master SET 
+                    processed = '',
                     vendor_internal_id = '${vendorData.entityInternalId}', 
                     currency_internal_id = '${vendorData.currencyInternalId}', 
                     processed_date = '${today}' 
@@ -212,10 +213,10 @@ function getVendor(entityId) {
 
 async function updateFailedRecords(connections, vendor_id) {
   try {
-    let query = `UPDATE interface_ap_master  
-                  SET 
+    let query = `UPDATE interface_ap_master SET 
+                  processed = 'F',
                   processed_date = '${today}' 
-                  WHERE vendor_id = '${vendor_id}' and processed = ''`;
+                  WHERE vendor_id = '${vendor_id}'`;
     const result = await connections.query(query);
     return result;
   } catch (error) {}

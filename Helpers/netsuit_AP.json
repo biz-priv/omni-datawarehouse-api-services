@@ -88,6 +88,12 @@
                       "@xsi:type": "SelectCustomFieldRef",
                       "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
                       "value": { "@internalId": "" }
+                    },
+                    {
+                      "@internalId": "2614",
+                      "@xsi:type": "StringCustomFieldRef",
+                      "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                      "value": ""
                     }
                   ]
                 }
