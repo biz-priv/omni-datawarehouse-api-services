@@ -357,7 +357,7 @@ async function getDataGroupBy(connections) {
       query = `SELECT iam.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
                   LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
                   WHERE ((iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
-                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '2022-04-18')) 
+                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '${today}')) 
                   and iam.invoice_nbr not in (
 	                  SELECT iap.invoice_nbr FROM interface_ap_master iap
 	                  LEFT JOIN interface_ap ia ON iap.invoice_nbr = ia.invoice_nbr and iap.invoice_type = ia.invoice_type
