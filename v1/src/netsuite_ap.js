@@ -551,6 +551,12 @@ function makeJsonToXml(payload, data, customerData) {
               "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
               value: e.ref_nbr,
             },
+            {
+              "@internalId": "2614",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.custcol_finalizedby ?? "",
+            },
           ],
         },
       };
