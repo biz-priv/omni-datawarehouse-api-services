@@ -1,15 +1,15 @@
 ---
 function:
-  handler: v1/src/netsuite_customer_step_trigger.handler
+  handler: ${self:custom.alias}/src/netsuite_customer_step_trigger.handler
   name: ${self:service}-netsuite-customer-step-trigger-${self:provider.stage}
   description: Netsuite AR customer step function trigger api service - ${self:provider.stage}
   runtime: nodejs14.x
   events:
     - schedule:
-        rate: cron(30 3 * * ? *)
+        rate: cron(30 8 * * ? *)
   package:
     include:
-      - v1/src/netsuite_customer_step_trigger.js
+      - ${self:custom.alias}/src/netsuite_customer_step_trigger.js
       - node_modules/**
   environment:
     NETSUITE_CUSTOMER_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-netsuite-customer-state-machine-${self:provider.stage}
