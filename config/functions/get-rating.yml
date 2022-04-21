@@ -1,6 +1,6 @@
 ---
 function:
-  handler: v1/src/get_rating.handler
+  handler: ${self:custom.alias}/src/get_rating.handler
   name: ${self:service}-get-rating-${self:provider.stage}
   description: Rating detail api service - ${self:provider.stage}
   runtime: nodejs12.x
@@ -33,7 +33,7 @@ function:
           type: request
   package:
     include:
-      - v1/src/get_rating.js
+      - ${self:custom.alias}/src/get_rating.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}

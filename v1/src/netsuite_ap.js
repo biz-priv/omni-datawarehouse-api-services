@@ -32,30 +32,29 @@ let queryInvoiceId = null;
 let queryInvoiceNbr = null;
 
 module.exports.handler = async (event, context, callback) => {
-  let hasMoreData = "false";
+  console.log("event", event);
+  // let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : totalCountPerLoop;
+    : 20;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
-    : queryOperator;
+    : "<=";
 
   queryInvoiceId = event.hasOwnProperty("queryInvoiceId")
     ? event.queryInvoiceId
-    : queryInvoiceId;
+    : null;
 
   queryInvoiceNbr = event.hasOwnProperty("queryInvoiceNbr")
     ? event.queryInvoiceNbr
-    : queryInvoiceNbr;
+    : null;
 
-  queryOffset = event.hasOwnProperty("queryOffset")
-    ? event.queryOffset
-    : queryOffset;
+  queryOffset = event.hasOwnProperty("queryOffset") ? event.queryOffset : 0;
 
   queryinvoiceType = event.hasOwnProperty("queryinvoiceType")
     ? event.queryinvoiceType
-    : queryinvoiceType;
+    : "IN";
 
   try {
     /**
@@ -67,6 +66,8 @@ module.exports.handler = async (event, context, callback) => {
       totalCountPerLoop = 0;
       console.log("> start");
       if (queryInvoiceId != null && queryInvoiceId.length > 0) {
+        console.log(">if");
+
         try {
           const invoiceDataList = await getInvoiceNbrData(
             connections,
@@ -137,7 +138,7 @@ module.exports.handler = async (event, context, callback) => {
               queryInvoiceNbr,
               true
             );
-            console.log("orderData", invoiceDataList.length);
+            console.log("invoiceDataList", invoiceDataList.length);
           } catch (error) {
             if (queryinvoiceType == "IN") {
               dbc.end();
@@ -163,8 +164,6 @@ module.exports.handler = async (event, context, callback) => {
             return {
               hasMoreData: "true",
               queryOperator,
-              queryInvoiceNbr: queryInvoiceNbr,
-              queryinvoiceType: "CM",
             };
           } else {
             dbc.end();
@@ -191,13 +190,21 @@ module.exports.handler = async (event, context, callback) => {
       /**
        * Get data from db
        */
-      const orderData = await getDataGroupBy(connections);
+      let invoiceDataList = [];
+      // const orderData = await getDataGroupBy(connections);
+      const orderData = [{ invoice_nbr: "149-8284" }];
 
       const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
       console.log("orderData", orderData.length);
       currentCount = orderData.length;
-
-      const invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+      try {
+        invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
+      } catch (error) {
+        return {
+          hasMoreData: "true",
+          queryOperator: ">",
+        };
+      }
       /**
        * 15 simultaneous process
        */
@@ -286,6 +293,7 @@ async function mainProcess(item, invoiceDataList) {
         dataGroup[e],
         customerData
       );
+
       /**
        * create invoice
        */
@@ -293,7 +301,10 @@ async function mainProcess(item, invoiceDataList) {
         xmlPayload,
         singleItem.invoice_type
       );
-      queryInvoiceId = invoiceId;
+
+      if (queryOperator == ">") {
+        queryInvoiceId = invoiceId;
+      }
 
       /**
        * update invoice id
@@ -348,7 +359,7 @@ async function getDataGroupBy(connections) {
       query = `SELECT iam.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
                   LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
                   WHERE ((iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
-                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '2022-04-18')) 
+                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '${today}')) 
                   and iam.invoice_nbr not in (
 	                  SELECT iap.invoice_nbr FROM interface_ap_master iap
 	                  LEFT JOIN interface_ap ia ON iap.invoice_nbr = ia.invoice_nbr and iap.invoice_type = ia.invoice_type
@@ -383,7 +394,7 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
   try {
     let query = "";
     if (isBigData) {
-      query = `SELECT * FROM interface_ap where invoice_nbr = ${invoice_nbr} and invoice_type ='${queryinvoiceType}' 
+      query = `SELECT * FROM interface_ap where invoice_nbr = '${invoice_nbr}' and invoice_type ='${queryinvoiceType}' 
       order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
     } else {
       query = `select * from interface_ap where invoice_nbr in (${invoice_nbr.join(
@@ -391,12 +402,15 @@ async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
       )})`;
     }
 
+    console.log("query", query);
+
     const result = await connections.query(query);
     if (!result || result.length == 0) {
       throw "No data found.";
     }
     return result;
   } catch (error) {
+    console.log("error", error);
     throw "getInvoiceNbrData: No data found.";
   }
 }
@@ -539,6 +553,18 @@ function makeJsonToXml(payload, data, customerData) {
               "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
               value: e.ref_nbr,
             },
+            {
+              "@internalId": "2506",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.consol_nbr ?? "",
+            },
+            {
+              "@internalId": "2614",
+              "@xsi:type": "StringCustomFieldRef",
+              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+              value: e.finalizedby ?? "",
+            },
           ],
         },
       };
@@ -565,12 +591,6 @@ function makeJsonToXml(payload, data, customerData) {
           "@typeId": "752",
           "@internalId": hardcode.source_system,
         },
-      },
-      {
-        "@internalId": "2506",
-        "@xsi:type": "StringCustomFieldRef",
-        "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-        value: singleItem.consol_nbr ?? "",
       },
       {
         "@internalId": "1748",
