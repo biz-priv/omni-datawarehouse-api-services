@@ -23,7 +23,7 @@ const userConfig = {
 
 const today = getCustomDate();
 const lineItemPerProcess = 500;
-let totalCountPerLoop = 0;
+let totalCountPerLoop = 20;
 let queryOffset = 0;
 let queryinvoiceType = "IN"; // IN / CM
 let queryOperator = "<=";
@@ -37,7 +37,7 @@ module.exports.handler = async (event, context, callback) => {
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
-    : 0;
+    : 20;
   queryOperator = event.hasOwnProperty("queryOperator")
     ? event.queryOperator
     : "<=";
@@ -293,8 +293,7 @@ async function mainProcess(item, invoiceDataList) {
         dataGroup[e],
         customerData
       );
-      console.log("xmlPayload", xmlPayload);
-      // throw "ee";
+
       /**
        * create invoice
        */
@@ -336,8 +335,8 @@ function getConnection() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    // const dbHost = process.env.HOST;
-    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
