@@ -1,6 +1,6 @@
 ---
 function:
-  handler: v1/src/netsuite_ap.handler
+  handler: ${self:custom.alias}/src/netsuite_ap.handler
   name: ${self:service}-netsuite-ap-${self:provider.stage}
   description: Netsuite AP api service - ${self:provider.stage}
   runtime: nodejs14.x
@@ -8,7 +8,7 @@ function:
   timeout: 900
   package:
     include:
-      - v1/src/netsuite_ap.js
+      - ${self:custom.alias}/src/netsuite_ap.js
       - Helpers/**
       - node_modules/**
   environment:
