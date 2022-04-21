@@ -6,7 +6,7 @@ function:
   runtime: nodejs14.x
   events:
     - schedule:
-        rate: cron(15 9 * * ? *)
+        rate: cron(25 22 * * ? *)
   package:
     include:
       - ${self:custom.alias}/src/netsuite_customer_step_trigger.js
