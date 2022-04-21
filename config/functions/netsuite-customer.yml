@@ -1,6 +1,6 @@
 ---
 function:
-  handler: v1/src/netsuite_customer.handler
+  handler: ${self:custom.alias}/src/netsuite_customer.handler
   name: ${self:service}-netsuite-customer-${self:provider.stage}
   description: Netsuite customer AR api service - ${self:provider.stage}
   runtime: nodejs14.x
@@ -8,7 +8,7 @@ function:
   timeout: 900
   package:
     include:
-      - v1/src/netsuite_customer.js
+      - ${self:custom.alias}/src/netsuite_customer.js
       - Helpers/**
       - node_modules/**
   environment:

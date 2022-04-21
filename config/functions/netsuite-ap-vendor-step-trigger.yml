@@ -1,6 +1,6 @@
 ---
 function:
-  handler: v1/src/netsuite_ap_vendor_step_trigger.handler
+  handler: ${self:custom.alias}/src/netsuite_ap_vendor_step_trigger.handler
   name: ${self:service}-netsuite-ap-vendor-step-trigger-${self:provider.stage}
   description: Netsuite AP Vendor step function trigger api service - ${self:provider.stage}
   runtime: nodejs14.x
@@ -9,7 +9,7 @@ function:
   #       rate: cron(30 14 * * ? *)
   package:
     include:
-      - v1/src/netsuite_ap_vendor_step_trigger.js
+      - ${self:custom.alias}/src/netsuite_ap_vendor_step_trigger.js
       - node_modules/**
   environment:
     NETSUITE_VENDOR_STEP_ARN: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:${self:service}-netsuite-ap-vendor-state-machine-${self:provider.stage}
