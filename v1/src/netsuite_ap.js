@@ -191,8 +191,8 @@ module.exports.handler = async (event, context, callback) => {
        * Get data from db
        */
       let invoiceDataList = [];
-      // const orderData = await getDataGroupBy(connections);
-      const orderData = [{ invoice_nbr: "149-8284" }];
+      const orderData = await getDataGroupBy(connections);
+      // const orderData = [{ invoice_nbr: "020-536382" }];
 
       const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
       console.log("orderData", orderData.length);
@@ -293,6 +293,7 @@ async function mainProcess(item, invoiceDataList) {
         dataGroup[e],
         customerData
       );
+      // console.log("xmlPayload", xmlPayload);
 
       /**
        * create invoice
@@ -560,7 +561,7 @@ function makeJsonToXml(payload, data, customerData) {
               value: e.consol_nbr ?? "",
             },
             {
-              "@internalId": "2614",
+              "@internalId": "2511", //2614
               "@xsi:type": "StringCustomFieldRef",
               "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
               value: e.finalizedby ?? "",

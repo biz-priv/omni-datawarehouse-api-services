@@ -6,7 +6,11 @@ function:
   runtime: nodejs14.x
   # events:
   #   - schedule:
-  #       rate: cron(30 14 * * ? *)
+  #       rate: cron(0 4 * * ? *) # 9:30 am
+  #   - schedule:
+  #       rate: cron(0 15 * * ? *) # 8:30 pm
+  #   - schedule:
+  #       rate: cron(0 20 * * ? *) # 1:30 am
   package:
     include:
       - ${self:custom.alias}/src/netsuite_ap_vendor_step_trigger.js
