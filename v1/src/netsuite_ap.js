@@ -27,13 +27,11 @@ let totalCountPerLoop = 20;
 let queryOffset = 0;
 let queryinvoiceType = "IN"; // IN / CM
 let queryOperator = "<=";
-// let queryOperator = ">";
 let queryInvoiceId = null;
 let queryInvoiceNbr = null;
 
 module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
-  // let hasMoreData = "false";
   let currentCount = 0;
   totalCountPerLoop = event.hasOwnProperty("totalCountPerLoop")
     ? event.totalCountPerLoop
@@ -192,7 +190,6 @@ module.exports.handler = async (event, context, callback) => {
        */
       let invoiceDataList = [];
       const orderData = await getDataGroupBy(connections);
-      // const orderData = [{ invoice_nbr: "020-536382" }];
 
       const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
       console.log("orderData", orderData.length);
@@ -293,7 +290,6 @@ async function mainProcess(item, invoiceDataList) {
         dataGroup[e],
         customerData
       );
-      // console.log("xmlPayload", xmlPayload);
 
       /**
        * create invoice
@@ -337,7 +333,6 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
-    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -561,7 +556,7 @@ function makeJsonToXml(payload, data, customerData) {
               value: e.consol_nbr ?? "",
             },
             {
-              "@internalId": "2511", //2614
+              "@internalId": "2511",
               "@xsi:type": "StringCustomFieldRef",
               "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
               value: e.finalizedby ?? "",
@@ -795,7 +790,6 @@ async function createInvoice(soapPayload, type) {
       throw error;
     } else {
       throw {
-        // customError: false,
         msg: "Netsuit AP Api Failed",
       };
     }
