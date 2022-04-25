@@ -388,14 +388,13 @@ async function getDataGroupBy(connections) {
 
 async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
   try {
-    let query = "";
+    let query = `SELECT ia.*, iam.vendor_internal_id ,iam.currency_internal_id  FROM interface_ap ia 
+      left join interface_ap_master iam on ia.invoice_nbr = iam.invoice_nbr `;
     if (isBigData) {
-      query = `SELECT * FROM interface_ap where invoice_nbr = '${invoice_nbr}' and invoice_type ='${queryinvoiceType}' 
+      query += ` where ia.invoice_nbr = '${invoice_nbr}' and ia.invoice_type ='${queryinvoiceType}' 
       order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
     } else {
-      query = `select * from interface_ap where invoice_nbr in (${invoice_nbr.join(
-        ","
-      )})`;
+      query += ` where ia.invoice_nbr in (${invoice_nbr.join(",")})`;
     }
 
     console.log("query", query);
@@ -556,7 +555,7 @@ function makeJsonToXml(payload, data, customerData) {
               value: e.consol_nbr ?? "",
             },
             {
-              "@internalId": "2511",
+              "@internalId": "2614",
               "@xsi:type": "StringCustomFieldRef",
               "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
               value: e.finalizedby ?? "",
