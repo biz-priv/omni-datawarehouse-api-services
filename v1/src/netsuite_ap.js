@@ -364,7 +364,7 @@ async function getDataGroupBy(connections) {
                       GROUP BY iap.invoice_nbr, iap.invoice_type
                       having tc > ${lineItemPerProcess}
                   )
-                  GROUP BY iam.invoice_nbr, iam.invoice_type having tc <= ${lineItemPerProcess} limit ${
+                  GROUP BY iam.invoice_nbr tc <= ${lineItemPerProcess} limit ${
         totalCountPerLoop + 1
       }`;
     } else {
@@ -389,7 +389,7 @@ async function getDataGroupBy(connections) {
 async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
   try {
     let query = `SELECT ia.*, iam.vendor_internal_id ,iam.currency_internal_id  FROM interface_ap ia 
-      left join interface_ap_master iam on ia.invoice_nbr = iam.invoice_nbr `;
+      left join interface_ap_master iam on ia.invoice_nbr = iam.invoice_nbr and ia.invoice_type = iam.invoice_type `;
     if (isBigData) {
       query += ` where ia.invoice_nbr = '${invoice_nbr}' and ia.invoice_type ='${queryinvoiceType}' 
       order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
