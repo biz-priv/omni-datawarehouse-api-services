@@ -188,13 +188,22 @@ function getVendor(entityId) {
       })
       .then((result, raw, soapHeader) => {
         if (result && result?.searchResult?.recordList?.record.length > 0) {
-          const record = result.searchResult.recordList.record[0];
-          resolve({
-            entityId: record.entityId,
-            entityInternalId: record["$attributes"].internalId,
-            currency: record.currency.name,
-            currencyInternalId: record.currency["$attributes"].internalId,
-          });
+          const recordList = result.searchResult.recordList.record;
+          let record = recordList.filter((e) => e.entityId == entityId);
+          if (record.length > 0) {
+            record = record[0];
+            resolve({
+              entityId: record.entityId,
+              entityInternalId: record["$attributes"].internalId,
+              currency: record.currency.name,
+              currencyInternalId: record.currency["$attributes"].internalId,
+            });
+          } else {
+            reject({
+              customError: true,
+              msg: `Vendor not found. (vendor_id: ${entityId})`,
+            });
+          }
         } else {
           reject({
             customError: true,
@@ -267,7 +276,7 @@ function sendMail(data) {
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
         to: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
-        subject: `Netsuite AP - Dev Error`,
+        subject: `Netsuite AP ${process.env.STAGE.toUpperCase()} Invoices - Error`,
         html: `
         <!DOCTYPE html>
         <html lang="en">
