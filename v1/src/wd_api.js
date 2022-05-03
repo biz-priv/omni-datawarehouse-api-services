@@ -19,7 +19,6 @@ module.exports.handler = async (event, context, callback) => {
     for (let i = 0; i < shipmentData.length; i++) {
       let item = shipmentData[i];
 
-      //Do something
       try {
         const newData = await checkStatus(item);
         let itemData = newData.data;
@@ -158,25 +157,22 @@ async function checkStatus(data) {
     });
 
     /**
-     * check if AG exists.
+     * check status
      */
     const params = {
       TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
-      FilterExpression:
-        "#file_nbr = :file_nbr AND #order_status = :order_status",
-      ExpressionAttributeNames: {
-        "#file_nbr": "file_nbr",
-        "#order_status": "order_status",
-      },
-      ExpressionAttributeValues: {
-        ":file_nbr": data.file_nbr.toString(),
-        ":order_status": data.order_status,
+      Key: {
+        id: data.file_nbr.toString() + data.order_status,
+        file_nbr: data.file_nbr.toString(),
       },
     };
-    const res = await documentClient.scan(params).promise();
 
+    const res = await documentClient.get(params).promise();
     //check data exists.
-    if (res && res.Count && res.Count == 1) {
+    if (res && res.Item) {
+      /**
+       * if order_status is other than AG/AH then skip
+       */
       if (data.order_status != "AG" && data.order_status != "AH") {
         throw "No new data";
       }
@@ -184,7 +180,7 @@ async function checkStatus(data) {
        * check if event_date_utc not same
        */
       if (
-        res.Items[0].event_date_utc !=
+        res.Item.event_date_utc !=
         new Date(data.event_date_utc).toLocaleString()
       ) {
         /**
@@ -192,23 +188,17 @@ async function checkStatus(data) {
          */
         const paramsAh = {
           TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
-          FilterExpression:
-            "#file_nbr = :file_nbr AND #order_status = :order_status",
-          ExpressionAttributeNames: {
-            "#file_nbr": "file_nbr",
-            "#order_status": "order_status",
-          },
-          ExpressionAttributeValues: {
-            ":file_nbr": data.file_nbr.toString(),
-            ":order_status": "AH",
+          Key: {
+            id: data.file_nbr.toString() + "AH",
+            file_nbr: "AH",
           },
         };
-        const resAh = await documentClient.scan(paramsAh).promise();
+        const resAh = await documentClient.get(paramsAh).promise();
         //if AH exists
-        if (resAh && resAh.Count && resAh.Count == 1) {
+        if (resAh && resAh.Item) {
           //check if AH event date not same
           if (
-            resAh.Items[0].event_date_utc !=
+            resAh.Item.event_date_utc !=
             new Date(data.event_date_utc).toLocaleString()
           ) {
             //update AH
