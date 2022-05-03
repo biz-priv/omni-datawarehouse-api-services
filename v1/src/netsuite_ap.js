@@ -364,7 +364,7 @@ async function getDataGroupBy(connections) {
                       GROUP BY iap.invoice_nbr, iap.invoice_type
                       having tc > ${lineItemPerProcess}
                   )
-                  GROUP BY iam.invoice_nbr tc <= ${lineItemPerProcess} limit ${
+                  GROUP BY iam.invoice_nbr having tc <= ${lineItemPerProcess} limit ${
         totalCountPerLoop + 1
       }`;
     } else {
