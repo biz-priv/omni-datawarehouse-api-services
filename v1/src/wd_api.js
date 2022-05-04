@@ -390,12 +390,15 @@ async function updateStatus(
   let documentClient = new AWS.DynamoDB.DocumentClient({
     region: process.env.DEFAULT_AWS,
   });
+  const orderStatusCheck =
+    record.order_status != "PUP" && record.order_status != "POD";
   const data = {
     ...record,
     id: record.file_nbr.toString() + record.order_status,
     ReferenceTransmissionNo: refTransmissionNo,
-    xml_payload: xmlPayload,
-    ...xmlResponse,
+    xml_payload: orderStatusCheck ? xmlPayload : null,
+    xml_response: orderStatusCheck ? xmlResponse.xml_response : null,
+    status_code: xmlResponse.status_code,
     status:
       refTransmissionNo == -1 || refTransmissionNo == null
         ? "failed"
