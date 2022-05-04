@@ -154,7 +154,7 @@ async function putVendor(connections, vendorData, vendor_id) {
                     vendor_internal_id = '${vendorData.entityInternalId}', 
                     currency_internal_id = '${vendorData.currencyInternalId}', 
                     processed_date = '${today}' 
-                    WHERE vendor_id = '${vendor_id}' and processed = '';`;
+                    WHERE vendor_id = '${vendor_id}';`;
     await connections.query(query);
   } catch (error) {
     throw "Vendor Update Failed";
