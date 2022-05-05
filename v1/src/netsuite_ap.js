@@ -79,21 +79,7 @@ module.exports.handler = async (event, context, callback) => {
 
           //after IN process end check for CM process
           if (lineItemPerProcess >= invoiceDataList.length) {
-            if (queryinvoiceType == "IN") {
-              dbc.end();
-              return {
-                hasMoreData: "true",
-                queryOperator,
-                queryInvoiceNbr: queryInvoiceNbr,
-                queryinvoiceType: "CM",
-              };
-            } else {
-              dbc.end();
-              return {
-                hasMoreData: "true",
-                queryOperator,
-              };
-            }
+            throw "Next CM Process or Stop";
           } else {
             // process rest of the data
             dbc.end();
@@ -108,10 +94,19 @@ module.exports.handler = async (event, context, callback) => {
           }
         } catch (error) {
           dbc.end();
-          return {
-            hasMoreData: "true",
-            queryOperator,
-          };
+          if (queryinvoiceType == "IN") {
+            return {
+              hasMoreData: "true",
+              queryOperator,
+              queryInvoiceNbr: queryInvoiceNbr,
+              queryinvoiceType: "CM",
+            };
+          } else {
+            return {
+              hasMoreData: "true",
+              queryOperator,
+            };
+          }
         }
       } else {
         console.log("> else");
@@ -157,14 +152,17 @@ module.exports.handler = async (event, context, callback) => {
           console.log("queryData", queryData);
           await updateInvoiceId(connections, queryData);
 
+          /**
+           * if items <= 501 process next invoice
+           * or send data for next update process of same invoice.
+           */
+          dbc.end();
           if (invoiceDataList.length <= lineItemPerProcess) {
-            dbc.end();
             return {
               hasMoreData: "true",
               queryOperator,
             };
           } else {
-            dbc.end();
             return {
               hasMoreData: "true",
               queryOperator,
@@ -189,17 +187,26 @@ module.exports.handler = async (event, context, callback) => {
        * Get data from db
        */
       let invoiceDataList = [];
-      const orderData = await getDataGroupBy(connections);
-
-      const invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
-      console.log("orderData", orderData.length);
-      currentCount = orderData.length;
+      let orderData = [];
+      let invoiceIDs = [];
       try {
+        orderData = await getDataGroupBy(connections);
+      } catch (error) {
+        return {
+          hasMoreData: "true",
+          queryOperator: queryOperator == "<=" ? ">" : "<=",
+        };
+      }
+
+      try {
+        invoiceIDs = orderData.map((a) => "'" + a.invoice_nbr + "'");
+        console.log("orderData", orderData.length);
+        currentCount = orderData.length;
         invoiceDataList = await getInvoiceNbrData(connections, invoiceIDs);
       } catch (error) {
         return {
           hasMoreData: "true",
-          queryOperator: ">",
+          queryOperator,
         };
       }
       /**
