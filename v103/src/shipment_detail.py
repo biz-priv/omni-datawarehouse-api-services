@@ -40,21 +40,29 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
         con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         cur = con.cursor()
         records_list = []
-        query = '''select distinct shipment_info.source_system, shipment_info.file_nbr, shipment_info.file_date ,shipment_info.handling_stn ,shipment_info.master_bill_nbr , \
-                shipment_info.house_bill_nbr,shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,\
-                shipment_info.pieces ,shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs ,\
-                shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date ,\
-                shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then \
-                shipment_milestone.order_status else shipment_info.current_status end as order_status, case when shipment_info.source_system = 'WT' then\
-                shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc, shipment_milestone.event_Date,\
-                shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer, shipment_info.current_status \
-                from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND (TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)\
-                or TRIM(shipment_info.shipper_nbr) = TRIM(api_token.cust_nbr) OR TRIM(shipment_info.cntrl_cust_nbr) = TRIM(api_token.cust_nbr)) left outer join customers customersb \
-                on shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr) left outer join customers customersc \
-                on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr) left outer join shipment_milestone \
-                on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y' \
-                left outer join service_level on shipment_info.service_level = service_level.service_level_desc where shipment_quote IN ('S') \
+        query = '''select distinct shipment_info.source_system, shipment_info.file_nbr, shipment_info.file_date ,shipment_info.handling_stn ,shipment_info.master_bill_nbr ,
+                shipment_info.house_bill_nbr,shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,shipment_info.shipper_name ,shipment_info.consignee_name ,
+                shipment_info.pieces ,shipment_info.actual_wght_lbs ,shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,shipment_info.chrg_wght_kgs ,
+                shipment_info.pickup_date ,shipment_info.pod_date ,shipment_info.eta_date ,shipment_info.etd_date ,shipment_info.schd_delv_date ,
+                shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then
+                shipment_milestone.order_status else shipment_info.current_status end as order_status, case when shipment_info.source_system = 'WT' then
+                shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc, shipment_milestone.event_Date,
+                shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer, shipment_info.current_status ,
+                shipment_ref.ref_nbr
+                from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND (TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)
+                or TRIM(shipment_info.shipper_nbr) = TRIM(api_token.cust_nbr) OR TRIM(shipment_info.cntrl_cust_nbr) = TRIM(api_token.cust_nbr))
+                left outer join customers customersb
+                on shipment_info.source_system = customersb.source_system and trim(shipment_info.bill_to_nbr) = trim(customersb.nbr)
+                left outer join customers customersc
+                on shipment_info.source_system = customersc.source_system and trim(shipment_info.cntrl_cust_nbr) = trim(customersc.nbr)
+                left outer join shipment_milestone
+                on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y'
+                left outer join service_level on shipment_info.service_level = service_level.service_level_desc
+                left outer join (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref)shipment_ref on shipment_info.source_system = shipment_ref.source_system and shipment_info.file_nbr = shipment_ref.file_nbr
+                where shipment_quote IN ('S')
+                and shipment_info.file_nbr = '2356738'
                 and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
+                
         LOGGER.info("shipment details query : %s", query)
         cur.execute(query)
         con.commit()

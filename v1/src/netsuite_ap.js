@@ -255,15 +255,14 @@ async function mainProcess(item, invoiceDataList) {
   let singleItem = null;
   try {
     const itemId = item.invoice_nbr;
+    const vendorId = item.vendor_id;
 
     /**
      * get invoice obj from DB
      */
     const dataById = invoiceDataList.filter((e) => {
-      return e.invoice_nbr == itemId;
+      return e.invoice_nbr == itemId && e.vendor_id == vendorId;
     });
-
-    singleItem = dataById[0];
 
     /**
      * group data by invoice_type IN/CM
@@ -276,19 +275,21 @@ async function mainProcess(item, invoiceDataList) {
       {}
     );
 
-    /**
-     * get customer from netsuit
-     */
-    let customerData = {
-      entityId: singleItem.vendor_id,
-      entityInternalId: singleItem.vendor_internal_id,
-      currency: singleItem.currency,
-      currencyInternalId: singleItem.currency_internal_id,
-    };
     let getUpdateQueryList = "";
 
     for (let e of Object.keys(dataGroup)) {
+      /**
+       * set single item and customer data
+       */
       singleItem = dataGroup[e][0];
+
+      let customerData = {
+        entityId: singleItem.vendor_id,
+        entityInternalId: singleItem.vendor_internal_id,
+        currency: singleItem.currency,
+        currencyInternalId: singleItem.currency_internal_id,
+      };
+
       /**
        * Make Json to Xml payload
        */
@@ -359,27 +360,38 @@ async function getDataGroupBy(connections) {
   try {
     let query = "";
     if (queryOperator == "<=") {
-      query = `SELECT iam.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
-                  LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
-                  WHERE ((iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
-                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '${today}')) 
+      query = `SELECT iam.invoice_nbr, iam.vendor_id, count(ia.*) as tc FROM interface_ap_master iam
+                  LEFT JOIN interface_ap ia ON 
+                  iam.invoice_nbr = ia.invoice_nbr and 
+                  iam.invoice_type = ia.invoice_type and 
+                  iam.vendor_id = ia.vendor_id  
+                  WHERE (
+	                  (iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
+	                  OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '${today}')
+                  ) 
                   and iam.invoice_nbr not in (
-	                  SELECT iap.invoice_nbr FROM interface_ap_master iap
-	                  LEFT JOIN interface_ap ia ON iap.invoice_nbr = ia.invoice_nbr and iap.invoice_type = ia.invoice_type
-                      WHERE (iap.internal_id is null and iap.processed != 'F' and iap.vendor_internal_id !='')
-                      OR (iap.vendor_internal_id !='' and iap.processed ='F' and iap.processed_date < '${today}')
-                      GROUP BY iap.invoice_nbr, iap.invoice_type
+	                  SELECT iamp.invoice_nbr FROM interface_ap_master iamp
+	                  LEFT JOIN interface_ap iap ON 
+	                  iamp.invoice_nbr = iap.invoice_nbr and 
+	                  iamp.invoice_type = iap.invoice_type and 
+	                  iamp.vendor_id = iap.vendor_id  
+                      WHERE (iamp.internal_id is null and iamp.processed != 'F' and iamp.vendor_internal_id !='')
+                      OR (iamp.vendor_internal_id !='' and iamp.processed ='F' and iamp.processed_date < '${today}')
+                      GROUP BY iamp.invoice_nbr, iamp.invoice_type, iamp.vendor_id
                       having tc > ${lineItemPerProcess}
                   )
-                  GROUP BY iam.invoice_nbr having tc <= ${lineItemPerProcess} limit ${
+                  GROUP BY iam.invoice_nbr, iam.vendor_id having tc <= ${lineItemPerProcess} limit ${
         totalCountPerLoop + 1
       }`;
     } else {
-      query = `SELECT iam.invoice_nbr ,count(ia.*) as tc FROM interface_ap_master iam
-                LEFT JOIN interface_ap ia ON iam.invoice_nbr = ia.invoice_nbr and iam.invoice_type = ia.invoice_type
+      query = `SELECT iam.invoice_nbr, iam.vendor_id, count(ia.*) as tc FROM interface_ap_master iam
+                LEFT JOIN interface_ap ia ON 
+                iam.invoice_nbr = ia.invoice_nbr and 
+                iam.invoice_type = ia.invoice_type and 
+                iam.vendor_id = ia.vendor_id
                 WHERE (iam.internal_id is null and iam.processed != 'F' and iam.vendor_internal_id !='')
                 OR (iam.vendor_internal_id !='' and iam.processed ='F' and iam.processed_date < '${today}')
-                GROUP BY iam.invoice_nbr, iam.invoice_type having tc > ${lineItemPerProcess} limit ${
+                GROUP BY iam.invoice_nbr, iam.vendor_id, iam.invoice_type having tc > ${lineItemPerProcess} limit ${
         totalCountPerLoop + 1
       }`;
     }
@@ -396,15 +408,14 @@ async function getDataGroupBy(connections) {
 async function getInvoiceNbrData(connections, invoice_nbr, isBigData = false) {
   try {
     let query = `SELECT ia.*, iam.vendor_internal_id ,iam.currency_internal_id  FROM interface_ap ia 
-      left join interface_ap_master iam on ia.invoice_nbr = iam.invoice_nbr and ia.invoice_type = iam.invoice_type `;
+      left join interface_ap_master iam on ia.invoice_nbr = iam.invoice_nbr and ia.invoice_type = iam.invoice_type 
+      and ia.vendor_id = iam.vendor_id `;
     if (isBigData) {
       query += ` where ia.invoice_nbr = '${invoice_nbr}' and ia.invoice_type ='${queryinvoiceType}' 
       order by id limit ${lineItemPerProcess + 1} offset ${queryOffset}`;
     } else {
       query += ` where ia.invoice_nbr in (${invoice_nbr.join(",")})`;
     }
-
-    console.log("query", query);
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {
@@ -839,7 +850,8 @@ async function getUpdateQuery(item, invoiceId, isSuccess = true) {
     } else {
       query += ` SET internal_id = null, processed = 'F', `;
     }
-    query += `  processed_date = '${today}'  WHERE invoice_nbr = '${item.invoice_nbr}' and invoice_type = '${item.invoice_type}'; `;
+    query += `  processed_date = '${today}'  WHERE invoice_nbr = '${item.invoice_nbr}' and invoice_type = '${item.invoice_type}'
+              and vendor_id = '${item.vendor_id}'; `;
 
     return query;
   } catch (error) {}
