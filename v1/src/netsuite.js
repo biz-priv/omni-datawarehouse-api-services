@@ -19,6 +19,8 @@ const userConfig = {
   wsdlPath: process.env.NETSUIT_AR_WDSLPATH,
 };
 
+const arDbName = "interface_ar";
+
 let totalCountPerLoop = 20;
 const today = getCustomDate();
 
@@ -186,10 +188,10 @@ function getConnection() {
 
 async function getDataGroupBy(connections) {
   try {
-    const query = `SELECT distinct invoice_nbr FROM interface_ar where (internal_id is null and processed != 'F' and
-                      customer_internal_id != '') or (customer_internal_id != '' and processed ='F' and processed_date < '${today}') limit ${
-      totalCountPerLoop + 1
-    }`;
+    const query = `SELECT distinct invoice_nbr FROM ${arDbName} where 
+    (internal_id is null and processed != 'F' and customer_internal_id != '') or 
+    (customer_internal_id != '' and processed ='F' and processed_date < '${today}')
+    limit ${totalCountPerLoop + 1}`;
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {
@@ -203,12 +205,9 @@ async function getDataGroupBy(connections) {
 
 async function getInvoiceNbrData(connections, invoice_nbr) {
   try {
-    const query = `select
-    a.source_system,a.id,a.file_nbr,a.customer_id,a.subsidiary,a.master_bill_nbr,a.invoice_nbr,a.invoice_date,a.ready_date,a.period,a.housebill_nbr,
-    a.customer_po,a.business_segment,a.invoice_type,a.handling_stn,a.controlling_stn,a.finalized_date,a.charge_cd,a.charge_cd_desc,charge_cd_internal_id,
-    a.curr_cd,a.rate,a.total,a.sales_person,a.posted_date,a.email,a.processed,a.load_create_date ,a.load_update_date,
-    a.customer_internal_id,a.currency_internal_id
-    from interface_ar a where a.invoice_nbr in (${invoice_nbr.join(",")})`;
+    const query = `select * from ${arDbName} a where a.invoice_nbr in (${invoice_nbr.join(
+      ","
+    )})`;
 
     const result = await connections.query(query);
     if (!result || result.length == 0 || !result[0].customer_id) {
@@ -255,9 +254,11 @@ function getOAuthKeys(configuration) {
 
 function makeJsonToXml(payload, auth, data, customerData) {
   try {
-    const hardcode = getHardcodeData();
-
     const singleItem = data[0];
+    const hardcode = getHardcodeData(
+      singleItem.source_system,
+      singleItem.intercompany == "Y" ? true : false
+    );
     payload["soap:Envelope"]["soap:Header"] = {
       tokenPassport: {
         "@xmlns": "urn:messages_2018_2.platform.webservices.netsuite.com",
@@ -305,55 +306,62 @@ function makeJsonToXml(payload, auth, data, customerData) {
 
     recode["q1:itemList"]["q1:item"] = data.map((e) => {
       return {
-        "q1:item": {
-          "@internalId": e.charge_cd_internal_id,
-        },
-        "q1:description": e.charge_cd_desc,
-        "q1:amount": e.total,
-        "q1:rate": e.rate,
-        "q1:department": {
-          "@internalId": hardcode.department.line,
-        },
-        "q1:class": {
-          "@internalId":
-            hardcode.class.line[e.business_segment.split(":")[1].trim()], //,hardcode.class.line, // class International - 3, Domestic - 2, Warehouse - 4,
-        },
-        "q1:location": {
-          "@externalId": e.handling_stn,
-        },
-        "q1:customFieldList": {
-          customField: [
-            {
-              "@internalId": "760",
-              "@xsi:type": "StringCustomFieldRef",
-              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-              value: e.housebill_nbr,
-            },
-            {
-              "@internalId": "1167",
-              "@xsi:type": "StringCustomFieldRef",
-              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-              value: e.sales_person,
-            },
-            {
-              "@internalId": "1727",
-              "@xsi:type": "StringCustomFieldRef",
-              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-              value: e.master_bill_nbr,
-            },
-            {
-              "@internalId": "1166",
-              "@xsi:type": "SelectCustomFieldRef",
-              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-              value: { "@externalId": e.controlling_stn },
-            },
-            {
-              "@internalId": "1164",
-              "@xsi:type": "DateCustomFieldRef",
-              "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-              value: dateFormat(e.ready_date),
-            },
-          ],
+        ...(singleItem.source_system == "CW" && {
+          "q1:taxCode": {
+            "@internalId": e.tax_code_internal_id,
+          },
+        }),
+        ...{
+          "q1:item": {
+            "@internalId": e.charge_cd_internal_id,
+          },
+          "q1:description": e.charge_cd_desc,
+          "q1:amount": e.total,
+          "q1:rate": e.rate,
+          "q1:department": {
+            "@internalId": hardcode.department.line,
+          },
+          "q1:class": {
+            "@internalId":
+              hardcode.class.line[e.business_segment.split(":")[1].trim()], //,hardcode.class.line, // class International - 3, Domestic - 2, Warehouse - 4,
+          },
+          "q1:location": {
+            "@externalId": e.handling_stn,
+          },
+          "q1:customFieldList": {
+            customField: [
+              {
+                "@internalId": "760",
+                "@xsi:type": "StringCustomFieldRef",
+                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                value: e.housebill_nbr ?? "",
+              },
+              {
+                "@internalId": "1167",
+                "@xsi:type": "StringCustomFieldRef",
+                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                value: e.sales_person ?? "",
+              },
+              {
+                "@internalId": "1727",
+                "@xsi:type": "StringCustomFieldRef",
+                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                value: e.master_bill_nbr ?? "",
+              },
+              {
+                "@internalId": "1166",
+                "@xsi:type": "SelectCustomFieldRef",
+                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                value: { "@externalId": e.controlling_stn },
+              },
+              {
+                "@internalId": "1164",
+                "@xsi:type": "DateCustomFieldRef",
+                "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
+                value: dateFormat(e.ready_date),
+              },
+            ],
+          },
         },
       };
     });
@@ -369,7 +377,7 @@ function makeJsonToXml(payload, auth, data, customerData) {
         "@internalId": "1730",
         "@xsi:type": "StringCustomFieldRef",
         "@xmlns": "urn:core_2021_2.platform.webservices.netsuite.com",
-        value: singleItem.file_nbr,
+        value: singleItem.file_nbr ?? "",
       },
       {
         "@internalId": "1744",
@@ -459,7 +467,6 @@ async function createInvoice(soapPayload, type) {
       throw error;
     } else {
       throw {
-        // customError: false,
         msg: "Netsuit AR Api Failed",
       };
     }
@@ -473,7 +480,7 @@ async function getUpdateQuery(item, invoiceId, isSuccess = true) {
       item.invoice_nbr,
       invoiceId
     );
-    let query = `UPDATE interface_ar `;
+    let query = `UPDATE ${arDbName} `;
     if (isSuccess) {
       query += ` SET internal_id = '${invoiceId}', processed = 'P', `;
     } else {
@@ -498,8 +505,9 @@ async function updateInvoiceId(connections, query) {
   }
 }
 
-function getHardcodeData(source_system = "WT") {
+function getHardcodeData(source_system, isIntercompany = false) {
   try {
+    const departmentType = isIntercompany ? "intercompany" : "default";
     const data = {
       WT: {
         source_system: "3",
@@ -507,39 +515,32 @@ function getHardcodeData(source_system = "WT") {
           head: "9",
           line: { International: 3, Domestic: 2, Warehouse: 16 },
         },
-        department: { head: "15", line: "1" },
+        department: {
+          default: { head: "15", line: "1" },
+          intercompany: { head: "15", line: "1" },
+        },
         location: { head: "18", line: "EXT ID: Take from DB" },
       },
       CW: {
         source_system: "1",
         class: {
           head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 16 },
+          line: { International: 3, Domestic: 2, Warehouse: 4, VAS: 5 },
         },
-        department: { head: "15", line: "1" },
-        location: { head: "18", line: "EXT ID: Take from DB" },
-      },
-      EE: {
-        source_system: "4",
-        class: {
-          head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 16 },
+        department: {
+          default: { head: "15", line: "1" },
+          intercompany: { head: "16", line: "1" },
         },
-        department: { head: "15", line: "1" },
-        location: { head: "18", line: "EXT ID: Take from DB" },
-      },
-      M1: {
-        source_system: "2",
-        class: {
-          head: "9",
-          line: { International: 3, Domestic: 2, Warehouse: 16 },
-        },
-        department: { head: "15", line: "1" },
         location: { head: "18", line: "EXT ID: Take from DB" },
       },
     };
     if (data.hasOwnProperty(source_system)) {
-      return data[source_system];
+      return {
+        ...data[source_system],
+        department:
+          data[source_system]?.department[departmentType] ??
+          data[source_system].department,
+      };
     } else {
       throw "source_system not exists";
     }
@@ -601,6 +602,7 @@ function sendMail(data) {
 
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
+        // to: "kazi.ali@bizcloudexperts.com,kiranv@bizcloudexperts.com,priyanka@bizcloudexperts.com",
         to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
         subject: `Netsuite AR ${process.env.STAGE.toUpperCase()} Invoices - Error`,
         html: `
