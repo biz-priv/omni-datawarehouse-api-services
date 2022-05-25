@@ -19,8 +19,10 @@
   "dependencies": {
     "axios": "^0.21.1",
     "joi": "^17.4.2",
+    "netsuite-rest": "^1.0.9",
     "node-suitetalk": "^0.0.5",
     "nodemailer": "^6.7.2",
+    "oauth-1.0a": "^2.2.6",
     "pg-promise": "^10.11.1",
     "serverless": "2.11.1",
     "serverless-add-api-key": "4.2.0",

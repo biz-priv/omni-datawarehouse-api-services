@@ -103,6 +103,7 @@ function getConnection() {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
     const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
 
@@ -115,10 +116,10 @@ function getConnection() {
 
 async function getVendorData(connections) {
   try {
-    const query = `SELECT distinct vendor_id FROM interface_ap_master where (vendor_internal_id = '' and processed_date is null) or
-                  (vendor_internal_id = '' and processed_date < '${today}') limit ${
-      totalCountPerLoop + 1
-    }`;
+    const query = `SELECT distinct vendor_id FROM interface_ap_master where intercompany = 'N' and 
+                  ((vendor_internal_id = '' and processed_date is null) or
+                   (vendor_internal_id = '' and processed_date < '${today}')) 
+                  limit ${totalCountPerLoop + 1}`;
 
     const result = await connections.query(query);
     if (!result || result.length == 0) {
@@ -145,14 +146,11 @@ async function getDataByVendorId(connections, vendor_id) {
 
 async function putVendor(connections, vendorData, vendor_id) {
   try {
-    let query = `INSERT INTO netsuit_vendors
-                  (vendor_id, vendor_internal_id, curr_cd, currency_internal_id)
-                  VALUES ('${vendorData.entityId}', '${vendorData.entityInternalId}',
-                          '${vendorData.currency}', '${vendorData.currencyInternalId}');`;
+    let query = `INSERT INTO netsuit_vendors (vendor_id, vendor_internal_id)
+                  VALUES ('${vendorData.entityId}', '${vendorData.entityInternalId}');`;
     query += `UPDATE interface_ap_master SET 
                     processed = '',
                     vendor_internal_id = '${vendorData.entityInternalId}', 
-                    currency_internal_id = '${vendorData.currencyInternalId}', 
                     processed_date = '${today}' 
                     WHERE vendor_id = '${vendor_id}';`;
     await connections.query(query);
@@ -170,7 +168,7 @@ function getVendor(entityId) {
       .then((/**/) => {
         // Set search preferences
         const searchPreferences = new Search.SearchPreferences();
-        searchPreferences.pageSize = 5;
+        searchPreferences.pageSize = 50;
         service.setSearchPreferences(searchPreferences);
 
         // Create basic search
@@ -195,8 +193,6 @@ function getVendor(entityId) {
             resolve({
               entityId: record.entityId,
               entityInternalId: record["$attributes"].internalId,
-              currency: record.currency.name,
-              currencyInternalId: record.currency["$attributes"].internalId,
             });
           } else {
             reject({
@@ -276,6 +272,7 @@ function sendMail(data) {
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
         to: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+        // to: "kazi.ali@bizcloudexperts.com",
         subject: `Netsuite AP ${process.env.STAGE.toUpperCase()} Invoices - Error`,
         html: `
         <!DOCTYPE html>
