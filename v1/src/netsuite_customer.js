@@ -148,8 +148,8 @@ async function getDataByCustomerId(connections, cus_id) {
 
 async function putCustomer(connections, customerData, customer_id) {
   try {
-    let query = `INSERT INTO netsuit_customer (customer_id, customer_internal_id)
-                  VALUES ('${customerData.entityId}', '${customerData.entityInternalId}');`;
+    let query = `INSERT INTO netsuit_customer (customer_id, customer_internal_id, curr_cd, currency_internal_id )
+                  VALUES ('${customerData.entityId}', '${customerData.entityInternalId}','','');`;
     query += `UPDATE ${arDbName} SET 
                     processed = '', 
                     customer_internal_id = '${customerData.entityInternalId}', 
