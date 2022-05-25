@@ -92,7 +92,7 @@ functions:
   netsuite-ap-vendor: ${file(config/functions/netsuite-ap-vendor.yml):function}
   netsuite-ap-vendor-step-trigger: ${file(config/functions/netsuite-ap-vendor-step-trigger.yml):function}
 
-  # netsuite-intercompany: ${file(config/functions/netsuite-intercompany.yml):function}
+  netsuite-intercompany: ${file(config/functions/netsuite-intercompany.yml):function}
   # netsuite-intercompany-step-trigger: ${file(config/functions/netsuite-intercompany-step-trigger.yml):function}
 
   # netsuite-currency: ${file(config/functions/netsuite-currency.yml):function}
