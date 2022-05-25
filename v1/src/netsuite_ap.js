@@ -517,11 +517,8 @@ function makeJsonToXml(payload, data, customerData) {
     recode["q1:otherRefNum"] = singleItem.customer_po; //customer_po is the bill to ref nbr
     recode["q1:memo"] = ""; // (leave out for worldtrak)
 
-    if (singleItem.invoice_type == "IN") {
+    if (singleItem.invoice_type == "IN" || singleItem.intercompany == "Y") {
       recode["q1:approvalStatus"] = { "@internalId": "2" };
-    }
-    if (singleItem.source_system == "CW") {
-      recode["q1:approvalStatus"] = { "@internalId": "1" };
     }
 
     recode["q1:itemList"]["q1:item"] = data.map((e) => {
