@@ -146,8 +146,8 @@ async function getDataByVendorId(connections, vendor_id) {
 
 async function putVendor(connections, vendorData, vendor_id) {
   try {
-    let query = `INSERT INTO netsuit_vendors (vendor_id, vendor_internal_id)
-                  VALUES ('${vendorData.entityId}', '${vendorData.entityInternalId}');`;
+    let query = `INSERT INTO netsuit_vendors (vendor_id, vendor_internal_id, curr_cd, currency_internal_id)
+                  VALUES ('${vendorData.entityId}', '${vendorData.entityInternalId}','','');`;
     query += `UPDATE interface_ap_master SET 
                     processed = '',
                     vendor_internal_id = '${vendorData.entityInternalId}', 
