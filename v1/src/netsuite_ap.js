@@ -298,41 +298,48 @@ async function mainProcess(item, invoiceDataList) {
         dataGroup[e],
         customerData
       );
+      try {
+        /**
+         * create invoice
+         */
+        const invoiceId = await createInvoice(
+          xmlPayload,
+          singleItem.invoice_type
+        );
 
-      /**
-       * create invoice
-       */
-      const invoiceId = await createInvoice(
-        xmlPayload,
-        singleItem.invoice_type
-      );
+        if (queryOperator == ">") {
+          queryInvoiceId = invoiceId;
+        }
 
-      if (queryOperator == ">") {
-        queryInvoiceId = invoiceId;
+        /**
+         * update invoice id
+         */
+        const getQuery = await getUpdateQuery(singleItem, invoiceId);
+        getUpdateQueryList += getQuery;
+      } catch (error) {
+        getUpdateQueryList += await invoiceErrorHandler(singleItem, error);
       }
-
-      /**
-       * update invoice id
-       */
-      const getQuery = await getUpdateQuery(singleItem, invoiceId);
-      getUpdateQueryList += getQuery;
     }
     return getUpdateQueryList;
   } catch (error) {
     if (error.hasOwnProperty("customError")) {
-      let getQuery = "";
-      try {
-        getQuery = await getUpdateQuery(singleItem, null, false);
-        const checkError = await checkSameError(singleItem, error);
-        if (!checkError) {
-          await recordErrorResponse(singleItem, error);
-        }
-        return getQuery;
-      } catch (error) {
-        await recordErrorResponse(singleItem, error);
-        return getQuery;
-      }
+      await invoiceErrorHandler(singleItem, error);
     }
+  }
+}
+
+async function invoiceErrorHandler(singleItem, error) {
+  let getQuery = "";
+  try {
+    getQuery = await getUpdateQuery(singleItem, null, false);
+    const checkError = await checkSameError(singleItem, error);
+    if (!checkError) {
+      await recordErrorResponse(singleItem, error);
+    }
+    return getQuery;
+  } catch (error) {
+    await recordErrorResponse(singleItem, error);
+    return getQuery;
   }
 }
 
@@ -517,7 +524,10 @@ function makeJsonToXml(payload, data, customerData) {
     recode["q1:otherRefNum"] = singleItem.customer_po; //customer_po is the bill to ref nbr
     recode["q1:memo"] = ""; // (leave out for worldtrak)
 
-    if (singleItem.invoice_type == "IN" || singleItem.intercompany == "Y") {
+    if (
+      (singleItem.source_system == "WT" && singleItem.invoice_type == "IN") ||
+      (singleItem.intercompany == "Y" && singleItem.invoice_type == "IN")
+    ) {
       recode["q1:approvalStatus"] = { "@internalId": "2" };
     }
 
@@ -985,8 +995,8 @@ function sendMail(data) {
 
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-        to: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
-        // to: "kazi.ali@bizcloudexperts.com,kiranv@bizcloudexperts.com,priyanka@bizcloudexperts.com",
+        // to: process.env.NETSUIT_AP_ERROR_EMAIL_TO,
+        to: "kazi.ali@bizcloudexperts.com,kiranv@bizcloudexperts.com,priyanka@bizcloudexperts.com,wwaller@omnilogistics.com",
         subject: `Netsuite AP ${process.env.STAGE.toUpperCase()} Invoices - Error`,
         html: `
         <!DOCTYPE html>

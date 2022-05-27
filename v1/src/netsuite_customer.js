@@ -276,7 +276,8 @@ function sendMail(data) {
 
       const message = {
         from: `Netsuite <${process.env.NETSUIT_AR_ERROR_EMAIL_FROM}>`,
-        to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+        // to: process.env.NETSUIT_AR_ERROR_EMAIL_TO,
+        to: "kazi.ali@bizcloudexperts.com,kiranv@bizcloudexperts.com,priyanka@bizcloudexperts.com,wwaller@omnilogistics.com",
         // to: "kazi.ali@bizcloudexperts.com",
         subject: `Netsuite AR ${process.env.STAGE.toUpperCase()} Invoices - Error`,
         html: `
