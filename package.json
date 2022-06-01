@@ -19,10 +19,6 @@
   "dependencies": {
     "axios": "^0.21.1",
     "joi": "^17.4.2",
-    "netsuite-rest": "^1.0.9",
-    "node-suitetalk": "^0.0.5",
-    "nodemailer": "^6.7.2",
-    "oauth-1.0a": "^2.2.6",
     "pg-promise": "^10.11.1",
     "serverless": "2.11.1",
     "serverless-add-api-key": "4.2.0",
@@ -31,8 +27,6 @@
     "serverless-layers": "2.3.3",
     "serverless-plugin-existing-s3": "2.4.0",
     "serverless-plugin-multiple-responses": "1.0.0",
-    "serverless-pseudo-parameters": "2.6.1",
-    "serverless-step-functions": "2.32.0",
     "xmlbuilder2": "^3.0.2"
   }
 }
