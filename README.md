@@ -5,5 +5,5 @@ Shipment Details
 Invoice Details
 Create Shipment
 Get Rating
-Bill of Lading
 WD API
+Bill of Lading
