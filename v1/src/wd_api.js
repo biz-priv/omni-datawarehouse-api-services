@@ -190,7 +190,7 @@ async function checkStatus(data) {
           TableName: process.env.WD_SHIPMENT_STATUS_TABLE,
           Key: {
             id: data.file_nbr.toString() + "AH",
-            file_nbr: "AH",
+            file_nbr: data.file_nbr.toString(),
           },
         };
         const resAh = await documentClient.get(paramsAh).promise();
