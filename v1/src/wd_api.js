@@ -180,8 +180,8 @@ async function checkStatus(data) {
        * check if event_date_utc not same
        */
       if (
-        res.Item.event_date_utc !=
-        new Date(data.event_date_utc).toLocaleString()
+        new Date(res.Item.event_date_utc).toISOString() !=
+        new Date(data.event_date_utc).toISOString()
       ) {
         /**
          * check if AH exists
@@ -198,8 +198,8 @@ async function checkStatus(data) {
         if (resAh && resAh.Item) {
           //check if AH event date not same
           if (
-            resAh.Item.event_date_utc !=
-            new Date(data.event_date_utc).toLocaleString()
+            new Date(resAh.Item.event_date_utc).toISOString() !=
+            new Date(data.event_date_utc).toISOString()
           ) {
             //update AH
             return { data: { ...data, order_status: "AH" }, is_update: true };
