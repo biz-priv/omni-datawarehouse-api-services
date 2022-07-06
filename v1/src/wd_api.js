@@ -297,6 +297,8 @@ async function makeJsonToXml(payload, inputData) {
         inputData.event_date_utc
       );
 
+      transBody["otm:SSStop"]["otm:SSStopSequenceNum"] =
+        inputData.order_status == "D1" ? 2 : 1; // on delivery it will be 2 everything else will be 1
       transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCity"] =
         inputData.event_city;
       transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCountry"] =
