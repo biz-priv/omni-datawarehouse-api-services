@@ -15,6 +15,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 from src.common import dynamo_query
+from src.common import dynamo_put
 
 InternalErrorMessage = "Internal Error."
 
@@ -81,6 +82,7 @@ def handler(event,context):
     logger.info("House Bill Details are: %s",house_bill_info)
     service_level_desc = get_service_level(event["body"]["oShipData"])
     update_shipment_table(shipment_data,house_bill_info, service_level_desc)
+    dynamo_put(os.environ['CUSTOMER_ENTITLEMENT_TABLE'],{"FileNumber": {"S": shipment_data["ShipQuoteNo"]},"CustomerID": {"S": customer_id},"HouseBillNumber": {"S": shipment_data["Housebill"]}})
     return shipment_data
 
 def ready_date_time(old_shipment_list):
