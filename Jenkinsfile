@@ -45,7 +45,6 @@ pipeline {
                     branch 'master';
                     branch 'develop';
                     branch 'hotfix/*';
-                    branch 'bugfix/*';
                 }
                 expression {
                     return true;
