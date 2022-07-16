@@ -36,6 +36,7 @@ function:
     include:
     - ${self:custom.alias}/src/list_shipment.js
     - src/shared/**
+    - node_modules/**
   environment:
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
     TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
