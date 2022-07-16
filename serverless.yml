@@ -43,6 +43,7 @@ custom:
       - update-shipment-status
       - customer-entitlement-sync
       - get-rating
+      - shipment-list
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -83,6 +84,7 @@ functions:
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
+  shipment-list: ${file(config/functions/shipment-list.yml):function}
 
 resources:
   Resources:

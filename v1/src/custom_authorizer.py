@@ -61,7 +61,7 @@ def handler(event, context):
 
     if "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    if "/list/shipment/{customerID}" in event["methodArn"]:
+    if "/shipment/list" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     if "/rating" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)    

@@ -96,19 +96,6 @@ def modify_float(x):
         logging.exception("FloatConversionError: %s", float_conversion_error)
         raise FloatConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
 
-def dynamo_put(table_name, items):
-    try:
-        client = session.create_client('dynamodb', region_name=os.environ['REGION'])
-        response = client.put_item(
-            TableName=table_name,
-            Item= items
-        )
-        LOGGER.info("Dynamo put response: {}".format(json.dumps(response)))
-        return response
-    except Exception as dynamo_query_error:
-        logging.exception("DynamoPutError: %s",dynamo_query_error)
-        raise DynamoPutError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_query_error
-
 
 class DynamoQueryError(Exception):
     pass
@@ -121,6 +108,4 @@ class DateConversionError(Exception):
 class ProcessingInputError(Exception):
     pass
 class FloatConversionError(Exception):
-    pass
-class DynamoPutError(Exception):
     pass

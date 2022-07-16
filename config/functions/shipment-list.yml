@@ -5,7 +5,7 @@ function:
   description: shipment list api service - ${self:provider.stage}
   events:
     - http:
-        path: /list/shipment/{customerID}
+        path: /shipment/list/{customerID}
         method: GET
         cors: true
         integration: lambda
