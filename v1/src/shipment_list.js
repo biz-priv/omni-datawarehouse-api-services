@@ -11,7 +11,7 @@ module.exports.handler = async (event) => {
       TableName: TOKEN_VALIDATION_TABLE,
       KeyConditionExpression: "CustomerID = :value1 AND ApiKey = :value2",
       ExpressionAttributeValues: {
-        ":value1": event.pathParameters["customerID"],
+        ":value1": event.path["customerID"],
         ":value2": event.headers["x-api-key"]
       },
     });
