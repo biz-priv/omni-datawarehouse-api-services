@@ -1,9 +1,8 @@
-const { send_response } = require("../../src/shared/response/index");
 const { schema } = require("../../src/shared/validation/index");
 const { CUSTOMER_ENTITLEMENT_TABLE, TOKEN_VALIDATION_TABLE } = process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event, context, callback) => {
   console.info("Event: \n", JSON.stringify(event));
   try {
     await schema.validateAsync(event);
@@ -26,19 +25,46 @@ module.exports.handler = async (event) => {
           },
         });
         if (fetchShipmentList.length) {
-          return send_response(200, { Items: fetchShipmentList });
+          return callback(
+            response(
+              "[200]", { Items: fetchShipmentList }
+            )
+          );
         } else {
-          return send_response(400, "Record Not Found");
+          return callback(
+            response(
+              "[400]", "Record Not Found"
+            )
+          );
         }
       } else {
-        return send_response(400, "Record Not Found");
+        return callback(
+          response(
+            "[400]", "Record Not Found"
+          )
+        );
       }
     } else {
       console.error("Error : \n", customerID);
-      return send_response(400, customerID);
+      return callback(
+        response(
+          "[400]", customerID
+        )
+      );
     }
   } catch (error) {
     console.error("Error : \n", error);
-    return send_response(400, error);
+    return callback(
+      response(
+        "[500]", error
+      )
+    );
   }
 };
+
+function response(code, message) {
+  return JSON.stringify({
+    httpStatus: code,
+    message,
+  });
+}
