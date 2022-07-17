@@ -25,46 +25,19 @@ module.exports.handler = async (event, context, callback) => {
           },
         });
         if (fetchShipmentList.length) {
-          return callback(
-            response(
-              "[200]", { Items: fetchShipmentList }
-            )
-          );
+          return { Items: fetchShipmentList }
         } else {
-          return callback(
-            response(
-              "[400]", "Record Not Found"
-            )
-          );
+          return "Record Not Found"
         }
       } else {
-        return callback(
-          response(
-            "[400]", "Record Not Found"
-          )
-        );
+        return "Record Not Found"
       }
     } else {
       console.error("Error : \n", customerID);
-      return callback(
-        response(
-          "[400]", customerID
-        )
-      );
+      return customerID
     }
   } catch (error) {
     console.error("Error : \n", error);
-    return callback(
-      response(
-        "[500]", error
-      )
-    );
+    return error
   }
 };
-
-function response(code, message) {
-  return JSON.stringify({
-    httpStatus: code,
-    message,
-  });
-}
