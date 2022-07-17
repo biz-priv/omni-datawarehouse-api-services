@@ -34,7 +34,7 @@ function:
               template: ${file(responseTemplate.vtl)}
   package:
     include:
-    - ${self:custom.alias}/src/list_shipment.js
+    - ${self:custom.alias}/src/shipment_list.js
     - src/shared/**
     - node_modules/**
   environment:
