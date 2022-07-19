@@ -4,7 +4,7 @@ const schema = Joi.object({
   headers: Joi.object({
     "x-api-key": Joi.string().required()
   }).unknown(true),
-  path: Joi.object({
+  pathParameters: Joi.object({
     "customerID": Joi.string().required()
   })
 }).unknown(true)
