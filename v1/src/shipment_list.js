@@ -28,10 +28,10 @@ module.exports.handler = async (event, context, callback) => {
         if (fetchShipmentList.length) {
           return callback(null, {statusCode: 200, body: JSON.stringify({ Items: fetchShipmentList })})
         } else {
-          return callback(null, {statusCode: 400, body: "Shipments don't exist"})
+          return callback(null, {statusCode: 404, body: "Shipments don't exist"})
         }
       } else {
-        return callback(null, {statusCode: 400, body: "Shipments don't exist"})
+        return callback(null, {statusCode: 404, body: "Shipments don't exist"})
       }
     } else {
       console.error("Error : \n", customerID);
