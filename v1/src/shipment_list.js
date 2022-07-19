@@ -23,21 +23,47 @@ module.exports.handler = async (event, context, callback) => {
           ExpressionAttributeValues: {
             ":value": customerID[0].CustomerID,
           },
+          ProjectionExpression: "FileNumber, HouseBillNumber"
         });
         if (fetchShipmentList.length) {
           return { Items: fetchShipmentList }
         } else {
-          return "Record Not Found"
+          return {
+            statusCode: 400,
+            body: JSON.stringify("Shipments don't exist"),
+          };
         }
       } else {
-        return "Record Not Found"
+        return callback(
+          response(
+            "[400]",
+            error != null && error.hasOwnProperty("message") ? error.message : "Shipments don't exist"
+          )
+        );
       }
     } else {
       console.error("Error : \n", customerID);
-      return customerID
+      return callback(
+        response(
+          "[400]",
+          error != null && error.hasOwnProperty("message") ? error.message : customerID
+        )
+      );
     }
   } catch (error) {
     console.error("Error : \n", error);
-    return error
+    return callback(
+      response(
+        "[500]",
+        error != null && error.hasOwnProperty("message") ? error.message : error
+      )
+    );
   }
 };
+
+function response(code, message) {
+  return JSON.stringify({
+    httpStatus: code,
+    message,
+  });
+}
