@@ -30,23 +30,24 @@ module.exports.handler = async (event, context, callback) => {
         } else {
           return {
             statusCode: 400,
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify("Shipments don't exist"),
           };
         }
       } else {
-        return callback(
-          response(
-            "[400]",
-            error != null && error.hasOwnProperty("message") ? error.message : "Shipments don't exist"
-          )
-        );
+       return callback(null, {statusCode: 400, body: "Shipments don't exist"})
       }
     } else {
       console.error("Error : \n", customerID);
       return callback(
         response(
           "[400]",
-          error != null && error.hasOwnProperty("message") ? error.message : customerID
+          customerID
         )
       );
     }
