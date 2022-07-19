@@ -26,45 +26,19 @@ module.exports.handler = async (event, context, callback) => {
           ProjectionExpression: "FileNumber, HouseBillNumber"
         });
         if (fetchShipmentList.length) {
-          return { Items: fetchShipmentList }
+          return callback(null, {statusCode: 200, body: JSON.stringify({ Items: fetchShipmentList })})
         } else {
-          return {
-            statusCode: 400,
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Headers": "Content-Type",
-              "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify("Shipments don't exist"),
-          };
+          return callback(null, {statusCode: 400, body: "Shipments don't exist"})
         }
       } else {
-       return callback(null, {statusCode: 400, body: "Shipments don't exist"})
+        return callback(null, {statusCode: 400, body: "Shipments don't exist"})
       }
     } else {
       console.error("Error : \n", customerID);
-      return callback(
-        response(
-          "[400]",
-          customerID
-        )
-      );
+      return callback(null, {statusCode: 400, body: JSON.stringify(customerID)})
     }
   } catch (error) {
     console.error("Error : \n", error);
-    return callback(
-      response(
-        "[500]",
-        error != null && error.hasOwnProperty("message") ? error.message : error
-      )
-    );
+    return callback(null, {statusCode: 500, body: JSON.stringify(error)})
   }
 };
-
-function response(code, message) {
-  return JSON.stringify({
-    httpStatus: code,
-    message,
-  });
-}
