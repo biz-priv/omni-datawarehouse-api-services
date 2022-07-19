@@ -1,0 +1,28 @@
+---
+function:
+  handler: ${self:custom.alias}/src/shipment_list.handler
+  name: ${self:service}-shipment-list-${self:provider.stage}
+  description: shipment list api service - ${self:provider.stage}
+  runtime: nodejs14.x
+  timeout: 500
+  events:
+    - http:
+        path: /shipment/list/{customerID}
+        method: GET
+        cors: true
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
+        
+  package:
+    include:
+    - ${self:custom.alias}/src/shipment_list.js
+    - src/shared/**
+    - node_modules/**
+  environment:
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
+    TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
+    REGION: ${self:provider.region}
