@@ -84,6 +84,7 @@ functions:
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
+  new-test-create-shipment: ${file(config/functions/new-test-create-shipment.yml):function}
 
 resources:
   Resources:
