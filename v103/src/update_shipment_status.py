@@ -13,6 +13,8 @@ def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
     response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_RECORDSTATUS_INDEX'],
                     'RecordStatus = :record_status', {":record_status": {"S": 'True'}})
+    
+    LOGGER.info("DyanmoDB response: %s", response)
 
     if "Items" not in response or len(response["Items"]) == 0:
         LOGGER.info("Dynamo query response: %s", json.dumps(response))

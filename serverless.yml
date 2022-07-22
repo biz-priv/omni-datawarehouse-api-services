@@ -24,6 +24,9 @@ provider:
 
 custom:
   alias: ${opt:alias, 'v1'}
+  prune:
+    automatic: true
+    number: 4
   # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # dev:
   #   domainName: dev-api.omnilogistics.com
@@ -65,6 +68,7 @@ plugins:
   - serverless-plugin-multiple-responses
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
+  - serverless-prune-plugin
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
