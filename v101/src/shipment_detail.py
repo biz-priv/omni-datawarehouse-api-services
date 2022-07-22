@@ -20,7 +20,7 @@ def handler(event, context):
 
     #check whether housebill or file nbr exists in shipment details dynamodb table
     details = process_input(event['query'])
-    LOGGER.info("Results from processing inputs: %s",(details[2]))
+    LOGGER.info("Results from processing inputs: %s",details)
 
     #response from shipment details dynamodb table
     if not details[2]['Items'] or len(details[2]["Items"]) == 0 or details[2]['Items'][0]['RecordStatus']['S'] == "False":
