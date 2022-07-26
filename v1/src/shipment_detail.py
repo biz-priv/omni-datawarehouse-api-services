@@ -21,6 +21,8 @@ def handler(event, context):
     response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'],
                     'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": house_bill_nbr}})
     
+    LOGGER.info("housebill exists in shipment details dynamodb table: %s",response)
+    
     #response from shipment details dynamodb table
     if not response['Items'] or len(response["Items"]) == 0 or response['Items'][0]['RecordStatus']['S'] == "False":
         return get_shipment_detail(house_bill_nbr)

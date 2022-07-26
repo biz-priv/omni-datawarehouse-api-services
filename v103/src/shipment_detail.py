@@ -60,10 +60,9 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
                 left outer join service_level on shipment_info.service_level = service_level.service_level_desc
                 left outer join (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref)shipment_ref on shipment_info.source_system = shipment_ref.source_system and shipment_info.file_nbr = shipment_ref.file_nbr
                 where shipment_quote IN ('S')
-                and shipment_info.file_nbr = '2356738'
                 and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
                 
-        LOGGER.info("shipment details query : %s", query)
+        LOGGER.info("shipment details query: %s", query)
         cur.execute(query)
         con.commit()
         shipment_details = cur.fetchall()
