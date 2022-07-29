@@ -22,8 +22,7 @@ module.exports.handler = async (event, context, callback) => {
           KeyConditionExpression: "CustomerID = :value",
           ExpressionAttributeValues: {
             ":value": customerID[0].CustomerID,
-          },
-          ProjectionExpression: "FileNumber, HouseBillNumber"
+          }
         });
         if (fetchShipmentList.length) {
           return callback(null, {statusCode: 200, body: JSON.stringify({ Items: fetchShipmentList })})
