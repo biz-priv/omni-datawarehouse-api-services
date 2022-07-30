@@ -197,19 +197,20 @@ def convert_records(data):
         record["Actual Weight KGS"] = modify_float(data[11])
         record["Chargeable Weight LBS"] = modify_float(data[12])
         record["Chargeable Weight KGS"] = modify_float(data[13])
-        record["Pickup Date"] = modify_date(data[14])
-        record["Pod Date"] = modify_date(data[15])
-        record["ETA Date"] = modify_date(data[16])
-        record["ETD Date"] = modify_date(data[17])
-        record["Scheduled Delivery Date"] = modify_date(data[18])
-        record["Service Level Description"] = data[19]
-        record["Service Level Code"] = data[20]
-        record["Current Status"] = data[21]
-        record["Current Status Desc"] = data[22]
-        record["Current Status Date"] = modify_date(data[23])
-        record["Current Status Date UTC"] = modify_date(data[24])
-        record["Bill To Customer"] = data[25]
-        record["Control Customer"] = data[26]
+        record["Pickup Date"] = modify_date(data[14]) + " " + data[15]
+        record["Pod Date"] = modify_date(data[16])
+        record["ETA Date"] = modify_date(data[18])
+        record["ETD Date"] = modify_date(data[20])
+        record["Scheduled Delivery Date"] = modify_date(data[22])
+        record["Service Level Description"] = data[24]
+        record["Service Level Code"] = data[25]
+        record["Current Status"] = data[26]
+        record["Current Status Desc"] = data[27]
+        record["Is Public"] = data[28]
+        record["Current Status Date"] = modify_date(data[29])
+        record["Current Status Date UTC"] = modify_date(data[30])
+        record["Bill To Customer"] = data[31]
+        record["Control Customer"] = data[32]
         return record
     except Exception as conversion_error:
         logging.exception("RecordsConversionError: %s", json.dumps(conversion_error))
