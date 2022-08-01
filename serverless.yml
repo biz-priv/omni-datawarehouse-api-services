@@ -47,6 +47,7 @@ custom:
       - customer-entitlement-sync
       - get-rating
       - create-shipment-v3
+      - pod
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"

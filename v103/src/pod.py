@@ -19,7 +19,7 @@ def handler(event, context):
         logging.exception("HandlerError: %s", handler_error)
         raise HandlerError(json.dumps({"httpStatus": 501, "message": "Internal Error."})) from handler_error
 
-    if req.json()["podhcpod"]["File Number"] == "ERROR":
+    if req.json()["hcpod"]["File Number"] == "ERROR":
         raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
     response = req.content
     LOGGER.info("Response: %s",response)
