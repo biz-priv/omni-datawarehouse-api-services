@@ -20,12 +20,12 @@ def handler(event, context):
         raise HandlerError(json.dumps({"httpStatus": 501, "message": "Internal Error."})) from handler_error
 
     if req.json()["hcpod"]["File Number"] == "ERROR":
-        raise WtBolApiError(json.dumps({"httpStatus": 400, "message": "World Track Bill of Lading API Error."}))
+        raise WtPODApiError(json.dumps({"httpStatus": 400, "message": "World Track POD API Error."}))
     response = req.content
     LOGGER.info("Response: %s",response)
     return response
 
 class HandlerError(Exception):
     pass
-class WtBolApiError(Exception):
+class WtPODApiError(Exception):
     pass
