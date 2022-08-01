@@ -2,6 +2,7 @@ const { schema } = require("../../src/shared/validation/index");
 const { CUSTOMER_ENTITLEMENT_TABLE, TOKEN_VALIDATION_TABLE } = process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");
 const pagination = require('../../src/shared/utils/pagination');
+const _ = require('lodash');
 
 module.exports.handler = async (event, context, callback) => {
   console.info("Event: \n", JSON.stringify(event));
@@ -52,26 +53,11 @@ module.exports.handler = async (event, context, callback) => {
 
 
 async function getResponse(results, count, page, size, event) {
-  console.info("Executing getResponse =====>>>>>");
-  console.info("results : ",JSON.stringify(results));
-  console.info("count : ",JSON.stringify(count));
-  console.info("page : ",JSON.stringify(page));
-  console.info("size : ",JSON.stringify(size));
-  console.info("event : ",JSON.stringify(event));
   let selfPageLink = "N/A";
-  let host = "https://" + _.get(event, 'headers.Host', null) + "/" + _.get(event, 'requestContext.stage', "dev");
-  let path = _.get(event, 'path', null) + "&";
-  selfPageLink = "page=" + page + "&size=" +
-      size + "&startkey=" + _.get(event, 'queryStringParameters.startkey') 
-  let startkey = "CustomerID"
-  let endkey = null
-  let responseArrayName = "Customers"
-  console.info("parameters for createPagingation :")
-  console.info("responseArrayName : " ,responseArrayName);
-  console.info("host : " ,host);
-  console.info("path : " ,path);
-  console.info("selfPageLink : " ,selfPageLink);
-  var response = await pagination.createPagination(results, responseArrayName, startkey, endkey, host, path, page, size, count, selfPageLink);
-  console.info("Response: ", JSON.stringify(response));
+  let host = "https://" + _.get(event, 'headers.Host', null);
+  let path = _.get(event, 'path', null) + "?";
+  selfPageLink = "page=" + page + "&size=" + size;
+  let responseArrayName = "Items"
+  var response = await pagination.createPagination(results, responseArrayName, host, path, page, size, count, selfPageLink);
   return response;
 }

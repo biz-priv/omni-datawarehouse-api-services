@@ -19,6 +19,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "joi": "^17.4.2",
+    "lodash": "^4.17.21",
     "pg-promise": "^10.11.1",
     "serverless": "2.11.1",
     "serverless-add-api-key": "4.2.0",
