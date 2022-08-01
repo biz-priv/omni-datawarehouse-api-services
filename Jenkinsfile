@@ -45,8 +45,6 @@ pipeline {
                     branch 'master';
                     branch 'develop';
                     branch 'hotfix/*';
-                    branch 'feature/*';
-                    branch 'bugfix/*';
                 }
                 expression {
                     return true;
@@ -60,6 +58,9 @@ pipeline {
                     serverless --version
                     echo ${env.ALIAS_VERSION}
                     sls deploy --alias v1 -s ${env.ENVIRONMENT}
+                    sls deploy --alias v101 -s ${env.ENVIRONMENT}
+                    sls deploy --alias v103 -s ${env.ENVIRONMENT}
+                    sls deploy --alias v104 -s ${env.ENVIRONMENT}
                     """
                 }
             }

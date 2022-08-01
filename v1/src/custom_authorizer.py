@@ -59,9 +59,13 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
 
-    if "/create/shipment" in event["methodArn"]:
+    if "/create/shipment/newtest" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    if "/rating" in event["methodArn"]:
+    elif "/create/shipment" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/shipment/list" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/rating" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)    
     elif "/billoflading" in event["methodArn"]:
         query = "CustomerID = :id AND "

@@ -96,6 +96,7 @@ def modify_float(x):
         logging.exception("FloatConversionError: %s", float_conversion_error)
         raise FloatConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
 
+
 class DynamoQueryError(Exception):
     pass
 class DynamoGetError(Exception):

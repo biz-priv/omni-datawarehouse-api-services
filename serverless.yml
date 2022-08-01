@@ -24,6 +24,9 @@ provider:
 
 custom:
   alias: ${opt:alias, 'v1'}
+  prune:
+    automatic: true
+    number: 8
   # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
   # dev:
   #   domainName: dev-api.omnilogistics.com
@@ -43,6 +46,7 @@ custom:
       - update-shipment-status
       - customer-entitlement-sync
       - get-rating
+      - create-shipment-v3
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -64,6 +68,7 @@ plugins:
   - serverless-plugin-multiple-responses
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
+  - serverless-prune-plugin
   # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
@@ -84,6 +89,8 @@ functions:
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
+  shipment-list: ${file(config/functions/shipment-list.yml):function}
+  create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
 
 resources:
   Resources:

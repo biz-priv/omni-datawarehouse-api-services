@@ -2,7 +2,6 @@ from src.common import modify_response
 from src.common import modify_date
 from src.common import modify_float
 from src.common import process_input
-from v101.src.shipment_detail import get_shipment_detail
 import os
 import json
 import logging
@@ -135,6 +134,103 @@ def convert_records_history(data, milestones_details):
         raise RecordsConversionError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
 
+def date_check(datetime, timezone):
+    if datetime:
+        if timezone != None:
+            datetimezone = datetime + " " + timezone
+        else:
+            datetimezone = datetime
+    else:
+        datetimezone = datetime
+    return datetimezone
+    
+def get_shipment_detail(hwb_file_nbr,parameter,customer_id_parameter,customer_id):
+    try:
+        con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
+                            port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
+        con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
+        cur = con.cursor()
+        records_list = []
+        query = '''select 
+                api_shipment_info.file_nbr ,api_shipment_info.file_datetime  ,api_shipment_info.handling_stn ,api_shipment_info.master_bill_nbr ,
+                api_shipment_info.house_bill_nbr, api_shipment_info.origin_port_iata ,api_shipment_info.destination_port_iata ,
+                api_shipment_info.shipper_name ,api_shipment_info.consignee_name ,api_shipment_info.pieces ,
+                api_shipment_info.actual_wght_lbs ,api_shipment_info.actual_wght_kgs ,api_shipment_info.chrg_wght_lbs ,
+                api_shipment_info.chrg_wght_kgs ,
+                api_shipment_info.pickup_date ,
+                api_shipment_info.pickup_timezone ,
+                api_shipment_info.pod_date ,
+                api_shipment_info.pod_timezone,
+                api_shipment_info.eta_date ,
+                api_shipment_info.eta_timezone,
+                api_shipment_info.etd_date ,
+                api_shipment_info.etd_timezone,
+                api_shipment_info.schd_delv_date , 
+                api_shipment_info.schd_delv_timezone,
+                api_shipment_info.service_level, 
+                api_shipment_info.service_level_id,
+                api_shipment_info.order_status ,
+                api_shipment_info.order_status_Desc,
+                api_shipment_info.is_public,
+                api_shipment_info.event_date,
+                api_shipment_info.event_date_utc,
+                api_shipment_info.bill_to_customer, 
+                api_shipment_info.cntrl_customer 
+                from api_shipment_info 
+                where'''+parameter+f'{hwb_file_nbr}'+customer_id_parameter+f'{customer_id}'
+        LOGGER.info("shipment details query : " + query)
+        cur.execute(query)
+        con.commit()
+    except Exception as get_error:
+        logging.exception("GetShipmentDetailError: %s", get_error)
+        raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
+    for results in cur.fetchall():
+        LOGGER.info("results before processing : %s", results)
+        records_list.append(convert_records(results))
+    cur.close()
+    con.close()
+    return {'shipmentDetails': records_list}
+
+def convert_records(data):
+    try:
+        record = {}
+        record["File Number"] = data[0]
+        record["File Date"] = modify_date(data[1])
+        record["Handling Station"] = data[2]
+        record["Master Waybill"] = data[3]
+        record["House Waybill"] = data[4]
+        record["Origin Port"] = data[5]
+        record["Destination Port"] = data[6]
+        record["Shipper Name"] = data[7]
+        record["Consignee Name"] = data[8]
+        record["Pieces"] = data[9]
+        record["Actual Weight LBS"] = modify_float(data[10])
+        record["Actual Weight KGS"] = modify_float(data[11])
+        record["Chargeable Weight LBS"] = modify_float(data[12])
+        record["Chargeable Weight KGS"] = modify_float(data[13])
+        record["Pickup Date"] = date_check(modify_date(data[14]), data[15])
+        record["Pod Date"] = date_check(modify_date(data[16]), data[17])
+        record["ETA Date"] = date_check(modify_date(data[18]), data[19])
+        record["ETD Date"] = date_check(modify_date(data[20]), data[21])
+        record["Scheduled Delivery Date"] = date_check(modify_date(data[22]), data[23])
+        record["Service Level Description"] = data[24]
+        record["Service Level Code"] = data[25]
+        record["Current Status"] = data[26]
+        record["Current Status Desc"] = data[27]
+        record["Is Public"] = data[28]
+        record["Current Status Date"] = modify_date(data[29])
+        record["Current Status Date UTC"] = modify_date(data[30])
+        record["Bill To Customer"] = data[31]
+        record["Control Customer"] = data[32]
+        return record
+    except Exception as conversion_error:
+        logging.exception("RecordsConversionError: %s", json.dumps(conversion_error))
+        raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
+
+class GetShipmentDetailError(Exception):
+    pass
+class RecordsConversionError(Exception):
+    pass
 
 class GetShipmentDetailError(Exception):
     pass
