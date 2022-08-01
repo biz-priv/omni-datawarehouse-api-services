@@ -1,6 +1,7 @@
 const { schema } = require("../../src/shared/validation/index");
 const { CUSTOMER_ENTITLEMENT_TABLE, TOKEN_VALIDATION_TABLE } = process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");
+const pagination = require('../../src/shared/utils/pagination');
 
 module.exports.handler = async (event, context, callback) => {
   console.info("Event: \n", JSON.stringify(event));
@@ -14,6 +15,11 @@ module.exports.handler = async (event, context, callback) => {
         ":value2": event.headers["x-api-key"]
       },
     });
+    let totalCount = 0;
+    let page = _.get(event, 'queryStringParameters.page')
+    let size = _.get(event, 'queryStringParameters.size')
+    console.info("page :---------- +++ : ",page);
+    console.info("size :---------- +++ : ",size);
     if (!customerID.error) {
       if (customerID.length) {
         const fetchShipmentList = await queryMethod({
@@ -25,7 +31,9 @@ module.exports.handler = async (event, context, callback) => {
           }
         });
         if (fetchShipmentList.length) {
-          return callback(null, {statusCode: 200, body: JSON.stringify({ Items: fetchShipmentList })})
+          totalCount = fetchShipmentList.length;
+          const paginationResult = await getResponse(fetchShipmentList, totalCount, page, size, event);
+          return callback(null, {statusCode: 200, body: JSON.stringify({ Items: paginationResult })})
         } else {
           return callback(null, {statusCode: 404, body: "Shipments don't exist"})
         }
@@ -41,3 +49,29 @@ module.exports.handler = async (event, context, callback) => {
     return callback(null, {statusCode: 500, body: JSON.stringify(error)})
   }
 };
+
+
+async function getResponse(results, count, page, size, event) {
+  console.info("Executing getResponse =====>>>>>");
+  console.info("results : ",JSON.stringify(results));
+  console.info("count : ",JSON.stringify(count));
+  console.info("page : ",JSON.stringify(page));
+  console.info("size : ",JSON.stringify(size));
+  console.info("event : ",JSON.stringify(event));
+  let selfPageLink = "N/A";
+  let host = "https://" + _.get(event, 'headers.Host', null) + "/" + _.get(event, 'requestContext.stage', "dev");
+  let path = _.get(event, 'path', null) + "&";
+  selfPageLink = "page=" + page + "&size=" +
+      size + "&startkey=" + _.get(event, 'queryStringParameters.startkey') 
+  let startkey = "CustomerID"
+  let endkey = null
+  let responseArrayName = "Customers"
+  console.info("parameters for createPagingation :")
+  console.info("responseArrayName : " ,responseArrayName);
+  console.info("host : " ,host);
+  console.info("path : " ,path);
+  console.info("selfPageLink : " ,selfPageLink);
+  var response = await pagination.createPagination(results, responseArrayName, startkey, endkey, host, path, page, size, count, selfPageLink);
+  console.info("Response: ", JSON.stringify(response));
+  return response;
+}
