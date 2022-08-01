@@ -134,6 +134,16 @@ def convert_records_history(data, milestones_details):
         raise RecordsConversionError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
 
+def date_check(datetime, timezone):
+    if datetime:
+        if timezone != None:
+            datetimezone = datetime + " " + timezone
+        else:
+            datetimezone = datetime
+    else:
+        datetimezone = datetime
+    return datetimezone
+    
 def get_shipment_detail(hwb_file_nbr,parameter,customer_id_parameter,customer_id):
     try:
         con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
@@ -175,6 +185,7 @@ def get_shipment_detail(hwb_file_nbr,parameter,customer_id_parameter,customer_id
         logging.exception("GetShipmentDetailError: %s", get_error)
         raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
     for results in cur.fetchall():
+        LOGGER.info("results before processing : %s", results)
         records_list.append(convert_records(results))
     cur.close()
     con.close()
@@ -197,11 +208,11 @@ def convert_records(data):
         record["Actual Weight KGS"] = modify_float(data[11])
         record["Chargeable Weight LBS"] = modify_float(data[12])
         record["Chargeable Weight KGS"] = modify_float(data[13])
-        record["Pickup Date"] = modify_date(data[14]) + " " + data[15]
-        record["Pod Date"] = modify_date(data[16])
-        record["ETA Date"] = modify_date(data[18])
-        record["ETD Date"] = modify_date(data[20])
-        record["Scheduled Delivery Date"] = modify_date(data[22])
+        record["Pickup Date"] = date_check(modify_date(data[14]), data[15])
+        record["Pod Date"] = date_check(modify_date(data[16]), data[17])
+        record["ETA Date"] = date_check(modify_date(data[18]), data[19])
+        record["ETD Date"] = date_check(modify_date(data[20]), data[21])
+        record["Scheduled Delivery Date"] = date_check(modify_date(data[22]), data[23])
         record["Service Level Description"] = data[24]
         record["Service Level Code"] = data[25]
         record["Current Status"] = data[26]
