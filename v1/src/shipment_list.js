@@ -1,4 +1,4 @@
-const { schema } = require("../../src/shared/validation/index");
+const { schema, pageAndSizeValidator } = require("../../src/shared/validation/index");
 const { CUSTOMER_ENTITLEMENT_TABLE, TOKEN_VALIDATION_TABLE } = process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");
 const pagination = require('../../src/shared/utils/pagination');
@@ -19,7 +19,8 @@ module.exports.handler = async (event, context, callback) => {
     let totalCount = 0;
     let page = _.get(event, 'queryStringParameters.page') || 1
     let size = _.get(event, 'queryStringParameters.size') || 10
-    
+    await pageAndSizeValidator.validate(page);
+    await pageAndSizeValidator.validate(size);
     if (!customerID.error) {
       if (customerID.length) {
         const fetchShipmentList = await queryMethod({
@@ -46,6 +47,9 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     console.error("Error : \n", error);
+    if(error.details){
+      return callback(null, { statusCode: 500, body: JSON.stringify({"message":error.details[0]['message']}) })
+    }
     return callback(null, {statusCode: 500, body: JSON.stringify(error)})
   }
 };

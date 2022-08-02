@@ -9,4 +9,5 @@ const schema = Joi.object({
   })
 }).unknown(true)
 
-module.exports = {schema};
+const pageAndSizeValidator = Joi.number().integer().invalid(0).optional();
+module.exports = {schema, pageAndSizeValidator};
