@@ -21,9 +21,9 @@ module.exports.handler = async (event, context, callback) => {
       },
     });
     let totalCount = 0;
-    let page = _.get(event, 'queryStringParameters.page')
-    let size = _.get(event, 'queryStringParameters.size')
-
+    let page = _.get(event, 'queryStringParameters.page') || 1
+    let size = _.get(event, 'queryStringParameters.size') || 10
+  
     if (!customerID.error) {
       if (customerID.length) {
         const fetchShipmentList = await queryMethod({
