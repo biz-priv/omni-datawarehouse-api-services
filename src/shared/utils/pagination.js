@@ -16,15 +16,15 @@ async function createPagination(response, responseArrayName, host, path, page, s
   if (!(currentPageResult.length < size) && result[page] != undefined) {
     nextPageLink = hostPath + "page=" + (Number(page) + 1) + "&size=" + size
   }
+
   if (lastPageArray) {
     lastPageLink = hostPath + "page=" + result.length + "&size=" +
-      size 
+      size
   }
-
 
   if (previousPageArray) {
     previousPageLink = hostPath + "page=" + (page - 1) + "&size=" +
-      size 
+      size
   }
 
   resp[responseArrayName] = currentPageResult;
@@ -36,7 +36,7 @@ async function createPagination(response, responseArrayName, host, path, page, s
     'Number': page
   };
   let firstLink = hostPath + "page=1" + "&size=" + size
-  
+
   resp["_links"] = {
     "self": {
       "href": hostPath + selfPageLink
@@ -54,7 +54,6 @@ async function createPagination(response, responseArrayName, host, path, page, s
       "href": previousPageLink
     }
   };
-  console.info("Return resp ==========:>>>>>>>>>",JSON.stringify(resp));
   return resp;
 }
 

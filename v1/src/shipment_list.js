@@ -17,10 +17,9 @@ module.exports.handler = async (event, context, callback) => {
       },
     });
     let totalCount = 0;
-    let page = _.get(event, 'queryStringParameters.page')
-    let size = _.get(event, 'queryStringParameters.size')
-    console.info("page :---------- +++ : ",page);
-    console.info("size :---------- +++ : ",size);
+    let page = _.get(event, 'queryStringParameters.page') || 1
+    let size = _.get(event, 'queryStringParameters.size') || 10
+    
     if (!customerID.error) {
       if (customerID.length) {
         const fetchShipmentList = await queryMethod({
@@ -36,10 +35,10 @@ module.exports.handler = async (event, context, callback) => {
           const paginationResult = await getResponse(fetchShipmentList, totalCount, page, size, event);
           return callback(null, {statusCode: 200, body: JSON.stringify({ Items: paginationResult })})
         } else {
-          return callback(null, {statusCode: 404, body: "Shipments don't exist"})
+          return callback(null, {statusCode: 404, body: "Shipments does not exist"})
         }
       } else {
-        return callback(null, {statusCode: 404, body: "Shipments don't exist"})
+        return callback(null, {statusCode: 404, body: "Shipments does not exist"})
       }
     } else {
       console.error("Error : \n", customerID);
