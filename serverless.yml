@@ -47,6 +47,7 @@ custom:
       - customer-entitlement-sync
       - get-rating
       - create-shipment-v3
+      - pod
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -83,6 +84,7 @@ functions:
   invoice-detail: ${file(config/functions/invoice-detail.yml):function}
   create-shipment: ${file(config/functions/create-shipment.yml):function}
   bill-of-lading: ${file(config/functions/bill-of-lading.yml):function}
+  pod: ${file(config/functions/pod.yml):function}
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}

@@ -1,0 +1,38 @@
+---
+function:
+  handler: ${self:custom.alias}/src/pod.handler
+  name: ${self:service}-pod-${self:provider.stage}
+  description: pod api service - ${self:provider.stage}
+  events:
+    - http:
+        path: /pod
+        method: GET
+        cors: true
+        integration: lambda
+        private: true
+        authorizer:
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ""
+            400:
+              pattern: '.*httpStatus\": 400.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+            501:
+              pattern: '.*httpStatus\": 501.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+  package:
+    include:
+      - ${self:custom.alias}/src/pod.py
+  environment:
+    pod_key: ${ssm:/omni-dw/${self:provider.stage}/pod/apiKey}
+    pod_URL: ${ssm:/omni-dw/${self:provider.stage}/pod/wt/url}
