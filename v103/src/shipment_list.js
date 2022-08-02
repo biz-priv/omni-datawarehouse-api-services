@@ -51,9 +51,6 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     console.error("Error : \n", error);
-    if(error.details){
-      return callback(null, { statusCode: 500, body: JSON.stringify({"message":error.details[0]['message']}) })
-    }
     return callback(null, {statusCode: 500, body: JSON.stringify(error)})
   }
 };
