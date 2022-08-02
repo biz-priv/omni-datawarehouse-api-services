@@ -12,7 +12,6 @@ module.exports.handler = async (event, context, callback) => {
     return callback(null, { statusCode: 500, body: JSON.stringify({"message":error.details[0]['message']}) })
   }
   try {
-    await schema.validateAsync(event);
     const customerID = await queryMethod({
       TableName: TOKEN_VALIDATION_TABLE,
       KeyConditionExpression: "CustomerID = :value1 AND ApiKey = :value2",
@@ -51,9 +50,6 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     console.error("Error : \n", error);
-    if(error.details){
-      return callback(null, { statusCode: 500, body: JSON.stringify({"message":error.details[0]['message']}) })
-    }
     return callback(null, {statusCode: 500, body: JSON.stringify(error)})
   }
 };
