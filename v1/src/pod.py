@@ -13,7 +13,7 @@ def handler(event, context):
             url = os.environ["pod_URL"]+os.environ["pod_key"]+'/'+num
         elif "house_bill_nbr" in event["query"]:
             num = event["query"]["house_bill_nbr"]
-            url = os.environ["pod_URL"]+os.environ["pod_key"]+'/'+num+'/hcpod'
+            url = os.environ["pod_URL"]+os.environ["pod_key"]+'/'+num+'/hawb'
         req = requests.get(url)
     except Exception as handler_error:
         logging.exception("HandlerError: %s", handler_error)
