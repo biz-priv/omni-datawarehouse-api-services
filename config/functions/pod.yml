@@ -5,7 +5,7 @@ function:
   description: pod api service - ${self:provider.stage}
   events:
     - http:
-        path: /pod
+        path: /proofofdelivery
         method: GET
         cors: true
         integration: lambda
