@@ -90,6 +90,7 @@ functions:
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
+  wd-api-international: ${file(config/functions/wd-api-international.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
 
