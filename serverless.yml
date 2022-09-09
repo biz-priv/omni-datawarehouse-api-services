@@ -85,6 +85,7 @@ functions:
   create-shipment: ${file(config/functions/create-shipment.yml):function}
   bill-of-lading: ${file(config/functions/bill-of-lading.yml):function}
   pod: ${file(config/functions/pod.yml):function}
+  uloadpoddocument: ${file(config/functions/uloadpoddocument.yml):function}
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}

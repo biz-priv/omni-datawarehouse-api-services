@@ -1,0 +1,106 @@
+const AWS = require("aws-sdk");
+const Joi = require("joi");
+const axios = require("axios");
+const { convert, create } = require("xmlbuilder2");
+
+module.exports.handler = async (event, context, callback) => {
+  const { body } = event;
+  const eventValidation = Joi.object().keys({
+    UploadPODDocument: Joi.object()
+      .keys({
+        Housebill: Joi.string().alphanum().required(),
+        b64str: Joi.string().alphanum().required(),
+      })
+      .required(),
+  });
+  const { error, value } = eventValidation.validate(body);
+  if (error) {
+    let msg = error.details[0].message
+      .split('" ')[1]
+      .replace(new RegExp('"', "g"), "");
+    let key = error.details[0].context.key;
+    console.log("[400]", key + " " + msg);
+    return callback(response("[400]", key + " " + msg));
+  }
+  let eventBody = value;
+  try {
+    const postData = makeJsonToXml(eventBody.UploadPODDocument);
+    console.log("postData", postData);
+    const res = await getXmlResponse(postData);
+    console.log("res***", res);
+    const dataObj = makeXmlToJson(res.xml_response);
+    if (
+      dataObj["soap:Envelope"]["soap:Body"].UploadPODDocumentResponse
+        .UploadPODDocumentResult == "true"
+    ) {
+      return callback(response("[200]", { msg: "Success" }));
+    } else {
+      throw "Failed";
+    }
+  } catch (error) {
+    return callback(response("[500]", "Failed"));
+  }
+};
+
+async function getXmlResponse(postData) {
+  let res;
+  try {
+    res = await axios.post(
+      "https://wttest.omnilogistics.com/WTKServices/shipments.asmx",
+      postData,
+      {
+        headers: {
+          Accept: "text/xml",
+          "Content-Type": "application/soap+xml; charset=utf-8",
+        },
+      }
+    );
+    console.log("res", res.toJSON());
+    return {
+      xml_response: res.data,
+      status_code: res.status,
+      status: res.status == 200 ? "success" : "failed",
+    };
+  } catch (e) {
+    // console.log(e);
+  }
+}
+function makeJsonToXml(data) {
+  return convert({
+    "soap12:Envelope": {
+      "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+      "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+      "@xmlns:soap12": "http://www.w3.org/2003/05/soap-envelope",
+      "soap12:Header": {
+        AuthHeader: {
+          "@xmlns": "http://tempuri.org/",
+          UserName: "biztest",
+          Password: "Api081020!",
+        },
+      },
+      "soap12:Body": {
+        UploadPODDocument: {
+          "@xmlns": "http://tempuri.org/",
+          HAWB: data.Housebill,
+          DocumentDataBase64: data.b64str,
+          DocumentExtension: "pdf",
+        },
+      },
+    },
+  });
+}
+
+function makeXmlToJson(data) {
+  try {
+    return convert(data, { format: "object" });
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
+  }
+}
+
+function response(code, message) {
+  return JSON.stringify({
+    httpStatus: code,
+    message,
+  });
+}
