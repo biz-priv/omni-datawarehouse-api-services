@@ -85,15 +85,15 @@ functions:
   create-shipment: ${file(config/functions/create-shipment.yml):function}
   bill-of-lading: ${file(config/functions/bill-of-lading.yml):function}
   pod: ${file(config/functions/pod.yml):function}
-  uloadpoddocument: ${file(config/functions/uloadpoddocument.yml):function}
   custom-authorizer: ${file(config/functions/custom-authorizer.yml):function}
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
-  wd-api-international: ${file(config/functions/wd-api-international.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
+  uloadpoddocument: ${file(config/functions/uloadpoddocument.yml):function}
+  # wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
 resources:
   Resources:

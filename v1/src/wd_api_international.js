@@ -12,7 +12,6 @@ module.exports.handler = async (event, context, callback) => {
      */
     const shipmentData = await getDataFromDB();
     console.info("Total shipment data count", shipmentData.length);
-    // return {};
 
     /**
      * Check ETA shipment data process
@@ -35,27 +34,27 @@ module.exports.handler = async (event, context, callback) => {
 
         console.log("xmlPayload", xmlPayload);
 
-        // /**
-        //  * Get response from WD api
-        //  */
-        // const xmlResponse = await getXmlResponse(xmlPayload);
+        /**
+         * Get response from WD api
+         */
+        const xmlResponse = await getXmlResponse(xmlPayload);
 
-        // /**
-        //  * make Xml to Json response
-        //  */
-        // const refTransmissionNo = makeXmlToJson(xmlResponse);
-        // console.log("refTransmissionNo", refTransmissionNo);
+        /**
+         * make Xml to Json response
+         */
+        const refTransmissionNo = makeXmlToJson(xmlResponse);
+        console.log("refTransmissionNo", refTransmissionNo);
 
-        // /**
-        //  * Update shipment data to dynamo db
-        //  */
-        // await updateStatus(
-        //   itemData,
-        //   xmlPayload,
-        //   xmlResponse,
-        //   refTransmissionNo,
-        //   is_update
-        // );
+        /**
+         * Update shipment data to dynamo db
+         */
+        await updateStatus(
+          itemData,
+          xmlPayload,
+          xmlResponse,
+          refTransmissionNo,
+          is_update
+        );
       } catch (error) {
         if (error != "No new data" && error != "No new AH data") {
           console.info("item:", item);
@@ -79,8 +78,8 @@ async function getDataFromDB() {
   try {
     const dbUser = process.env.USER;
     const dbPassword = process.env.PASS;
-    // const dbHost = process.env.HOST;
-    const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
+    const dbHost = process.env.HOST;
+    // const dbHost = "omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com";
 
     const dbPort = process.env.PORT;
     const dbName = process.env.DBNAME;
