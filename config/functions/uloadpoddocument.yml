@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/uloadpoddocument.handler
+  handler: v1/src/uloadpoddocument.handler
   name: ${self:service}-uload-pod-document-${self:provider.stage}
   description: uload pod document api service - ${self:provider.stage}
   runtime: nodejs12.x
