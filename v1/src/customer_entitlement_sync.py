@@ -21,8 +21,7 @@ def handler(event, context):
             csv_obj = s3_client.Object(os.environ['bucket'], key).get()['Body']
             batch_size = 100
             batch = []
-            fieldnames = ['CustomerID', 'SourceSystem', 'FileNumber', 'HouseBillNumber', 'CustomerNbr', 'Station', 'Origin', 'Destination', 'PickupDate', 'PickupTimeZone', 'SchdDeliveryDate',
-                          'SchdDeliveryTimeZone', 'ConsigneeName', 'ConsigneeAddress', 'ShipperName', 'ShipperAddress', 'OrderStatus', 'OrderStatusDescription', 'IsPublic', 'Charges']
+            fieldnames = ['FileNumber', 'HouseBillNumber', 'CustomerID']
             for row in csv.DictReader(codecs.getreader('utf-8')(csv_obj), fieldnames=fieldnames, delimiter='|'):
                 if len(batch) >= batch_size:
                     write_to_dynamo(batch, table_name)
@@ -35,7 +34,7 @@ def handler(event, context):
         else:
             LOGGER.info("No Action Required")
     except Exception as handler_error:
-        logging.exception("HandlerError: %s", json.dumps(handler_error))
+        logging.exception("HandlerError: %s", handler_error)
         raise HandlerError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from handler_error
 

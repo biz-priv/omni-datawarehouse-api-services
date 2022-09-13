@@ -47,8 +47,7 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
                 shipment_info.service_level ,service_level.service_level_id, case when shipment_info.source_system = 'WT' then
                 shipment_milestone.order_status else shipment_info.current_status end as order_status, case when shipment_info.source_system = 'WT' then
                 shipment_milestone.order_Status_Desc else shipment_info.current_status end as order_status_desc, shipment_milestone.event_Date,
-                shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer, shipment_info.current_status ,
-                shipment_ref.ref_nbr
+                shipment_milestone.event_Date_utc,customersb.name bill_to_customer,customersc.name controlling_customer, shipment_info.current_status
                 from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system AND (TRIM(shipment_info.bill_to_nbr) = TRIM(api_token.cust_nbr)
                 or TRIM(shipment_info.shipper_nbr) = TRIM(api_token.cust_nbr) OR TRIM(shipment_info.cntrl_cust_nbr) = TRIM(api_token.cust_nbr))
                 left outer join customers customersb
@@ -58,10 +57,9 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
                 left outer join shipment_milestone
                 on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y'
                 left outer join service_level on shipment_info.service_level = service_level.service_level_desc
-                left outer join (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref)shipment_ref on shipment_info.source_system = shipment_ref.source_system and shipment_info.file_nbr = shipment_ref.file_nbr
                 where shipment_quote IN ('S')
                 and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
-                
+
         LOGGER.info("shipment details query: %s", query)
         cur.execute(query)
         con.commit()
