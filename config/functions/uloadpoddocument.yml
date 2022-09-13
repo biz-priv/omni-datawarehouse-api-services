@@ -33,7 +33,7 @@ function:
           type: request
   package:
     include:
-      - ${self:custom.alias}/src/uloadpoddocument.js
+      - v1/src/uloadpoddocument.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
