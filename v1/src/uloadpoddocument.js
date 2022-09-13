@@ -61,6 +61,7 @@ async function getXmlResponse(postData) {
       status: res.status == 200 ? "success" : "failed",
     };
   } catch (e) {
+    throw "Error";
     // console.log(e);
   }
 }
