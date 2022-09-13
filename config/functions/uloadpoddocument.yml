@@ -3,7 +3,9 @@ function:
   handler: v1/src/uloadpoddocument.handler
   name: ${self:service}-uload-pod-document-${self:provider.stage}
   description: uload pod document api service - ${self:provider.stage}
-  runtime: nodejs12.x
+  runtime: nodejs14.x
+  timeout: 500
+  memorySize: 2048
   events:
     - http:
         path: /uloadpoddocument
