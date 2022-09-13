@@ -5,24 +5,27 @@ const { convert, create } = require("xmlbuilder2");
 
 module.exports.handler = async (event, context, callback) => {
   const { body } = event;
-  const eventValidation = Joi.object().keys({
-    UploadPODDocument: Joi.object()
-      .keys({
-        Housebill: Joi.string().alphanum().required(),
-        b64str: Joi.string().alphanum().required(),
-      })
-      .required(),
-  });
-  const { error, value } = eventValidation.validate(body);
-  if (error) {
-    let msg = error.details[0].message
-      .split('" ')[1]
-      .replace(new RegExp('"', "g"), "");
-    let key = error.details[0].context.key;
-    console.log("[400]", key + " " + msg);
-    return callback(response("[400]", key + " " + msg));
-  }
-  let eventBody = value;
+  console.log("event", event);
+  // const eventValidation = Joi.object()
+  //   .keys({
+  //     UploadPODDocument: Joi.object()
+  //       .keys({
+  //         Housebill: Joi.string().alphanum().required(),
+  //         b64str: Joi.string().alphanum().required(),
+  //       })
+  //       .required(),
+  //   })
+  //   .required();
+  // const { error, value } = eventValidation.validate(body);
+  // if (error) {
+  //   let msg = error.details[0].message
+  //     .split('" ')[1]
+  //     .replace(new RegExp('"', "g"), "");
+  //   let key = error.details[0].context.key;
+  //   console.log("[400]", key + " " + msg);
+  //   return callback(response("[400]", key + " " + msg));
+  // }
+  let eventBody = body;
   try {
     const postData = makeJsonToXml(eventBody.UploadPODDocument);
     console.log("postData", postData);
@@ -33,7 +36,7 @@ module.exports.handler = async (event, context, callback) => {
       dataObj["soap:Envelope"]["soap:Body"].UploadPODDocumentResponse
         .UploadPODDocumentResult == "true"
     ) {
-      return callback(response("[200]", { msg: "Success" }));
+      return { msg: "Success" };
     } else {
       throw "Failed";
     }
