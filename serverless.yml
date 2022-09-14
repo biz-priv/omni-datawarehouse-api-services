@@ -48,6 +48,7 @@ custom:
       - get-rating
       - create-shipment-v3
       - pod
+      - uloadpoddocument
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"

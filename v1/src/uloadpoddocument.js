@@ -6,25 +6,25 @@ const { convert, create } = require("xmlbuilder2");
 module.exports.handler = async (event, context, callback) => {
   const { body } = event;
   console.log("event", event);
-  // const eventValidation = Joi.object()
-  //   .keys({
-  //     UploadPODDocument: Joi.object()
-  //       .keys({
-  //         Housebill: Joi.string().alphanum().required(),
-  //         b64str: Joi.string().alphanum().required(),
-  //       })
-  //       .required(),
-  //   })
-  //   .required();
-  // const { error, value } = eventValidation.validate(body);
-  // if (error) {
-  //   let msg = error.details[0].message
-  //     .split('" ')[1]
-  //     .replace(new RegExp('"', "g"), "");
-  //   let key = error.details[0].context.key;
-  //   console.log("[400]", key + " " + msg);
-  //   return callback(response("[400]", key + " " + msg));
-  // }
+  const eventValidation = Joi.object()
+    .keys({
+      UploadPODDocument: Joi.object()
+        .keys({
+          Housebill: Joi.string().alphanum().required(),
+          b64str: Joi.string().alphanum().required(),
+        })
+        .required(),
+    })
+    .required();
+  const { error, value } = eventValidation.validate(body);
+  if (error) {
+    let msg = error.details[0].message
+      .split('" ')[1]
+      .replace(new RegExp('"', "g"), "");
+    let key = error.details[0].context.key;
+    console.log("[400]", key + " " + msg);
+    return callback(response("[400]", key + " " + msg));
+  }
   let eventBody = body;
   try {
     const postData = makeJsonToXml(eventBody.UploadPODDocument);
