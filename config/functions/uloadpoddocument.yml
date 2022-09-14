@@ -28,11 +28,11 @@ function:
               headers:
                 Content-Type: "'application/json'"
               template: ${file(responseTemplate.vtl)}
-        authorizer:
-          name: custom-authorizer
-          resultTtlInSeconds: 0
-          identitySource: method.request.header.x-api-key
-          type: request
+        # authorizer:
+        #   name: custom-authorizer
+        #   resultTtlInSeconds: 0
+        #   identitySource: method.request.header.x-api-key
+        #   type: request
   package:
     include:
       - v1/src/uloadpoddocument.js
