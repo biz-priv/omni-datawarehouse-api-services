@@ -54,7 +54,6 @@ async function getXmlResponse(postData) {
         "Content-Type": "application/soap+xml; charset=utf-8",
       },
     });
-    console.log("res", res.toJSON());
     return {
       xml_response: res.data,
       status_code: res.status,
