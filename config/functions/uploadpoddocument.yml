@@ -1,6 +1,6 @@
 ---
 function:
-  handler: v1/src/uloadpoddocument.handler
+  handler: v1/src/uploadpoddocument.handler
   name: ${self:service}-uload-pod-document-${self:provider.stage}
   description: uload pod document api service - ${self:provider.stage}
   runtime: nodejs14.x
@@ -8,7 +8,7 @@ function:
   memorySize: 2048
   events:
     - http:
-        path: /uloadpoddocument
+        path: /uploadpoddocument
         method: POST
         integration: lambda
         private: true
@@ -35,8 +35,8 @@ function:
           type: request
   package:
     include:
-      - v1/src/uloadpoddocument.js
+      - v1/src/uploadpoddocument.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    ULOAD_POD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uloadpoddocument}
+    ULOAD_POD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uploadpoddocument}

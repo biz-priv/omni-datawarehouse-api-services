@@ -69,7 +69,7 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
     
-    if "/uloadpoddocument" in event["methodArn"]:
+    if "/uploadpoddocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     if "/shipment/list" in event["methodArn"]:
