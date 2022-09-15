@@ -10,8 +10,8 @@ module.exports.handler = async (event, context, callback) => {
     .keys({
       UploadPODDocument: Joi.object()
         .keys({
-          Housebill: Joi.string().alphanum().required(),
-          b64str: Joi.string().alphanum().required(),
+          Housebill: Joi.string().required(),
+          b64str: Joi.string().required(),
         })
         .required(),
     })
