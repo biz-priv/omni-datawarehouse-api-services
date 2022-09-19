@@ -17,7 +17,7 @@ def handler(event, context):
         raise HandlerError(json.dumps({"httpStatus": 501, "message": "Internal Error."})) from handler_error
 
     if req.json()["label"]["File Number"] == "ERROR":
-        raise WtLabelApiError(json.dumps({"httpStatus": 400, "message": "World Track POD API Error."}))
+        raise WtLabelApiError(json.dumps({"httpStatus": 400, "message": "World Track LABEL API Error."}))
     response = req.content
     LOGGER.info("Response: %s",response)
     return response
