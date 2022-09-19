@@ -49,6 +49,7 @@ custom:
       - create-shipment-v3
       - pod
       - uploadpoddocument
+      - freightlabel
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -94,6 +95,7 @@ functions:
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
+  freightlabel: ${file(config/functions/freightlabel.yml):function}
   # wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
 resources:
