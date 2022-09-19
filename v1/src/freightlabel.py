@@ -10,7 +10,7 @@ def handler(event, context):
     try :
         if "house_bill_nbr" in event["query"]:
             num = event["query"]["house_bill_nbr"]
-            url = os.environ["label_URL"]+os.environ["label_key"]+'/'+num
+            url = os.environ["label_URL"]+os.environ["label_key"]+'/'+num+'/hawb'
         req = requests.get(url)
     except Exception as handler_error:
         logging.exception("HandlerError: %s", handler_error)
