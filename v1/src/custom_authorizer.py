@@ -59,7 +59,9 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
 
-    if "/create/shipment/newtest" in event["methodArn"]:
+    if "/uploadpoddocument" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/create/shipment/newtest" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
@@ -87,6 +89,21 @@ def handler(event, context):
             return validate_dynamo_query_response(bol_response, event, customer_id,msg)
         except Exception as bol_response_error:
             logging.exception("Bol_responseError: %s",bol_response_error)
+    elif "/freightlabel" in event["methodArn"]:
+        query = "CustomerID = :id AND "
+        if "house_bill_nbr" in params:
+            num = params["house_bill_nbr"]
+            index = os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"]
+            query += "HouseBillNumber = :num"
+            msg = "House bill number does not exist."
+        try:
+            #validate if the given hwb or file_nbr is associated with the customer id in customer entitlement dynamodb
+            bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query,
+                        {":id": {"S": customer_id}, ":num": {"S": num}})
+            LOGGER.info("Customer Entitlement response for bill of lading : %s",json.dumps(bol_response))
+            return validate_dynamo_query_response(bol_response, event, customer_id,msg)
+        except Exception as bol_response_error:
+            logging.exception("Label_responseError: %s",bol_response_error)
     else:
         house_bill_nbr = event['queryStringParameters']['house_bill_nbr']
         hb_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], os.environ["CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX"],
@@ -106,7 +123,7 @@ def validate_dynamo_query_response(response, event, customer_id=None, message=No
         raise CustomerIdNotFound(json.dumps({"httpStatus": 400, "message": "Customer Id not found."})) from cust_id_notfound_error
 
 def validate_input(method_arn, params):
-    if "/shipment/info" in method_arn or "/shipment/detail" in method_arn or "/invoice/detail" in method_arn:
+    if "/shipment/info" in method_arn or "/shipment/detail" in method_arn or "/invoice/detail" in method_arn or "/freightlabel" in method_arn:
         return validate_house_bill_nbr(params)
     elif "/billoflading" in method_arn:
         if "house_bill_nbr" in params and "file_nbr" in params:
