@@ -26,5 +26,5 @@ function:
     WD_PDF_POD_API_URL: ${ssm:/omni-dw/${self:provider.stage}/wdPdfPodApiUrl}
     WD_PDF_API_KEY: ${ssm:/omni-dw/${self:provider.stage}/wdPdfApiKey}
 
-  # events:
-  #   - schedule: rate(30 minutes)
+  events:
+    - schedule: rate(30 minutes)

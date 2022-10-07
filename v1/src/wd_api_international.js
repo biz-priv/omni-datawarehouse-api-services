@@ -121,7 +121,7 @@ async function getDataFromDB() {
         (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
         on a.source_system = c.source_system
         and a.file_nbr = c.file_nbr
-        where a.cntrl_cust_nbr = '2265322653'
+        where a.cntrl_cust_nbr = '22653'
         and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
         and a.file_date >= '2022-03-25'
         union
