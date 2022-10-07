@@ -96,7 +96,7 @@ functions:
   create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
-  # wd-api-international: ${file(config/functions/wd-api-international.yml):function}
+  wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
 resources:
   Resources:
