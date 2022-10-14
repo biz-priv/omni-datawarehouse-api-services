@@ -90,7 +90,7 @@ def modify_response(data):
 
 def modify_date(x):
     try:
-        if x == None or '1900-01-01' in x:
+        if x == None:
             return None
         else:
             return x.isoformat()
