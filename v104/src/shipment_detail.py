@@ -41,46 +41,51 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
         cur = con.cursor()
         records_list = []
         query = '''select distinct
-                shipment_info.file_nbr ,shipment_info.file_datetime ,
-                shipment_info.handling_stn ,shipment_info.master_bill_nbr ,
-                shipment_info.house_bill_nbr, shipment_info.origin_port_iata ,shipment_info.destination_port_iata ,
-                shipment_info.shipper_name ,
-                shipment_info.shipper_addr_1 ,
-                shipment_info.shipper_addr_2 ,
-                shipment_info.shipper_city ,
-                shipment_info.shipper_st ,
-                shipment_info.shipper_cntry ,
-                shipment_info.shipper_zip ,
-                shipment_info.consignee_name ,
-                shipment_info.consignee_addr_1 ,
-                shipment_info.consignee_addr_2 ,
-                shipment_info.consignee_city ,
-                shipment_info.consignee_st ,
-                shipment_info.consignee_cntry ,
-                shipment_info.consignee_zip ,
-                shipment_info.pieces ,
-                shipment_info.actual_wght_lbs ,
-                shipment_info.actual_wght_kgs ,shipment_info.chrg_wght_lbs ,
-                shipment_info.chrg_wght_kgs ,
-                shipment_info.pickup_date ,
-                shipment_info.pickup_timezone ,
-                shipment_info.pod_date ,
-                shipment_info.pod_timezone,
-                shipment_info.eta_date ,
-                shipment_info.eta_timezone,
-                shipment_info.etd_date ,
-                shipment_info.etd_timezone,
-                shipment_info.schd_delv_date ,
-                shipment_info.schd_delv_timezone,
-                shipment_info.service_level,
-                service_level.service_level_id,
-                shipment_milestone.order_status ,
-                shipment_milestone.order_status_Desc,
-                shipment_milestone.is_public,
-                shipment_milestone.event_date,
-                shipment_milestone.event_date_utc,
-                customersb.name bill_to_cust,
-                customersc.name cntrl_cust
+                    shipment_info.file_nbr ,
+                    shipment_info.file_datetime,
+                    shipment_info.handling_stn ,
+                    shipment_info.master_bill_nbr ,
+                    shipment_info.house_bill_nbr,
+                    shipment_info.origin_port_iata ,
+                    shipment_info.destination_port_iata ,
+                    shipment_info.shipper_name ,
+                    shipment_info.consignee_name ,
+                    shipment_info.pieces ,
+                    shipment_info.actual_wght_lbs ,
+                    shipment_info.actual_wght_kgs ,
+                    shipment_info.chrg_wght_lbs ,
+                    shipment_info.chrg_wght_kgs ,
+                    shipment_info.pickup_date ,
+                    shipment_info.pickup_timezone ,
+                    shipment_info.pod_date ,
+                    shipment_info.pod_timezone,
+                    shipment_info.eta_date ,
+                    shipment_info.eta_timezone,
+                    shipment_info.etd_date ,
+                    shipment_info.etd_timezone,
+                    shipment_info.schd_delv_date ,
+                    shipment_info.schd_delv_timezone,
+                    shipment_info.service_level,
+                    service_level.service_level_id,
+                    shipment_milestone.order_status ,
+                    shipment_milestone.order_status_Desc,
+                    shipment_milestone.is_public,
+                    shipment_milestone.event_date,
+                    shipment_milestone.event_date_utc,
+                    customersb.name bill_to_cust,
+                    customersc.name cntrl_cust,
+                    shipment_info.consignee_addr_1 ,
+                    shipment_info.consignee_addr_2 ,
+                    shipment_info.consignee_city ,
+                    shipment_info.consignee_st ,
+                    shipment_info.consignee_cntry ,
+                    shipment_info.consignee_zip ,
+                    shipment_info.shipper_addr_1 ,
+                    shipment_info.shipper_addr_2 ,
+                    shipment_info.shipper_city ,
+                    shipment_info.shipper_st ,
+                    shipment_info.shipper_cntry ,
+                    shipment_info.shipper_zip
                 from shipment_info LEFT OUTER JOIN api_token ON shipment_info.source_system = api_token.source_system
                 AND
                 (
@@ -96,8 +101,8 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
                 on shipment_info.source_system = shipment_milestone.source_system and shipment_info.file_nbr = shipment_milestone.file_nbr and shipment_milestone.is_custompublic = 'Y'
                 left outer join service_level on shipment_info.service_level = service_level.service_level_desc
                 where shipment_quote IN ('S')
-               and '''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
-
+               and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
+                
         LOGGER.info("shipment details query: %s", query)
         cur.execute(query)
         con.commit()
@@ -108,8 +113,7 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
         raise GetShipmentDetailError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
 
-    milestones = convert_records_history(
-        shipment_details[0], get_milestones(shipment_details))
+    milestones = convert_records_history(shipment_details[0], get_milestones(shipment_details))
     records_list.append(milestones)
     shipment_details_records = {'shipmentDetails': records_list}
     cur.close()
@@ -123,12 +127,10 @@ def get_milestones(shipment_details):
         milestone_list = []
         for milestones in shipment_details:
             response = {}
-            response["Current Status"] = milestones[28] if milestones[28] == "CAN" else milestones[22]
-            response["Current Status Desc"] = "CANCELLED" if milestones[28] == "CAN" else milestones[23]
-            response["Current Status Date"] = modify_date(
-                milestones[2]) if milestones[28] == "CAN" else modify_date(milestones[24])
-            response["Current Status Date UTC"] = modify_date(
-                milestones[2]) if milestones[28] == "CAN" else modify_date(milestones[25])
+            response["Current Status"] = milestones[26]
+            response["Current Status Desc"] = milestones[27]
+            response["Current Status Date"] = modify_date(milestones[29])
+            response["Current Status Date UTC"] = modify_date(milestones[30])
             milestone_list.append(response)
         LOGGER.info("milestone list : %s", milestone_list)
         return milestone_list
@@ -137,40 +139,197 @@ def get_milestones(shipment_details):
         raise MilestoneError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from milestones_error
 
+def date_check(datetime, timezone):
+    if datetime:
+        if timezone != None:
+            datetimezone = datetime + " " + timezone
+        else:
+            datetimezone = datetime
+    else:
+        datetimezone = datetime
+    return datetimezone
 
 def convert_records_history(data, milestones_details):
     try:
         record = {}
-        record["File Number"] = data[1]
-        record["File Date"] = modify_date(data[2])
-        record["Handling Station"] = data[3]
-        record["Master Waybill"] = data[4]
-        record["House Waybill"] = data[5]
-        record["Origin Port"] = data[6]
-        record["Destination Port"] = data[7]
-        record["Shipper Name"] = data[8]
-        record["Consignee Name"] = data[9]
-        record["Pieces"] = data[10]
-        record["Actual Weight LBS"] = modify_float(data[11])
-        record["Actual Weight KGS"] = modify_float(data[12])
-        record["Chargeable Weight LBS"] = modify_float(data[13])
-        record["Chargeable Weight KGS"] = modify_float(data[14])
-        record["Pickup Date"] = modify_date(data[15])
-        record["Pod Date"] = modify_date(data[16])
-        record["ETA Date"] = modify_date(data[17])
-        record["ETD Date"] = modify_date(data[18])
-        record["Scheduled Delivery Date"] = modify_date(data[19])
-        record["Service Level Description"] = data[20]
-        record["Service Level Code"] = data[21]
-        record["Bill To Customer"] = data[26]
-        record["Control Customer"] = data[27]
+        record["File Number"] = data[0]
+        record["File Date"] = modify_date(data[1])
+        record["Handling Station"] = data[2]
+        record["Master Waybill"] = data[3]
+        record["House Waybill"] = data[4]
+        record["Origin Port"] = data[5]
+        record["Destination Port"] = data[6]
+        record["Pieces"] = data[9]
+        record["Actual Weight LBS"] = modify_float(data[10])
+        record["Actual Weight KGS"] = modify_float(data[11])
+        record["Chargeable Weight LBS"] = modify_float(data[12])
+        record["Chargeable Weight KGS"] = modify_float(data[13])
+        record["Pickup Date"] = date_check(modify_date(data[14]), data[15])
+        record["Pod Date"] = date_check(modify_date(data[16]), data[17])
+        record["ETA Date"] = date_check(modify_date(data[18]), data[19])
+        record["ETD Date"] = date_check(modify_date(data[20]), data[21])
+        record["Scheduled Delivery Date"] = date_check(modify_date(data[22]), data[23])
+        record["Service Level Description"] = data[24]
+        record["Service Level Code"] = data[25]
+        record["Bill To Customer"] = data[31]
+        record["Control Customer"] = data[32]
         record["Milestones"] = milestones_details
+        
+        record["Consignee"] = {
+            "Consignee Name": data[8],
+            "consignee_addr_1": data[33],
+            "consignee_addr_2": data[34],
+            "consignee_city": data[35],
+            "consignee_st": data[36],
+            "consignee_cntry": data[37],
+            "consignee_zip": data[38]
+        }
+        
+        record["Shipper"] = {
+            "Shipper Name" : data[7],
+            "shipper_addr_1" : data[39],
+            "shipper_addr_2" : data[40],
+            "shipper_city" : data[41],
+            "shipper_st" : data[42],
+            "shipper_cntry" : data[43],
+            "shipper_zip" : data[44]
+        }
+
         return record
     except Exception as conversion_error:
         logging.exception("RecordsConversionError: %s", conversion_error)
         raise RecordsConversionError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
+    
+def get_shipment_detail(hwb_file_nbr,parameter,customer_id_parameter,customer_id):
+    try:
+        con=psycopg2.connect(dbname = os.environ['db_name'], host=os.environ['db_host'],
+                            port= os.environ['db_port'], user = os.environ['db_username'], password = os.environ['db_password'])
+        con.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) #psycopg2 extension to enable AUTOCOMMIT
+        cur = con.cursor()
+        records_list = []
+        query = '''select distinct
+                    api_shipment_info.file_nbr ,
+                    api_shipment_info.file_datetime  ,
+                    api_shipment_info.handling_stn ,
+                    api_shipment_info.master_bill_nbr ,
+                    api_shipment_info.house_bill_nbr,
+                    api_shipment_info.origin_port_iata ,
+                    api_shipment_info.destination_port_iata ,
+                    api_shipment_info.shipper_name ,
+                    api_shipment_info.consignee_name ,
+                    api_shipment_info.pieces ,
+                    api_shipment_info.actual_wght_lbs ,
+                    api_shipment_info.actual_wght_kgs ,
+                    api_shipment_info.chrg_wght_lbs ,
+                    api_shipment_info.chrg_wght_kgs ,
+                    api_shipment_info.pickup_date ,
+                    api_shipment_info.pickup_timezone ,
+                    api_shipment_info.pod_date ,
+                    api_shipment_info.pod_timezone,
+                    api_shipment_info.eta_date ,
+                    api_shipment_info.eta_timezone,
+                    api_shipment_info.etd_date ,
+                    api_shipment_info.etd_timezone,
+                    api_shipment_info.schd_delv_date , 
+                    api_shipment_info.schd_delv_timezone,
+                    api_shipment_info.service_level, 
+                    api_shipment_info.service_level_id,
+                    api_shipment_info.order_status ,
+                    api_shipment_info.order_status_Desc,
+                    api_shipment_info.is_public,
+                    api_shipment_info.event_date,
+                    api_shipment_info.event_date_utc,
+                    api_shipment_info.bill_to_customer, 
+                    api_shipment_info.cntrl_customer,
+                    shipment_info.shipper_name ,
+                    shipment_info.shipper_addr_1 ,
+                    shipment_info.shipper_addr_2 ,
+                    shipment_info.shipper_city ,
+                    shipment_info.shipper_st ,
+                    shipment_info.shipper_cntry ,
+                    shipment_info.shipper_zip ,
+                    shipment_info.consignee_name ,
+                    shipment_info.consignee_addr_1 ,
+                    shipment_info.consignee_addr_2 ,
+                    shipment_info.consignee_city ,
+                    shipment_info.consignee_st ,
+                    shipment_info.consignee_cntry ,
+                    shipment_info.consignee_zip
+                    from api_shipment_info left outer join shipment_info on 
+                    api_shipment_info.file_nbr = shipment_info.file_nbr
+                where api_shipment_info.'''+parameter+f'{hwb_file_nbr}'+customer_id_parameter+f'{customer_id}'
+        LOGGER.info("shipment details query : " + query)
+        cur.execute(query)
+        con.commit()
+    except Exception as get_error:
+        logging.exception("GetShipmentDetailError: %s", get_error)
+        raise GetShipmentDetailError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_error
+    for results in cur.fetchall():
+        LOGGER.info("results before processing : %s", results)
+        records_list.append(convert_records(results))
+    cur.close()
+    con.close()
+    return {'shipmentDetails': records_list}
 
+def convert_records(data):
+    try:
+        record = {}
+        record["File Number"] = data[0]
+        record["File Date"] = modify_date(data[1])
+        record["Handling Station"] = data[2]
+        record["Master Waybill"] = data[3]
+        record["House Waybill"] = data[4]
+        record["Origin Port"] = data[5]
+        record["Destination Port"] = data[6]
+        record["Pieces"] = data[9]
+        record["Actual Weight LBS"] = modify_float(data[10])
+        record["Actual Weight KGS"] = modify_float(data[11])
+        record["Chargeable Weight LBS"] = modify_float(data[12])
+        record["Chargeable Weight KGS"] = modify_float(data[13])
+        record["Pickup Date"] = date_check(modify_date(data[14]), data[15])
+        record["Pod Date"] = date_check(modify_date(data[16]), data[17])
+        record["ETA Date"] = date_check(modify_date(data[18]), data[19])
+        record["ETD Date"] = date_check(modify_date(data[20]), data[21])
+        record["Scheduled Delivery Date"] = date_check(modify_date(data[22]), data[23])
+        record["Service Level Description"] = data[24]
+        record["Service Level Code"] = data[25]
+        record["Current Status"] = data[26]
+        record["Current Status Desc"] = data[27]
+        record["Is Public"] = data[28]
+        record["Current Status Date"] = modify_date(data[29])
+        record["Current Status Date UTC"] = modify_date(data[30])
+        record["Bill To Customer"] = data[31]
+        record["Control Customer"] = data[32]
+
+        record["Consignee"] = {
+            "consignee_name" : data[40],
+            "consignee_addr_1" : data[41],
+            "consignee_addr_2" : data[42],
+            "consignee_city" : data[43],
+            "consignee_st" : data[44],
+            "consignee_cntry" : data[45],
+            "consignee_zip" : data[46]
+        }
+
+        record["Shipper"] = {
+            "shipper_name" : data[33],
+            "shipper_addr_1" : data[34],
+            "shipper_addr_2" : data[35],
+            "shipper_city" : data[36],
+            "shipper_st" : data[37],
+            "shipper_cntry" : data[38],
+            "shipper_zip" : data[39]
+        }
+        return record
+    except Exception as conversion_error:
+        logging.exception("RecordsConversionError: %s", json.dumps(conversion_error))
+        raise RecordsConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from conversion_error
+
+class GetShipmentDetailError(Exception):
+    pass
+class RecordsConversionError(Exception):
+    pass
 
 class GetShipmentDetailError(Exception):
     pass
