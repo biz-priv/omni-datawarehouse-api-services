@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import botocore.session
+import dicttoxml
 import datetime
 session = botocore.session.get_session()
 
@@ -9,6 +10,7 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
+InternalErrorMessage = "Internal Error."
 
 
 def dynamo_query(table_name, index_name, expression, attributes):
@@ -114,6 +116,50 @@ def modify_float(x):
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
 
 
+def get_reference_list(data_obj):
+    try:
+        if "Reference List" in data_obj:
+            temp_reference_list = modify_object_keys(
+                data_obj["Reference List"])
+            for bill_to_item in temp_reference_list:
+                bill_to_item.update({"CustomerTypeV3": "BillTo"})
+                bill_to_item.update({"RefTypeId": "REF"})
+
+            def add_shipper(x):
+                t = []
+                for bill_to_item in x:
+                    t.append(
+                        {"ReferenceNo": bill_to_item['ReferenceNo'], "CustomerTypeV3": "Shipper", "RefTypeId": "REF"})
+                x.extend(t)
+                return x
+            temp_reference_list = add_shipper(temp_reference_list)
+
+            def reference_list_item(x): return 'NewShipmentRefsV3'
+            reference_list = dicttoxml.dicttoxml(temp_reference_list,
+                                                 attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
+            reference_list = str(reference_list).\
+                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace("""</ReferenceList>'""", """</ReferenceList>""")
+        else:
+            reference_list = ''
+        return reference_list
+    except Exception as reference_list_error:
+        logging.exception("GetReferenceListError: %s", reference_list_error)
+        raise GetReferenceListError(json.dumps(
+            {"httpStatus": 501, "message": InternalErrorMessage})) from reference_list_error
+
+
+def modify_object_keys(array):
+    new_array = []
+    for obj in array:
+        new_obj = {}
+        for key in obj:
+            new_key = key.replace(" ", "")
+            new_obj[new_key] = obj[key]
+        new_array.append(new_obj)
+    return new_array
+
+
 class DynamoQueryError(Exception):
     pass
 
@@ -135,4 +181,8 @@ class ProcessingInputError(Exception):
 
 
 class FloatConversionError(Exception):
+    pass
+
+
+class GetReferenceListError(Exception):
     pass
