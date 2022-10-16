@@ -280,31 +280,36 @@ def get_shipment_line_list(data_obj):
 
 
 def get_reference_list(data_obj):
-    if "Reference List" in data_obj:
-        temp_reference_list = modify_object_keys(
-            data_obj["Reference List"])
-        for bill_to_item in temp_reference_list:
-            bill_to_item.update({"CustomerTypeV3": "BillTo"})
-            bill_to_item.update({"RefTypeId": "REF"})
+    try:
+        if "Reference List" in data_obj:
+            temp_reference_list = modify_object_keys(
+                data_obj["Reference List"])
+            for bill_to_item in temp_reference_list:
+                bill_to_item.update({"CustomerTypeV3": "BillTo"})
+                bill_to_item.update({"RefTypeId": "REF"})
 
-        def add_shipper(x):
-            t = []
-            for bill_to_item in x:
-                t.append(
-                    {"ReferenceNo": bill_to_item['ReferenceNo'], "CustomerTypeV3": "Shipper", "RefTypeId": "REF"})
-            x.extend(t)
-            return x
-        temp_reference_list = add_shipper(temp_reference_list)
+            def add_shipper(x):
+                t = []
+                for bill_to_item in x:
+                    t.append(
+                        {"ReferenceNo": bill_to_item['ReferenceNo'], "CustomerTypeV3": "Shipper", "RefTypeId": "REF"})
+                x.extend(t)
+                return x
+            temp_reference_list = add_shipper(temp_reference_list)
 
-        def reference_list_item(x): return 'NewShipmentRefsV3'
-        reference_list = dicttoxml.dicttoxml(temp_reference_list,
-                                             attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
-        reference_list = str(reference_list).\
-            replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
-            replace("""</ReferenceList>'""", """</ReferenceList>""")
-    else:
-        reference_list = ''
-    return reference_list
+            def reference_list_item(x): return 'NewShipmentRefsV3'
+            reference_list = dicttoxml.dicttoxml(temp_reference_list,
+                                                 attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
+            reference_list = str(reference_list).\
+                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace("""</ReferenceList>'""", """</ReferenceList>""")
+        else:
+            reference_list = ''
+        return reference_list
+    except Exception as reference_list_error:
+        logging.exception("GetReferenceListError: %s", reference_list_error)
+        raise GetReferenceListError(json.dumps(
+            {"httpStatus": 501, "message": InternalErrorMessage})) from reference_list_error
 
 
 def get_accessorial_list(data_obj):
