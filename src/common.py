@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import botocore.session
+import datetime
 session = botocore.session.get_session()
 
 LOGGER = logging.getLogger()
@@ -90,7 +91,8 @@ def modify_response(data):
 
 def modify_date(x):
     try:
-        if x == None:
+        y = datetime.datetime(1900, 1, 1, 0, 0)
+        if x == None or x == y:
             return None
         else:
             return x.isoformat()
