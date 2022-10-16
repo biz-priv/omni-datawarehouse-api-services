@@ -16,7 +16,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-InternalErrorMessage = "Internal Error."
+INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 
 def handler(event, context):
@@ -44,7 +44,7 @@ def handler(event, context):
     except Exception as transform_error:
         logging.exception("DataTransformError: %s", transform_error)
         raise DataTransformError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from transform_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from transform_error
 
     temp_ship_data = ready_date_time(temp_ship_data)
     shipment_line_list = get_shipment_line_list(event["body"]["oShipData"])
@@ -70,7 +70,7 @@ def handler(event, context):
     except Exception as url_error:
         logger.exception("Environment variable URL not set.")
         raise EnvironmentVariableError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from url_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from url_error
     pars = {'op': 'AddNewShipmentV3'}
     try:
         wt_response = requests.post(url, headers={
@@ -112,7 +112,7 @@ def ready_date_time(old_shipment_list):
     except Exception as ready_datetime_error:
         logging.exception("ReadyDateTimeError: %s", ready_datetime_error)
         raise ReadyDateTimeError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from ready_datetime_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from ready_datetime_error
 
 
 def get_service_level(service_level_code):
@@ -136,7 +136,7 @@ def get_service_level(service_level_code):
     except Exception as service_level_error:
         logging.exception("GetServiceLevelError: %s", service_level_error)
         raise GetServiceLevelError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from service_level_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from service_level_error
 
 
 def truncate_description(value):
@@ -168,7 +168,7 @@ def validate_dynamodb(customer_id):
     except Exception as validate_error:
         logging.exception("ValidateDynamoDBError: %s", validate_error)
         raise ValidateDynamoDBError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from validate_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
 
 
 def update_response(response):
@@ -192,7 +192,7 @@ def update_response(response):
     except Exception as update_response_error:
         logging.exception("UpdateResponseError: %s", update_response_error)
         raise UpdateResponseError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from update_response_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from update_response_error
 
 
 def update_authorizer_table(shipment_data, customer_id):
@@ -218,7 +218,7 @@ def update_authorizer_table(shipment_data, customer_id):
         logging.exception("UpdateAuthorizerTableError: %s",
                           update_authorizer_error)
         raise UpdateAuthorizerTableError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from update_authorizer_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from update_authorizer_error
 
 
 now = datetime.now()
@@ -254,7 +254,7 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc):
         logging.exception("UpdateShipmentTableError: %s",
                           update_shipment_error)
         raise UpdateShipmentTableError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from update_shipment_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from update_shipment_error
 
 
 def get_shipment_line_list(data_obj):
@@ -276,7 +276,7 @@ def get_shipment_line_list(data_obj):
         logging.exception("GetShipmentLineListError: %s",
                           shipment_linelist_error)
         raise GetShipmentLineListError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from shipment_linelist_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from shipment_linelist_error
 
 
 def get_reference_list(data_obj):
@@ -309,7 +309,7 @@ def get_reference_list(data_obj):
     except Exception as reference_list_error:
         logging.exception("GetReferenceListError: %s", reference_list_error)
         raise GetReferenceListError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from reference_list_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from reference_list_error
 
 
 def get_accessorial_list(data_obj):
@@ -332,7 +332,7 @@ def get_accessorial_list(data_obj):
         logging.exception("GetAccessorialListError: %s",
                           accessorial_list_error)
         raise GetAccessorialListError(json.dumps(
-            {"httpStatus": 501, "message": InternalErrorMessage})) from accessorial_list_error
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from accessorial_list_error
 
 
 def validate_input(event):
