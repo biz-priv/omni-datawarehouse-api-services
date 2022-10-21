@@ -118,8 +118,8 @@ async function getDataFromDB() {
         on a.source_system = c.source_system
         and a.file_nbr = c.file_nbr
         where a.bill_to_nbr = '17833'
-        and b.order_status in ('PUP','COB','DEL','POD','OSD','REF')
-        and a.file_date >= '2022-03-25'
+        and b.order_status in ('PUP','COB','DEL','OSD','REF')
+        and a.file_date >= '2022-03-25' and b.event_date_utc is not null
         union
     select distinct
       a.file_nbr ,a.house_bill_nbr ,pod_name,
@@ -137,7 +137,7 @@ async function getDataFromDB() {
           on a.source_system = c.source_system
           and a.file_nbr = c.file_nbr
           where a.bill_to_nbr = '17833'
-          and a.file_date >= '2022-03-25'`;
+          and a.file_date >= '2022-03-25' and eta_date is not NULL`;
 
     const result = await connections.query(query);
 
@@ -238,7 +238,7 @@ async function makeJsonToXml(payload, inputData) {
      */
     let transHeader =
       payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-        "otm:Transmission"
+      "otm:Transmission"
       ]["otm:TransmissionHeader"];
     /**
      * TransmissionBody values
@@ -255,13 +255,13 @@ async function makeJsonToXml(payload, inputData) {
        */
       let transBody =
         payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-          "otm:Transmission"
+        "otm:Transmission"
         ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0][
         "otm:ArgValue"
       ] = validateRefNbr(inputData.ref_nbr)
-        ? inputData.ref_nbr
-        : inputData.house_bill_nbr;
+          ? inputData.ref_nbr
+          : inputData.house_bill_nbr;
 
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1][
         "otm:ArgValue"
@@ -366,7 +366,7 @@ async function getXmlResponse(postData) {
       status_code: res.status,
       status: res.status == 200 ? "success" : "failed",
     };
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function makeXmlToJson(xmlResponse) {
@@ -426,7 +426,7 @@ async function updateStatus(
       Item: data,
     };
     await documentClient.put(params).promise();
-  } catch (e) {}
+  } catch (e) { }
 }
 
 async function getBase64Pdf(file_nbr, type) {
@@ -471,8 +471,8 @@ function validateRefNbr(ref_nbr = null) {
       ref_nbr != null
         ? ref_nbr.split("-")
         : (() => {
-            throw "error null";
-          })();
+          throw "error null";
+        })();
     const dateStr = parseInt(split[0]);
     const isdate =
       split.length == 2
