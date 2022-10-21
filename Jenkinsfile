@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'ecs' }
     parameters {
-        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v1')
+        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v2')
     }
     stages {
         stage('Set parameters') {
@@ -28,23 +28,12 @@ pipeline {
                 }
             }
         }
-        stage('Code Scan - Python') {
-            steps{
-                script {
-                    sh '''
-                    eval $(pylint --rcfile=pylint.cfg $(find . -type f -path '*/src/*.py')  --output-format=parseable -r y > pylint.log)
-                    cat pylint.log
-                    pylint --fail-under=9.0 --rcfile=pylint.cfg $(find . -type f -path '*/src/*.py')  --output-format=parseable -r y
-                    '''
-                }
-            }
-        }
+
         stage('Omni Deploy'){
             when {
                 anyOf {
                     branch 'master';
                     branch 'develop';
-                    branch 'hotfix/*';
                 }
                 expression {
                     return true;
