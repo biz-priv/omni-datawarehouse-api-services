@@ -10,8 +10,6 @@ function:
         cors: true
         integration: lambda
         private: true
-        provisionedConcurrency: 1
-        concurrencyAutoscaling: true
         authorizer: 
           name: custom-authorizer
           resultTtlInSeconds: 0

@@ -24,6 +24,16 @@ provider:
 
 custom:
   alias: ${opt:alias, 'v1'}
+  prune:
+    automatic: true
+    number: 8
+  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
+  # dev:
+  #   domainName: dev-api.omnilogistics.com
+  #   certificateName: dev-api.omnilogistics.com
+  prod:
+    domainName: api.omnilogistics.com
+    certificateName: api.omnilogistics.com
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
     functions:
@@ -45,7 +55,15 @@ custom:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
     "Access-Control-Allow-Headers": "'*'"
-
+  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
+  # customDomain:
+  #   domainName: ${self:custom.${self:provider.stage}.domainName}
+  #   stage: ${self:provider.stage}
+  #   basePath: v1
+  #   certificateName: ${self:custom.${self:provider.stage}.certificateName}
+  #   createRoute53Record: true
+  #   endpointType: 'regional'
+  #   securityPolicy: tls_1_2
 
 plugins:
   - serverless-layers
@@ -53,7 +71,8 @@ plugins:
   - serverless-plugin-multiple-responses
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
-  - serverless-provisioned-concurrency-autoscaling
+  - serverless-prune-plugin
+  # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
   individually: true
