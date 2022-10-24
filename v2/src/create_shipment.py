@@ -20,10 +20,10 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 
 def handler(event, context):
+    LOGGER.info("Event: %s", json.dumps(event))
     event["body"]["shipmentCreateRequest"] = literal_eval(
         str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
     truncate_description(event["body"]["shipmentCreateRequest"]["shipmentLines"])
-    LOGGER.info("Event: %s", json.dumps(event))
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
     LOGGER.info("Customer Info: %s", json.dumps(customer_info))

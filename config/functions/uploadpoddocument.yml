@@ -3,6 +3,8 @@ function:
   handler: v1/src/uploadpoddocument.handler
   name: ${self:service}-upload-pod-document-${self:provider.stage}
   description: upload pod document api service - ${self:provider.stage}
+  provisionedConcurrency: 1
+  concurrencyAutoscaling: true
   runtime: nodejs14.x
   timeout: 500
   memorySize: 2048
