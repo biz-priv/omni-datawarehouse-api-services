@@ -45,8 +45,8 @@ def handler(event, context):
         LOGGER.info("Event: %s",event)
         api_key = event['headers']['x-api-key']
         params = event["queryStringParameters"]
-        LOGGER.info("Event API Key: %s", api_key)
-        LOGGER.info("Event params: %s", params)
+        LOGGER.info("Event API Key: %s", str(api_key))
+        LOGGER.info("Event params: %s", str(params))
     except Exception as api_key_error:
         LOGGER.info("API Key Error Exception loop")
         logging.exception("ApiKeyError: %s",api_key_error)
