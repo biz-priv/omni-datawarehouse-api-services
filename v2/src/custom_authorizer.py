@@ -45,23 +45,30 @@ def handler(event, context):
         LOGGER.info("Event: %s",event)
         api_key = event['headers']['x-api-key']
         params = event["queryStringParameters"]
+        LOGGER.info("Event API Key: ", api_key)
+        LOGGER.info("Event params: ", params)
     except Exception as api_key_error:
+        LOGGER.info("API Key Error Exception loop")
         logging.exception("ApiKeyError: %s",api_key_error)
         raise ApiKeyError(json.dumps({"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
+    LOGGER.info("Passed event parsing try-except loop")
     #Validating params only for the GET APIs
     if "/create/shipment/newtest" not in event["methodArn"]:
+        LOGGER.info("/create/shipment/newtest not in event[methodArn]")
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
     elif "/create/shipment" not in event["methodArn"]:
+        LOGGER.info("/create/shipment not in event[methodArn]")
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
-
+    
+    LOGGER.info("passed not in methodArn if/else checks")
+    LOGGER.info("DynamoQueryParams- Table: ", os.environ["TOKEN_VALIDATION_TABLE"] +"Index: "+ os.environ["TOKEN_VALIDATION_TABLE_INDEX"]+"KeyConditionExpression: "+'ApiKey = :apikey'+"ExpressionAttributeValues: "+ {":apikey": {"S": api_key}})
     #Get customer ID based on the api_key
-    response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"],
-            'ApiKey = :apikey', {":apikey": {"S": api_key}})
+    response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"],'ApiKey = :apikey', {":apikey": {"S": api_key}})
     LOGGER.info("token validation table response : %s",json.dumps(response))
 
     #Validate if the given fil_nbr or house_bill_nbr has an entry in the DB and get its customer_id
