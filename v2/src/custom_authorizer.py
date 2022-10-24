@@ -54,13 +54,8 @@ def handler(event, context):
 
     LOGGER.info("Passed event parsing try-except loop")
     #Validating params only for the GET APIs
-    if "/create/shipment/newtest" not in event["methodArn"]:
+    if "/create/shipment/newtest" not in event["methodArn"] and "/create/shipment" not in event["methodArn"]:
         LOGGER.info("/create/shipment/newtest not in event[methodArn]")
-        validation_response = validate_input(params)
-        if validation_response["status"] == "error":
-            return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
-    elif "/create/shipment" not in event["methodArn"]:
-        LOGGER.info("/create/shipment not in event[methodArn]")
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
