@@ -61,7 +61,7 @@ def handler(event, context):
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
     
     LOGGER.info("passed not in methodArn if/else checks")
-    LOGGER.info("DynamoQueryParams- Table: ", str(os.environ["TOKEN_VALIDATION_TABLE"]) +"Index: "+ str(os.environ["TOKEN_VALIDATION_TABLE_INDEX"])+"KeyConditionExpression: "+'ApiKey = :apikey'+"ExpressionAttributeValues: "+ str({":apikey": {"S": api_key}}))
+    LOGGER.info("DynamoQueryParams- Table: "+ str(os.environ["TOKEN_VALIDATION_TABLE"]) +"Index: "+ str(os.environ["TOKEN_VALIDATION_TABLE_INDEX"])+"KeyConditionExpression: "+'ApiKey = :apikey'+"ExpressionAttributeValues: "+ str({":apikey": {"S": api_key}}))
     #Get customer ID based on the api_key
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"],'ApiKey = :apikey', {":apikey": {"S": api_key}})
     LOGGER.info("token validation table response : %s",json.dumps(response))
