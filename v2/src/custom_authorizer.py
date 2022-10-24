@@ -68,15 +68,20 @@ def handler(event, context):
 
     #Validate if the given fil_nbr or house_bill_nbr has an entry in the DB and get its customer_id
     customer_id = validate_dynamo_query_response(response, event, None, "Invalid API Key")
+    LOGGER.info("customer_id: %s", str(customer_id))
     if type(customer_id) != str:
         return customer_id
 
+    LOGGER.info("customer_id got, before create/shipment")
     if "/create/shipment/newtest" in event["methodArn"]:
+        LOGGER.info("create/shipment/newtest if-else")
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
+        LOGGER.info("create/shipment if-else")
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     else:
+        LOGGER.info("not create/shipment if-else")
         query = "CustomerID = :id AND "
         if "file_nbr" in params:
             num = params["file_nbr"]
