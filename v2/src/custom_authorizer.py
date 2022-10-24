@@ -54,19 +54,14 @@ def handler(event, context):
 
     LOGGER.info("Passed event parsing try-except loop")
     #Validating params only for the GET APIs
-    if "/create/shipment/newtest" not in event["methodArn"]:
+    if "/create/shipment/newtest" not in event["methodArn"] and "/create/shipment" not in event["methodArn"]:
         LOGGER.info("/create/shipment/newtest not in event[methodArn]")
-        validation_response = validate_input(params)
-        if validation_response["status"] == "error":
-            return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
-    elif "/create/shipment" not in event["methodArn"]:
-        LOGGER.info("/create/shipment not in event[methodArn]")
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
     
     LOGGER.info("passed not in methodArn if/else checks")
-    LOGGER.info("DynamoQueryParams- Table: ", os.environ["TOKEN_VALIDATION_TABLE"] +"Index: "+ os.environ["TOKEN_VALIDATION_TABLE_INDEX"]+"KeyConditionExpression: "+'ApiKey = :apikey'+"ExpressionAttributeValues: "+ {":apikey": {"S": api_key}})
+    LOGGER.info("DynamoQueryParams- Table: ", str(os.environ["TOKEN_VALIDATION_TABLE"]) +"Index: "+ str(os.environ["TOKEN_VALIDATION_TABLE_INDEX"])+"KeyConditionExpression: "+'ApiKey = :apikey'+"ExpressionAttributeValues: "+ str({":apikey": {"S": api_key}}))
     #Get customer ID based on the api_key
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"],'ApiKey = :apikey', {":apikey": {"S": api_key}})
     LOGGER.info("token validation table response : %s",json.dumps(response))
