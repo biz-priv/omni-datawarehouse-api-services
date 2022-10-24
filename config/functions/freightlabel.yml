@@ -3,8 +3,7 @@ function:
   handler: v1/src/freightlabel.handler
   name: ${self:service}-freightlabel-${self:provider.stage}
   description: freightlabel api service - ${self:provider.stage}
-  provisionedConcurrency: 1
-  concurrencyAutoscaling: true
+  
   events:
     - http:
         path: /freightlabel
