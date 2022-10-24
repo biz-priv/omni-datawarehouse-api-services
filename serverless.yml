@@ -43,7 +43,6 @@ custom:
       - update-shipment-status
       - customer-entitlement-sync
       - get-rating
-      - create-shipment-v3
       - pod
       - uploadpoddocument
       - freightlabel
@@ -91,7 +90,6 @@ functions:
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
-  create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
   wd-api-international: ${file(config/functions/wd-api-international.yml):function}
