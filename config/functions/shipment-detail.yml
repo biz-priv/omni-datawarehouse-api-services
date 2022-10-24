@@ -3,8 +3,7 @@ function:
   handler: ${self:custom.alias}/src/shipment_detail.handler
   name: ${self:service}-shipment-detail-${self:provider.stage}
   description: shipment detail api service - ${self:provider.stage}
-  provisionedConcurrency: 1
-  concurrencyAutoscaling: true
+  
   events: 
     - http: 
         path: /shipment/detail
