@@ -41,7 +41,7 @@ custom:
       - get-rating
       - pod
       - uploadpoddocument
-      - freightlabel
+      # - freightlabel
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -77,7 +77,7 @@ functions:
   wd-api: ${file(config/functions/wd-api.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
-  freightlabel: ${file(config/functions/freightlabel.yml):function}
+  # freightlabel: ${file(config/functions/freightlabel.yml):function}
   wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
 resources:
