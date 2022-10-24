@@ -57,7 +57,7 @@ pipeline {
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
+                    sls deploy --alias v2 -s ${env.ENVIRONMENT}
                     """
                 }
             }
