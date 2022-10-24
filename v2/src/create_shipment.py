@@ -20,7 +20,7 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 
 def handler(event, context):
-    LOGGER.info("Event: %s", json.dumps(event))
+    LOGGER.info("Event: %s",event)
     event["body"]["shipmentCreateRequest"] = literal_eval(
         str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
     truncate_description(event["body"]["shipmentCreateRequest"]["shipmentLines"])
