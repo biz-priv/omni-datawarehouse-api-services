@@ -22,8 +22,8 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 def handler(event, context):
     LOGGER.info("Event: %s",event)
-    event["body"]["shipmentCreateRequest"] = literal_eval(
-        str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
+    # event["body"]["shipmentCreateRequest"] = literal_eval(
+    #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
     truncate_description(event["body"]["shipmentCreateRequest"]["shipmentLines"])
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
@@ -199,6 +199,8 @@ def modify_object_keys(array):
                 new_key = 'WeightUOMV3'
             elif(key == 'DimUOM'):
                 new_key = 'DimUOMV3'
+            elif(key == 'Weight'):
+                new_key = 'Weigth'
             new_obj[new_key] = obj[key]
         new_array.append(new_obj)
     return new_array
@@ -362,15 +364,21 @@ def get_reference_list(data_obj):
 def get_accessorial_list(data_obj):
     try:
         if "accessorialList" in data_obj:
-            temp_accessorials_list = []
-            for code in data_obj["accessorialList"]:
-                new_obj = {}
-                new_key = "Code"
-                new_obj[new_key] = code
-            temp_accessorials_list.append(new_obj)
+            temp_accessorials_list = data_obj["accessorialList"]
+            # for code in data_obj["accessorialList"]:
+            #     new_obj = {}
+            #     new_key = "Code"
+            #     new_obj[new_key] = code
+            #     temp_accessorials_list.append(new_obj)
+            def add_accessorial(x):
+                t = []
+                for code in x:
+                    t.append(
+                        {"Code": code})
+                x.extend(t)
+                return x
+            temp_accessorials_list = add_accessorial(temp_accessorials_list)
             
-            # temp_accessorials_list = modify_object_keys(
-            #     data_obj["accessorialList"])
             LOGGER.info("Temp Accessorial List Modify Keys: %s", temp_accessorials_list)
             def accessorial_list_item(x): return 'NewShipmentAcessorialsV3'
             accessorial_list = dicttoxml.dicttoxml(temp_accessorials_list, attr_type=False,
