@@ -50,10 +50,15 @@ def handler(event, context):
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
                 new_key = key.replace(" ", "")
                 new_key = new_key[0].capitalize() + new_key[1:]
-                if(key == 'Incoterm'):
+                if(key == 'incoterm'):
                     new_key = 'IncoTermsCode'
-                elif(key == 'CustomerNumber'):
+                elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
+                if(key=='mode'):
+                    if(event["body"]["shipmentCreateRequest"][key]=='FTL'):
+                        event["body"]["shipmentCreateRequest"][key] = 'Truckload'
+                    else:
+                        event["body"]["shipmentCreateRequest"][key] = 'Domestic'
                 LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         for key in event["body"]["shipmentCreateRequest"]["shipper"]:
