@@ -45,7 +45,7 @@ def handler(event, context):
 
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
-        temp_ship_data["AddNewShipmentV3"]["oShipData"] = {}
+        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"] = {}
         for key in event["body"]["shipmentCreateRequest"]:
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
                 new_key = key.replace(" ", "")
@@ -55,15 +55,15 @@ def handler(event, context):
                 elif(key == 'CustomerNumber'):
                     new_key = 'CustomerNo'
                 LOGGER.info("New Key: %s",new_key)
-                temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"][key]
+                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         for key in event["body"]["shipmentCreateRequest"]["shipper"]:
             new_key = "Shipper"+key[0].capitalize()+key[1:]
             if(key == 'address'):
                 new_key = "ShipperAddress1"
-            temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
         for key in event["body"]["shipmentCreateRequest"]["consignee"]:
             new_key = "Consignee"+key[0].capitalize()+key[1:]
-            temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
         
         LOGGER.info("Temp Ship Data %s",temp_ship_data)
     except Exception as transform_error:
@@ -91,8 +91,8 @@ def handler(event, context):
             xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
                     <UserName>"""+os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
                     </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
-                    xmlns="http://tempuri.org/"><shipmentCreateRequest>"""
-    end = """</shipmentCreateRequest></AddNewShipmentV3></soap:Body></soap:Envelope>"""
+                    xmlns="http://tempuri.org/"><oShipData>"""
+    end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
     payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
     LOGGER.info("Payload xml data is : %s", json.dumps(payload))
     try:
@@ -126,25 +126,25 @@ def handler(event, context):
 def ready_date_time(old_shipment_list):
     try:
         updated_shipment_list = {}
-        ready_time = old_shipment_list["AddNewShipmentV3"]["oShipData"]["ReadyTime"]
+        ready_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["ReadyTime"]
         updated_shipment_list["ReadyTime"] = ready_time
-        delivery_from = old_shipment_list["AddNewShipmentV3"]["oShipData"]["DeliveryWindowFrom"]
+        delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryWindowFrom"]
         updated_shipment_list["DeliveryTime"] = delivery_from
         updated_shipment_list["DeliveryDate"] = delivery_from
-        delivery_to = old_shipment_list["AddNewShipmentV3"]["oShipData"]["DeliveryWindowTo"]
+        delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryWindowTo"]
         updated_shipment_list["DeliveryTime2"] = delivery_to
 
-        if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
-            close_date = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseTime"]
+        if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
+            close_date = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseTime"]
             updated_shipment_list["CloseDate"] = close_date
-        elif "CloseDate" in old_shipment_list["AddNewShipmentV3"]["oShipData"]:
-            close_time = old_shipment_list["AddNewShipmentV3"]["oShipData"]["CloseDate"]
+        elif "CloseDate" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
+            close_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseDate"]
             updated_shipment_list["CloseTime"] = close_time
         else:
             pass
 
         updated_shipment_list.update(
-            old_shipment_list["AddNewShipmentV3"]["oShipData"])
+            old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"])
         updated_shipment_list = pydash.objects.set_(
             {}, 'AddNewShipmentV3.shipmentCreateRequest', updated_shipment_list)
         return updated_shipment_list
@@ -236,7 +236,7 @@ def update_response(response):
         LOGGER.info("Shipment Details are: %s", json.dumps(shipment_details))
         return shipment_details
     except KeyError as wt_error:
-        logging.exception("WtBolApiError: %s", json.dumps(wt_error))
+        logging.exception("WtBolApiError: %s", wt_error)
         raise WtBolApiError(json.dumps(
             {"httpStatus": 400, "message": "World Track Create Shipment API Error."})) from wt_error
     except Exception as update_error:
