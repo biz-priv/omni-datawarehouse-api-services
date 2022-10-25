@@ -313,10 +313,11 @@ def get_shipment_line_list(data_obj):
         if "shipmentLines" in data_obj:
             temp_shipment_line_list = modify_object_keys(
                 data_obj["shipmentLines"])
-            
+            for i in temp_shipment_line_list:
+                i['Hazmat'] = str(i['Hazmat']).lower()
             def shipment_line_list_item(x): return 'NewShipmentDimLineV3'
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
-                                                     attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
+                                                        attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
             shipment_line_list = str(shipment_line_list).\
                 replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
                 replace("""</ShipmentLineList>'""", """</ShipmentLineList>""")
