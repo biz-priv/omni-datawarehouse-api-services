@@ -55,7 +55,6 @@ plugins:
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
   - serverless-prune-plugin
-  - serverless-provisioned-concurrency-autoscaling
 
 package:
   individually: true
