@@ -338,7 +338,7 @@ def get_reference_list(data_obj):
                 t = []
                 for bill_to_item in x:
                     t.append(
-                        {"ReferenceNo": bill_to_item['refNumber'], "CustomerTypeV3": bill_to_item['refType'], "RefTypeId": bill_to_item['refParty']})
+                        {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefType'], "RefTypeId": bill_to_item['RefParty']})
                 x.extend(t)
                 return x
             temp_reference_list = add_shipper(temp_reference_list)
