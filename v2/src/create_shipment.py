@@ -336,25 +336,22 @@ def get_reference_list(data_obj):
         if "customerReference" in data_obj:
             temp_reference_list = modify_object_keys(
                 data_obj["customerReference"])
-
-            LOGGER.info("Temp Reference List Modify Keys: %s", temp_reference_list)
             for bill_to_item in temp_reference_list:
                 bill_to_item.update({"CustomerTypeV3": "BillTo"})
                 bill_to_item.update({"RefTypeId": "REF"})
-                LOGGER.info("BillToItem: %s", bill_to_item)
-            
             def add_shipper(x):
                 t = []
+                m=[]
                 for bill_to_item in x:
                     t.append(
-                        {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefType'], "RefTypeId": bill_to_item['RefParty']})
-                x.extend(t)
-                return x
+                        {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty'], "RefTypeId": bill_to_item['RefType']})
+                m.extend(t)
+                return m
             temp_reference_list = add_shipper(temp_reference_list)
-
+            
             def reference_list_item(x): return 'NewShipmentRefsV3'
             reference_list = dicttoxml.dicttoxml(temp_reference_list,
-                                                 attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
+                                                    attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
             reference_list = str(reference_list).\
                 replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
                 replace("""</ReferenceList>'""", """</ReferenceList>""")
