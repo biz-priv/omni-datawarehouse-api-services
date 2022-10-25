@@ -115,6 +115,7 @@ def handler(event, context):
     current_date = (date.today()).strftime("%Y-%m-%d")
     update_shipment_table(shipment_data, house_bill_info,
                           service_level_desc, current_date)
+    LOGGER.info(str(shipment_data))
     return shipment_data
 
 
@@ -384,10 +385,10 @@ def validate_input(event):
     if not "enhancedAuthContext" in event or "customerId" not in event["enhancedAuthContext"]:
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "CustomerId not found."}))
-    client_data = ['serviceLevel', 'readyDate']
+    client_data = ['serviceLevel', 'readyTime']
     if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
         raise InputError(json.dumps(
-            {"httpStatus": 400, "message": "One/All of: Service Level, Ready Date parameters are missing in the request body shipmentCreateRequest."}))
+            {"httpStatus": 400, "message": "One/All of: Service Level, Ready Time parameters are missing in the request body shipmentCreateRequest."}))
     return event["enhancedAuthContext"]["customerId"]
 
 
