@@ -48,20 +48,20 @@ def handler(event, context):
         for key in event["body"]["shipmentCreateRequest"]:
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
                 new_key = key.replace(" ", "")
-                new_key = new_key.capitalize()
+                new_key = new_key[0].capitalize() + new_key[1:]
                 if(key == 'Incoterm'):
                     new_key = 'IncoTermsCode'
                 elif(key == 'CustomerNumber'):
                     new_key = 'CustomerNo'
                 LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        for key in event["body"]["shipmentCreateRequest"]["Shipper"]:
-            new_key = "Shipper"+key.capitalize()
+        for key in event["body"]["shipmentCreateRequest"]["shipper"]:
+            new_key = "Shipper"+key[0].capitalize()+key[1:].capitalize()
             if(key == 'address'):
                 new_key = "ShipperAddress1"
             temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["Shipper"][key]
         for key in event["body"]["shipmentCreateRequest"]["Consignee"]:
-            new_key = "Consignee"+key.capitalize()
+            new_key = "Consignee"+key[0].capitalize()+key[1:].capitalize()
             temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["Consignee"][key]
         
         LOGGER.info("Temp Ship Data %s",temp_ship_data)
