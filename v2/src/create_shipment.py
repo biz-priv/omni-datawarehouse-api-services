@@ -193,7 +193,11 @@ def modify_object_keys(array):
         new_obj = {}
         for key in obj:
             new_key = key.replace(" ", "")
-            new_key = new_key.capitalize()
+            new_key = new_key[0].capitalize() + new_key[1:]
+            if(key == 'WeightUOM'):
+                new_key = 'WeightUOMV3'
+            elif(key == 'DimUOM'):
+                new_key = 'DimUOMV3'
             new_obj[new_key] = obj[key]
         new_array.append(new_obj)
     return new_array
@@ -301,16 +305,6 @@ def get_shipment_line_list(data_obj):
         if "shipmentLines" in data_obj:
             temp_shipment_line_list = modify_object_keys(
                 data_obj["shipmentLines"])
-
-            for key in temp_shipment_line_list:
-                if(key == 'WeightUOM'):
-                    new_key = 'WeightUOMV3'
-                    temp_shipment_line_list[new_key] = temp_shipment_line_list[key]
-                elif(key == 'DimUOM'):
-                    new_key = 'DimUOMV3'
-                    temp_shipment_line_list[new_key] = temp_shipment_line_list[key]
-                else:
-                    pass
             
             def shipment_line_list_item(x): return 'NewShipmentDimLineV3'
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
@@ -333,10 +327,13 @@ def get_reference_list(data_obj):
         if "customerReference" in data_obj:
             temp_reference_list = modify_object_keys(
                 data_obj["customerReference"])
+
+            LOGGER.info("Temp Reference List Modify Keys: %s", temp_reference_list)
             for bill_to_item in temp_reference_list:
                 bill_to_item.update({"CustomerTypeV3": "BillTo"})
                 bill_to_item.update({"RefTypeId": "REF"})
-
+                LOGGER.info("BillToItem: %s", bill_to_item)
+            
             def add_shipper(x):
                 t = []
                 for bill_to_item in x:
