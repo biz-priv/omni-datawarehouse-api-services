@@ -364,25 +364,17 @@ def get_reference_list(data_obj):
 def get_accessorial_list(data_obj):
     try:
         if "accessorialList" in data_obj:
-            temp_accessorials_list = data_obj["accessorialList"]
-            # for code in data_obj["accessorialList"]:
-            #     new_obj = {}
-            #     new_key = "Code"
-            #     new_obj[new_key] = code
-            #     temp_accessorials_list.append(new_obj)
-            def add_accessorial(x):
-                t = []
-                for code in x:
-                    t.append(
-                        {"Code": code})
-                x.extend(t)
-                return x
-            temp_accessorials_list = add_accessorial(temp_accessorials_list)
+            temp_accessorials_list = []
+            for code in data_obj["accessorialList"]:
+                new_obj = {}
+                new_key = "Code"
+                new_obj[new_key] = code
+                temp_accessorials_list.append(new_obj)
             
             LOGGER.info("Temp Accessorial List Modify Keys: %s", temp_accessorials_list)
-            def accessorial_list_item(x): return 'NewShipmentAcessorialsV3'
+            def accessorial_list_item(x): return "NewShipmentAcessorialsV3"
             accessorial_list = dicttoxml.dicttoxml(temp_accessorials_list, attr_type=False,
-                                                   custom_root='NewShipmentAcessorialsList', item_func=accessorial_list_item)
+                                                    custom_root='NewShipmentAcessorialsList', item_func=accessorial_list_item)
             accessorial_list = str(accessorial_list).\
                 replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
                 replace("""</NewShipmentAcessorialsList>'""",
