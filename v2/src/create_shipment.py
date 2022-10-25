@@ -1,3 +1,4 @@
+from re import template
 from src.common import dynamo_query
 import json
 import os
@@ -363,7 +364,7 @@ def get_accessorial_list(data_obj):
         if "accessorialList" in data_obj:
             temp_accessorials_list = modify_object_keys(
                 data_obj["accessorialList"])
-
+            LOGGER.info("Temp Accessorial List Modify Keys: %s", temp_accessorials_list)
             def accessorial_list_item(x): return 'NewShipmentAcessorialsV3'
             accessorial_list = dicttoxml.dicttoxml(temp_accessorials_list, attr_type=False,
                                                    custom_root='NewShipmentAcessorialsList', item_func=accessorial_list_item)
@@ -375,8 +376,7 @@ def get_accessorial_list(data_obj):
             accessorial_list = ''
         return accessorial_list
     except Exception as get_accessorial_error:
-        logging.exception("GetAccessorialListError: %s",
-                          json.dumps(get_accessorial_error))
+        logging.exception("GetAccessorialListError: %s",get_accessorial_error)
         raise GetAccessorialListError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_accessorial_error
 
