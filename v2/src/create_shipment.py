@@ -56,13 +56,13 @@ def handler(event, context):
                 LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"][key]
         for key in event["body"]["shipmentCreateRequest"]["shipper"]:
-            new_key = "Shipper"+key[0].capitalize()+key[1:].capitalize()
+            new_key = "Shipper"+key[0].capitalize()+key[1:]
             if(key == 'address'):
                 new_key = "ShipperAddress1"
-            temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["Shipper"][key]
-        for key in event["body"]["shipmentCreateRequest"]["Consignee"]:
-            new_key = "Consignee"+key[0].capitalize()+key[1:].capitalize()
-            temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["Consignee"][key]
+            temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
+        for key in event["body"]["shipmentCreateRequest"]["consignee"]:
+            new_key = "Consignee"+key[0].capitalize()+key[1:]
+            temp_ship_data["AddNewShipmentV3"]["oShipData"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
         
         LOGGER.info("Temp Ship Data %s",temp_ship_data)
     except Exception as transform_error:
