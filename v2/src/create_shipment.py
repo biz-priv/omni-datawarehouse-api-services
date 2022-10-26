@@ -67,23 +67,6 @@ def handler(event, context):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
         else:
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
-        errors = []
-        for req_field in ["serviceLevel","closeTime","shipper","readyTime","consignee","customerReference"]:
-            if req_field not in event["body"]["shipmentCreateRequest"]:
-                if(req_field == 'readyTime' and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
-                    errors.append("readyDate/Time not in body") 
-                elif(req_field == 'readyTime' and 'readyDate' in event["body"]["shipmentCreateRequest"]):
-                    continue
-                else:
-                    errors.append(req_field + " not in body")
-            elif req_field in ['shipper','consignee']:
-                for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
-                    if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
-                        errors.append(req_field +' missing '+sub_reqs)
-        if errors:
-            LOGGER.info(", ".join(list(map(str,errors))))
-            raise DataTransformError(json.dumps(
-            {"httpStatus": 501, "message": ", ".join(list(map(str,errors)))}))
         for key in event["body"]["shipmentCreateRequest"]["shipper"]:
             new_key = "Shipper"+key[0].capitalize()+key[1:]
             if(key == 'address'):
@@ -426,6 +409,19 @@ def validate_input(event):
     if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "One/All of: Service Level, Ready Time parameters are missing in the request body shipmentCreateRequest."}))
+    else:
+        errors = []
+        for req_field in ["closeTime","shipper","consignee","customerReference"]:
+            if req_field not in event["body"]["shipmentCreateRequest"]:
+                errors.append(req_field + " not in body")
+            elif req_field in ['shipper','consignee']:
+                for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
+                    if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
+                        errors.append(req_field +' missing '+sub_reqs)
+        if errors:
+            LOGGER.info(", ".join(list(map(str,errors))))
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message":", ".join(list(map(str,errors)))}))
     return event["enhancedAuthContext"]["customerId"]
 
 
