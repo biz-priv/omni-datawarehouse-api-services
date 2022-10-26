@@ -35,13 +35,6 @@ def handler(event, context):
         event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
         event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
         LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
-        if(event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
-            event["body"]["shipmentCreateRequest"]["DeclaredType"] = 'INSP'
-            event["body"]["shipmentCreateRequest"]["DeclaredValue"] = event["body"]["shipmentCreateRequest"]["insuredValue"]
-        else:
-            event["body"]["shipmentCreateRequest"]["DeclaredType"] = 'LL'
-        # event["body"]["shipmentCreateRequest"]["DeclaredType"] = customer_info['DeclaredType']['S']
-        LOGGER.info("shipmentCreateRequestDeclaredType/Value Updated %s", event["body"]["shipmentCreateRequest"])
 
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
@@ -54,13 +47,22 @@ def handler(event, context):
                     new_key = 'IncoTermsCode'
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
+                elif(key == 'billTo'):
+                    new_key = 'PayType'
                 if(key=='mode'):
                     if(event["body"]["shipmentCreateRequest"][key]=='FTL'):
                         event["body"]["shipmentCreateRequest"][key] = 'Truckload'
                     else:
                         event["body"]["shipmentCreateRequest"][key] = 'Domestic'
-                LOGGER.info("New Key: %s",new_key)
-                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+                print("New Key: %s",new_key)
+                if 'DeliveryWindow' not in new_key :
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["ShipmentType"] = "Shipment"
+        if(event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
+            event["body"]["shipmentCreateRequest"]["DeclaredType"] = 'INSP'
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
+        else:
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
         for key in event["body"]["shipmentCreateRequest"]["shipper"]:
             new_key = "Shipper"+key[0].capitalize()+key[1:]
             if(key == 'address'):
@@ -68,6 +70,8 @@ def handler(event, context):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
         for key in event["body"]["shipmentCreateRequest"]["consignee"]:
             new_key = "Consignee"+key[0].capitalize()+key[1:]
+            if(key == 'address'):
+                new_key = "ConsigneeAddress1"
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
         
         LOGGER.info("Temp Ship Data %s",temp_ship_data)
@@ -133,6 +137,7 @@ def ready_date_time(old_shipment_list):
         updated_shipment_list = {}
         ready_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["ReadyTime"]
         updated_shipment_list["ReadyTime"] = ready_time
+        updated_shipment_list["ReadyDate"] = ready_time
         delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryWindowFrom"]
         updated_shipment_list["DeliveryTime"] = delivery_from
         updated_shipment_list["DeliveryDate"] = delivery_from
@@ -200,11 +205,11 @@ def modify_object_keys(array):
         for key in obj:
             new_key = key.replace(" ", "")
             new_key = new_key[0].capitalize() + new_key[1:]
-            if(key == 'WeightUOM'):
+            if(key == 'weightUOM'):
                 new_key = 'WeightUOMV3'
-            elif(key == 'DimUOM'):
+            elif(key == 'dimUOM'):
                 new_key = 'DimUOMV3'
-            elif(key == 'Weight'):
+            elif(key == 'weight'):
                 new_key = 'Weigth'
             new_obj[new_key] = obj[key]
         new_array.append(new_obj)
