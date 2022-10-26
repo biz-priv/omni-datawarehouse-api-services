@@ -28,23 +28,12 @@ pipeline {
                 }
             }
         }
-        stage('Code Scan - Python') {
-            steps{
-                script {
-                    sh '''
-                    eval $(pylint --rcfile=pylint.cfg $(find . -type f -path '*/src/*.py')  --output-format=parseable -r y > pylint.log)
-                    cat pylint.log
-                    pylint --fail-under=9.0 --rcfile=pylint.cfg $(find . -type f -path '*/src/*.py')  --output-format=parseable -r y
-                    '''
-                }
-            }
-        }
+
         stage('Omni Deploy'){
             when {
                 anyOf {
                     branch 'master';
                     branch 'develop';
-                    branch 'hotfix/*';
                 }
                 expression {
                     return true;
@@ -57,10 +46,7 @@ pipeline {
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias v1 -s ${env.ENVIRONMENT}
-                    sls deploy --alias v101 -s ${env.ENVIRONMENT}
-                    sls deploy --alias v103 -s ${env.ENVIRONMENT}
-                    sls deploy --alias v104 -s ${env.ENVIRONMENT}
+                    sls deploy --alias v2 -s ${env.ENVIRONMENT}
                     """
                 }
             }

@@ -27,13 +27,6 @@ custom:
   prune:
     automatic: true
     number: 8
-  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
-  # dev:
-  #   domainName: dev-api.omnilogistics.com
-  #   certificateName: dev-api.omnilogistics.com
-  prod:
-    domainName: api.omnilogistics.com
-    certificateName: api.omnilogistics.com
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
     functions:
@@ -46,7 +39,6 @@ custom:
       - update-shipment-status
       - customer-entitlement-sync
       - get-rating
-      - create-shipment-v3
       - pod
       - uploadpoddocument
       - freightlabel
@@ -55,15 +47,6 @@ custom:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
     "Access-Control-Allow-Headers": "'*'"
-  # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
-  # customDomain:
-  #   domainName: ${self:custom.${self:provider.stage}.domainName}
-  #   stage: ${self:provider.stage}
-  #   basePath: v1
-  #   certificateName: ${self:custom.${self:provider.stage}.certificateName}
-  #   createRoute53Record: true
-  #   endpointType: 'regional'
-  #   securityPolicy: tls_1_2
 
 plugins:
   - serverless-layers
@@ -72,7 +55,6 @@ plugins:
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
   - serverless-prune-plugin
-  # - serverless-domain-manager # --- ENABLE FOR CUSTOM DOMAIN AND VERSIONING
 
 package:
   individually: true
@@ -93,7 +75,6 @@ functions:
   get-rating: ${file(config/functions/get-rating.yml):function}
   wd-api: ${file(config/functions/wd-api.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
-  create-shipment-v3: ${file(config/functions/create-shipment-v3.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
   wd-api-international: ${file(config/functions/wd-api-international.yml):function}

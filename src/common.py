@@ -2,16 +2,21 @@ import os
 import json
 import logging
 import botocore.session
+import dicttoxml
+import datetime
 session = botocore.session.get_session()
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
+InternalErrorMessage = "Internal Error."
+
 
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
-        client = session.create_client('dynamodb', region_name=os.environ['REGION'])
+        client = session.create_client(
+            'dynamodb', region_name=os.environ['REGION'])
         response = client.query(
             TableName=table_name,
             IndexName=index_name,
@@ -21,43 +26,51 @@ def dynamo_query(table_name, index_name, expression, attributes):
         LOGGER.info("Dynamo query response: {}".format(json.dumps(response)))
         return response
     except Exception as dynamo_query_error:
-        logging.exception("DynamoQueryError: %s",dynamo_query_error)
-        raise DynamoQueryError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_query_error
+        logging.exception("DynamoQueryError: %s", dynamo_query_error)
+        raise DynamoQueryError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_query_error
+
 
 def dynamo_get(table_name, key):
     try:
-        client = session.create_client('dynamodb', region_name=os.environ['REGION'])
+        client = session.create_client(
+            'dynamodb', region_name=os.environ['REGION'])
         response = client.get_item(
             TableName=table_name,
             Key=key
         )
-        LOGGER.info("Dynamo get response: %s",json.dumps(response))
+        LOGGER.info("Dynamo get response: %s", json.dumps(response))
         if "Item" in response:
             return response["Item"]
         else:
             return None
     except Exception as dynamo_get_error:
-        logging.exception("DynamoGetError: %s",dynamo_get_error)
-        raise DynamoGetError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_get_error
+        logging.exception("DynamoGetError: %s", dynamo_get_error)
+        raise DynamoGetError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_get_error
+
 
 def process_input(query):
     try:
         if "house_bill_nbr" in query:
             number = query['house_bill_nbr']
             parameter = " house_bill_nbr = "
-            response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'], 
-                        'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": number}})
+            response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_HOUSEBILL_INDEX'],
+                                    'HouseBillNumber = :house_bill_nbr', {":house_bill_nbr": {"S": number}})
         else:
             number = query['file_nbr']
             parameter = " file_nbr = "
-            response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_FILENUMBER_INDEX'], 
-                        'FileNumber = :file_nbr', {":file_nbr": {"S": number}})
+            response = dynamo_query(os.environ['SHIPMENT_DETAILS_TABLE'], os.environ['SHIPMENT_DETAILS_FILENUMBER_INDEX'],
+                                    'FileNumber = :file_nbr', {":file_nbr": {"S": number}})
         execution_parameters = [number, parameter, response]
-        LOGGER.info("Process Input response: {}".format(json.dumps(execution_parameters)))
+        LOGGER.info("Process Input response: {}".format(
+            json.dumps(execution_parameters)))
         return execution_parameters
     except Exception as input_error:
-        logging.exception("ProcessingInputError: %s",input_error)
-        raise ProcessingInputError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from input_error
+        logging.exception("ProcessingInputError: %s", input_error)
+        raise ProcessingInputError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from input_error
+
 
 def modify_response(data):
     try:
@@ -73,18 +86,23 @@ def modify_response(data):
         response["File Date"] = data[0]["File Date"]["S"]
         return [response]
     except Exception as modify_error:
-        logging.exception("ModifyResponseError: %s",modify_error)
-        raise ModifyResponseError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from modify_error
+        logging.exception("ModifyResponseError: %s", modify_error)
+        raise ModifyResponseError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from modify_error
+
 
 def modify_date(x):
     try:
-        if x == None:
+        y = datetime.datetime(1900, 1, 1, 0, 0)
+        if x == None or x == y:
             return None
         else:
             return x.isoformat()
     except Exception as date_conversion_error:
         logging.exception("DateConversionError: %s", date_conversion_error)
-        raise DateConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from date_conversion_error
+        raise DateConversionError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from date_conversion_error
+
 
 def modify_float(x):
     try:
@@ -94,18 +112,77 @@ def modify_float(x):
             return float(x)
     except Exception as float_conversion_error:
         logging.exception("FloatConversionError: %s", float_conversion_error)
-        raise FloatConversionError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
+        raise FloatConversionError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from float_conversion_error
+
+
+def get_reference_list(data_obj):
+    try:
+        if "Reference List" in data_obj:
+            temp_reference_list = modify_object_keys(
+                data_obj["Reference List"])
+            for bill_to_item in temp_reference_list:
+                bill_to_item.update({"CustomerTypeV3": "BillTo"})
+                bill_to_item.update({"RefTypeId": "REF"})
+
+            def add_shipper(x):
+                t = []
+                for bill_to_item in x:
+                    t.append(
+                        {"ReferenceNo": bill_to_item['ReferenceNo'], "CustomerTypeV3": "Shipper", "RefTypeId": "REF"})
+                x.extend(t)
+                return x
+            temp_reference_list = add_shipper(temp_reference_list)
+
+            def reference_list_item(x): return 'NewShipmentRefsV3'
+            reference_list = dicttoxml.dicttoxml(temp_reference_list,
+                                                 attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
+            reference_list = str(reference_list).\
+                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace("""</ReferenceList>'""", """</ReferenceList>""")
+        else:
+            reference_list = ''
+        return reference_list
+    except Exception as reference_list_error:
+        logging.exception("GetReferenceListError: %s", reference_list_error)
+        raise GetReferenceListError(json.dumps(
+            {"httpStatus": 501, "message": InternalErrorMessage})) from reference_list_error
+
+
+def modify_object_keys(array):
+    new_array = []
+    for obj in array:
+        new_obj = {}
+        for key in obj:
+            new_key = key.replace(" ", "")
+            new_obj[new_key] = obj[key]
+        new_array.append(new_obj)
+    return new_array
 
 
 class DynamoQueryError(Exception):
     pass
+
+
 class DynamoGetError(Exception):
     pass
+
+
 class ModifyResponseError(Exception):
     pass
+
+
 class DateConversionError(Exception):
     pass
+
+
 class ProcessingInputError(Exception):
     pass
+
+
 class FloatConversionError(Exception):
+    pass
+
+
+class GetReferenceListError(Exception):
     pass
