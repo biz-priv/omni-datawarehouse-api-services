@@ -49,7 +49,7 @@ def handler(event, context):
                     new_key = 'CustomerNo'
                 elif(key == 'billTo'):
                     new_key = 'PayType'
-                if(key=='mode'):
+                elif(key=='mode'):
                     if(event["body"]["shipmentCreateRequest"][key]=='FTL'):
                         event["body"]["shipmentCreateRequest"][key] = 'Truckload'
                     else:
@@ -58,6 +58,8 @@ def handler(event, context):
                     new_key = 'DeliveryTime'
                 elif(key == 'deliveryWindowTo'):
                     new_key = 'DeliveryTime2'
+                elif(key == 'delBy'):
+                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize()
                 print("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         if(event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
