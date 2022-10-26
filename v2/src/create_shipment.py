@@ -54,10 +54,12 @@ def handler(event, context):
                         event["body"]["shipmentCreateRequest"][key] = 'Truckload'
                     else:
                         event["body"]["shipmentCreateRequest"][key] = 'Domestic'
+                elif(key == 'deliveryWindowFrom'):
+                    new_key = 'DeliveryTime'
+                elif(key == 'deliveryWindowTo'):
+                    new_key = 'DeliveryTime2'
                 print("New Key: %s",new_key)
-                if 'DeliveryWindow' not in new_key :
-                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["ShipmentType"] = "Shipment"
+                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         if(event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
             event["body"]["shipmentCreateRequest"]["DeclaredType"] = 'INSP'
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
@@ -138,10 +140,10 @@ def ready_date_time(old_shipment_list):
         ready_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["ReadyTime"]
         updated_shipment_list["ReadyTime"] = ready_time
         updated_shipment_list["ReadyDate"] = ready_time
-        delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryWindowFrom"]
+        delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime"]
         updated_shipment_list["DeliveryTime"] = delivery_from
         updated_shipment_list["DeliveryDate"] = delivery_from
-        delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryWindowTo"]
+        delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime2"]
         updated_shipment_list["DeliveryTime2"] = delivery_to
 
         if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
