@@ -61,7 +61,7 @@ def handler(event, context):
                 print("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         if(event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
-            event["body"]["shipmentCreateRequest"]["DeclaredType"] = 'INSP'
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'INSP'
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
         else:
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
@@ -321,6 +321,8 @@ def get_shipment_line_list(data_obj):
                 data_obj["shipmentLines"])
             for i in temp_shipment_line_list:
                 i['Hazmat'] = str(i['Hazmat']).lower()
+                i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
+                i['DimUOMV3'] = str(i['DimUOMV3']).lower()
             def shipment_line_list_item(x): return 'NewShipmentDimLineV3'
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
                                                         attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
