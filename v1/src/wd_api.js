@@ -84,60 +84,75 @@ async function getDataFromDB() {
     const connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
     const connections = dbc(connectionString);
     const query = `select distinct
-    a.file_nbr ,a.house_bill_nbr ,pod_name,
-    a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
-    case b.order_status
-    when 'PUP' then 'AF'
-    when 'COB' then 'AN'
-    when 'DEL'then 'D1'
-    when 'OSD' then 'A9'
-    when 'REF' then 'A7'
-    else order_Status
-    end order_Status,
-    case b.order_status
-    when 'PUP' then 'Pick Up Confirmed'
-    when 'COB' then 'Confirmed On Board'
-    when 'DEL'then 'Delivered - No Exception'
-    when 'REF'then 'Delivery - Refused'
-    when 'OSD'then 'Delivered - With Exception'
-    else order_Status_desc
-    end order_Status_Desc,
-    case when b.order_status in ('PUP','COB','DEL','REF','OSD') then b.event_date_utc else null end as Event_Date_utc,
-    case when b.order_status in ('PUP','COB') then A.ORIGIN_PORT_IATA
-    when b.order_status in ('DEL','REF','OSD') then A.DESTINATION_PORT_IATA
-    else '' end as event_city,
-    case when b.order_status in ('PUP','COB','DEL') then  'US' else '' end as Event_country,
-    coalesce(c.ref_nbr,a.house_bill_nbr)ref_nbr
-        from
-        shipment_info a
-        left outer join shipment_milestone b
-        on a.file_nbr = b.file_nbr
-        and a.source_system = b.source_system
-        left outer join
-        (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
-        on a.source_system = c.source_system
-        and a.file_nbr = c.file_nbr
-        where a.bill_to_nbr = '17833'
-        and b.order_status in ('PUP','COB','DEL','OSD','REF')
-        and a.file_date >= '2022-03-25' and b.event_date_utc is not null
-        union
-    select distinct
-      a.file_nbr ,a.house_bill_nbr ,pod_name,
-      a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
-      'AG' order_Status,
-      'ETA for final delivery' order_Status_desc,
-      eta_date as Event_Date_utc,
-      A.DESTINATION_PORT_IATA as event_city,
-      'US' as Event_country,
-      coalesce(c.ref_nbr,a.house_bill_nbr ) ref_nbr
-          from
-          shipment_info a
-          left outer join
-          (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
-          on a.source_system = c.source_system
-          and a.file_nbr = c.file_nbr
-          where a.bill_to_nbr = '17833'
-          and a.file_date >= '2022-03-25' and eta_date is not NULL`;
+        a.file_nbr ,a.house_bill_nbr ,pod_name,
+        a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
+        case b.order_status
+        when 'PUP' then 'AF'
+        when 'DPO' then 'CP'
+        when 'AAP' then 'AV'
+        when 'AAD' then 'X1'
+        when 'COB' then 'AN'
+        when 'CEH' then 'OO'
+        when 'CCL' then 'I1'
+        when 'APD' then 'A3'
+        when 'DAR' then 'S1'
+        when 'DEL'then 'D1'
+        when 'OSD' then 'A9'
+        when 'REF' then 'A7'
+        else order_Status
+        end order_Status,
+        case b.order_status
+      when 'PUP' then 'Pick Up Confirmed'
+      when 'DPO' then 'Actual departure Origin Port'
+      when 'AAP' then 'Actual Arrival at Destination Port'
+      when 'AAD' then 'Actual Arrival at Destination Port'
+      when 'COB' then 'Confirmed On Board'
+      when 'CEH' then 'Import Customs Hold'
+      when 'CCL' then 'Import Customs clearance completed'
+      when 'APD' then 'Delivery Appointment Confirmed'
+      when 'DAR' then 'Delivery Appointment Requested'
+      when 'DEL' then 'Delivered - No Exception'	
+      when 'OSD' then 'Delivered - With Exception'
+      when 'REF' then 'Delivery - Refused'
+      else order_Status_desc
+        end order_Status_Desc,
+        case when b.order_status in ('PUP','DPO','AAP','AAD','COB','CEH','CCL','APD','DAR','DEL','OSD','REF') then b.event_date_utc else null end as Event_Date_utc,
+        case when b.order_status in ('PUP','DPO','COB') then A.ORIGIN_PORT_IATA
+        when b.order_status in ('AAP','AAD','CEH','CCL','APD','DAR','DEL','OSD','REF') then A.DESTINATION_PORT_IATA
+        else '' end as event_city,
+        case when b.order_status in ('PUP','DPO','COB','DEL','AAP','AAD','CEH','CCL','APD','DAR','DEL','OSD','REF') then  'US' else '' end as Event_country,
+        coalesce(c.ref_nbr,a.house_bill_nbr)ref_nbr
+            from
+            shipment_info a
+            left outer join shipment_milestone b
+            on a.file_nbr = b.file_nbr
+            and a.source_system = b.source_system
+            left outer join
+            (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
+            on a.source_system = c.source_system
+            and a.file_nbr = c.file_nbr
+            where a.bill_to_nbr = '17833'
+            and b.order_status in ('PUP','DPO','AAP','AAD','COB','CEH','CCL','APD','DAR','DEL','OSD','REF')
+            and a.file_date >= '2022-10-01'
+            union
+        select distinct
+          a.file_nbr ,a.house_bill_nbr ,pod_name,
+          a.handling_stn ,a.controlling_stn ,a.chrg_wght_lbs ,a.chrg_wght_kgs ,pieces,
+          'AG' order_Status,
+          'ETA for final delivery' order_Status_desc,
+          eta_date as Event_Date_utc,
+          A.DESTINATION_PORT_IATA as event_city,
+          'US' as Event_country,
+          coalesce(c.ref_nbr,a.house_bill_nbr ) ref_nbr
+              from
+              shipment_info a
+              left outer join
+              (select distinct source_system ,file_nbr ,ref_nbr from shipment_ref where ref_typeid = 'LOA') c
+              on a.source_system = c.source_system
+              and a.file_nbr = c.file_nbr
+              where a.bill_to_nbr = '17833'
+              and a.file_date >= '2022-10-01'
+          and eta_date is not null`;
 
     const result = await connections.query(query);
 
@@ -238,7 +253,7 @@ async function makeJsonToXml(payload, inputData) {
      */
     let transHeader =
       payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-      "otm:Transmission"
+        "otm:Transmission"
       ]["otm:TransmissionHeader"];
     /**
      * TransmissionBody values
@@ -255,13 +270,13 @@ async function makeJsonToXml(payload, inputData) {
        */
       let transBody =
         payload["soapenv:Envelope"]["soapenv:Body"]["tran:publish"][
-        "otm:Transmission"
+          "otm:Transmission"
         ]["otm:TransmissionBody"]["otm:GLogXMLElement"]["otm:ShipmentStatus"];
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][0][
         "otm:ArgValue"
       ] = validateRefNbr(inputData.ref_nbr)
-          ? inputData.ref_nbr
-          : inputData.house_bill_nbr;
+        ? inputData.ref_nbr
+        : inputData.house_bill_nbr;
 
       transBody["otm:IntSavedQuery"]["otm:IntSavedQueryArg"][1][
         "otm:ArgValue"
@@ -297,8 +312,9 @@ async function makeJsonToXml(payload, inputData) {
         inputData.event_date_utc
       );
 
-      transBody["otm:SSStop"]["otm:SSStopSequenceNum"] =
-        inputData.order_status == "D1" ? 2 : 1; // on delivery it will be 2 everything else will be 1
+      transBody["otm:SSStop"]["otm:SSStopSequenceNum"] = getStatusCode(
+        inputData.order_status
+      );
       transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCity"] =
         inputData.event_city;
       transBody["otm:SSStop"]["otm:SSLocation"]["otm:EventCountry"] =
@@ -353,6 +369,27 @@ async function makeJsonToXml(payload, inputData) {
   }
 }
 
+function getStatusCode(status) {
+  const statusArr = {
+    AF: 1,
+    CP: 1,
+    AN: 1,
+    AV: 2,
+    X1: 2,
+    OO: 2,
+    I1: 2,
+    A3: 2,
+    S1: 2,
+    D1: 2,
+    A9: 2,
+    A7: 2,
+  };
+  try {
+    return statusArr[status];
+  } catch (e) {
+    return 1;
+  }
+}
 async function getXmlResponse(postData) {
   try {
     const res = await axios.post(process.env.WD_API, postData, {
@@ -366,7 +403,7 @@ async function getXmlResponse(postData) {
       status_code: res.status,
       status: res.status == 200 ? "success" : "failed",
     };
-  } catch (e) { }
+  } catch (e) {}
 }
 
 function makeXmlToJson(xmlResponse) {
@@ -426,7 +463,7 @@ async function updateStatus(
       Item: data,
     };
     await documentClient.put(params).promise();
-  } catch (e) { }
+  } catch (e) {}
 }
 
 async function getBase64Pdf(file_nbr, type) {
@@ -471,8 +508,8 @@ function validateRefNbr(ref_nbr = null) {
       ref_nbr != null
         ? ref_nbr.split("-")
         : (() => {
-          throw "error null";
-        })();
+            throw "error null";
+          })();
     const dateStr = parseInt(split[0]);
     const isdate =
       split.length == 2
