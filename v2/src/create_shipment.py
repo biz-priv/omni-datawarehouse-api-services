@@ -159,8 +159,7 @@ def ready_date_time(old_shipment_list):
             {}, 'AddNewShipmentV3.shipmentCreateRequest', updated_shipment_list)
         return updated_shipment_list
     except Exception as ready_date_error:
-        logging.exception("ReadyDateTimeError: %s",
-                          json.dumps(ready_date_error))
+        logging.exception("ReadyDateTimeError: %s", ready_date_error)
         raise ReadyDateTimeError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from ready_date_error
 
