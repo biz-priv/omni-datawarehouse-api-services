@@ -31,9 +31,9 @@ def handler(event, context):
     if customer_info == 'Failure':
         return {"httpStatus": 400, "message": "Customer Information doesnot exist. Please raise a support ticket to add the customer"}
     try:
-        event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+        # event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
         event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-        event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
         LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
 
         temp_ship_data = {}
@@ -51,6 +51,7 @@ def handler(event, context):
                     new_key = 'CustomerNo'
                 elif(key == 'controllingStation'):
                     new_key = 'Station'
+                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'UserID'):
                     new_key = 'WebtrakUserID'
                 elif(key=='mode'):
