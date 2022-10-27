@@ -45,12 +45,15 @@ def handler(event, context):
                 new_key = new_key[0].capitalize() + new_key[1:]
                 if(key == 'incoterm'):
                     new_key = 'IncoTermsCode'
+                    event["body"]["shipmentCreateRequest"][key] == event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
-                elif(key == 'billTo'):
-                    new_key = 'PayType'
+                elif(key == 'controllingStation'):
+                    new_key = 'Station'
+                elif(key == 'UserID'):
+                    new_key = 'WebtrakUserID'
                 elif(key=='mode'):
-                    if(event["body"]["shipmentCreateRequest"][key]=='FTL'):
+                    if(event["body"]["shipmentCreateRequest"][key]=='FTL' or event["body"]["shipmentCreateRequest"][key]=='Truckload'):
                         event["body"]["shipmentCreateRequest"][key] = 'Truckload'
                     else:
                         event["body"]["shipmentCreateRequest"][key] = 'Domestic'
@@ -60,9 +63,11 @@ def handler(event, context):
                     new_key = 'DeliveryTime2'
                 elif(key == 'delBy'):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize()
+                elif(key == 'serviceLevel'):
+                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
                 print("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        if(event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
+        if('insuredValue' in event["body"]["shipmentCreateRequest"] and event["body"]["shipmentCreateRequest"]["insuredValue"] >= 0):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'INSP'
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
         else:
@@ -410,14 +415,18 @@ def validate_input(event):
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "One/All of: Service Level, Ready Time parameters are missing in the request body shipmentCreateRequest."}))
     else:
+        acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM', 'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD' ]
         errors = []
-        for req_field in ["closeTime","shipper","consignee","customerReference"]:
+        for req_field in ["closeTime","shipper","consignee","customerReference","controllingStation","customerNumber"]:
             if req_field not in event["body"]["shipmentCreateRequest"]:
                 errors.append(req_field + " not in body")
             elif req_field in ['shipper','consignee']:
                 for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
                     if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
                         errors.append(req_field +' missing '+sub_reqs)
+        if(event["body"]["shipmentCreateRequest"]["serviceLevel"][0:2].upper() not in acceptableServiceLevelCodes):
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message":event["body"]["shipmentCreateRequest"]["serviceLevel"] + " is not a valid value for Service Level"}))
         if errors:
             LOGGER.info(", ".join(list(map(str,errors))))
             raise InputError(json.dumps(
