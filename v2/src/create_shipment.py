@@ -68,6 +68,8 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
                 elif(key == 'projectCode'):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
+                elif(key == 'readyDate'):
+                    new_key = 'ReadyTime'
                 LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         try:
@@ -154,18 +156,32 @@ def ready_date_time(old_shipment_list):
         ready_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["ReadyTime"]
         updated_shipment_list["ReadyTime"] = ready_time
         updated_shipment_list["ReadyDate"] = ready_time
-        delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime"]
-        updated_shipment_list["DeliveryTime"] = delivery_from
-        updated_shipment_list["DeliveryDate"] = delivery_from
-        delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime2"]
-        updated_shipment_list["DeliveryTime2"] = delivery_to
-
-        if "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
-            close_date = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseTime"]
-            updated_shipment_list["CloseDate"] = close_date
-        elif "CloseDate" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
-            close_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseDate"]
-            updated_shipment_list["CloseTime"] = close_time
+        
+        if("DeliveryTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
+            delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime"]
+            if ((delivery_from[4] or delivery_from[7] or delivery_from[19])!='-' or not(delivery_from[0:4].isnumeric() and delivery_from[5:7].isnumeric() and delivery_from[8:10].isnumeric() and delivery_from[11:13].isnumeric() and delivery_from[14:16].isnumeric() and delivery_from[17:19].isnumeric() and delivery_from[20:22].isnumeric() and delivery_from[23:25].isnumeric()) or (delivery_from[13] or delivery_from[16] or delivery_from[22])!=':' or delivery_from[10]!='T'):
+                LOGGER.info("not sending deliveryTime as it is an invalid value")
+            else:
+                updated_shipment_list["DeliveryTime"] = delivery_from
+                updated_shipment_list["DeliveryDate"] = delivery_from
+        if("DeliveryTime2" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
+            delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime2"]
+            if ((delivery_to[4] or delivery_to[7] or delivery_to[19])!='-' or not(delivery_to[0:4].isnumeric() and delivery_to[5:7].isnumeric() and delivery_to[8:10].isnumeric() and delivery_to[11:13].isnumeric() and delivery_to[14:16].isnumeric() and delivery_to[17:19].isnumeric() and delivery_to[20:22].isnumeric() and delivery_to[23:25].isnumeric()) or (delivery_to[13] or delivery_to[16] or delivery_to[22])!=':' or delivery_to[10]!='T'):
+                LOGGER.info("not sending deliveryTime2 as it is an invalid value")
+            else:
+                updated_shipment_list["DeliveryTime2"] = delivery_to            
+        if "CloseDate" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
+            close_date = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseDate"]
+            if ((close_date[4] or close_date[7] or close_date[19])!='-' or not(close_date[0:4].isnumeric() and close_date[5:7].isnumeric() and close_date[8:10].isnumeric() and close_date[11:13].isnumeric() and close_date[14:16].isnumeric() and close_date[17:19].isnumeric() and close_date[20:22].isnumeric() and close_date[23:25].isnumeric()) or (close_date[13] or close_date[16] or close_date[22])!=':' or close_date[10]!='T'):
+                LOGGER.info("not sending closeDate as it is an invalid value")
+            else:
+                updated_shipment_list["CloseDate"] = close_date
+        elif "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
+            close_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseTime"]
+            if ((close_time[4] or close_time[7] or close_time[19])!='-' or not(close_time[0:4].isnumeric() and close_time[5:7].isnumeric() and close_time[8:10].isnumeric() and close_time[11:13].isnumeric() and close_time[14:16].isnumeric() and close_time[17:19].isnumeric() and close_time[20:22].isnumeric() and close_time[23:25].isnumeric()) or (close_time[13] or close_time[16] or close_time[22])!=':' or close_time[10]!='T'):
+                LOGGER.info("not sending closeTime as it is an invalid value")
+            else:
+                updated_shipment_list["CloseTime"] = close_time
         else:
             pass
 
@@ -418,14 +434,22 @@ def validate_input(event):
     if not "enhancedAuthContext" in event or "customerId" not in event["enhancedAuthContext"]:
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "CustomerId not found."}))
-    client_data = ['serviceLevel', 'readyTime']
+    client_data = ['serviceLevel']
     if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
         raise InputError(json.dumps(
-            {"httpStatus": 400, "message": "One/All of: Service Level, Ready Time parameters are missing in the request body shipmentCreateRequest."}))
+            {"httpStatus": 400, "message": "Service Level is missing in the request body shipmentCreateRequest."}))
+    elif('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
+        raise InputError(json.dumps(
+            {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
     else:
         acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM', 'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD' ]
         acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'BRO', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
         errors = []
+        for ready in ['readyDate', 'readyTime']:
+            if ready in event["body"]["shipmentCreateRequest"]:
+                readyTime = event["body"]["shipmentCreateRequest"][ready]
+                if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
+                    errors.append(ready + ' is not in the correct date format.')
         for req_field in ["closeTime","shipper","consignee","customerReference","controllingStation","customerNumber"]:
             if req_field not in event["body"]["shipmentCreateRequest"]:
                 errors.append(req_field + " not in body")
@@ -440,7 +464,7 @@ def validate_input(event):
                         errors.append(req_field +' missing '+sub_reqs)
             elif req_field == 'controllingStation':
                 if event["body"]["shipmentCreateRequest"]["controllingStation"][0:3].upper() not in acceptableStations:
-                    errors.append(req_field +'  is not a valid value for Station')
+                    errors.append(event["body"]["shipmentCreateRequest"][req_field] +'  is not a valid value for Station')
         if(event["body"]["shipmentCreateRequest"]["serviceLevel"][0:2].upper() not in acceptableServiceLevelCodes):
             raise InputError(json.dumps(
             {"httpStatus": 400, "message":event["body"]["shipmentCreateRequest"]["serviceLevel"] + " is not a valid value for Service Level"}))
