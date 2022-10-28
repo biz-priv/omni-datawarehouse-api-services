@@ -35,7 +35,7 @@ def handler(event, context):
             event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
             event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
             LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
-        event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
 
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
