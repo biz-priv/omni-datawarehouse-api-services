@@ -41,7 +41,6 @@ def handler(event, context):
         temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"] = {}
         for key in event["body"]["shipmentCreateRequest"]:
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
-                event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].replace('&','and')
                 new_key = key.replace(" ", "")
                 new_key = new_key[0].capitalize() + new_key[1:]
                 if(key == 'incoterm'):
@@ -122,6 +121,7 @@ def handler(event, context):
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
     payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
+    payload = payload.replace('&','')
     LOGGER.info("Payload xml data is : %s", json.dumps(payload))
     try:
         url = os.environ["URL"]
