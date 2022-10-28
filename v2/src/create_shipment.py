@@ -24,7 +24,7 @@ def handler(event, context):
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
     customer_id = validate_input(event)
-    if(customer_id == 'customer-portal-admin'):
+    if(customer_id != 'customer-portal-admin'):
         customer_info = validate_dynamodb(customer_id)
         for key in ['controllingStation', 'customerNumber']:
             if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
