@@ -25,17 +25,18 @@ def handler(event, context):
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
     customer_id = validate_input(event)
-    customer_info = validate_dynamodb(customer_id)
-    LOGGER.info("Customer Info: %s", json.dumps(customer_info))
-    if customer_info == 'Failure':
-        return {"httpStatus": 400, "message": "Customer Information doesnot exist. Please raise a support ticket to add the customer"}
-    try:
-        if 'controllingStation' not in event["body"]["shipmentCreateRequest"] or 'customerNumber' not in event["body"]["shipmentCreateRequest"]:
-            event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
-            event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+    if(event["headers"]['x-api-key'] not in ['7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn']):
+        customer_info = validate_dynamodb(customer_id)
+        for key in ['controllingStation', 'customerNumber']:
+            if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
+                event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+            if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
+                event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
             LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
-        # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
-
+        if customer_info == 'Failure':
+            return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
+        LOGGER.info("Customer Info: %s", json.dumps(customer_info))
+    try:
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
         temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"] = {}
@@ -164,6 +165,7 @@ def ready_date_time(old_shipment_list):
             delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime"]
             if ((delivery_from[4] or delivery_from[7] or delivery_from[19])!='-' or not(delivery_from[0:4].isnumeric() and delivery_from[5:7].isnumeric() and delivery_from[8:10].isnumeric() and delivery_from[11:13].isnumeric() and delivery_from[14:16].isnumeric() and delivery_from[17:19].isnumeric() and delivery_from[20:22].isnumeric() and delivery_from[23:25].isnumeric()) or (delivery_from[13] or delivery_from[16] or delivery_from[22])!=':' or delivery_from[10]!='T'):
                 LOGGER.info("not sending deliveryTime as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime')
             else:
                 updated_shipment_list["DeliveryTime"] = delivery_from
                 updated_shipment_list["DeliveryDate"] = delivery_from
@@ -171,18 +173,21 @@ def ready_date_time(old_shipment_list):
             delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime2"]
             if ((delivery_to[4] or delivery_to[7] or delivery_to[19])!='-' or not(delivery_to[0:4].isnumeric() and delivery_to[5:7].isnumeric() and delivery_to[8:10].isnumeric() and delivery_to[11:13].isnumeric() and delivery_to[14:16].isnumeric() and delivery_to[17:19].isnumeric() and delivery_to[20:22].isnumeric() and delivery_to[23:25].isnumeric()) or (delivery_to[13] or delivery_to[16] or delivery_to[22])!=':' or delivery_to[10]!='T'):
                 LOGGER.info("not sending deliveryTime2 as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime2')
             else:
                 updated_shipment_list["DeliveryTime2"] = delivery_to            
         if "CloseDate" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
             close_date = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseDate"]
             if ((close_date[4] or close_date[7] or close_date[19])!='-' or not(close_date[0:4].isnumeric() and close_date[5:7].isnumeric() and close_date[8:10].isnumeric() and close_date[11:13].isnumeric() and close_date[14:16].isnumeric() and close_date[17:19].isnumeric() and close_date[20:22].isnumeric() and close_date[23:25].isnumeric()) or (close_date[13] or close_date[16] or close_date[22])!=':' or close_date[10]!='T'):
                 LOGGER.info("not sending closeDate as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseDate')
             else:
                 updated_shipment_list["CloseDate"] = close_date
         elif "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
             close_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseTime"]
             if ((close_time[4] or close_time[7] or close_time[19])!='-' or not(close_time[0:4].isnumeric() and close_time[5:7].isnumeric() and close_time[8:10].isnumeric() and close_time[11:13].isnumeric() and close_time[14:16].isnumeric() and close_time[17:19].isnumeric() and close_time[20:22].isnumeric() and close_time[23:25].isnumeric()) or (close_time[13] or close_time[16] or close_time[22])!=':' or close_time[10]!='T'):
                 LOGGER.info("not sending closeTime as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseTime')
             else:
                 updated_shipment_list["CloseTime"] = close_time
         else:
