@@ -343,7 +343,10 @@ def get_shipment_line_list(data_obj):
             temp_shipment_line_list = modify_object_keys(
                 data_obj["shipmentLines"])
             for i in temp_shipment_line_list:
-                i['Hazmat'] = str(i['Hazmat']).lower()
+                if(str(i['Hazmat']).lower() in ['0','1','true','false']):
+                    i['Hazmat'] = str(i['Hazmat']).lower()
+                else:
+                    i['Hazmat'] = 'false'
                 if str(i['WeightUOMV3']).lower() in ['lb','kg']:
                     i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
                 else:
@@ -480,7 +483,7 @@ def validate_input(event):
                 errors.append(req_field + " not in body")
             elif req_field == "customerNumber":
                 if not event["body"]["shipmentCreateRequest"][req_field].isnumeric():
-                    errors.append(req_field + " must be a number")
+                    errors.append(req_field + " must be an integer")
                 elif len(event["body"]["shipmentCreateRequest"][req_field])>6:
                     errors.append(req_field + " must be less than 6 digits")
             elif req_field in ['shipper','consignee']:
