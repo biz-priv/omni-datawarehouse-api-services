@@ -349,7 +349,7 @@ def get_shipment_line_list(data_obj):
                     i['DimUOMV3'] = str(i['DimUOMV3']).lower()
                 else:
                     i['DimUOMV3'] = 'in'
-                i['Description'] = i['Description'][0:45]
+                i['Description'] = i['Description'][0:35]
                 i['PieceType'] = i['PieceType'][0:3]
                 try:
                     i['Pieces'] = int(i['Pieces'])
