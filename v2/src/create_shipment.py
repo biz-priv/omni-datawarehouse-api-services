@@ -19,7 +19,6 @@ LOGGER.setLevel(logging.INFO)
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
-
 def handler(event, context):
     LOGGER.info("Event: %s",event)
     # event["body"]["shipmentCreateRequest"] = literal_eval(
@@ -483,21 +482,25 @@ def validate_input(event):
                 readyTime = event["body"]["shipmentCreateRequest"][ready]
                 if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
                     errors.append(ready + ' is not in the correct date format.')
-        for req_field in ["closeTime","shipper","consignee","customerReference","controllingStation","customerNumber"]:
+        for req_field in ["closeTime","shipper","consignee","customerReference"]:
             if req_field not in event["body"]["shipmentCreateRequest"]:
                 errors.append(req_field + " not in body")
-            elif req_field == "customerNumber":
-                if not event["body"]["shipmentCreateRequest"][req_field].isnumeric():
-                    errors.append(req_field + " must be an integer")
-                elif len(event["body"]["shipmentCreateRequest"][req_field])>6:
-                    errors.append(req_field + " must be less than 6 digits")
             elif req_field in ['shipper','consignee']:
                 for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
                     if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
                         errors.append(req_field +' missing '+sub_reqs)
-            elif req_field == 'controllingStation':
-                if event["body"]["shipmentCreateRequest"]["controllingStation"][0:3].upper() not in acceptableStations:
-                    errors.append(event["body"]["shipmentCreateRequest"][req_field] +'  is not a valid value for Station')
+        if(event["headers"]['x-api-key'] not in ['7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn']):
+            for req_field in ["controllingStation","customerNumber"]:
+                if req_field not in event["body"]["shipmentCreateRequest"]:
+                    errors.append(req_field + " not in body")
+                elif req_field == "customerNumber":
+                    if not event["body"]["shipmentCreateRequest"][req_field].isnumeric():
+                        errors.append(req_field + " must be an integer")
+                    elif len(event["body"]["shipmentCreateRequest"][req_field])>6:
+                        errors.append(req_field + " must be less than 6 digits")
+                elif req_field == 'controllingStation':
+                    if event["body"]["shipmentCreateRequest"]["controllingStation"][0:3].upper() not in acceptableStations:
+                        errors.append(event["body"]["shipmentCreateRequest"][req_field] +'  is not a valid value for Station')
         if(event["body"]["shipmentCreateRequest"]["serviceLevel"][0:2].upper() not in acceptableServiceLevelCodes):
             raise InputError(json.dumps(
             {"httpStatus": 400, "message":event["body"]["shipmentCreateRequest"]["serviceLevel"] + " is not a valid value for Service Level"}))
