@@ -121,7 +121,6 @@ def handler(event, context):
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
     payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
-    payload = payload.replace('&','')
     LOGGER.info("Payload xml data is : %s", json.dumps(payload))
     try:
         url = os.environ["URL"]
