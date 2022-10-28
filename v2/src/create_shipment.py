@@ -351,9 +351,20 @@ def get_shipment_line_list(data_obj):
                 data_obj["shipmentLines"])
             for i in temp_shipment_line_list:
                 i['Hazmat'] = str(i['Hazmat']).lower()
-                i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
+                if str(i['WeightUOMV3']).lower() in ['lb','kg']:
+                    i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
+                else:
+                    i['WeightUOMV3'] = 'lb'
+                
                 i['DimUOMV3'] = str(i['DimUOMV3']).lower()
                 i['Description'] = i['Description'][0:45]
+                i['PieceType'] = i['PieceType'][0:3]
+                try:
+                    i['Pieces'] = int(i['Pieces'])
+                    if(int(i['Pieces'])>32767):
+                        i.pop('Pieces')
+                except ValueError:
+                    i.pop('Pieces')
             def shipment_line_list_item(x): return 'NewShipmentDimLineV3'
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
                                                         attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
