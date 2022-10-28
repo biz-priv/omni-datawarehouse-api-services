@@ -34,8 +34,8 @@ def handler(event, context):
         if 'controllingStation' not in event["body"]["shipmentCreateRequest"] or 'customerNumber' not in event["body"]["shipmentCreateRequest"]:
             event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
             event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-            # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
             LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
+        # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
 
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
@@ -315,7 +315,7 @@ def update_authorizer_table(shipment_data, customer_id):
 
 def update_shipment_table(shipment_data, house_bill_info, service_level_desc, current_date):
     try:
-        temp_data = ['CustomerNo', 'BillToAcct']
+        temp_data = ['CustomerNo']
         for i in temp_data:
             house_bill_info.pop(i)
         house_bill_no = shipment_data['Housebill']
@@ -364,6 +364,24 @@ def get_shipment_line_list(data_obj):
                         i.pop('Pieces')
                 except ValueError:
                     i.pop('Pieces')
+                try:
+                    i['Length'] = int(i['Length'])
+                    if(int(i['Length'])>999):
+                        i.pop('Length')
+                except ValueError:
+                    i.pop('Length')
+                try:
+                    i['Width'] = int(i['Width'])
+                    if(int(i['Width'])>999):
+                        i.pop('Width')
+                except ValueError:
+                    i.pop('Width')
+                try:
+                    i['Weigth'] = int(i['Weigth'])
+                    if(int(i['Weigth'])>999):
+                        i.pop('Weigth')
+                except ValueError:
+                    i.pop('Weigth')
             def shipment_line_list_item(x): return 'NewShipmentDimLineV3'
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
                                                         attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
