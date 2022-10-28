@@ -63,7 +63,10 @@ def handler(event, context):
                 elif(key == 'deliveryWindowTo'):
                     new_key = 'DeliveryTime2'
                 elif(key == 'delBy'):
-                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize()
+                    if(event["body"]["shipmentCreateRequest"][key].lower() in ['between', 'by', 'only']):
+                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize()
+                    else:
+                        event["body"]["shipmentCreateRequest"][key] = 'By'
                 elif(key == 'serviceLevel'):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
                 elif(key == 'projectCode'):
@@ -349,7 +352,7 @@ def get_shipment_line_list(data_obj):
                     i['DimUOMV3'] = str(i['DimUOMV3']).lower()
                 else:
                     i['DimUOMV3'] = 'in'
-                i['Description'] = i['Description'][0:45]
+                i['Description'] = i['Description'][0:35]
                 i['PieceType'] = i['PieceType'][0:3]
                 try:
                     i['Pieces'] = int(i['Pieces'])
