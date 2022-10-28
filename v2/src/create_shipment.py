@@ -270,11 +270,23 @@ def update_response(response):
                     json.dumps(temp_shipment_details))
         shipment_details = temp_shipment_details["soap:Envelope"][
             "soap:Body"]["AddNewShipmentV3Response"]["AddNewShipmentV3Result"]
-        temp_data = ['ErrorMessage', 'DestinationAirport']
+        temp_data = ['DestinationAirport']
         for i in temp_data:
             shipment_details.pop(i)
-        LOGGER.info("Shipment Details are: %s", json.dumps(shipment_details))
-        return shipment_details
+        new_ship_details = {}
+        print(new_ship_details)
+        for key in shipment_details:
+            if(key == 'ShipQuoteNo'):
+                new_ship_details['fileNumber'] = shipment_details['ShipQuoteNo']
+                # temp_data.append("ShipQuoteNo")
+            if(key == 'Housebill'):
+                new_ship_details['housebill'] = shipment_details['Housebill']
+                # temp_data.append("Housebill")
+            if(key == 'ErrorMessage'):
+                if(shipment_details['ErrorMessage'] != "None"):
+                    new_ship_details['errorMessage'] = shipment_details['ErrorMessage']
+        LOGGER.info("Shipment Details are: %s", json.dumps(new_ship_details))
+        return new_ship_details
     except KeyError as wt_error:
         logging.exception("WtBolApiError: %s", wt_error)
         raise WtBolApiError(json.dumps(
