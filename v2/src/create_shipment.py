@@ -24,7 +24,6 @@ def handler(event, context):
     LOGGER.info("Event: %s",event)
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
-    truncate_description(event["body"]["shipmentCreateRequest"]["shipmentLines"])
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
     LOGGER.info("Customer Info: %s", json.dumps(customer_info))
@@ -221,14 +220,6 @@ def get_service_level(service_level_code):
                           json.dumps(service_level_error))
         raise GetServiceLevelError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from service_level_error
-
-
-def truncate_description(value):
-    for i in value:
-        if len(i["description"]) >= 35:
-            i["description"] = i["description"][:35]
-        else:
-            pass
 
 
 def modify_object_keys(array):
