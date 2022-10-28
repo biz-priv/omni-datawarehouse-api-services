@@ -24,7 +24,7 @@ def handler(event, context):
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
     customer_id = validate_input(event)
-    if(event["headers"]['x-api-key'] not in ['7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn']):
+    if(customer_id == 'customer-portal-admin'):
         customer_info = validate_dynamodb(customer_id)
         for key in ['controllingStation', 'customerNumber']:
             if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
@@ -489,7 +489,7 @@ def validate_input(event):
                 for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
                     if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
                         errors.append(req_field +' missing '+sub_reqs)
-        if(event["headers"]['x-api-key'] in ['7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn']):
+        if(event["enhancedAuthContext"]["customerId"] == 'customer-portal-admin'):
             for req_field in ["controllingStation","customerNumber"]:
                 if req_field not in event["body"]["shipmentCreateRequest"]:
                     errors.append(req_field + " not in body")
