@@ -24,7 +24,6 @@ def handler(event, context):
     LOGGER.info("Event: %s",event)
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
-    truncate_description(event["body"]["shipmentCreateRequest"]["shipmentLines"])
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
     LOGGER.info("Customer Info: %s", json.dumps(customer_info))
@@ -42,7 +41,6 @@ def handler(event, context):
         temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"] = {}
         for key in event["body"]["shipmentCreateRequest"]:
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
-                event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].replace('&','and')
                 new_key = key.replace(" ", "")
                 new_key = new_key[0].capitalize() + new_key[1:]
                 if(key == 'incoterm'):
@@ -123,6 +121,7 @@ def handler(event, context):
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
     payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
+    payload = payload.replace('&','')
     LOGGER.info("Payload xml data is : %s", json.dumps(payload))
     try:
         url = os.environ["URL"]
@@ -221,14 +220,6 @@ def get_service_level(service_level_code):
                           json.dumps(service_level_error))
         raise GetServiceLevelError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from service_level_error
-
-
-def truncate_description(value):
-    for i in value:
-        if len(i["description"]) >= 35:
-            i["description"] = i["description"][:35]
-        else:
-            pass
 
 
 def modify_object_keys(array):
@@ -355,7 +346,10 @@ def get_shipment_line_list(data_obj):
                     i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
                 else:
                     i['WeightUOMV3'] = 'lb'
-                i['DimUOMV3'] = str(i['DimUOMV3']).lower()
+                if str(i['DimUOMV3']).lower() in ['in','cm']:
+                    i['DimUOMV3'] = str(i['DimUOMV3']).lower()
+                else:
+                    i['DimUOMV3'] = 'in'
                 i['Description'] = i['Description'][0:45]
                 i['PieceType'] = i['PieceType'][0:3]
                 try:
