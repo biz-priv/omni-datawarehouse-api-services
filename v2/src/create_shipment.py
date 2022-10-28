@@ -34,8 +34,8 @@ def handler(event, context):
         if 'controllingStation' not in event["body"]["shipmentCreateRequest"] or 'customerNumber' not in event["body"]["shipmentCreateRequest"]:
             event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
             event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-            # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
             LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
+        event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
 
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
@@ -308,8 +308,7 @@ def update_authorizer_table(shipment_data, customer_id):
         )
         return response
     except Exception as update_dynamo_error:
-        logging.exception("UpdateAuthorizerTableError: %s",
-                          json.dumps(update_dynamo_error))
+        logging.exception("UpdateAuthorizerTableError: %s", update_dynamo_error)
         raise UpdateAuthorizerTableError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from update_dynamo_error
 
