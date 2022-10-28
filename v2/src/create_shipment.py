@@ -489,7 +489,7 @@ def validate_input(event):
                 for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
                     if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
                         errors.append(req_field +' missing '+sub_reqs)
-        if(event["headers"]['x-api-key'] not in ['7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn']):
+        if(event["headers"]['x-api-key'] in ['7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn']):
             for req_field in ["controllingStation","customerNumber"]:
                 if req_field not in event["body"]["shipmentCreateRequest"]:
                     errors.append(req_field + " not in body")
