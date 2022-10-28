@@ -31,10 +31,11 @@ def handler(event, context):
     if customer_info == 'Failure':
         return {"httpStatus": 400, "message": "Customer Information doesnot exist. Please raise a support ticket to add the customer"}
     try:
-        # event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
-        event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-        # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
-        LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
+        if 'controllingStation' not in event["body"]["shipmentCreateRequest"] or 'customerNumber' not in event["body"]["shipmentCreateRequest"]:
+            event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+            event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+            # event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+            LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
 
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
@@ -339,8 +340,7 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc, cu
         )
         return response
     except Exception as update_dynamo_error:
-        logging.exception("UpdateShipmentTableError: %s",
-                          json.dumps(update_dynamo_error))
+        logging.exception("UpdateShipmentTableError: %s", update_dynamo_error)
         raise UpdateShipmentTableError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from update_dynamo_error
 
