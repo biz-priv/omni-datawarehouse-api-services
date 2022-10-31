@@ -55,7 +55,7 @@ custom:
       package:
         individually: true
         patterns:
-          - "/config/functions/*"
+          - "config/functions/*"
 
 plugins:
   - serverless-layers
