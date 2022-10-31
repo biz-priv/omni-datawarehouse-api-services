@@ -51,6 +51,7 @@ plugins:
   - serverless-plugin-multiple-responses
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
+  - serverless-provisioned-concurrency-autoscaling
 
 package:
   individually: true
