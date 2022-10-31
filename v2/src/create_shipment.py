@@ -23,9 +23,6 @@ def handler(event, context):
     LOGGER.info("Event: %s",event)
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
-    if event.get("source") == "serverless-plugin-warmup":
-        print("WarmUp - Lambda is warm!")
-        return {}
 
     customer_id = validate_input(event)
     if(customer_id != 'customer-portal-admin'):
