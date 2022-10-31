@@ -28,7 +28,6 @@
     "serverless-layers": "2.3.3",
     "serverless-plugin-existing-s3": "2.4.0",
     "serverless-plugin-multiple-responses": "1.0.0",
-    "xmlbuilder2": "^3.0.2",
-    "serverless-prune-plugin": "^2.0.1"
+    "xmlbuilder2": "^3.0.2"
   }
 }
