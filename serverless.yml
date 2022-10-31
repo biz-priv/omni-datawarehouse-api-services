@@ -49,6 +49,9 @@ custom:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
     "Access-Control-Allow-Headers": "'*'"
+  warmup:
+    default:
+      enabled: false
 
 plugins:
   - serverless-layers
