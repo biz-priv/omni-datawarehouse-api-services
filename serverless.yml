@@ -26,7 +26,7 @@ custom:
   alias: ${opt:alias, 'v1'}
   prune:
     automatic: true
-    number: 8
+    number: 9
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
     functions:
