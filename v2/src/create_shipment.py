@@ -283,7 +283,7 @@ def update_response(response):
                 new_ship_details['housebill'] = shipment_details['Housebill']
                 # temp_data.append("Housebill")
             if(key == 'ErrorMessage'):
-                if(shipment_details['ErrorMessage'] != "None"):
+                if(shipment_details['ErrorMessage'] != None):
                     new_ship_details['errorMessage'] = shipment_details['ErrorMessage']
         LOGGER.info("Shipment Details are: %s", json.dumps(new_ship_details))
         return new_ship_details
