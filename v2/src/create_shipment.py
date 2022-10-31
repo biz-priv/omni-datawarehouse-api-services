@@ -274,17 +274,18 @@ def update_response(response):
         for i in temp_data:
             shipment_details.pop(i)
         new_ship_details = {}
+        new_ship_details["shipmentCreateResponse"] = {}
         print(new_ship_details)
         for key in shipment_details:
             if(key == 'ShipQuoteNo'):
-                new_ship_details['fileNumber'] = shipment_details['ShipQuoteNo']
+                new_ship_details["shipmentCreateResponse"]['fileNumber'] = shipment_details['ShipQuoteNo']
                 # temp_data.append("ShipQuoteNo")
             if(key == 'Housebill'):
-                new_ship_details['housebill'] = shipment_details['Housebill']
+                new_ship_details["shipmentCreateResponse"]['housebill'] = shipment_details['Housebill']
                 # temp_data.append("Housebill")
             if(key == 'ErrorMessage'):
                 if(shipment_details['ErrorMessage'] != None):
-                    new_ship_details['errorMessage'] = shipment_details['ErrorMessage']
+                    new_ship_details["shipmentCreateResponse"]['errorMessage'] = shipment_details['ErrorMessage']
         LOGGER.info("Shipment Details are: %s", json.dumps(new_ship_details))
         return new_ship_details
     except KeyError as wt_error:
@@ -299,8 +300,8 @@ def update_response(response):
 
 def update_authorizer_table(shipment_data, customer_id):
     try:
-        house_bill_no = shipment_data['housebill']
-        file_no = shipment_data['fileNumber']
+        house_bill_no = shipment_data["shipmentCreateResponse"]['housebill']
+        file_no = shipment_data["shipmentCreateResponse"]['fileNumber']
         response = client.put_item(
             TableName=os.environ['CUSTOMER_ENTITLEMENT_TABLE'],
             Item={
@@ -327,8 +328,8 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc, cu
         temp_data = ['CustomerNo']
         for i in temp_data:
             house_bill_info.pop(i)
-        house_bill_no = shipment_data['housebill']
-        file_number = shipment_data['fileNumber']
+        house_bill_no = shipment_data["shipmentCreateResponse"]['housebill']
+        file_number = shipment_data["shipmentCreateResponse"]['fileNumber']
         shipment_info = {}
         shipment_info['HouseBillNumber'] = {'S': house_bill_no}
         shipment_info['FileNumber'] = {'S': file_number}
