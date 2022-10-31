@@ -299,8 +299,8 @@ def update_response(response):
 
 def update_authorizer_table(shipment_data, customer_id):
     try:
-        house_bill_no = shipment_data['Housebill']
-        file_no = shipment_data['ShipQuoteNo']
+        house_bill_no = shipment_data['housebill']
+        file_no = shipment_data['fileNumber']
         response = client.put_item(
             TableName=os.environ['CUSTOMER_ENTITLEMENT_TABLE'],
             Item={
