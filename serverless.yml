@@ -52,6 +52,11 @@ custom:
   warmup:
     default:
       enabled: false
+      package:
+        individually: true
+        exclude:
+          - "**/*"
+          - serverless.yaml
 
 plugins:
   - serverless-layers
