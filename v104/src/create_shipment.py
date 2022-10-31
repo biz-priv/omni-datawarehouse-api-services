@@ -19,6 +19,9 @@ from src.common import dynamo_query
 InternalErrorMessage = "Internal Error."
 
 def handler(event,context):
+    if event.get("source") == "serverless-plugin-warmup":
+        print("WarmUp - Lambda is warm!")
+        return {}
     event["body"]["oShipData"] = literal_eval(str(event["body"]["oShipData"]).replace("Weight","Weigth"))
     truncate_description(event["body"]["oShipData"]["Shipment Line List"])
     logger.info("Event: %s", json.dumps(event))
