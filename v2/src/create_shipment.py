@@ -283,7 +283,7 @@ def update_response(response):
                 new_ship_details['housebill'] = shipment_details['Housebill']
                 # temp_data.append("Housebill")
             if(key == 'ErrorMessage'):
-                if(shipment_details['ErrorMessage'] != "None"):
+                if(shipment_details['ErrorMessage'] != None):
                     new_ship_details['errorMessage'] = shipment_details['ErrorMessage']
         LOGGER.info("Shipment Details are: %s", json.dumps(new_ship_details))
         return new_ship_details
@@ -327,8 +327,8 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc, cu
         temp_data = ['CustomerNo']
         for i in temp_data:
             house_bill_info.pop(i)
-        house_bill_no = shipment_data['Housebill']
-        file_number = shipment_data['ShipQuoteNo']
+        house_bill_no = shipment_data['housebill']
+        file_number = shipment_data['fileNumber']
         shipment_info = {}
         shipment_info['HouseBillNumber'] = {'S': house_bill_no}
         shipment_info['FileNumber'] = {'S': file_number}
