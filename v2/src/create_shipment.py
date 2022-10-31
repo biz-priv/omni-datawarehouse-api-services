@@ -327,8 +327,8 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc, cu
         temp_data = ['CustomerNo']
         for i in temp_data:
             house_bill_info.pop(i)
-        house_bill_no = shipment_data['Housebill']
-        file_number = shipment_data['ShipQuoteNo']
+        house_bill_no = shipment_data['housebill']
+        file_number = shipment_data['fileNumber']
         shipment_info = {}
         shipment_info['HouseBillNumber'] = {'S': house_bill_no}
         shipment_info['FileNumber'] = {'S': file_number}
