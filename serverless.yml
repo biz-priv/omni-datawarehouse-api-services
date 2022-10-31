@@ -52,10 +52,6 @@ custom:
   warmup:
     default:
       enabled: false
-      package:
-        individually: true
-        patterns:
-          - "config/functions/*"
 
 plugins:
   - serverless-layers
