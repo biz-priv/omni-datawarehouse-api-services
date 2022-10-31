@@ -23,6 +23,10 @@ def handler(event, context):
     LOGGER.info("Event: %s",event)
     # event["body"]["shipmentCreateRequest"] = literal_eval(
     #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
+    if (event.source == 'serverless-plugin-warmup'):
+        print('WarmUP - Lambda is warm!')
+        return (None, 'Lambda is warm!')
+    
     customer_id = validate_input(event)
     if(customer_id != 'customer-portal-admin'):
         customer_info = validate_dynamodb(customer_id)
