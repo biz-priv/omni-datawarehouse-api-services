@@ -20,9 +20,6 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 
 def handler(event, context):
-    if event.get("source") == "serverless-plugin-warmup":
-        print("WarmUp - Lambda is warm!")
-        return {}
     event["body"]["oShipData"] = literal_eval(
         str(event["body"]["oShipData"]).replace("Weight", "Weigth"))
     truncate_description(event["body"]["oShipData"]["Shipment Line List"])
