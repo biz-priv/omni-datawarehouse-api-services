@@ -165,12 +165,18 @@ def ready_date_time(old_shipment_list):
             if ((delivery_from[4] or delivery_from[7] or delivery_from[19])!='-' or not(delivery_from[0:4].isnumeric() and delivery_from[5:7].isnumeric() and delivery_from[8:10].isnumeric() and delivery_from[11:13].isnumeric() and delivery_from[14:16].isnumeric() and delivery_from[17:19].isnumeric() and delivery_from[20:22].isnumeric() and delivery_from[23:25].isnumeric()) or (delivery_from[13] or delivery_from[16] or delivery_from[22])!=':' or delivery_from[10]!='T'):
                 LOGGER.info("not sending deliveryTime as it is an invalid value")
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime')
+            elif(delivery_from[5:7] in ['09', '04', '06', '11'] and int(delivery_from[8:10])>30 or delivery_from[5:7] not in ['09', '04', '06', '11'] and int(delivery_from[8:10])>31 or delivery_from[5:7] =='02' and int(delivery_from[8:10])>28):
+                LOGGER.info("not sending deliveryTime as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime')
             else:
                 updated_shipment_list["DeliveryTime"] = delivery_from
                 updated_shipment_list["DeliveryDate"] = delivery_from
         if("DeliveryTime2" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
             delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime2"]
             if ((delivery_to[4] or delivery_to[7] or delivery_to[19])!='-' or not(delivery_to[0:4].isnumeric() and delivery_to[5:7].isnumeric() and delivery_to[8:10].isnumeric() and delivery_to[11:13].isnumeric() and delivery_to[14:16].isnumeric() and delivery_to[17:19].isnumeric() and delivery_to[20:22].isnumeric() and delivery_to[23:25].isnumeric()) or (delivery_to[13] or delivery_to[16] or delivery_to[22])!=':' or delivery_to[10]!='T'):
+                LOGGER.info("not sending deliveryTime2 as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime2')
+            elif(delivery_to[5:7] in ['09', '04', '06', '11'] and int(delivery_to[8:10])>30 or delivery_to[5:7] not in ['09', '04', '06', '11'] and int(delivery_to[8:10])>31 or delivery_to[5:7] =='02' and int(delivery_to[8:10])>28):
                 LOGGER.info("not sending deliveryTime2 as it is an invalid value")
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime2')
             else:
@@ -180,11 +186,17 @@ def ready_date_time(old_shipment_list):
             if ((close_date[4] or close_date[7] or close_date[19])!='-' or not(close_date[0:4].isnumeric() and close_date[5:7].isnumeric() and close_date[8:10].isnumeric() and close_date[11:13].isnumeric() and close_date[14:16].isnumeric() and close_date[17:19].isnumeric() and close_date[20:22].isnumeric() and close_date[23:25].isnumeric()) or (close_date[13] or close_date[16] or close_date[22])!=':' or close_date[10]!='T'):
                 LOGGER.info("not sending closeDate as it is an invalid value")
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseDate')
+            elif(close_date[5:7] in ['09', '04', '06', '11'] and int(close_date[8:10])>30 or close_date[5:7] not in ['09', '04', '06', '11'] and int(close_date[8:10])>31 or close_date[5:7] =='02' and int(close_date[8:10])>28):
+                LOGGER.info("not sending closeDate as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseDate')
             else:
                 updated_shipment_list["CloseDate"] = close_date
         elif "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
             close_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseTime"]
             if ((close_time[4] or close_time[7] or close_time[19])!='-' or not(close_time[0:4].isnumeric() and close_time[5:7].isnumeric() and close_time[8:10].isnumeric() and close_time[11:13].isnumeric() and close_time[14:16].isnumeric() and close_time[17:19].isnumeric() and close_time[20:22].isnumeric() and close_time[23:25].isnumeric()) or (close_time[13] or close_time[16] or close_time[22])!=':' or close_time[10]!='T'):
+                LOGGER.info("not sending closeTime as it is an invalid value")
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseTime')
+            elif(close_time[5:7] in ['09', '04', '06', '11'] and int(close_time[8:10])>30 or close_time[5:7] not in ['09', '04', '06', '11'] and int(close_time[8:10])>31 or close_time[5:7] =='02' and int(close_time[8:10])>28):
                 LOGGER.info("not sending closeTime as it is an invalid value")
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseTime')
             else:
@@ -494,6 +506,8 @@ def validate_input(event):
             if ready in event["body"]["shipmentCreateRequest"]:
                 readyTime = event["body"]["shipmentCreateRequest"][ready]
                 if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
+                    errors.append(ready + ' is not in the correct date format.')
+                elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
                     errors.append(ready + ' is not in the correct date format.')
         for req_field in ["closeTime","shipper","consignee","customerReference"]:
             if req_field not in event["body"]["shipmentCreateRequest"]:
