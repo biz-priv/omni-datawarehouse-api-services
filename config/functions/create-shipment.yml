@@ -6,7 +6,7 @@ function:
   provisionedConcurrency: 1
   concurrencyAutoscaling:
     enabled: true
-    alias: ${self:custom.alias}
+    alias: v2
     maximum: 10
     minimum: 1
   events:
