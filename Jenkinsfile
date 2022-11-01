@@ -28,13 +28,12 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Omni Deploy'){
             when {
                 anyOf {
                     branch 'master';
                     branch 'develop';
-                    branch 'hotfix/*';
                 }
                 expression {
                     return true;
