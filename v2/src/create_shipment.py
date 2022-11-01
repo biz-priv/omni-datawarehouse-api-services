@@ -30,10 +30,11 @@ def handler(event, context):
         for key in ['controllingStation', 'customerNumber']:
             if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
                 event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+                LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
             if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
                 event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
                 event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
-            LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
+                LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
         LOGGER.info("Customer Info: %s", json.dumps(customer_info))
@@ -76,7 +77,7 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
                 elif(key == 'readyDate'):
                     new_key = 'ReadyTime'
-                LOGGER.info("New Key: %s",new_key)
+                # LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         if('accessorialList' in event["body"]["shipmentCreateRequest"]):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(event["body"]["shipmentCreateRequest"]['accessorialList'])
@@ -99,21 +100,15 @@ def handler(event, context):
             if(key == 'address'):
                 new_key = "ConsigneeAddress1"
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
-        
-        LOGGER.info("Temp Ship Data %s",temp_ship_data)
     except Exception as transform_error:
         logging.exception("DataTransformError: %s", transform_error)
         raise DataTransformError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from transform_error
 
     temp_ship_data = ready_date_time(temp_ship_data)
-    LOGGER.info("Temp Ship Data ReadyDateTime %s",temp_ship_data)
     shipment_line_list = get_shipment_line_list(event["body"]["shipmentCreateRequest"])
-    LOGGER.info("ShipmentLineList %s",shipment_line_list)
     reference_list = get_reference_list(event["body"]["shipmentCreateRequest"])
-    LOGGER.info("Get Reference list %s",reference_list)
     accessorial_list = get_accessorial_list(event["body"]["shipmentCreateRequest"])
-    LOGGER.info("Accessorial List %s", accessorial_list)
 
     ship_data = dicttoxml.dicttoxml(
         temp_ship_data, attr_type=False, custom_root='soap:Body')
