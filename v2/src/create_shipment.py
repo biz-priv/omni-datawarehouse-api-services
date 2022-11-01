@@ -32,6 +32,7 @@ def handler(event, context):
                 event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
             if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
                 event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+                event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
             LOGGER.info("shipmentCreateRequest Updated %s", event["body"]["shipmentCreateRequest"])
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
@@ -49,6 +50,7 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
                 elif(key == 'controllingStation'):
                     new_key = 'Station'
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
@@ -76,6 +78,8 @@ def handler(event, context):
                     new_key = 'ReadyTime'
                 LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+        if('accessorialList' in event["body"]["shipmentCreateRequest"]):
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(event["body"]["shipmentCreateRequest"]['accessorialList'])
         try:
             if('insuredValue' in event["body"]["shipmentCreateRequest"] and isinstance(float(event["body"]["shipmentCreateRequest"]["insuredValue"]),float) and float(event["body"]["shipmentCreateRequest"]["insuredValue"]) >= 0):
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'INSP'
