@@ -294,7 +294,6 @@ def update_response(response):
             shipment_details.pop(i)
         new_ship_details = {}
         new_ship_details["shipmentCreateResponse"] = {}
-        print(new_ship_details)
         for key in shipment_details:
             if(key == 'ShipQuoteNo'):
                 new_ship_details["shipmentCreateResponse"]['fileNumber'] = shipment_details['ShipQuoteNo']
