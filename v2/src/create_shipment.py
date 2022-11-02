@@ -95,16 +95,18 @@ def handler(event, context):
         except (ValueError):
             LOGGER.info('string exception')
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
-        for key in event["body"]["shipmentCreateRequest"]["shipper"]:
-            new_key = "Shipper"+key[0].capitalize()+key[1:]
-            if(key == 'address'):
-                new_key = "ShipperAddress1"
-            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
-        for key in event["body"]["shipmentCreateRequest"]["consignee"]:
-            new_key = "Consignee"+key[0].capitalize()+key[1:]
-            if(key == 'address'):
-                new_key = "ConsigneeAddress1"
-            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
+        if('shipper' in event["body"]["shipmentCreateRequest"]):
+            for key in event["body"]["shipmentCreateRequest"]["shipper"]:
+                new_key = "Shipper"+key[0].capitalize()+key[1:]
+                if(key == 'address'):
+                    new_key = "ShipperAddress1"
+                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
+        if('consignee' in event["body"]["shipmentCreateRequest"]):
+            for key in event["body"]["shipmentCreateRequest"]["consignee"]:
+                new_key = "Consignee"+key[0].capitalize()+key[1:]
+                if(key == 'address'):
+                    new_key = "ConsigneeAddress1"
+                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
     except Exception as transform_error:
         logging.exception("DataTransformError: %s", transform_error)
         raise DataTransformError(json.dumps(
