@@ -72,11 +72,16 @@ def handler(event, context):
                     else:
                         event["body"]["shipmentCreateRequest"][key] = 'By'
                 elif(key == 'serviceLevel'):
+                    acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM', 'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD' ]
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
+                    if(event["body"]["shipmentCreateRequest"][key] not in acceptableServiceLevelCodes):
+                        continue
                 elif(key == 'projectCode'):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
-                elif(key == 'readyDate'):
-                    new_key = 'ReadyTime'
+                elif(key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = event["body"]["shipmentCreateRequest"][key]
+                elif(key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = event["body"]["shipmentCreateRequest"][key]
                 # LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         if('accessorialList' in event["body"]["shipmentCreateRequest"]):
@@ -492,14 +497,13 @@ def validate_input(event):
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "CustomerId not found."}))
     client_data = ['serviceLevel']
-    if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
-        raise InputError(json.dumps(
-            {"httpStatus": 400, "message": "Service Level is missing in the request body shipmentCreateRequest."}))
-    elif('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
+    # if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
+    #     raise InputError(json.dumps(
+    #         {"httpStatus": 400, "message": "Service Level is missing in the request body shipmentCreateRequest."}))
+    if('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
     else:
-        acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM', 'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD' ]
         acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'BRO', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
         errors = []
         for ready in ['readyDate', 'readyTime']:
@@ -509,13 +513,6 @@ def validate_input(event):
                     errors.append(ready + ' is not in the correct date format.')
                 elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
                     errors.append(ready + ' is not in the correct date format.')
-        for req_field in ["closeTime","shipper","consignee","customerReference"]:
-            if req_field not in event["body"]["shipmentCreateRequest"]:
-                errors.append(req_field + " not in body")
-            elif req_field in ['shipper','consignee']:
-                for sub_reqs in ['name', 'address', 'city', 'state', "zip", "country"]:
-                    if sub_reqs not in event["body"]["shipmentCreateRequest"][req_field]:
-                        errors.append(req_field +' missing '+sub_reqs)
         if(event["enhancedAuthContext"]["customerId"] == 'customer-portal-admin'):
             for req_field in ["controllingStation","customerNumber"]:
                 if req_field not in event["body"]["shipmentCreateRequest"]:
@@ -528,9 +525,9 @@ def validate_input(event):
                 elif req_field == 'controllingStation':
                     if event["body"]["shipmentCreateRequest"]["controllingStation"][0:3].upper() not in acceptableStations:
                         errors.append(event["body"]["shipmentCreateRequest"][req_field] +'  is not a valid value for Station')
-        if(event["body"]["shipmentCreateRequest"]["serviceLevel"][0:2].upper() not in acceptableServiceLevelCodes):
-            raise InputError(json.dumps(
-            {"httpStatus": 400, "message":event["body"]["shipmentCreateRequest"]["serviceLevel"] + " is not a valid value for Service Level"}))
+        # if(event["body"]["shipmentCreateRequest"]["serviceLevel"][0:2].upper() not in acceptableServiceLevelCodes):
+        #     raise InputError(json.dumps(
+        #     {"httpStatus": 400, "message":event["body"]["shipmentCreateRequest"]["serviceLevel"] + " is not a valid value for Service Level"}))
         
         if errors:
             LOGGER.info(", ".join(list(map(str,errors))))
