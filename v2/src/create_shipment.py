@@ -463,7 +463,7 @@ def get_reference_list(data_obj):
                                     {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty']})
                             elif('RefType' in bill_to_item and 'RefNumber' not in bill_to_item):
                                 t.append(
-                                    {"ReferenceNo": bill_to_item['RefNumber'],  "RefTypeId": bill_to_item['RefType']})
+                                    {"RefTypeId": bill_to_item['RefType'], "CustomerTypeV3": bill_to_item['RefParty']})
                 m.extend(t)
                 return m
             temp_reference_list = add_shipper(temp_reference_list)
