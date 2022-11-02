@@ -454,9 +454,17 @@ def get_reference_list(data_obj):
                 t = []
                 m=[]
                 for bill_to_item in x:
-                    if(bill_to_item['RefParty'].upper() in ['SHIPPER', 'BILLTO', 'CONSIGNEE']):
-                        t.append(
-                            {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty'], "RefTypeId": bill_to_item['RefType']})
+                    if('RefParty' in bill_to_item):
+                        if(bill_to_item['RefParty'].upper() in ['SHIPPER', 'BILLTO', 'CONSIGNEE']):
+                            if('RefNumber' in bill_to_item and 'RefType' in bill_to_item):
+                                t.append(
+                                    {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty'], "RefTypeId": bill_to_item['RefType']})
+                            elif('RefNumber' in bill_to_item and 'RefType' not in bill_to_item):
+                                t.append(
+                                    {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty']})
+                            elif('RefType' in bill_to_item and 'RefNumber' not in bill_to_item):
+                                t.append(
+                                    {"ReferenceNo": bill_to_item['RefNumber'],  "RefTypeId": bill_to_item['RefType']})
                 m.extend(t)
                 return m
             temp_reference_list = add_shipper(temp_reference_list)
