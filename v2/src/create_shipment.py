@@ -379,44 +379,53 @@ def get_shipment_line_list(data_obj):
             temp_shipment_line_list = modify_object_keys(
                 data_obj["shipmentLines"])
             for i in temp_shipment_line_list:
-                if(str(i['Hazmat']).lower() in ['0','1','true','false']):
-                    i['Hazmat'] = str(i['Hazmat']).lower()
-                else:
-                    i['Hazmat'] = 'false'
-                if str(i['WeightUOMV3']).lower() in ['lb','kg']:
-                    i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
-                else:
-                    i['WeightUOMV3'] = 'lb'
-                if str(i['DimUOMV3']).lower() in ['in','cm']:
-                    i['DimUOMV3'] = str(i['DimUOMV3']).lower()
-                else:
-                    i['DimUOMV3'] = 'in'
-                i['Description'] = i['Description'][0:35]
-                i['PieceType'] = i['PieceType'][0:3]
-                try:
-                    i['Pieces'] = int(i['Pieces'])
-                    if(int(i['Pieces'])>32767):
+                if('Hazmat' in i):
+                    if(str(i['Hazmat']).lower() in ['0','1','true','false']):
+                        i['Hazmat'] = str(i['Hazmat']).lower()
+                    else:
+                        i['Hazmat'] = 'false'
+                if('WeightUOMV3' in i):
+                    if str(i['WeightUOMV3']).lower() in ['lb','kg']:
+                        i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
+                    else:
+                        i['WeightUOMV3'] = 'lb'
+                if('DimUOMV3' in i):
+                    if str(i['DimUOMV3']).lower() in ['in','cm']:
+                        i['DimUOMV3'] = str(i['DimUOMV3']).lower()
+                    else:
+                        i['DimUOMV3'] = 'in'
+                if('Description' in i):
+                    i['Description'] = i['Description'][0:35]
+                if('PieceType' in i):
+                    i['PieceType'] = i['PieceType'][0:3]
+                if('Pieces' in i):
+                    try:
+                        i['Pieces'] = int(i['Pieces'])
+                        if(int(i['Pieces'])>32767):
+                            i.pop('Pieces')
+                    except ValueError:
                         i.pop('Pieces')
-                except ValueError:
-                    i.pop('Pieces')
-                try:
-                    i['Length'] = int(i['Length'])
-                    if(int(i['Length'])>999):
+                if('Length' in i):
+                    try:
+                        i['Length'] = int(i['Length'])
+                        if(int(i['Length'])>999):
+                            i.pop('Length')
+                    except ValueError:
                         i.pop('Length')
-                except ValueError:
-                    i.pop('Length')
-                try:
-                    i['Width'] = int(i['Width'])
-                    if(int(i['Width'])>999):
+                if('Width' in i):  
+                    try:
+                        i['Width'] = int(i['Width'])
+                        if(int(i['Width'])>999):
+                            i.pop('Width')
+                    except ValueError:
                         i.pop('Width')
-                except ValueError:
-                    i.pop('Width')
-                try:
-                    i['Weigth'] = int(i['Weigth'])
-                    if(int(i['Weigth'])>999):
+                if('Weigth' in i):
+                    try:
+                        i['Weigth'] = int(i['Weigth'])
+                        if(int(i['Weigth'])>999):
+                            i.pop('Weigth')
+                    except ValueError:
                         i.pop('Weigth')
-                except ValueError:
-                    i.pop('Weigth')
             def shipment_line_list_item(x): return 'NewShipmentDimLineV3'
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
                                                         attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
