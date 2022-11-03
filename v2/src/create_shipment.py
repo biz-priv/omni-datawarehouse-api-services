@@ -514,6 +514,9 @@ def validate_input(event):
     if not "enhancedAuthContext" in event or "customerId" not in event["enhancedAuthContext"]:
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "CustomerId not found."}))
+    if not "shipmentCreateRequest" in event:
+        raise InputError(json.dumps(
+            {"httpStatus": 400, "message": "shipmentCreateRequest must be sent"}))
     client_data = ['serviceLevel']
     # if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
     #     raise InputError(json.dumps(
