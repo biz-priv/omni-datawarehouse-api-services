@@ -60,7 +60,7 @@ def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
                 where shipment_quote IN ('S')
                 and shipment_info.'''+parameter+f'{hwb_file_nbr}'+' and api_token.ID = '+f'{customer_id}'
 
-        LOGGER.info("shipment details query: %s", query)
+        # LOGGER.info("shipment details query: %s", query)
         cur.execute(query)
         con.commit()
         shipment_details = cur.fetchall()
