@@ -100,12 +100,24 @@ def handler(event, context):
                 new_key = "Shipper"+key[0].capitalize()+key[1:]
                 if(key == 'address'):
                     new_key = "ShipperAddress1"
+                elif(key == 'venueName'):
+                    new_key = "ShipperShowVenue"
+                elif(key == 'booth'):
+                    new_key = "ShipperShowBooth"
+                elif(key == 'decorator'):
+                    new_key = "ShipperShowDecorator"
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
         if('consignee' in event["body"]["shipmentCreateRequest"]):
             for key in event["body"]["shipmentCreateRequest"]["consignee"]:
                 new_key = "Consignee"+key[0].capitalize()+key[1:]
                 if(key == 'address'):
                     new_key = "ConsigneeAddress1"
+                elif(key == 'venueName'):
+                    new_key = "ConsigneeShowVenue"
+                elif(key == 'booth'):
+                    new_key = "ConsigneeShowBooth"
+                elif(key == 'decorator'):
+                    new_key = "ConsigneeShowDecorator"
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
     except Exception as transform_error:
         logging.exception("DataTransformError: %s", transform_error)
