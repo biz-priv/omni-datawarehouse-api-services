@@ -9,7 +9,7 @@ function:
   memorySize: 2048
   events:
     - http:
-        path: /addDocument
+        path: /shipment/addDocument
         method: POST
         integration: lambda
         private: true
