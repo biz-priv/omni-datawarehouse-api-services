@@ -77,6 +77,8 @@ functions:
   wd-api: ${file(config/functions/wd-api.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
+  add-document: ${file(config/functions/add-document.yml):function}
+  get-rate: ${file(config/functions/get-rate.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
   wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
