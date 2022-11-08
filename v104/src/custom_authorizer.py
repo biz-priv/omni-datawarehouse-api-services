@@ -50,11 +50,7 @@ def handler(event, context):
         raise ApiKeyError(json.dumps({"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
     #Validating params only for the GET APIs
-    if "/create/shipment/newtest" not in event["methodArn"]:
-        validation_response = validate_input(params)
-        if validation_response["status"] == "error":
-            return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
-    elif "/create/shipment" not in event["methodArn"]:
+    if "/create/shipment" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
@@ -73,8 +69,6 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     if "/shipment/list" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "/create/shipment/newtest" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
