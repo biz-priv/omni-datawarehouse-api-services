@@ -41,8 +41,8 @@ def generate_policy(principal_id, effect, method_arn, customer_id = None, messag
         raise GeneratePolicyError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from generate_policy_error
 
 def handler(event, context):
+    LOGGER.info("Event: %s",event)
     try:
-        LOGGER.info("Event: %s",event)
         api_key = event['headers']['x-api-key']
         params = event["queryStringParameters"]
         LOGGER.info("Event API Key: %s", str(api_key))
@@ -52,16 +52,12 @@ def handler(event, context):
         logging.exception("ApiKeyError: %s",api_key_error)
         raise ApiKeyError(json.dumps({"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
-    LOGGER.info("Passed event parsing try-except loop")
     #Validating params only for the GET APIs
-    if "/create/shipment/newtest" not in event["methodArn"] and "/create/shipment" not in event["methodArn"]:
-        LOGGER.info("/create/shipment/newtest not in event[methodArn]")
+    if "/create/shipment" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
     
-    LOGGER.info("passed not in methodArn if/else checks")
-    LOGGER.info("DynamoQueryParams- Table: "+ str(os.environ["TOKEN_VALIDATION_TABLE"]) +"Index: "+ str(os.environ["TOKEN_VALIDATION_TABLE_INDEX"])+"KeyConditionExpression: "+'ApiKey = :apikey'+"ExpressionAttributeValues: "+ str({":apikey": {"S": api_key}}))
     #Get customer ID based on the api_key
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"],'ApiKey = :apikey', {":apikey": {"S": api_key}})
     LOGGER.info("token validation table response : %s",json.dumps(response))
@@ -72,16 +68,10 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
 
-    LOGGER.info("customer_id got, before create/shipment")
-    if "/create/shipment/newtest" in event["methodArn"]:
-        LOGGER.info("create/shipment/newtest if-else")
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "/create/shipment" in event["methodArn"]:
-        LOGGER.info("create/shipment if-else")
+    if "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     else:
-        LOGGER.info("not create/shipment if-else")
         query = "CustomerID = :id AND "
         if "file_nbr" in params:
             num = params["file_nbr"]

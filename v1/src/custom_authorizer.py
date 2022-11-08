@@ -61,8 +61,6 @@ def handler(event, context):
 
     if "/uploadpoddocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "/create/shipment/newtest" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/shipment/list" in event["methodArn"]:
