@@ -4,25 +4,25 @@ const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
 const CommodityInputValidation = {
-  CommodityPieces: Joi.number().integer().required(),
-  CommodityWeightLB: Joi.number().integer().required(),
-  CommodityLengthIN: Joi.number().integer().required(),
-  CommodityWidthIN: Joi.number().integer().required(),
-  CommodityHeightIN: Joi.number().integer().required(),
+  pieces: Joi.number().integer(), //.required(),
+  weight: Joi.number().integer(), //.required(),
+  length: Joi.number().integer(), //.required(),
+  width: Joi.number().integer(), //.required(),
+  height: Joi.number().integer(), //.required(),
 };
 const AccessorialInputValidation = {
-  Code: Joi.string().alphanum().required(),
+  Code: Joi.string().alphanum(),//.required(),
 };
 const eventValidation = Joi.object().keys({
-  shipementRateRequest: Joi.object()
+  shipmentRateRequest: Joi.object()
     .keys({
       shipperZip: Joi.string().alphanum().required(),
       consigneeZip: Joi.string().alphanum().required(),
       pickupTime: Joi.date().iso().greater("now").required(),
     })
     .required(),
-  CommodityInput: Joi.array().items(CommodityInputValidation).required(),
-  "New Shipment Accessorials List": Joi.array().items(
+  CommodityInput: Joi.array().items(CommodityInputValidation),//.required(),
+  "accessorialList": Joi.array().items(
     AccessorialInputValidation
   ),
 });
@@ -50,16 +50,16 @@ module.exports.handler = async (event, context, callback) => {
     console.info("NoError, value: ", value)
   }
   let eventBody = value;
-  const PickupTime = body.RatingInput.PickupTime.toString();
+  const PickupTime = body.shipmentRateRequest.pickupTime.toString();
 
-  eventBody.RatingInput.LiabilityType = LiabilityType;
-  eventBody.RatingInput.PickupDate = PickupTime;
-  eventBody.RatingInput.PickupTime = PickupTime;
-  eventBody.RatingInput.PickupLocationCloseTime = PickupTime;
+  eventBody.shipmentRateRequest.LiabilityType = LiabilityType;
+  eventBody.shipmentRateRequest.PickupDate = PickupTime;
+  eventBody.shipmentRateRequest.PickupTime = PickupTime;
+  eventBody.shipmentRateRequest.PickupLocationCloseTime = PickupTime;
 
   try {
     const customerData = await getCustomerId(apiKey);
-    eventBody.RatingInput.WebTrakUserID = customerData.WebTrackId;
+    eventBody.shipmentRateRequest.WebTrakUserID = customerData.WebTrackId;
 
     eventBody.CommodityInput = addCommodityWeightPerPiece(
       eventBody.CommodityInput
