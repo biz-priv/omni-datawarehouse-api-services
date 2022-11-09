@@ -9,22 +9,25 @@ const CommodityInputValidation = {
   length: Joi.number().integer(), //.required(),
   width: Joi.number().integer(), //.required(),
   height: Joi.number().integer(), //.required(),
+  pieceType: Joi.string().alphanum(),
+  hazmat: Joi.any().allow(0,1,true,false,'true','false'),
+  dimUOM: Joi.string(),
+  weightUOM: Joi.string(),
 };
-const AccessorialInputValidation = {
-  Code: Joi.string().alphanum(),//.required(),
-};
+
 const eventValidation = Joi.object().keys({
   shipmentRateRequest: Joi.object()
     .keys({
       shipperZip: Joi.string().alphanum().required(),
       consigneeZip: Joi.string().alphanum().required(),
       pickupTime: Joi.date().iso().greater("now").required(),
+      customerNumber: Joi.number().integer(),
+      commodityClass: Joi.number(),
+      insuredValue: Joi.number().integer(),
+      accessorialList: Joi.array().items(Joi.string().alphanum()),
+      shipmentLines: Joi.array().items(CommodityInputValidation).required(),
     })
     .required(),
-  CommodityInput: Joi.array().items(CommodityInputValidation),//.required(),
-  "accessorialList": Joi.array().items(
-    AccessorialInputValidation
-  ),
 });
 
 function isArray(a) {
@@ -32,22 +35,24 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  console.log(event)
+  console.log(event);
   const { body } = event;
   const LiabilityType = "LL";
-
   const apiKey = event.headers["x-api-key"];
-
+  if (body.shipmentRateRequest.shipmentLines.hazmat) {
+    body.shipmentRateRequest.shipmentLines.hazmat =
+      body.shipmentRateRequest.shipmentLines.hazmat.toLowerCase();
+  }
   const { error, value } = eventValidation.validate(body);
   if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    console.info("MessageError",response("[400]", key + " " + msg))
+    console.info("MessageError", response("[400]", key + " " + msg));
     return callback(response("[400]", key + " " + msg));
-  } else{
-    console.info("NoError, value: ", value)
+  } else {
+    console.info("NoError, value: ", value);
   }
   let eventBody = value;
   const PickupTime = body.shipmentRateRequest.pickupTime.toString();
@@ -61,8 +66,8 @@ module.exports.handler = async (event, context, callback) => {
     const customerData = await getCustomerId(apiKey);
     eventBody.shipmentRateRequest.WebTrakUserID = customerData.WebTrackId;
 
-    eventBody.CommodityInput = addCommodityWeightPerPiece(
-      eventBody.CommodityInput
+    eventBody.shipmentLines = addCommodityWeightPerPiece(
+      eventBody.shipmentLines
     );
     if (eventBody.hasOwnProperty("New Shipment Accessorials List")) {
       eventBody.AccessorialInput = {
@@ -72,6 +77,7 @@ module.exports.handler = async (event, context, callback) => {
       };
       delete eventBody["New Shipment Accessorials List"];
     }
+    
 
     const postData = makeJsonToXml(eventBody);
     console.log("postData", postData);
