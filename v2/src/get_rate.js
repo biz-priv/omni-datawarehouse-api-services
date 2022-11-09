@@ -14,11 +14,11 @@ const AccessorialInputValidation = {
   Code: Joi.string().alphanum().required(),
 };
 const eventValidation = Joi.object().keys({
-  RatingInput: Joi.object()
+  shipementRateRequest: Joi.object()
     .keys({
-      OriginZip: Joi.string().alphanum().required(),
-      DestinationZip: Joi.string().alphanum().required(),
-      PickupTime: Joi.date().iso().greater("now").required(),
+      shipperZip: Joi.string().alphanum().required(),
+      consigneeZip: Joi.string().alphanum().required(),
+      pickupTime: Joi.date().iso().greater("now").required(),
     })
     .required(),
   CommodityInput: Joi.array().items(CommodityInputValidation).required(),
@@ -32,6 +32,7 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
+  console.log(event)
   const { body } = event;
   const LiabilityType = "LL";
 
@@ -43,7 +44,10 @@ module.exports.handler = async (event, context, callback) => {
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
+    console.info("MessageError",response("[400]", key + " " + msg))
     return callback(response("[400]", key + " " + msg));
+  } else{
+    console.info("NoError, value: ", value)
   }
   let eventBody = value;
   const PickupTime = body.RatingInput.PickupTime.toString();
