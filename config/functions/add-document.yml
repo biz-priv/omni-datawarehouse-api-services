@@ -36,8 +36,8 @@ function:
         #   type: request
   package:
     include:
-      - v2/src/adddocument.js
+      - v2/src/add_document.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    # ULOAD_POD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uploadpoddocument}
+    ULOAD_POD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uploadpoddocument}

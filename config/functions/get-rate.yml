@@ -34,7 +34,7 @@ function:
           type: request
   package:
     include:
-      - ${self:custom.alias}/src/get_rating.js
+      - ${self:custom.alias}/src/get_rate.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
