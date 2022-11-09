@@ -66,11 +66,7 @@ def handler(event, context):
     elif "/shipment/list" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/rating" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)   
-    elif "/rate" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)   
-    elif "/addDocument" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)    
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)     
     elif "/billoflading" in event["methodArn"]:
         query = "CustomerID = :id AND "
         if "file_nbr" in params:
