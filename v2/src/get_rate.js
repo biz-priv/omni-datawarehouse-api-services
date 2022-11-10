@@ -71,6 +71,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
+  console.info("ReqFields Filled",newJSON)
   if(customer_id != 'customer-portal-admin'){
     let resp = await getCustomerId(customer_id)
     if(resp == 'failure'){
@@ -82,7 +83,7 @@ module.exports.handler = async (event, context, callback) => {
   if ("customerNumber" in body.shipmentRateRequest) {
     newJSON.RatingInput.BillToNo = reqFields.customerNumber;
   }
-
+  console.info("BillToFilled: ",newJSON)
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (body.shipmentRateRequest.insuredValue > 0) {
@@ -94,6 +95,7 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.LiabilityType = "LL";
     }
   }
+  console.info("Liability",newJSON)
   // console.log(body.shipmentRateRequest);
 
   // let eventBody = value;
