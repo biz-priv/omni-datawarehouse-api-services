@@ -39,6 +39,6 @@ function:
   environment:
     REGION: ${self:provider.region}
     # TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
-    RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rating}
+    RATING_API: ${ssm:/omni-dw/${self:provider.stage}/shipment/rate}
     ACCOUNT_INFO_TABLE: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/table}
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/customerId/index}
