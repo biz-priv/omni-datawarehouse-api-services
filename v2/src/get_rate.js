@@ -310,13 +310,14 @@ async function getCustomerId(customerId) {
       region: process.env.REGION,
     });
     const params = {
-      TableName: os.environ['ACCOUNT_INFO_TABLE'],
-      IndexName: os.environ['ACCOUNT_INFO_TABLE_INDEX'],
+      TableName: process.env.ACCOUNT_INFO_TABLE,
+      IndexName: process.env.ACCOUNT_INFO_TABLE_INDEX,
       KeyConditionExpression: 'CustomerID = :CustomerID',
       ExpressionAttributeValues: {":CustomerID": {"S": customer_id}},
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
+      console.info("Dynamo resp: ", response.Items)
       return response.Items[0];
     } else {
       return 'failure';
