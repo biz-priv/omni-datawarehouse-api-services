@@ -72,7 +72,7 @@ module.exports.handler = async (event, context, callback) => {
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
   if(customer_id != 'customer-portal-admin'){
-    let resp = getCustomerId(customer_id)
+    let resp = await getCustomerId(customer_id)
     if(resp == 'failure'){
       return callback(response("[400]", 'Customer Information does not exist. Please raise a support ticket to add the customer'));
     } else {
