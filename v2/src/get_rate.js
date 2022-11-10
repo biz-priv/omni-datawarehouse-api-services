@@ -226,10 +226,10 @@ function makeXmlToJson(data) {
     if (
       obj["soap:Envelope"][
         "soap:Body"
-      ].GetRatingResponse.GetRatingResult.hasOwnProperty("RatingOutput")
+      ].GetRatingByCustomerResponse.GetRatingByCustomerResult.hasOwnProperty("RatingOutput")
     ) {
       const modifiedObj =
-        obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
+        obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse.GetRatingByCustomerResult
           .RatingOutput;
       console.log("modifiedObj", modifiedObj);
 
