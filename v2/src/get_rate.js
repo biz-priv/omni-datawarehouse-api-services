@@ -111,6 +111,7 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.CommodityInput.CommodityInput =
         addCommodityWeightPerPiece(body.shipmentRateRequest);
     }
+    console.info("ShipLines ",newJSON)
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
@@ -122,6 +123,7 @@ module.exports.handler = async (event, context, callback) => {
       };
       delete body.shipmentRateRequest["accessorialList"];
     }
+    console.info("accessorialList",newJSON)
 
     const postData = makeJsonToXml(newJSON);
     console.log("postData", postData);
