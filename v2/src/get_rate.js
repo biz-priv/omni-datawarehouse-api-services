@@ -7,6 +7,7 @@ const eventValidation = Joi.object().keys({
   shipperZip: Joi.number().integer().max(99999).min(10000).required(),
   consigneeZip: Joi.number().integer().max(99999).min(10000).required(),
   pickupTime: Joi.date().iso().greater("now").required(),
+  customerNumber: Joi.number().integer().max(999999),
 });
 
 function isArray(a) {
@@ -16,7 +17,6 @@ function isArray(a) {
 module.exports.handler = async (event, context, callback) => {
   console.log(event);
   const { body } = event;
-  // const LiabilityType = "LL";
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
   let valError;
@@ -28,7 +28,12 @@ module.exports.handler = async (event, context, callback) => {
       },
     },
   };
-  if (!("shipmentRateRequest" in body)) {
+  if (
+    !("enhancedAuthContext" in event) ||
+    !("customerId" in event.enhancedAuthContext)
+  ) {
+    valError = "CustomerId not found.";
+  } else if (!("shipmentRateRequest" in body)) {
     valError = "shipmentRateRequest is required.";
   } else if (
     !("shipperZip" in body.shipmentRateRequest) ||
@@ -42,17 +47,20 @@ module.exports.handler = async (event, context, callback) => {
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
     reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
   }
+
+  
   const { error, value } = eventValidation.validate(reqFields);
 
   if (valError) {
     console.info(valError);
+    return callback(response("[400]", valError));
   } else if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.info("MessageError", "[400]", error);
-    console.log("[400]", error);
+    return callback(response("[400]", key + " " + error));
   } else {
     newJSON.RatingParam.RatingInput.OriginZip = reqFields.shipperZip;
     newJSON.RatingParam.RatingInput.DestinationZip = reqFields.consigneeZip;
@@ -64,6 +72,19 @@ module.exports.handler = async (event, context, callback) => {
       reqFields.pickupTime.toString();
   }
   newJSON.RatingParam.RatingInput.RequestID = 20221104;
+  customer_id = event.enhancedAuthContext.customerId;
+  if(customer_id != 'customer-portal-admin'){
+    let resp = getCustomerId(customer_id)
+    if(resp == 'failure'){
+      return callback(response("[400]", 'Customer Information does not exist. Please raise a support ticket to add the customer'));
+    } else {
+      newJSON.RatingParam.RatingInput.BillToNo = customer_info['BillToAcct']['S']
+    }
+  } 
+  if ("customerNumber" in body.shipmentRateRequest) {
+    newJSON.RatingParam.RatingInput.BillToNo = reqFields.customerNumber;
+  }
+
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (body.shipmentRateRequest.insuredValue > 0) {
@@ -85,22 +106,19 @@ module.exports.handler = async (event, context, callback) => {
   // eventBody.shipmentRateRequest.PickupTime = PickupTime;
   // eventBody.shipmentRateRequest.PickupLocationCloseTime = PickupTime;
 
-  
-
   try {
-    if('shipmentLines' in body.shipmentRateRequest){
-      newJSON.RatingParam.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-        body.shipmentRateRequest
-      );
+    if ("shipmentLines" in body.shipmentRateRequest) {
+      newJSON.RatingParam.CommodityInput.CommodityInput =
+        addCommodityWeightPerPiece(body.shipmentRateRequest);
     }
     // newJSON.RatingParam.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
-    if ('accessorialList' in body.shipmentRateRequest) {
+    if ("accessorialList" in body.shipmentRateRequest) {
       newJSON.RatingParam.AccessorialInput = {
-        AccessorialInput: body.shipmentRateRequest.accessorialList.map(
-          (e) => ({ AccessorialCode: e.Code })
-        ),
+        AccessorialInput: body.shipmentRateRequest.accessorialList.map((e) => ({
+          AccessorialCode: e.Code,
+        })),
       };
       delete body.shipmentRateRequest["accessorialList"];
     }
@@ -124,8 +142,8 @@ module.exports.handler = async (event, context, callback) => {
 
 function addCommodityWeightPerPiece(inputData) {
   let commodityInput = {
-    CommodityInput: {}
-  }
+    CommodityInput: {},
+  };
   for (const key in inputData.shipmentLines) {
     if (key == "dimUOM") {
       if (inputData[key].toLowerCase() == "cm") {
@@ -176,8 +194,8 @@ function addCommodityWeightPerPiece(inputData) {
         inputData.shipmentLines[0][shipKey];
     }
   }
-  
-  return commodityInput.CommodityInput
+
+  return commodityInput.CommodityInput;
 }
 
 function makeJsonToXml(data) {
@@ -288,28 +306,22 @@ function response(code, message) {
   });
 }
 
-async function getCustomerId(ApiKey) {
+async function getCustomerId(customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
       region: process.env.REGION,
     });
     const params = {
-      TableName: process.env.TOKEN_VALIDATOR,
-      FilterExpression: "#ApiKey = :ApiKey",
-      ExpressionAttributeNames: { "#ApiKey": "ApiKey" },
-      ExpressionAttributeValues: { ":ApiKey": ApiKey },
+      TableName: os.environ['ACCOUNT_INFO_TABLE'],
+      IndexName: os.environ['ACCOUNT_INFO_TABLE_INDEX'],
+      KeyConditionExpression: 'CustomerID = :CustomerID',
+      ExpressionAttributeValues: {":CustomerID": {"S": customer_id}},
     };
-    const response = await documentClient.scan(params).promise();
+    const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
-      if (
-        !response.Items[0].hasOwnProperty("WebTrackId") ||
-        response.Items[0].WebTrackId == null
-      ) {
-        throw "No valid WebTrackId";
-      }
       return response.Items[0];
     } else {
-      throw "Invalid API Key";
+      return 'failure';
     }
   } catch (e) {
     throw e.hasOwnProperty("message") ? e.message : e;
