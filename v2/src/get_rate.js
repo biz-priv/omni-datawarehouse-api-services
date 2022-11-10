@@ -116,12 +116,14 @@ module.exports.handler = async (event, context, callback) => {
     //   body.shipmentRateRequest
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
-      newJSON.AccessorialInput = {
-        AccessorialInput: body.shipmentRateRequest.accessorialList.map((e) => ({
-          AccessorialCode: e.Code,
-        })),
-      };
-      delete body.shipmentRateRequest["accessorialList"];
+      newJSON.AccessorialInput={}
+      newJSON.AccessorialInput.AccessorialInput = [];
+      for (let x = 0; x < body.shipmentRateRequest.accessorialList.length; x++) {
+        console.log(body.shipmentRateRequest.accessorialList[x]);
+        newJSON.AccessorialInput.AccessorialInput.push({
+          AccessorialCode: body.shipmentRateRequest.accessorialList[x],
+        });
+      }
     }
     console.info("accessorialList",newJSON)
 
@@ -316,7 +318,7 @@ async function getCustomerId(customerId) {
     const params = {
       TableName: process.env.ACCOUNT_INFO_TABLE,
       IndexName: process.env.ACCOUNT_INFO_TABLE_INDEX,
-      KeyConditionExpression: '#CustomerID = :CustomerID',
+      KeyConditionExpression: 'CustomerID = :CustomerID',
       ExpressionAttributeValues: {":CustomerID": customerId},
     };
     const response = await documentClient.query(params).promise();
