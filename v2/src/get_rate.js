@@ -21,11 +21,9 @@ module.exports.handler = async (event, context, callback) => {
   let reqFields = {};
   let valError;
   let newJSON = {
-    RatingParam: {
       RatingInput: {},
       CommodityInput: {
         CommodityInput: {},
-      },
     },
   };
   if (
@@ -62,38 +60,38 @@ module.exports.handler = async (event, context, callback) => {
     console.info("MessageError", "[400]", error);
     return callback(response("[400]", key + " " + error));
   } else {
-    newJSON.RatingParam.RatingInput.OriginZip = reqFields.shipperZip;
-    newJSON.RatingParam.RatingInput.DestinationZip = reqFields.consigneeZip;
-    newJSON.RatingParam.RatingInput.PickupTime =
+    newJSON.RatingInput.OriginZip = reqFields.shipperZip;
+    newJSON.RatingInput.DestinationZip = reqFields.consigneeZip;
+    newJSON.RatingInput.PickupTime =
       reqFields.pickupTime.toString();
-    newJSON.RatingParam.RatingInput.PickupDate =
+    newJSON.RatingInput.PickupDate =
       reqFields.pickupTime.toString();
-    newJSON.RatingParam.RatingInput.PickupLocationCloseTime =
+    newJSON.RatingInput.PickupLocationCloseTime =
       reqFields.pickupTime.toString();
   }
-  newJSON.RatingParam.RatingInput.RequestID = 20221104;
+  newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
   if(customer_id != 'customer-portal-admin'){
     let resp = getCustomerId(customer_id)
     if(resp == 'failure'){
       return callback(response("[400]", 'Customer Information does not exist. Please raise a support ticket to add the customer'));
     } else {
-      newJSON.RatingParam.RatingInput.BillToNo = customer_info['BillToAcct']['S']
+      newJSON.RatingInput.BillToNo = resp['BillToAcct']['S']
     }
   } 
   if ("customerNumber" in body.shipmentRateRequest) {
-    newJSON.RatingParam.RatingInput.BillToNo = reqFields.customerNumber;
+    newJSON.RatingInput.BillToNo = reqFields.customerNumber;
   }
 
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (body.shipmentRateRequest.insuredValue > 0) {
-        newJSON.RatingParam.RatingInput.LiabilityType = "INSP";
+        newJSON.RatingInput.LiabilityType = "INSP";
       } else {
-        newJSON.RatingParam.RatingInput.LiabilityType = "LL";
+        newJSON.RatingInput.LiabilityType = "LL";
       }
     } catch {
-      newJSON.RatingParam.RatingInput.LiabilityType = "LL";
+      newJSON.RatingInput.LiabilityType = "LL";
     }
   }
   // console.log(body.shipmentRateRequest);
@@ -108,14 +106,14 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     if ("shipmentLines" in body.shipmentRateRequest) {
-      newJSON.RatingParam.CommodityInput.CommodityInput =
+      newJSON.CommodityInput.CommodityInput =
         addCommodityWeightPerPiece(body.shipmentRateRequest);
     }
-    // newJSON.RatingParam.CommodityInput = addCommodityWeightPerPiece(
+    // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
-      newJSON.RatingParam.AccessorialInput = {
+      newJSON.AccessorialInput = {
         AccessorialInput: body.shipmentRateRequest.accessorialList.map((e) => ({
           AccessorialCode: e.Code,
         })),
