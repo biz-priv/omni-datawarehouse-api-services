@@ -97,15 +97,15 @@ module.exports.handler = async (event, context, callback) => {
     //   body.shipmentRateRequest
     // );
     if ('accessorialList' in body.shipmentRateRequest) {
-      eventBody.AccessorialInput = {
+      newJSON.RatingParam.AccessorialInput = {
         AccessorialInput: body.shipmentRateRequest.accessorialList.map(
           (e) => ({ AccessorialCode: e.Code })
         ),
       };
-      delete eventBody["New Shipment Accessorials List"];
+      delete body.shipmentRateRequest["accessorialList"];
     }
 
-    const postData = makeJsonToXml(eventBody);
+    const postData = makeJsonToXml(newJSON);
     console.log("postData", postData);
     // return {};
     const dataResponse = await getRating(postData);
