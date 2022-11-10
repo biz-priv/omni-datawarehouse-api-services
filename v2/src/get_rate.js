@@ -71,8 +71,9 @@ module.exports.handler = async (event, context, callback) => {
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
+  console.info("ReqFields Filled",newJSON)
   if(customer_id != 'customer-portal-admin'){
-    let resp = getCustomerId(customer_id)
+    let resp = await getCustomerId(customer_id)
     if(resp == 'failure'){
       return callback(response("[400]", 'Customer Information does not exist. Please raise a support ticket to add the customer'));
     } else {
@@ -82,7 +83,7 @@ module.exports.handler = async (event, context, callback) => {
   if ("customerNumber" in body.shipmentRateRequest) {
     newJSON.RatingInput.BillToNo = reqFields.customerNumber;
   }
-
+  console.info("BillToFilled: ",newJSON)
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (body.shipmentRateRequest.insuredValue > 0) {
@@ -94,6 +95,7 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.LiabilityType = "LL";
     }
   }
+  console.info("Liability",newJSON)
   // console.log(body.shipmentRateRequest);
 
   // let eventBody = value;
@@ -109,6 +111,7 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.CommodityInput.CommodityInput =
         addCommodityWeightPerPiece(body.shipmentRateRequest);
     }
+    console.info("ShipLines ",newJSON)
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
@@ -120,6 +123,7 @@ module.exports.handler = async (event, context, callback) => {
       };
       delete body.shipmentRateRequest["accessorialList"];
     }
+    console.info("accessorialList",newJSON)
 
     const postData = makeJsonToXml(newJSON);
     console.log("postData", postData);
