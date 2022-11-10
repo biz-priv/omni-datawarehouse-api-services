@@ -3,31 +3,10 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
-const CommodityInputValidation = {
-  pieces: Joi.number().integer(), //.required(),
-  weight: Joi.number().integer(), //.required(),
-  length: Joi.number().integer(), //.required(),
-  width: Joi.number().integer(), //.required(),
-  height: Joi.number().integer(), //.required(),
-  pieceType: Joi.string().alphanum(),
-  hazmat: Joi.any().allow(0,1,true,false,'true','false'),
-  dimUOM: Joi.string(),
-  weightUOM: Joi.string(),
-};
-
 const eventValidation = Joi.object().keys({
-  shipmentRateRequest: Joi.object()
-    .keys({
-      shipperZip: Joi.string().alphanum().required(),
-      consigneeZip: Joi.string().alphanum().required(),
-      pickupTime: Joi.date().iso().greater("now").required(),
-      customerNumber: Joi.number().integer(),
-      commodityClass: Joi.number(),
-      insuredValue: Joi.number().integer(),
-      accessorialList: Joi.array().items(Joi.string().alphanum()),
-      shipmentLines: Joi.array().items(CommodityInputValidation).required(),
-    })
-    .required(),
+  shipperZip: Joi.number().integer().max(99999).min(10000).required(),
+  consigneeZip: Joi.number().integer().max(99999).min(10000).required(),
+  pickupTime: Joi.date().iso().greater("now").required(),
 });
 
 function isArray(a) {
@@ -37,59 +16,100 @@ function isArray(a) {
 module.exports.handler = async (event, context, callback) => {
   console.log(event);
   const { body } = event;
-  const LiabilityType = "LL";
+  // const LiabilityType = "LL";
   const apiKey = event.headers["x-api-key"];
-  if (body.shipmentRateRequest.shipmentLines.hazmat) {
-    body.shipmentRateRequest.shipmentLines.hazmat =
-      body.shipmentRateRequest.shipmentLines.hazmat.toLowerCase();
+  let reqFields = {};
+  let valError;
+  let newJSON = {
+    RatingParam: {
+      RatingInput: {},
+      CommodityInput: {
+        CommodityInput: {},
+      },
+    },
+  };
+  if (!("shipmentRateRequest" in body)) {
+    valError = "shipmentRateRequest is required.";
+  } else if (
+    !("shipperZip" in body.shipmentRateRequest) ||
+    !("consigneeZip" in body.shipmentRateRequest) ||
+    !("pickupTime" in body.shipmentRateRequest)
+  ) {
+    valError =
+      "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
+  } else {
+    reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
+    reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
+    reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
   }
-  const { error, value } = eventValidation.validate(body);
-  if (error) {
+  const { error, value } = eventValidation.validate(reqFields);
+
+  if (valError) {
+    console.info(valError);
+  } else if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    console.info("MessageError", response("[400]", key + " " + msg));
-    return callback(response("[400]", key + " " + msg));
+    console.info("MessageError", "[400]", error);
+    console.log("[400]", error);
   } else {
-    console.info("NoError, value: ", value);
+    newJSON.RatingParam.RatingInput.OriginZip = reqFields.shipperZip;
+    newJSON.RatingParam.RatingInput.DestinationZip = reqFields.consigneeZip;
+    newJSON.RatingParam.RatingInput.PickupTime =
+      reqFields.pickupTime.toString();
+    newJSON.RatingParam.RatingInput.PickupDate =
+      reqFields.pickupTime.toString();
+    newJSON.RatingParam.RatingInput.PickupLocationCloseTime =
+      reqFields.pickupTime.toString();
   }
-  let eventBody = value;
-  const PickupTime = body.shipmentRateRequest.pickupTime.toString();
+  newJSON.RatingParam.RatingInput.RequestID = 20221104;
+  if ("insuredValue" in body.shipmentRateRequest) {
+    try {
+      if (body.shipmentRateRequest.insuredValue > 0) {
+        newJSON.RatingParam.RatingInput.LiabilityType = "INSP";
+      } else {
+        newJSON.RatingParam.RatingInput.LiabilityType = "LL";
+      }
+    } catch {
+      newJSON.RatingParam.RatingInput.LiabilityType = "LL";
+    }
+  }
+  // console.log(body.shipmentRateRequest);
 
-  eventBody.shipmentRateRequest.LiabilityType = LiabilityType;
-  eventBody.shipmentRateRequest.PickupDate = PickupTime;
-  eventBody.shipmentRateRequest.PickupTime = PickupTime;
-  eventBody.shipmentRateRequest.PickupLocationCloseTime = PickupTime;
+  // let eventBody = value;
+  // const PickupTime = body.shipmentRateRequest.pickupTime.toString();
+
+  // eventBody.shipmentRateRequest.LiabilityType = LiabilityType;
+  // eventBody.shipmentRateRequest.PickupDate = PickupTime;
+  // eventBody.shipmentRateRequest.PickupTime = PickupTime;
+  // eventBody.shipmentRateRequest.PickupLocationCloseTime = PickupTime;
+
+  
 
   try {
-    const customerData = await getCustomerId(apiKey);
-    eventBody.shipmentRateRequest.WebTrakUserID = customerData.WebTrackId;
-
-    eventBody.shipmentLines = addCommodityWeightPerPiece(
-      eventBody.shipmentLines
-    );
-    if (eventBody.hasOwnProperty("New Shipment Accessorials List")) {
+    if('shipmentLines' in body.shipmentRateRequest){
+      newJSON.RatingParam.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
+        body.shipmentRateRequest
+      );
+    }
+    // newJSON.RatingParam.CommodityInput = addCommodityWeightPerPiece(
+    //   body.shipmentRateRequest
+    // );
+    if ('accessorialList' in body.shipmentRateRequest) {
       eventBody.AccessorialInput = {
-        AccessorialInput: eventBody["New Shipment Accessorials List"].map(
+        AccessorialInput: body.shipmentRateRequest.accessorialList.map(
           (e) => ({ AccessorialCode: e.Code })
         ),
       };
       delete eventBody["New Shipment Accessorials List"];
     }
-    
 
     const postData = makeJsonToXml(eventBody);
     console.log("postData", postData);
     // return {};
     const dataResponse = await getRating(postData);
     const dataObj = makeXmlToJson(dataResponse);
-    if (
-      dataObj.hasOwnProperty("Message") &&
-      dataObj.Message == "WebTrakUserID is invalid."
-    ) {
-      return callback(response("[500]", "WebTrakUserID is invalid"));
-    }
 
     return dataObj;
   } catch (error) {
@@ -103,18 +123,61 @@ module.exports.handler = async (event, context, callback) => {
 };
 
 function addCommodityWeightPerPiece(inputData) {
-  return {
-    CommodityInput: inputData.map((obj) => ({
-      CommodityPieces: obj.CommodityPieces,
-      CommodityWeightPerPiece: Math.round(
-        obj.CommodityWeightLB / obj.CommodityPieces
-      ),
-      CommodityWeight: obj.CommodityWeightLB,
-      CommodityLength: obj.CommodityLengthIN,
-      CommodityWidth: obj.CommodityWidthIN,
-      CommodityHeight: obj.CommodityHeightIN,
-    })),
-  };
+  let commodityInput = {
+    CommodityInput: {}
+  }
+  for (const key in inputData.shipmentLines) {
+    if (key == "dimUOM") {
+      if (inputData[key].toLowerCase() == "cm") {
+        if ("length" in inputData.shipmentLines) {
+          try {
+            inputData.shipmentLines.length =
+              inputData.shipmentLines.length * 2.54;
+          } catch {
+            console.info("invalid value for length");
+          }
+        }
+        if ("width" in inputData.shipmentLines) {
+          try {
+            inputData.shipmentLines.width =
+              inputData.shipmentLines.width * 2.54;
+          } catch {
+            console.info("invalid value for width");
+          }
+        }
+        if ("height" in inputData.shipmentLines) {
+          try {
+            inputData.shipmentLines.height =
+              inputData.shipmentLines.height * 2.54;
+          } catch {
+            console.info("invalid value for height");
+          }
+        }
+      }
+    } else if (key == "weightUOM") {
+      if (inputData[key].toLowerCase() == "kg") {
+        if ("weight" in inputData.shipmentLines) {
+          try {
+            inputData.shipmentLines.weight =
+              inputData.shipmentLines.weight * 2.2046;
+          } catch {
+            console.log("invalid value for weight");
+          }
+        }
+      }
+    }
+  }
+
+  for (const shipKey in inputData.shipmentLines[0]) {
+    if (shipKey != "dimUOM" && shipKey != "weightUOM") {
+      new_key =
+        "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+      commodityInput.CommodityInput[new_key] =
+        inputData.shipmentLines[0][shipKey];
+    }
+  }
+  
+  return commodityInput.CommodityInput
 }
 
 function makeJsonToXml(data) {
