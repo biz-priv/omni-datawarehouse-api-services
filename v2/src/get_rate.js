@@ -131,6 +131,7 @@ module.exports.handler = async (event, context, callback) => {
     console.log("postData", postData);
     // return {};
     const dataResponse = await getRating(postData);
+    console.log(dataResponse)
     const dataObj = makeXmlToJson(dataResponse);
 
     return dataObj;
@@ -221,13 +222,14 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
+    console.log(obj)
     if (
       obj["soap:Envelope"][
         "soap:Body"
-      ].GetRatingResponse.GetRatingResult.hasOwnProperty("RatingOutput")
+      ].GetRatingByCustomerResponse.GetRatingByCustomerResult.hasOwnProperty("RatingOutput")
     ) {
       const modifiedObj =
-        obj["soap:Envelope"]["soap:Body"].GetRatingResponse.GetRatingResult
+        obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse.GetRatingByCustomerResult
           .RatingOutput;
       console.log("modifiedObj", modifiedObj);
 
