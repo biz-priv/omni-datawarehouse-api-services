@@ -116,12 +116,14 @@ module.exports.handler = async (event, context, callback) => {
     //   body.shipmentRateRequest
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
-      newJSON.AccessorialInput = {
-        AccessorialInput: body.shipmentRateRequest.accessorialList.map((e) => ({
-          AccessorialCode: e.Code,
-        })),
-      };
-      delete body.shipmentRateRequest["accessorialList"];
+      newJSON.AccessorialInput={}
+      newJSON.AccessorialInput.AccessorialInput = [];
+      for (let x = 0; x < body.shipmentRateRequest.accessorialList.length; x++) {
+        console.log(body.shipmentRateRequest.accessorialList[x]);
+        newJSON.AccessorialInput.AccessorialInput.push({
+          AccessorialCode: body.shipmentRateRequest.accessorialList[x],
+        });
+      }
     }
     console.info("accessorialList",newJSON)
 
