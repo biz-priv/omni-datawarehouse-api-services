@@ -76,7 +76,7 @@ module.exports.handler = async (event, context, callback) => {
     if(resp == 'failure'){
       return callback(response("[400]", 'Customer Information does not exist. Please raise a support ticket to add the customer'));
     } else {
-      newJSON.RatingInput.BillToNo = customer_info['BillToAcct']['S']
+      newJSON.RatingInput.BillToNo = resp['BillToAcct']['S']
     }
   } 
   if ("customerNumber" in body.shipmentRateRequest) {
