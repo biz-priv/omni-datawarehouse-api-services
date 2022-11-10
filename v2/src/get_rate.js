@@ -222,6 +222,7 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
+    console.log(obj)
     if (
       obj["soap:Envelope"][
         "soap:Body"
