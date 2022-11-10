@@ -81,7 +81,7 @@ module.exports.handler = async (event, context, callback) => {
     }
   } 
   if ("customerNumber" in body.shipmentRateRequest) {
-    newJSON.RatingInput.BillToNo = reqFields.customerNumber;
+    newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
   console.info("BillToFilled: ",newJSON)
   if ("insuredValue" in body.shipmentRateRequest) {
@@ -316,7 +316,7 @@ async function getCustomerId(customerId) {
     const params = {
       TableName: process.env.ACCOUNT_INFO_TABLE,
       IndexName: process.env.ACCOUNT_INFO_TABLE_INDEX,
-      KeyConditionExpression: 'CustomerID = :CustomerID',
+      KeyConditionExpression: '#CustomerID = :CustomerID',
       ExpressionAttributeValues: {":CustomerID": {"S": customerId}},
     };
     const response = await documentClient.query(params).promise();
