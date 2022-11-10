@@ -317,7 +317,7 @@ async function getCustomerId(customerId) {
       TableName: process.env.ACCOUNT_INFO_TABLE,
       IndexName: process.env.ACCOUNT_INFO_TABLE_INDEX,
       KeyConditionExpression: '#CustomerID = :CustomerID',
-      ExpressionAttributeValues: {":CustomerID": {"S": customerId}},
+      ExpressionAttributeValues: {":CustomerID": customerId},
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
