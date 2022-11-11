@@ -326,9 +326,9 @@ function makeXmlToJson(data) {
           console.log(t);
 
           if(ampm[1].toUpperCase() == 'PM'){
-            x.setHours(Number(t[0])+12)
+            EstimatedDelivery.setHours(Number(t[0])+12)
           } else {
-            x.setHours(Number(t[0]))
+            EstimatedDelivery.setHours(Number(t[0]))
           }
 
           EstimatedDelivery.setMinutes(t[1]);
