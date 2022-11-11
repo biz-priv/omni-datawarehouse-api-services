@@ -161,7 +161,7 @@ function addCommodityWeightPerPiece(inputData) {
         if ("length" in inputData.shipmentLines[0]) {
           try {
             inputData.shipmentLines[0].length =
-              inputData.shipmentLines[0].length * 2.54;
+              Math.round(inputData.shipmentLines[0].length * 2.54);
           } catch {
             console.info("invalid value for length");
           }
@@ -169,7 +169,7 @@ function addCommodityWeightPerPiece(inputData) {
         if ("width" in inputData.shipmentLines[0]) {
           try {
             inputData.shipmentLines[0].width =
-              inputData.shipmentLines[0].width * 2.54;
+              Math.round(inputData.shipmentLines[0].width * 2.54);
           } catch {
             console.info("invalid value for width");
           }
@@ -177,7 +177,7 @@ function addCommodityWeightPerPiece(inputData) {
         if ("height" in inputData.shipmentLines[0]) {
           try {
             inputData.shipmentLines[0].height =
-              inputData.shipmentLines[0].height * 2.54;
+              Math.round(inputData.shipmentLines[0].height * 2.54);
           } catch {
             console.info("invalid value for height");
           }
@@ -188,7 +188,7 @@ function addCommodityWeightPerPiece(inputData) {
         if ("weight" in inputData.shipmentLines[0]) {
           try {
             inputData.shipmentLines[0].weight =
-              inputData.shipmentLines[0].weight * 2.2046;
+              Math.round(inputData.shipmentLines[0].weight * 2.2046);
           } catch {
             console.info("invalid value for weight");
           }
