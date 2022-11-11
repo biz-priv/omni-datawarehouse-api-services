@@ -15,7 +15,7 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  console.log(event);
+  console.info(event);
   const { body } = event;
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
@@ -131,19 +131,19 @@ module.exports.handler = async (event, context, callback) => {
         x < body.shipmentRateRequest.accessorialList.length;
         x++
       ) {
-        console.log(body.shipmentRateRequest.accessorialList[x]);
+        console.info(body.shipmentRateRequest.accessorialList[x]);
         newJSON.AccessorialInput.AccessorialInput.push({
           AccessorialCode: body.shipmentRateRequest.accessorialList[x],
         });
       }
     }
-    console.info("accessorialList", newJSON);
+    console.info("accessorialList", newJSON.AccessorialInput);
 
     const postData = makeJsonToXml(newJSON);
-    console.log("postData", postData);
+    console.info("postData", postData);
     // return {};
     const dataResponse = await getRating(postData);
-    console.log(dataResponse);
+    console.info(dataResponse);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
@@ -207,7 +207,7 @@ function addCommodityWeightPerPiece(inputData) {
       }
     }
   }
-  console.log("inputdata.ShipmentLines: ", inputData.shipmentLines);
+  console.info("inputdata.ShipmentLines: ", inputData.shipmentLines);
   for (const shipKey in inputData.shipmentLines[0]) {
     if (shipKey.includes("//")) {
       continue;
@@ -257,7 +257,7 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
-    console.log(obj);
+    console.info(obj);
     if (
       obj["soap:Envelope"][
         "soap:Body"
@@ -268,7 +268,7 @@ function makeXmlToJson(data) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
           .GetRatingByCustomerResult.RatingOutput;
-      console.log("modifiedObj", modifiedObj);
+      console.info("modifiedObj", modifiedObj);
 
       if (isArray(modifiedObj)) {
         return modifiedObj.map((e) => {
@@ -321,20 +321,16 @@ function makeXmlToJson(data) {
           let EstimatedDelivery = new Date(e.DeliveryDate);
 
           let ampm = e.DeliveryTime.split(" ");
-          console.log(ampm);
           let t = ampm[0].split(":");
-          console.log(t);
 
-          if(ampm[1].toUpperCase() == 'PM'){
-            EstimatedDelivery.setHours(Number(t[0])+12)
+          if (ampm[1].toUpperCase() == "PM") {
+            EstimatedDelivery.setHours(Number(t[0]) + 12);
           } else {
-            EstimatedDelivery.setHours(Number(t[0]))
+            EstimatedDelivery.setHours(Number(t[0]));
           }
 
           EstimatedDelivery.setMinutes(t[1]);
           EstimatedDelivery.setSeconds(t[2]);
-
-          console.log(EstimatedDelivery);
 
           return {
             serviceLevel: e.ServiceLevelID,
@@ -349,8 +345,6 @@ function makeXmlToJson(data) {
       } else {
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
-        } else if (modifiedObj.Message.search("WebTrakUserID") != -1) {
-          throw "Internal error message";
         }
         let AccessorialOutput = null;
         if (
@@ -379,20 +373,29 @@ function makeXmlToJson(data) {
           }
           AccessorialOutput = list;
         }
-        return [
-          {
-            serviceLevelID: modifiedObj.ServiceLevelID,
-            StandardTotalRate: modifiedObj.StandardTotalRate,
-            Message: modifiedObj.Message,
-            StandardFreightCharge: modifiedObj.hasOwnProperty(
-              "StandardFreightCharge"
-            )
-              ? modifiedObj.StandardFreightCharge
-              : "",
-            AccessorialOutput:
-              AccessorialOutput == null ? "" : AccessorialOutput,
-          },
-        ];
+
+        let EstimatedDelivery = new Date(e.DeliveryDate);
+
+        let ampm = e.DeliveryTime.split(" ");
+        let t = ampm[0].split(":");
+
+        if (ampm[1].toUpperCase() == "PM") {
+          EstimatedDelivery.setHours(Number(t[0]) + 12);
+        } else {
+          EstimatedDelivery.setHours(Number(t[0]));
+        }
+
+        EstimatedDelivery.setMinutes(t[1]);
+        EstimatedDelivery.setSeconds(t[2]);
+        return {
+          serviceLevel: modifiedObj.ServiceLevelID,
+          estimatedDelivery:
+            modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
+          totalRate: modifiedObj.StandardTotalRate,
+          freightCharge: modifiedObj.StandardFreightCharge,
+          accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
+          message: modifiedObj.Message,
+        };
       }
     } else {
       throw "Rate not found.";
