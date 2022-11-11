@@ -88,7 +88,7 @@ module.exports.handler = async (event, context, callback) => {
   console.info("BillToFilled: ", newJSON);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
-      if (body.shipmentRateRequest.insuredValue > 0) {
+      if (Number(body.shipmentRateRequest.insuredValue) >= 0) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
           body.shipmentRateRequest.insuredValue;
@@ -198,6 +198,9 @@ function addCommodityWeightPerPiece(inputData) {
   }
   console.log("inputdata.ShipmentLines: ", inputData.shipmentLines);
   for (const shipKey in inputData.shipmentLines[0]) {
+    if(shipKey.includes('//')) {
+      continue;
+    }
     if (shipKey != "dimUOM" && shipKey != "weightUOM") {
       if (
         shipKey == "pieces" ||
