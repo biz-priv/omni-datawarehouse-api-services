@@ -82,13 +82,16 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.BillToNo = resp["BillToAcct"]["S"];
     }
   }
-  if ("customerNumber" in body.shipmentRateRequest) {
+  if (
+    "customerNumber" in body.shipmentRateRequest &&
+    Number.isInteger(Number(body.shipmentRateRequest.customerNumber))
+  ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
   console.info("BillToFilled: ", newJSON);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
-      if (body.shipmentRateRequest.insuredValue > 0) {
+      if (Number(body.shipmentRateRequest.insuredValue) > 0) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
           body.shipmentRateRequest.insuredValue;
@@ -99,9 +102,13 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.LiabilityType = "LL";
     }
   }
-  if ("commodityClass" in body.shipmentRateRequest) {
-    newJSON.RatingInput.CommodityClass =
-      body.shipmentRateRequest.commodityClass;
+  if (
+    "commodityClass" in body.shipmentRateRequest &&
+    Number(body.shipmentRateRequest.commodityClass) != NaN
+  ) {
+    newJSON.RatingInput.CommodityClass = Number(
+      body.shipmentRateRequest.commodityClass
+    );
   }
 
   console.info("RatingInput Updated", newJSON);
@@ -160,24 +167,27 @@ function addCommodityWeightPerPiece(inputData) {
       if (inputData.shipmentLines[0][key].toLowerCase() == "cm") {
         if ("length" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines[0].length =
-              Math.round(inputData.shipmentLines[0].length * 2.54);
+            inputData.shipmentLines[0].length = Math.round(
+              inputData.shipmentLines[0].length * 2.54
+            );
           } catch {
             console.info("invalid value for length");
           }
         }
         if ("width" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines[0].width =
-              Math.round(inputData.shipmentLines[0].width * 2.54);
+            inputData.shipmentLines[0].width = Math.round(
+              inputData.shipmentLines[0].width * 2.54
+            );
           } catch {
             console.info("invalid value for width");
           }
         }
         if ("height" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines[0].height =
-              Math.round(inputData.shipmentLines[0].height * 2.54);
+            inputData.shipmentLines[0].height = Math.round(
+              inputData.shipmentLines[0].height * 2.54
+            );
           } catch {
             console.info("invalid value for height");
           }
@@ -187,8 +197,9 @@ function addCommodityWeightPerPiece(inputData) {
       if (inputData.shipmentLines[0][key].toLowerCase() == "kg") {
         if ("weight" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines[0].weight =
-              Math.round(inputData.shipmentLines[0].weight * 2.2046);
+            inputData.shipmentLines[0].weight = Math.round(
+              inputData.shipmentLines[0].weight * 2.2046
+            );
           } catch {
             console.info("invalid value for weight");
           }
@@ -198,6 +209,9 @@ function addCommodityWeightPerPiece(inputData) {
   }
   console.log("inputdata.ShipmentLines: ", inputData.shipmentLines);
   for (const shipKey in inputData.shipmentLines[0]) {
+    if (shipKey.includes("//")) {
+      continue;
+    }
     if (shipKey != "dimUOM" && shipKey != "weightUOM") {
       if (
         shipKey == "pieces" ||
@@ -206,7 +220,7 @@ function addCommodityWeightPerPiece(inputData) {
         shipKey == "height" ||
         shipKey == "width"
       ) {
-        if (Number.isInteger(inputData.shipmentLines[0][shipKey])) {
+        if (Number.isInteger(Number(inputData.shipmentLines[0][shipKey]))) {
           new_key =
             "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
           commodityInput.CommodityInput[new_key] =
@@ -304,11 +318,28 @@ function makeXmlToJson(data) {
             }
             AccessorialOutput = list;
           }
+          let EstimatedDelivery = new Date(e.DeliveryDate);
+
+          let ampm = e.DeliveryTime.split(" ");
+          console.log(ampm);
+          let t = ampm[0].split(":");
+          console.log(t);
+
+          if(ampm[1].toUpperCase() == 'PM'){
+            x.setHours(Number(t[0])+12)
+          } else {
+            x.setHours(Number(t[0]))
+          }
+
+          EstimatedDelivery.setMinutes(t[1]);
+          EstimatedDelivery.setSeconds(t[2]);
+
+          console.log(EstimatedDelivery);
 
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
-              e.DeliveryDate == "1/1/1900" ? "" : e.DeliveryDate,
+              e.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
             totalRate: e.StandardTotalRate,
             freightCharge: e.StandardFreightCharge,
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
