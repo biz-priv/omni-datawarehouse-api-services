@@ -246,18 +246,24 @@ function makeXmlToJson(data) {
           ) {
             const list = [];
             list.push(e.AccessorialOutput.AccessorialOutput);
-            AccessorialOutput = list;
+            AccessorialOutput.code = list.AccessorialCode;
+            AccessorialOutput.description = list.AccessorialDesc;
+            AccessorialOutput.charge = list.AccessorialCharge;
           } else {
             AccessorialOutput = e.AccessorialOutput.AccessorialOutput;
           }
 
           return {
-            ServiceLevelID: e.ServiceLevelID,
-            StandardTotalRate: e.StandardTotalRate,
-            StandardFreightCharge: e.StandardFreightCharge,
-            AccessorialOutput:
+            shipmentRateResponse:{
+              serviceLevel: e.ServiceLevelID,
+              estimatedDelivery: e.DeliveryDate == '1/1/1900' ? "" : e.DeliveryDate,
+              totalRate: e.StandardTotalRate,
+              freightCharge: e.StandardFreightCharge,
+              AccessorialList:
               AccessorialOutput == null ? "" : AccessorialOutput,
-            Message: e.Message,
+              message: e.Message,
+            }
+            
           };
         });
       } else {
