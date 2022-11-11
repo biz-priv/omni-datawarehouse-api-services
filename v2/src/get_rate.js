@@ -82,13 +82,13 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.BillToNo = resp["BillToAcct"]["S"];
     }
   }
-  if ("customerNumber" in body.shipmentRateRequest) {
+  if ("customerNumber" in body.shipmentRateRequest && Number.isInteger(Number(body.shipmentRateRequest.customerNumber))) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
   console.info("BillToFilled: ", newJSON);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
-      if (Number(body.shipmentRateRequest.insuredValue) >= 0) {
+      if (Number(body.shipmentRateRequest.insuredValue) > 0) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
           body.shipmentRateRequest.insuredValue;
@@ -99,9 +99,9 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.LiabilityType = "LL";
     }
   }
-  if ("commodityClass" in body.shipmentRateRequest) {
+  if ("commodityClass" in body.shipmentRateRequest && Number(body.shipmentRateRequest.commodityClass) != NaN) {
     newJSON.RatingInput.CommodityClass =
-      body.shipmentRateRequest.commodityClass;
+      Number(body.shipmentRateRequest.commodityClass);
   }
 
   console.info("RatingInput Updated", newJSON);
@@ -209,7 +209,7 @@ function addCommodityWeightPerPiece(inputData) {
         shipKey == "height" ||
         shipKey == "width"
       ) {
-        if (Number.isInteger(inputData.shipmentLines[0][shipKey])) {
+        if (Number.isInteger(Number(inputData.shipmentLines[0][shipKey]))) {
           new_key =
             "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
           commodityInput.CommodityInput[new_key] =
