@@ -155,40 +155,40 @@ function addCommodityWeightPerPiece(inputData) {
   let commodityInput = {
     CommodityInput: {},
   };
-  for (const key in inputData.shipmentLines) {
+  for (const key in inputData.shipmentLines[0]) {
     if (key == "dimUOM") {
-      if (inputData[key].toLowerCase() == "cm") {
-        if ("length" in inputData.shipmentLines) {
+      if (inputData.shipmentLines[0][key].toLowerCase() == "cm") {
+        if ("length" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines.length =
-              inputData.shipmentLines.length * 2.54;
+            inputData.shipmentLines[0].length =
+              inputData.shipmentLines[0].length * 2.54;
           } catch {
             console.info("invalid value for length");
           }
         }
-        if ("width" in inputData.shipmentLines) {
+        if ("width" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines.width =
-              inputData.shipmentLines.width * 2.54;
+            inputData.shipmentLines[0].width =
+              inputData.shipmentLines[0].width * 2.54;
           } catch {
             console.info("invalid value for width");
           }
         }
-        if ("height" in inputData.shipmentLines) {
+        if ("height" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines.height =
-              inputData.shipmentLines.height * 2.54;
+            inputData.shipmentLines[0].height =
+              inputData.shipmentLines[0].height * 2.54;
           } catch {
             console.info("invalid value for height");
           }
         }
       }
     } else if (key == "weightUOM") {
-      if (inputData[key].toLowerCase() == "kg") {
-        if ("weight" in inputData.shipmentLines) {
+      if (inputData.shipmentLines[0][key].toLowerCase() == "kg") {
+        if ("weight" in inputData.shipmentLines[0]) {
           try {
-            inputData.shipmentLines.weight =
-              inputData.shipmentLines.weight * 2.2046;
+            inputData.shipmentLines[0].weight =
+              inputData.shipmentLines[0].weight * 2.2046;
           } catch {
             console.info("invalid value for weight");
           }
