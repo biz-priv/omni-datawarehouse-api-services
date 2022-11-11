@@ -21,9 +21,9 @@ module.exports.handler = async (event, context, callback) => {
   let reqFields = {};
   let valError;
   let newJSON = {
-      RatingInput: {},
-      CommodityInput: {
-        CommodityInput: {},
+    RatingInput: {},
+    CommodityInput: {
+      CommodityInput: {},
     },
   };
   if (
@@ -46,7 +46,6 @@ module.exports.handler = async (event, context, callback) => {
     reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
   }
 
-  
   const { error, value } = eventValidation.validate(reqFields);
 
   if (valError) {
@@ -62,33 +61,37 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     newJSON.RatingInput.OriginZip = reqFields.shipperZip;
     newJSON.RatingInput.DestinationZip = reqFields.consigneeZip;
-    newJSON.RatingInput.PickupTime =
-      reqFields.pickupTime.toString();
-    newJSON.RatingInput.PickupDate =
-      reqFields.pickupTime.toString();
+    newJSON.RatingInput.PickupTime = reqFields.pickupTime.toString();
+    newJSON.RatingInput.PickupDate = reqFields.pickupTime.toString();
     newJSON.RatingInput.PickupLocationCloseTime =
       reqFields.pickupTime.toString();
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
-  console.info("ReqFields Filled",newJSON)
-  if(customer_id != 'customer-portal-admin'){
-    let resp = await getCustomerId(customer_id)
-    if(resp == 'failure'){
-      return callback(response("[400]", 'Customer Information does not exist. Please raise a support ticket to add the customer'));
+  console.info("ReqFields Filled", newJSON);
+  if (customer_id != "customer-portal-admin") {
+    let resp = await getCustomerId(customer_id);
+    if (resp == "failure") {
+      return callback(
+        response(
+          "[400]",
+          "Customer Information does not exist. Please raise a support ticket to add the customer"
+        )
+      );
     } else {
-      newJSON.RatingInput.BillToNo = resp['BillToAcct']['S']
+      newJSON.RatingInput.BillToNo = resp["BillToAcct"]["S"];
     }
-  } 
+  }
   if ("customerNumber" in body.shipmentRateRequest) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
-  console.info("BillToFilled: ",newJSON)
+  console.info("BillToFilled: ", newJSON);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (body.shipmentRateRequest.insuredValue > 0) {
         newJSON.RatingInput.LiabilityType = "INSP";
-        newJSON.RatingInput.DeclaredValue = body.shipmentRateRequest.insuredValue;
+        newJSON.RatingInput.DeclaredValue =
+          body.shipmentRateRequest.insuredValue;
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
@@ -97,38 +100,44 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
   if ("commodityClass" in body.shipmentRateRequest) {
-    newJSON.RatingInput.CommodityClass = body.shipmentRateRequest.commodityClass;
+    newJSON.RatingInput.CommodityClass =
+      body.shipmentRateRequest.commodityClass;
   }
 
-  console.info("RatingInput Updated", newJSON)
+  console.info("RatingInput Updated", newJSON);
 
   try {
     if ("shipmentLines" in body.shipmentRateRequest) {
-      newJSON.CommodityInput.CommodityInput =
-        addCommodityWeightPerPiece(body.shipmentRateRequest);
+      newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
+        body.shipmentRateRequest
+      );
     }
-    console.info("ShipLines ",newJSON)
+    console.info("ShipLines ", newJSON);
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
-      newJSON.AccessorialInput={}
+      newJSON.AccessorialInput = {};
       newJSON.AccessorialInput.AccessorialInput = [];
-      for (let x = 0; x < body.shipmentRateRequest.accessorialList.length; x++) {
+      for (
+        let x = 0;
+        x < body.shipmentRateRequest.accessorialList.length;
+        x++
+      ) {
         console.log(body.shipmentRateRequest.accessorialList[x]);
         newJSON.AccessorialInput.AccessorialInput.push({
           AccessorialCode: body.shipmentRateRequest.accessorialList[x],
         });
       }
     }
-    console.info("accessorialList",newJSON)
+    console.info("accessorialList", newJSON);
 
     const postData = makeJsonToXml(newJSON);
     console.log("postData", postData);
     // return {};
     const dataResponse = await getRating(postData);
-    console.log(dataResponse)
-    const dataObj ={} 
+    console.log(dataResponse);
+    const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
     return dataObj;
@@ -181,19 +190,34 @@ function addCommodityWeightPerPiece(inputData) {
             inputData.shipmentLines.weight =
               inputData.shipmentLines.weight * 2.2046;
           } catch {
-            console.log("invalid value for weight");
+            console.info("invalid value for weight");
           }
         }
       }
     }
   }
-  console.log('inputdata.ShipmentLines: ', inputData.shipmentLines)
+  console.log("inputdata.ShipmentLines: ", inputData.shipmentLines);
   for (const shipKey in inputData.shipmentLines[0]) {
     if (shipKey != "dimUOM" && shipKey != "weightUOM") {
-      new_key =
-        "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-      commodityInput.CommodityInput[new_key] =
-        inputData.shipmentLines[0][shipKey];
+      if (
+        shipKey == "pieces" ||
+        shipKey == "weight" ||
+        shipKey == "length" ||
+        shipKey == "height" ||
+        shipKey == "width"
+      ) {
+        if (Number.isInteger(inputData.shipmentLines[0][shipKey])) {
+          new_key =
+            "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+          commodityInput.CommodityInput[new_key] =
+            inputData.shipmentLines[0][shipKey];
+        }
+      } else {
+        new_key =
+          "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+        commodityInput.CommodityInput[new_key] =
+          inputData.shipmentLines[0][shipKey];
+      }
     }
   }
 
@@ -219,15 +243,17 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
-    console.log(obj)
+    console.log(obj);
     if (
       obj["soap:Envelope"][
         "soap:Body"
-      ].GetRatingByCustomerResponse.GetRatingByCustomerResult.hasOwnProperty("RatingOutput")
+      ].GetRatingByCustomerResponse.GetRatingByCustomerResult.hasOwnProperty(
+        "RatingOutput"
+      )
     ) {
       const modifiedObj =
-        obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse.GetRatingByCustomerResult
-          .RatingOutput;
+        obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
+          .GetRatingByCustomerResult.RatingOutput;
       console.log("modifiedObj", modifiedObj);
 
       if (isArray(modifiedObj)) {
@@ -242,33 +268,51 @@ function makeXmlToJson(data) {
             e.AccessorialOutput.AccessorialOutput[0] == null
           ) {
             const list = [];
-            for(let i = 0;i<e.AccessorialOutput.AccessorialOutput.length;i++){
-              list[i]={}
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialCode ? list[i].code = e.AccessorialOutput.AccessorialOutput[i].AccessorialCode : 
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc ? list[i].description = e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc : 
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge ? list[i].charge = e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge : console.info('no charge')
+            for (
+              let i = 0;
+              i < e.AccessorialOutput.AccessorialOutput.length;
+              i++
+            ) {
+              list[i] = {};
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialCode
+                ? (list[i].code =
+                    e.AccessorialOutput.AccessorialOutput[i].AccessorialCode)
+                : e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
+                ? (list[i].description =
+                    e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc)
+                : e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
+                ? (list[i].charge =
+                    e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge)
+                : console.info("no charge");
             }
-            AccessorialOutput = list
+            AccessorialOutput = list;
           } else {
             const list = [];
             // list.push(e.AccessorialOutput.AccessorialOutput);
-            for(let i = 0;i<e.AccessorialOutput.AccessorialOutput.length;i++){
-              list[i]={}
-              list[i].code = e.AccessorialOutput.AccessorialOutput[i].AccessorialCode
-              list[i].description = e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
-              list[i].charge = e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
+            for (
+              let i = 0;
+              i < e.AccessorialOutput.AccessorialOutput.length;
+              i++
+            ) {
+              list[i] = {};
+              list[i].code =
+                e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+              list[i].description =
+                e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
+              list[i].charge =
+                e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
             }
             AccessorialOutput = list;
           }
 
           return {
-              serviceLevel: e.ServiceLevelID,
-              estimatedDelivery: e.DeliveryDate == '1/1/1900' ? "" : e.DeliveryDate,
-              totalRate: e.StandardTotalRate,
-              freightCharge: e.StandardFreightCharge,
-              accessorialList:
-              AccessorialOutput == null ? "" : AccessorialOutput,
-              message: e.Message,
+            serviceLevel: e.ServiceLevelID,
+            estimatedDelivery:
+              e.DeliveryDate == "1/1/1900" ? "" : e.DeliveryDate,
+            totalRate: e.StandardTotalRate,
+            freightCharge: e.StandardFreightCharge,
+            accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
+            message: e.Message,
           };
         });
       } else {
@@ -288,14 +332,21 @@ function makeXmlToJson(data) {
           AccessorialOutput = list;
         } else {
           const list = [];
-            // list.push(e.AccessorialOutput.AccessorialOutput);
-            for(let i = 0;i<e.AccessorialOutput.AccessorialOutput.length;i++){
-              list[i]={}
-              list[i].code = e.AccessorialOutput.AccessorialOutput[i].AccessorialCode
-              list[i].description = e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
-              list[i].charge = e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
-            }
-            AccessorialOutput = list;
+          // list.push(e.AccessorialOutput.AccessorialOutput);
+          for (
+            let i = 0;
+            i < e.AccessorialOutput.AccessorialOutput.length;
+            i++
+          ) {
+            list[i] = {};
+            list[i].code =
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+            list[i].description =
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
+            list[i].charge =
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+          }
+          AccessorialOutput = list;
         }
         return [
           {
@@ -339,15 +390,15 @@ async function getCustomerId(customerId) {
     const params = {
       TableName: process.env.ACCOUNT_INFO_TABLE,
       IndexName: process.env.ACCOUNT_INFO_TABLE_INDEX,
-      KeyConditionExpression: 'CustomerID = :CustomerID',
-      ExpressionAttributeValues: {":CustomerID": customerId},
+      KeyConditionExpression: "CustomerID = :CustomerID",
+      ExpressionAttributeValues: { ":CustomerID": customerId },
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
-      console.info("Dynamo resp: ", response.Items)
+      console.info("Dynamo resp: ", response.Items);
       return response.Items[0];
     } else {
-      return 'failure';
+      return "failure";
     }
   } catch (e) {
     throw e.hasOwnProperty("message") ? e.message : e;
