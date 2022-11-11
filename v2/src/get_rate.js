@@ -246,9 +246,13 @@ function makeXmlToJson(data) {
           ) {
             const list = [];
             list.push(e.AccessorialOutput.AccessorialOutput);
-            AccessorialOutput.code = list.AccessorialCode;
-            AccessorialOutput.description = list.AccessorialDesc;
-            AccessorialOutput.charge = list.AccessorialCharge;
+            for(let i = 0;i<list.length;i++){
+              list[i].code = e.AccessorialOutput.AccessorialCode
+              list[i].description = e.AccessorialOutput.AccessorialDesc
+              list[i].charge = e.AccessorialOutput.AccessorialCharge
+            }
+            console.log(list)
+            AccessorialOutput = list
           } else {
             AccessorialOutput = e.AccessorialOutput.AccessorialOutput;
           }
@@ -259,7 +263,7 @@ function makeXmlToJson(data) {
               estimatedDelivery: e.DeliveryDate == '1/1/1900' ? "" : e.DeliveryDate,
               totalRate: e.StandardTotalRate,
               freightCharge: e.StandardFreightCharge,
-              AccessorialList:
+              accessorialList:
               AccessorialOutput == null ? "" : AccessorialOutput,
               message: e.Message,
             }
