@@ -132,7 +132,8 @@ module.exports.handler = async (event, context, callback) => {
     // return {};
     const dataResponse = await getRating(postData);
     console.log(dataResponse)
-    const dataObj = makeXmlToJson(dataResponse);
+    const dataObj ={} 
+    dataObj.shipmentRateResponse = [makeXmlToJson(dataResponse)];
 
     return dataObj;
   } catch (error) {
@@ -265,7 +266,6 @@ function makeXmlToJson(data) {
           }
 
           return {
-            shipmentRateResponse:[{
               serviceLevel: e.ServiceLevelID,
               estimatedDelivery: e.DeliveryDate == '1/1/1900' ? "" : e.DeliveryDate,
               totalRate: e.StandardTotalRate,
@@ -273,8 +273,6 @@ function makeXmlToJson(data) {
               accessorialList:
               AccessorialOutput == null ? "" : AccessorialOutput,
               message: e.Message,
-            }]
-            
           };
         });
       } else {
