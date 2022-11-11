@@ -88,6 +88,7 @@ module.exports.handler = async (event, context, callback) => {
     try {
       if (body.shipmentRateRequest.insuredValue > 0) {
         newJSON.RatingInput.LiabilityType = "INSP";
+        newJSON.RatingInput.DeclaredValue = body.shipmentRateRequest.insuredValue;
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
@@ -95,16 +96,11 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.LiabilityType = "LL";
     }
   }
-  console.info("Liability",newJSON)
-  // console.log(body.shipmentRateRequest);
+  if ("commodityClass" in body.shipmentRateRequest) {
+    newJSON.RatingInput.CommodityClass = body.shipmentRateRequest.commodityClass;
+  }
 
-  // let eventBody = value;
-  // const PickupTime = body.shipmentRateRequest.pickupTime.toString();
-
-  // eventBody.shipmentRateRequest.LiabilityType = LiabilityType;
-  // eventBody.shipmentRateRequest.PickupDate = PickupTime;
-  // eventBody.shipmentRateRequest.PickupTime = PickupTime;
-  // eventBody.shipmentRateRequest.PickupLocationCloseTime = PickupTime;
+  console.info("RatingInput Updated", newJSON)
 
   try {
     if ("shipmentLines" in body.shipmentRateRequest) {
@@ -133,7 +129,7 @@ module.exports.handler = async (event, context, callback) => {
     const dataResponse = await getRating(postData);
     console.log(dataResponse)
     const dataObj ={} 
-    dataObj.shipmentRateResponse = [makeXmlToJson(dataResponse)];
+    dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
     return dataObj;
   } catch (error) {
@@ -191,7 +187,7 @@ function addCommodityWeightPerPiece(inputData) {
       }
     }
   }
-
+  console.log('inputdata.ShipmentLines: ', inputData.shipmentLines)
   for (const shipKey in inputData.shipmentLines[0]) {
     if (shipKey != "dimUOM" && shipKey != "weightUOM") {
       new_key =
