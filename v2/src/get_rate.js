@@ -245,7 +245,12 @@ function makeXmlToJson(data) {
             e.AccessorialOutput.AccessorialOutput[0] == null
           ) {
             const list = [];
-            list.push(e.AccessorialOutput.AccessorialOutput);
+            for(let i = 0;i<e.AccessorialOutput.AccessorialOutput.length;i++){
+              list[i]={}
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialCode ? list[i].code = e.AccessorialOutput.AccessorialOutput[i].AccessorialCode : 
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc ? list[i].description = e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc : 
+              e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge ? list[i].charge = e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge : console.info('no charge')
+            }
             AccessorialOutput = list
           } else {
             const list = [];
@@ -260,7 +265,7 @@ function makeXmlToJson(data) {
           }
 
           return {
-            shipmentRateResponse:{
+            shipmentRateResponse:[{
               serviceLevel: e.ServiceLevelID,
               estimatedDelivery: e.DeliveryDate == '1/1/1900' ? "" : e.DeliveryDate,
               totalRate: e.StandardTotalRate,
@@ -268,7 +273,7 @@ function makeXmlToJson(data) {
               accessorialList:
               AccessorialOutput == null ? "" : AccessorialOutput,
               message: e.Message,
-            }
+            }]
             
           };
         });
@@ -288,11 +293,19 @@ function makeXmlToJson(data) {
           list.push(modifiedObj.AccessorialOutput.AccessorialOutput);
           AccessorialOutput = list;
         } else {
-          AccessorialOutput = modifiedObj.AccessorialOutput.AccessorialOutput;
+          const list = [];
+            // list.push(e.AccessorialOutput.AccessorialOutput);
+            for(let i = 0;i<e.AccessorialOutput.AccessorialOutput.length;i++){
+              list[i]={}
+              list[i].code = e.AccessorialOutput.AccessorialOutput[i].AccessorialCode
+              list[i].description = e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
+              list[i].charge = e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
+            }
+            AccessorialOutput = list;
         }
         return [
           {
-            ServiceLevelID: modifiedObj.ServiceLevelID,
+            serviceLevelID: modifiedObj.ServiceLevelID,
             StandardTotalRate: modifiedObj.StandardTotalRate,
             Message: modifiedObj.Message,
             StandardFreightCharge: modifiedObj.hasOwnProperty(
