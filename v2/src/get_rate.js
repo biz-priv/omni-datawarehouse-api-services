@@ -246,15 +246,17 @@ function makeXmlToJson(data) {
           ) {
             const list = [];
             list.push(e.AccessorialOutput.AccessorialOutput);
-            for(let i = 0;i<list.length;i++){
-              list[i].code = e.AccessorialOutput.AccessorialCode
-              list[i].description = e.AccessorialOutput.AccessorialDesc
-              list[i].charge = e.AccessorialOutput.AccessorialCharge
-            }
-            console.log(list)
             AccessorialOutput = list
           } else {
-            AccessorialOutput = e.AccessorialOutput.AccessorialOutput;
+            const list = [];
+            // list.push(e.AccessorialOutput.AccessorialOutput);
+            for(let i = 0;i<e.AccessorialOutput.AccessorialOutput.length;i++){
+              list[i]={}
+              list[i].code = e.AccessorialOutput.AccessorialOutput[i].AccessorialCode
+              list[i].description = e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
+              list[i].charge = e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
+            }
+            AccessorialOutput = list;
           }
 
           return {
