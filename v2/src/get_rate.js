@@ -79,7 +79,7 @@ module.exports.handler = async (event, context, callback) => {
         )
       );
     } else {
-      newJSON.RatingInput.BillToNo = resp["BillToAcct"]["S"];
+      newJSON.RatingInput.BillToNo = resp["BillToAcct"];
     }
   }
   if (
