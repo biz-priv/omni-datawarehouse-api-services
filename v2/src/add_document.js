@@ -14,6 +14,7 @@ module.exports.handler = async (event, context, callback) => {
           b64str: Joi.string().min(20).required(),
           contentType: Joi.any(),
           docType: Joi.any(),
+          fileNumber: Joi.any(),
         })
         .required(),
     })
@@ -27,38 +28,34 @@ module.exports.handler = async (event, context, callback) => {
     console.log("[400]", key + " " + msg);
     return callback(response("[400]", key + " " + msg));
   }
-  let eventBody = body;
-  let fileExtension = "";
-  switch (eventBody.documentUploadRequest.b64str[0]) {
-    case "/":
-      fileExtension = ".jpeg";
-      break;
-    case "i":
-      fileExtension = ".png";
-      break;
-    case "R":
-      fileExtension = ".gif";
-      break;
-    case "U":
-      fileExtension = ".webp";
-      break;
-    case "J":
-      fileExtension = ".pdf";
-      break;
-    default:
-      fileExtension = "";
-  }
-
-  let validated = {};
-  validated.b64str = eventBody.documentUploadRequest.b64str;
+  let customerId;
+  let fileNumber='';
   let housebill = "";
   let docType = "";
+  let eventBody = body;
+  let fileExtension = "";
+  let validated = {};
+  let currentDateTime = new Date();
+  validated.b64str = eventBody.documentUploadRequest.b64str;
+
+  if(!('enhancedAuthContext' in event) || !('customerId' in event.enhancedAuthContext)){
+    return callback(response("[400]", "Unable to validate user"));
+  } else {
+    customerId = event.enhancedAuthContext.customerId
+  }
   if (
     "housebill" in eventBody.documentUploadRequest &&
-    Number.isInteger(Number(housebill))
+    Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
   ) {
+    fileNumber = await getFileNumber(eventBody.documentUploadRequest.housebill,customerId)
+    fileNumber = fileNumber["FileNumber"]
     validated.housebill = eventBody.documentUploadRequest.housebill;
-    housebill = eventBody.documentUploadRequest.housebill;
+    console.log('filenumber: ',fileNumber)
+  } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.housebill))){
+    fileNumber = eventBody.documentUploadRequest.fileNumber
+    housebill = await getHousebillNumber(eventBody.documentUploadRequest.fileNumber,customerId);
+    validated.housebill = housebill['HouseBillNumber']
+    console.log('housebill: ',validated.housebill)
   }
   if (
     "docType" in eventBody.documentUploadRequest &&
@@ -68,7 +65,26 @@ module.exports.handler = async (event, context, callback) => {
     docType = eventBody.documentUploadRequest.docType;
   }
 
-  let currentDateTime = new Date();
+  switch (eventBody.documentUploadRequest.b64str[0]) {
+    case "/9j/4":
+      fileExtension = ".jpeg";
+      break;
+    case "iVBOR":
+      fileExtension = ".png";
+      break;
+    case "R0lG":
+      fileExtension = ".gif";
+      break;
+    case "J":
+      fileExtension = ".pdf";
+      break;
+    case "TU0AK" || "SUkqA":
+      fileExtension = ".tiff";
+      break;
+    default:
+      fileExtension = "";
+  }
+
   let formatDate =
     currentDateTime.getFullYear().toString() +
     pad2(currentDateTime.getMonth() + 1) +
@@ -77,24 +93,23 @@ module.exports.handler = async (event, context, callback) => {
     pad2(currentDateTime.getMinutes()) +
     pad2(currentDateTime.getSeconds());
 
-  let fileName = housebill + "_" + docType + "_" + formatDate + fileExtension;
+  let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
   validated.filename = fileName;
   try {
     const postData = makeJsonToXml(validated);
     console.log("postData", postData);
     const res = await getXmlResponse(postData);
-    console.log("res***", res);
+    console.log("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
     if (
-      dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
-        .Success == "true"
+      dataObjxml['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.Success == "true"
     ) {
-      return { documentUploadResponse:{message:'success'} };
+      return { documentUploadResponse: { message: "success" } };
     } else {
       throw "Failed";
     }
   } catch (error) {
-    return callback(response("[500]", "Failed"));
+    return callback(response("[500]", {documentUploadResponse: {message: 'failed', error: dataObjxml['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.ErrorStatus}}));
   }
 };
 
@@ -153,4 +168,52 @@ function response(code, message) {
 
 function pad2(n) {
   return n < 10 ? "0" + n : n;
+}
+
+async function getFileNumber(housebill,customerId) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const params = {
+      TableName: process.env.HOUSEBILL_TABLE,
+      IndexName: process.env.HOUSEBILL_TABLE_INDEX,
+      KeyConditionExpression: "CustomerID = :CustomerID AND HouseBillNumber = :Housebill",
+      ExpressionAttributeValues: { ":Housebill": housebill, ":CustomerID":customerId},
+    };
+    const response = await documentClient.query(params).promise();
+    console.log("getFileNumber resp: ", response)
+    if (response.Items && response.Items.length > 0) {
+      console.info("Dynamo resp: ", response.Items);
+      return response.Items[0];
+    } else {
+      return "failure";
+    }
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
+  }
+}
+
+async function getHousebillNumber(filenumber,customerId) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const params = {
+      TableName: process.env.HOUSEBILL_TABLE,
+      IndexName: process.env.FILENUMBER_TABLE_INDEX,
+      KeyConditionExpression: "CustomerID = :CustomerID AND FileNumber = :FileNumber",
+      ExpressionAttributeValues: { ":FileNumber": filenumber, ":CustomerID":customerId },
+    };
+    const response = await documentClient.query(params).promise();
+    console.log('getHousebill resp:', response)
+    if (response.Items && response.Items.length > 0) {
+      console.info("Dynamo resp: ", response.Items);
+      return response.Items[0];
+    } else {
+      return "failure";
+    }
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
+  }
 }
