@@ -125,16 +125,18 @@ module.exports.handler = async (event, context, callback) => {
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
       newJSON.AccessorialInput = {};
-      newJSON.AccessorialInput.AccessorialInput = [];
+      newJSON.AccessorialInput.AccessorialInput={
+        AccessorialCode : []
+      }
       for (
         let x = 0;
         x < body.shipmentRateRequest.accessorialList.length;
         x++
       ) {
-        console.info(body.shipmentRateRequest.accessorialList[x]);
-        newJSON.AccessorialInput.AccessorialInput.push({
-          AccessorialCode: body.shipmentRateRequest.accessorialList[x],
-        });
+        console.log(body.shipmentRateRequest.accessorialList[x]);
+        newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
+          body.shipmentRateRequest.accessorialList[x],
+        );
       }
     }
     console.info("accessorialList", newJSON.AccessorialInput);
