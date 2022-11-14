@@ -40,6 +40,9 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
+  } else if (!('customerNumber' in body.shipmentRateRequest)){
+    error = 'customerNumber is a required field for this request.'
+    
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
