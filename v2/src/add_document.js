@@ -8,10 +8,10 @@ module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   const eventValidation = Joi.object()
     .keys({
-      UploadPODDocument: Joi.object()
+      documentUploadRequest: Joi.object()
         .keys({
-          Housebill: Joi.string().required(),
-          b64str: Joi.string().required(),
+          housebill: Joi.string().required(),
+          b64str: Joi.string().min(12).required(),
         })
         .required(),
     })
@@ -27,7 +27,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   let eventBody = body;
   try {
-    const postData = makeJsonToXml(eventBody.UploadPODDocument);
+    const postData = makeJsonToXml(eventBody.documentUploadRequest);
     console.log("postData", postData);
     const res = await getXmlResponse(postData);
     console.log("res***", res);
@@ -78,9 +78,9 @@ function makeJsonToXml(data) {
         },
       },
       "soap12:Body": {
-        UploadPODDocument: {
+        documentUploadRequest: {
           "@xmlns": "http://tempuri.org/",
-          HAWB: data.Housebill,
+          HAWB: data.housebill,
           DocumentDataBase64: data.b64str,
           DocumentExtension: "pdf",
         },
