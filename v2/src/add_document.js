@@ -27,8 +27,28 @@ module.exports.handler = async (event, context, callback) => {
     console.log("[400]", key + " " + msg);
     return callback(response("[400]", key + " " + msg));
   }
-
   let eventBody = body;
+  let fileExtension = "";
+  switch (eventBody.documentUploadRequest.b64str[0]) {
+    case "/":
+      fileExtension = ".jpeg";
+      break;
+    case "i":
+      fileExtension = ".png";
+      break;
+    case "R":
+      fileExtension = ".gif";
+      break;
+    case "U":
+      fileExtension = ".webp";
+      break;
+    case "J":
+      fileExtension = ".pdf";
+      break;
+    default:
+      fileExtension = "";
+  }
+
   let validated = {};
   validated.b64str = eventBody.documentUploadRequest.b64str;
   let housebill = "";
