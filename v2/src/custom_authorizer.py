@@ -70,10 +70,10 @@ def handler(event, context):
 
     if "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "/rate" in event["methodArn"]:
+    elif "shipment/rate" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)   
-    elif "/addDocument" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id) 
+    elif "shipment/addDocument" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     else:
         query = "CustomerID = :id AND "
