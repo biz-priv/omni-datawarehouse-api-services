@@ -41,7 +41,7 @@ module.exports.handler = async (event, context, callback) => {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
   } else if (!('customerNumber' in body.shipmentRateRequest)){
-    error = 'customerNumber is a required field for this request.'
+    valError = 'customerNumber is a required field for this request.'
     
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
@@ -136,7 +136,7 @@ module.exports.handler = async (event, context, callback) => {
         x < body.shipmentRateRequest.accessorialList.length;
         x++
       ) {
-        // console.log(body.shipmentRateRequest.accessorialList[x]);
+        
         newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
           body.shipmentRateRequest.accessorialList[x],
         );
@@ -307,7 +307,7 @@ function makeXmlToJson(data) {
             AccessorialOutput = list;
           } else {
             const list = [];
-            // list.push(e.AccessorialOutput.AccessorialOutput);
+            
             for (
               let i = 0;
               i < e.AccessorialOutput.AccessorialOutput.length;
@@ -378,7 +378,7 @@ function makeXmlToJson(data) {
           AccessorialOutput = list;
         } else {
           const list = [];
-          // list.push(e.AccessorialOutput.AccessorialOutput);
+          
           for (
             let i = 0;
             i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
