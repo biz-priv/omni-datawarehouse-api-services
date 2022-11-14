@@ -10,8 +10,10 @@ module.exports.handler = async (event, context, callback) => {
     .keys({
       documentUploadRequest: Joi.object()
         .keys({
-          housebill: Joi.string().required(),
-          b64str: Joi.string().min(12).required(),
+          housebill: Joi.any(),
+          b64str: Joi.string().min(20).required(),
+          contentType: Joi.any(),
+          docType: Joi.any(),
         })
         .required(),
     })
@@ -25,9 +27,40 @@ module.exports.handler = async (event, context, callback) => {
     console.log("[400]", key + " " + msg);
     return callback(response("[400]", key + " " + msg));
   }
+
   let eventBody = body;
+  let validated = {};
+  validated.b64str = eventBody.documentUploadRequest.b64str;
+  let housebill = "";
+  let docType = "";
+  if (
+    "housebill" in eventBody.documentUploadRequest &&
+    Number.isInteger(Number(housebill))
+  ) {
+    validated.housebill = eventBody.documentUploadRequest.housebill;
+    housebill = eventBody.documentUploadRequest.housebill;
+  }
+  if (
+    "docType" in eventBody.documentUploadRequest &&
+    eventBody.documentUploadRequest.docType != ""
+  ) {
+    validated.docType = eventBody.documentUploadRequest.docType;
+    docType = eventBody.documentUploadRequest.docType;
+  }
+
+  let currentDateTime = new Date();
+  let formatDate =
+    currentDateTime.getFullYear().toString() +
+    pad2(currentDateTime.getMonth() + 1) +
+    pad2(currentDateTime.getDate()) +
+    pad2(currentDateTime.getHours()) +
+    pad2(currentDateTime.getMinutes()) +
+    pad2(currentDateTime.getSeconds());
+
+  let fileName = housebill + "_" + docType + "_" + formatDate + fileExtension;
+  validated.filename = fileName;
   try {
-    const postData = makeJsonToXml(eventBody.documentUploadRequest);
+    const postData = makeJsonToXml(validated);
     console.log("postData", postData);
     const res = await getXmlResponse(postData);
     console.log("res***", res);
@@ -75,6 +108,8 @@ function makeJsonToXml(data) {
           "@xmlns": "http://tempuri.org/",
           Housebill: data.housebill,
           FileDataBase64: data.b64str,
+          Filename: data.filename,
+          DocType: data.docType,
         },
       },
     },
@@ -94,4 +129,8 @@ function response(code, message) {
     httpStatus: code,
     message,
   });
+}
+
+function pad2(n) {
+  return n < 10 ? "0" + n : n;
 }
