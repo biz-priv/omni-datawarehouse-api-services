@@ -41,3 +41,6 @@ function:
   environment:
     REGION: ${self:provider.region}
     ULOAD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/addDocument}
+    HOUSEBILL_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
+    HOUSEBILL_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
+    FILENUMBER_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/fileNumber/index}
