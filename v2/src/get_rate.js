@@ -358,30 +358,46 @@ function makeXmlToJson(data) {
           modifiedObj.AccessorialOutput.AccessorialOutput[0] == null
         ) {
           const list = [];
-          list.push(modifiedObj.AccessorialOutput.AccessorialOutput);
+          for (
+            let i = 0;
+            i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
+            i++
+          ) {
+            list[i] = {};
+            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode
+              ? (list[i].code =
+                modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode)
+              : modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
+              ? (list[i].description =
+                modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialDesc)
+              : modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
+              ? (list[i].charge =
+                modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCharge)
+              : console.info("no charge");
+          }
           AccessorialOutput = list;
         } else {
           const list = [];
           // list.push(e.AccessorialOutput.AccessorialOutput);
           for (
             let i = 0;
-            i < e.AccessorialOutput.AccessorialOutput.length;
+            i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
             i++
           ) {
             list[i] = {};
             list[i].code =
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
             list[i].description =
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
+            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
             list[i].charge =
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
           }
           AccessorialOutput = list;
         }
 
-        let EstimatedDelivery = new Date(e.DeliveryDate);
+        let EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
 
-        let ampm = e.DeliveryTime.split(" ");
+        let ampm = modifiedObj.DeliveryTime.split(" ");
         let t = ampm[0].split(":");
 
         if (ampm[1].toUpperCase() == "PM") {
