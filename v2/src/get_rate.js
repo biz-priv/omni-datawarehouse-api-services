@@ -133,7 +133,7 @@ module.exports.handler = async (event, context, callback) => {
         x < body.shipmentRateRequest.accessorialList.length;
         x++
       ) {
-        console.log(body.shipmentRateRequest.accessorialList[x]);
+        // console.log(body.shipmentRateRequest.accessorialList[x]);
         newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
           body.shipmentRateRequest.accessorialList[x],
         );
