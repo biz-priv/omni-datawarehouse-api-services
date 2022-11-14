@@ -40,4 +40,4 @@ function:
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
-    ULOAD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uploadpoddocument}
+    ULOAD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/addDocument}
