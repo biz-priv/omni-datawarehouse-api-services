@@ -101,7 +101,7 @@ module.exports.handler = async (event, context, callback) => {
 async function getXmlResponse(postData) {
   let res;
   try {
-    res = await axios.post(process.env.ULOAD_POD_DOCUMENT_API, postData, {
+    res = await axios.post(process.env.ULOAD_DOCUMENT_API, postData, {
       headers: {
         Accept: "text/xml",
         "Content-Type": "application/soap+xml; charset=utf-8",
