@@ -86,10 +86,10 @@ module.exports.handler = async (event, context, callback) => {
     console.log("res***", res);
     const dataObj = makeXmlToJson(res.xml_response);
     if (
-      dataObj["soap:Envelope"]["soap:Body"].UploadPODDocumentResponse
-        .UploadPODDocumentResult == "true"
+      dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+        .Success == "true"
     ) {
-      return { msg: "Success" };
+      return { documentUploadResponse:{message:'success'} };
     } else {
       throw "Failed";
     }
