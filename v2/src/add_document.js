@@ -8,10 +8,10 @@ module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   const eventValidation = Joi.object()
     .keys({
-      UploadPODDocument: Joi.object()
+      documentUploadRequest: Joi.object()
         .keys({
-          Housebill: Joi.string().required(),
-          b64str: Joi.string().required(),
+          housebill: Joi.string().required(),
+          b64str: Joi.string().min(12).required(),
         })
         .required(),
     })
@@ -27,7 +27,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   let eventBody = body;
   try {
-    const postData = makeJsonToXml(eventBody.UploadPODDocument);
+    const postData = makeJsonToXml(eventBody.documentUploadRequest);
     console.log("postData", postData);
     const res = await getXmlResponse(postData);
     console.log("res***", res);
@@ -66,23 +66,15 @@ async function getXmlResponse(postData) {
 }
 function makeJsonToXml(data) {
   return convert({
-    "soap12:Envelope": {
+    "soap:Envelope": {
       "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
       "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-      "@xmlns:soap12": "http://www.w3.org/2003/05/soap-envelope",
-      "soap12:Header": {
-        AuthHeader: {
+      "@xmlns:soap": "http://www.w3.org/2003/05/soap-envelope",
+      "soap:Body": {
+        AttachFileToShipment: {
           "@xmlns": "http://tempuri.org/",
-          UserName: "biztest",
-          Password: "Api081020!",
-        },
-      },
-      "soap12:Body": {
-        UploadPODDocument: {
-          "@xmlns": "http://tempuri.org/",
-          HAWB: data.Housebill,
-          DocumentDataBase64: data.b64str,
-          DocumentExtension: "pdf",
+          Housebill: data.housebill,
+          FileDataBase64: data.b64str,
         },
       },
     },
