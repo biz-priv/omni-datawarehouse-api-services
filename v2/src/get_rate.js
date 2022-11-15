@@ -101,7 +101,7 @@ module.exports.handler = async (event, context, callback) => {
   console.info("BillToFilled: ", newJSON);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
-      if (Number(body.shipmentRateRequest.insuredValue) > 0) {
+      if (Number(body.shipmentRateRequest.insuredValue) > 0 && Number(body.shipmentRateRequest.insuredValue)<=9999999999999999999999999999) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
           body.shipmentRateRequest.insuredValue;
