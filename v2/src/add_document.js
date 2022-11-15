@@ -86,6 +86,9 @@ module.exports.handler = async (event, context, callback) => {
     if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
       validated.docType = eventBody.documentUploadRequest.docType;
       docType = eventBody.documentUploadRequest.docType;
+    } else {
+      validated.docType = eventBody.documentUploadRequest.docType.toString().slice(0,175);
+      docType = eventBody.documentUploadRequest.docType.toString().slice(0,175);
     }
   }
   if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2) {
@@ -124,7 +127,7 @@ module.exports.handler = async (event, context, callback) => {
     pad2(currentDateTime.getMinutes()) +
     pad2(currentDateTime.getSeconds());
 
-  let fileName = fileNumber + "_" + docType.slice(0,175) + "_" + formatDate + fileExtension;
+  let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
   validated.filename = fileName;
 
   try {
