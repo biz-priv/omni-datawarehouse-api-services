@@ -333,7 +333,7 @@ function makeXmlToJson(data) {
           }
           let EstimatedDelivery = new Date(e.DeliveryDate);
 
-          let ampm = e.DeliveryTime.split(" ");
+          let ampm = e.DeliveryTime.toString().split(" ");
           let t = ampm[0].split(":");
 
           if (ampm[1].toUpperCase() == "PM") {
@@ -421,7 +421,7 @@ function makeXmlToJson(data) {
 
         let EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
 
-        let ampm = modifiedObj.DeliveryTime.split(" ");
+        let ampm = modifiedObj.DeliveryTime.toString().split(" ");
         let t = ampm[0].split(":");
 
         if (ampm[1].toUpperCase() == "PM") {
