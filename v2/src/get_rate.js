@@ -40,8 +40,11 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
-  } else if(!(Number.isInteger(Number(body.shipmentRateRequest.shipperZip))) || !(Number.isInteger(Number(body.shipmentRateRequest.consigneeZip)))){
-    valError = 'Invalid zip value.'
+  } else if (
+    !Number.isInteger(Number(body.shipmentRateRequest.shipperZip)) ||
+    !Number.isInteger(Number(body.shipmentRateRequest.consigneeZip))
+  ) {
+    valError = "Invalid zip value.";
   } else if (
     event.enhancedAuthContext.customerId == "customer-portal-admin" &&
     !("customerNumber" in body.shipmentRateRequest)
@@ -331,20 +334,22 @@ function makeXmlToJson(data) {
               AccessorialOutput = list;
             }
           }
-          let EstimatedDelivery = new Date(e.DeliveryDate);
+          let EstimatedDelivery;
+          if (e.DeliveryTime && e.DeliveryTime != null) {
+            EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
 
-          let ampm = e.DeliveryTime.toString().split(" ");
-          let t = ampm[0].split(":");
+            let ampm = e.DeliveryTime.toString().split(" ");
+            let t = ampm[0].split(":");
 
-          if (ampm[1].toUpperCase() == "PM") {
-            EstimatedDelivery.setHours(Number(t[0]) + 12);
-          } else {
-            EstimatedDelivery.setHours(Number(t[0]));
+            if (ampm[1].toUpperCase() == "PM") {
+              EstimatedDelivery.setHours(Number(t[0]) + 12);
+            } else {
+              EstimatedDelivery.setHours(Number(t[0]));
+            }
+
+            EstimatedDelivery.setMinutes(t[1]);
+            EstimatedDelivery.setSeconds(t[2]);
           }
-
-          EstimatedDelivery.setMinutes(t[1]);
-          EstimatedDelivery.setSeconds(t[2]);
-
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
@@ -418,20 +423,23 @@ function makeXmlToJson(data) {
             AccessorialOutput = list;
           }
         }
+        let EstimatedDelivery;
+        if (modifiedObj.DeliveryTime && modifiedObj.DeliveryTime != null) {
+          EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
 
-        let EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
+          let ampm = modifiedObj.DeliveryTime.toString().split(" ");
+          let t = ampm[0].split(":");
 
-        let ampm = modifiedObj.DeliveryTime.toString().split(" ");
-        let t = ampm[0].split(":");
+          if (ampm[1].toUpperCase() == "PM") {
+            EstimatedDelivery.setHours(Number(t[0]) + 12);
+          } else {
+            EstimatedDelivery.setHours(Number(t[0]));
+          }
 
-        if (ampm[1].toUpperCase() == "PM") {
-          EstimatedDelivery.setHours(Number(t[0]) + 12);
-        } else {
-          EstimatedDelivery.setHours(Number(t[0]));
+          EstimatedDelivery.setMinutes(t[1]);
+          EstimatedDelivery.setSeconds(t[2]);
         }
 
-        EstimatedDelivery.setMinutes(t[1]);
-        EstimatedDelivery.setSeconds(t[2]);
         return {
           serviceLevel: modifiedObj.ServiceLevelID,
           estimatedDelivery:
