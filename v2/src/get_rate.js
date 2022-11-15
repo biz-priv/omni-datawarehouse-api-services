@@ -40,6 +40,8 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
+  } else if(!(Number.isInteger(Number(body.shipmentRateRequest.shipperZip))) || !(Number.isInteger(Number(body.shipmentRateRequest.consigneeZip)))){
+    valError = 'Invalid zip value.'
   } else if (
     event.enhancedAuthContext.customerId == "customer-portal-admin" &&
     !("customerNumber" in body.shipmentRateRequest)
