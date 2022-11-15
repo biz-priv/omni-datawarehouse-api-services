@@ -158,7 +158,16 @@ module.exports.handler = async (event, context, callback) => {
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
-    return dataObj;
+    if('Error' in dataObj.shipmentRateResponse){
+      return callback(
+        response(
+          "[400]",
+          dataObj
+        )
+      );
+    } else {
+      return dataObj;
+    }
   } catch (error) {
     return callback(
       response(
@@ -350,6 +359,10 @@ function makeXmlToJson(data) {
             EstimatedDelivery.setMinutes(t[1]);
             EstimatedDelivery.setSeconds(t[2]);
           }
+          if(e.ServiceLevelID.length == undefined && e.DeliveryTime == undefined && e.Message != null){
+            return{Error: e.Message}
+          }
+
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
@@ -438,6 +451,10 @@ function makeXmlToJson(data) {
 
           EstimatedDelivery.setMinutes(t[1]);
           EstimatedDelivery.setSeconds(t[2]);
+        }
+
+        if(modifiedObj.ServiceLevelID.length == undefined && modifiedObj.DeliveryTime == undefined && modifiedObj.Message != null){
+          return{Error: modifiedObj.Message}
         }
 
         return {
