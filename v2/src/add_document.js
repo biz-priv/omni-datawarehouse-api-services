@@ -102,14 +102,14 @@ module.exports.handler = async (event, context, callback) => {
     console.log("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
     if (
-      dataObjxml['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.Success == "true"
+      dataObj['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.Success == "true"
     ) {
       return { documentUploadResponse: { message: "success" } };
     } else {
       throw "Failed";
     }
   } catch (error) {
-    return callback(response("[500]", {documentUploadResponse: {message: 'failed', error: dataObjxml['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.ErrorStatus}}));
+    return callback(response("[500]", {documentUploadResponse: {message: 'failed', error: dataObj['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.ErrorStatus}}));
   }
 };
 
