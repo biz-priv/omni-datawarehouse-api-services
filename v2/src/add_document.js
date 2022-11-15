@@ -88,9 +88,12 @@ module.exports.handler = async (event, context, callback) => {
       docType = eventBody.documentUploadRequest.docType;
     }
   }
-  if ("contentType" in eventBody.documentUploadRequest) {
+  if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2) {
     fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
+    if(fileExtension.length >= 8){
+      fileExtension = fileExtension.slice(0,8)
+    }
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
       case "/9j/4":
@@ -121,7 +124,7 @@ module.exports.handler = async (event, context, callback) => {
     pad2(currentDateTime.getMinutes()) +
     pad2(currentDateTime.getSeconds());
 
-  let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
+  let fileName = fileNumber + "_" + docType.slice(0,175) + "_" + formatDate + fileExtension;
   validated.filename = fileName;
 
   try {
