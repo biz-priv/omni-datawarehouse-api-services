@@ -156,7 +156,7 @@ module.exports.handler = async (event, context, callback) => {
   } catch (error) {
     return callback(
       response(
-        "[500]",
+        "[400]",
         error != null && error.hasOwnProperty("message") ? error.message : error
       )
     );
