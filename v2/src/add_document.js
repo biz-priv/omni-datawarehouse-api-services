@@ -29,7 +29,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", key + " " + msg));
   }
   let customerId;
-  let fileNumber='';
+  let fileNumber = "";
   let housebill = "";
   let docType = "";
   let eventBody = body;
@@ -38,43 +38,59 @@ module.exports.handler = async (event, context, callback) => {
   let currentDateTime = new Date();
   validated.b64str = eventBody.documentUploadRequest.b64str;
 
-  if(!('enhancedAuthContext' in event) || !('customerId' in event.enhancedAuthContext)){
+  if (
+    !("enhancedAuthContext" in event) ||
+    !("customerId" in event.enhancedAuthContext)
+  ) {
     return callback(response("[400]", "Unable to validate user"));
   } else {
-    customerId = event.enhancedAuthContext.customerId
+    customerId = event.enhancedAuthContext.customerId;
   }
   if (
     "housebill" in eventBody.documentUploadRequest &&
     Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
   ) {
-    fileNumber = await getFileNumber(eventBody.documentUploadRequest.housebill,customerId)
-    if(fileNumber == 'failure'){
-      return callback(response("[400]", "Invalid Housebill for this customer."));
+    fileNumber = await getFileNumber(
+      eventBody.documentUploadRequest.housebill,
+      customerId
+    );
+    if (fileNumber == "failure") {
+      return callback(
+        response("[400]", "Invalid Housebill for this customer.")
+      );
     } else {
-      fileNumber = fileNumber["FileNumber"]
+      fileNumber = fileNumber["FileNumber"];
       validated.housebill = eventBody.documentUploadRequest.housebill;
-      console.log('filenumber: ',fileNumber)
+      console.log("filenumber: ", fileNumber);
     }
-  } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))){
-    housebill = await getHousebillNumber(eventBody.documentUploadRequest.fileNumber,customerId);
-    if(housebill == 'failure'){
-      return callback(response("[400]", "No Housebill found."))
+  } else if (
+    "fileNumber" in eventBody.documentUploadRequest &&
+    Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))
+  ) {
+    housebill = await getHousebillNumber(
+      eventBody.documentUploadRequest.fileNumber,
+      customerId
+    );
+    if (housebill == "failure") {
+      return callback(response("[400]", "No Housebill found."));
     } else {
-      fileNumber = eventBody.documentUploadRequest.fileNumber
-      validated.housebill = housebill['HouseBillNumber']
-      console.log('housebill: ', validated.housebill)
+      fileNumber = eventBody.documentUploadRequest.fileNumber;
+      validated.housebill = housebill["HouseBillNumber"];
+      console.log("housebill: ", validated.housebill);
     }
-   
   }
   if (
     "docType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.docType != ""
   ) {
-    validated.docType = eventBody.documentUploadRequest.docType;
-    docType = eventBody.documentUploadRequest.docType;
+    if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
+      validated.docType = eventBody.documentUploadRequest.docType;
+      docType = eventBody.documentUploadRequest.docType;
+    }
   }
-  if('contentType' in eventBody.documentUploadRequest){
-    fileExtension = "."+eventBody.documentUploadRequest.contentType.split('/')[1]
+  if ("contentType" in eventBody.documentUploadRequest) {
+    fileExtension =
+      "." + eventBody.documentUploadRequest.contentType.split("/")[1];
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
       case "/9j/4":
@@ -115,15 +131,27 @@ module.exports.handler = async (event, context, callback) => {
     console.log("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
     if (
-      dataObj['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.Success == "true"
+      dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+        .AttachFileToShipmentResult.Success == "true"
     ) {
       return { documentUploadResponse: { message: "success" } };
     } else {
-      return {documentUploadResponse: {message: 'failed', error: dataObj['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.ErrorStatus}}
+      return {
+        documentUploadResponse: {
+          message: "failed",
+          error:
+            dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+              .AttachFileToShipmentResult.ErrorStatus,
+        },
+      };
       // throw "Failed";
     }
   } catch (error) {
-    return callback(response("[500]", {documentUploadResponse: {message: 'failed', error: error}}));
+    return callback(
+      response("[500]", {
+        documentUploadResponse: { message: "failed", error: error },
+      })
+    );
   }
 };
 
@@ -184,7 +212,7 @@ function pad2(n) {
   return n < 10 ? "0" + n : n;
 }
 
-async function getFileNumber(housebill,customerId) {
+async function getFileNumber(housebill, customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
       region: process.env.REGION,
@@ -192,8 +220,12 @@ async function getFileNumber(housebill,customerId) {
     const params = {
       TableName: process.env.HOUSEBILL_TABLE,
       IndexName: process.env.HOUSEBILL_TABLE_INDEX,
-      KeyConditionExpression: "CustomerID = :CustomerID AND HouseBillNumber = :Housebill",
-      ExpressionAttributeValues: { ":Housebill": housebill, ":CustomerID":customerId},
+      KeyConditionExpression:
+        "CustomerID = :CustomerID AND HouseBillNumber = :Housebill",
+      ExpressionAttributeValues: {
+        ":Housebill": housebill,
+        ":CustomerID": customerId,
+      },
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
@@ -207,7 +239,7 @@ async function getFileNumber(housebill,customerId) {
   }
 }
 
-async function getHousebillNumber(filenumber,customerId) {
+async function getHousebillNumber(filenumber, customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
       region: process.env.REGION,
@@ -215,8 +247,12 @@ async function getHousebillNumber(filenumber,customerId) {
     const params = {
       TableName: process.env.HOUSEBILL_TABLE,
       IndexName: process.env.FILENUMBER_TABLE_INDEX,
-      KeyConditionExpression: "CustomerID = :CustomerID AND FileNumber = :FileNumber",
-      ExpressionAttributeValues: { ":FileNumber": filenumber, ":CustomerID":customerId },
+      KeyConditionExpression:
+        "CustomerID = :CustomerID AND FileNumber = :FileNumber",
+      ExpressionAttributeValues: {
+        ":FileNumber": filenumber,
+        ":CustomerID": customerId,
+      },
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
