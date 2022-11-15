@@ -4,8 +4,8 @@ const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
 const eventValidation = Joi.object().keys({
-  shipperZip: Joi.number().integer().required(),
-  consigneeZip: Joi.number().integer().required(),
+  shipperZip: Joi.string().required(),
+  consigneeZip: Joi.string().required(),
   pickupTime: Joi.date().iso().greater("now").required(),
   customerNumber: Joi.number().integer().max(999999),
 });
@@ -40,9 +40,13 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
-  } else if (event.enhancedAuthContext.customerId == 'customer-portal-admin' && !('customerNumber' in body.shipmentRateRequest)){
-    valError = 'customerNumber is a required field for this request.'
-    
+  } else if(!(Number.isInteger(Number(body.shipmentRateRequest.shipperZip))) || !(Number.isInteger(Number(body.shipmentRateRequest.consigneeZip)))){
+    valError = 'Invalid zip value.'
+  } else if (
+    event.enhancedAuthContext.customerId == "customer-portal-admin" &&
+    !("customerNumber" in body.shipmentRateRequest)
+  ) {
+    valError = "customerNumber is a required field for this request.";
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
@@ -128,17 +132,16 @@ module.exports.handler = async (event, context, callback) => {
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
       newJSON.AccessorialInput = {};
-      newJSON.AccessorialInput.AccessorialInput={
-        AccessorialCode : []
-      }
+      newJSON.AccessorialInput.AccessorialInput = {
+        AccessorialCode: [],
+      };
       for (
         let x = 0;
         x < body.shipmentRateRequest.accessorialList.length;
         x++
       ) {
-        
         newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
-          body.shipmentRateRequest.accessorialList[x],
+          body.shipmentRateRequest.accessorialList[x]
         );
       }
     }
@@ -225,7 +228,10 @@ function addCommodityWeightPerPiece(inputData) {
         shipKey == "height" ||
         shipKey == "width"
       ) {
-        if (Number.isInteger(Number(inputData.shipmentLines[0][shipKey]))&&Number(inputData.shipmentLines[0][shipKey])<=999) {
+        if (
+          Number.isInteger(Number(inputData.shipmentLines[0][shipKey])) &&
+          Number(inputData.shipmentLines[0][shipKey]) <= 999
+        ) {
           new_key =
             "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
           commodityInput.CommodityInput[new_key] =
@@ -262,7 +268,7 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
-    console.info('obj',obj);
+    console.info("obj", obj);
     if (
       obj["soap:Envelope"][
         "soap:Body"
@@ -276,6 +282,7 @@ function makeXmlToJson(data) {
       console.info("modifiedObj", modifiedObj);
 
       if (isArray(modifiedObj)) {
+        console.info("isArray");
         return modifiedObj.map((e) => {
           if (isEmpty(e.Message)) {
             e.Message = "";
@@ -307,21 +314,22 @@ function makeXmlToJson(data) {
             AccessorialOutput = list;
           } else {
             const list = [];
-            
-            for (
-              let i = 0;
-              i < e.AccessorialOutput.AccessorialOutput.length;
-              i++
-            ) {
-              list[i] = {};
-              list[i].code =
-                e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
-              list[i].description =
-                e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
-              list[i].charge =
-                e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+            if (e.AccessorialOutput.AccessorialOutput) {
+              for (
+                let i = 0;
+                i < e.AccessorialOutput.AccessorialOutput.length;
+                i++
+              ) {
+                list[i] = {};
+                list[i].code =
+                  e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+                list[i].description =
+                  e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
+                list[i].charge =
+                  e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+              }
+              AccessorialOutput = list;
             }
-            AccessorialOutput = list;
           }
           let EstimatedDelivery = new Date(e.DeliveryDate);
 
@@ -348,6 +356,7 @@ function makeXmlToJson(data) {
           };
         });
       } else {
+        console.info("object");
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
         }
@@ -366,33 +375,48 @@ function makeXmlToJson(data) {
             list[i] = {};
             modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode
               ? (list[i].code =
-                modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode)
-              : modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
+                  modifiedObj.AccessorialOutput.AccessorialOutput[
+                    i
+                  ].AccessorialCode)
+              : modifiedObj.AccessorialOutput.AccessorialOutput[i]
+                  .AccessorialDesc
               ? (list[i].description =
-                modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialDesc)
-              : modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
+                  modifiedObj.AccessorialOutput.AccessorialOutput[
+                    i
+                  ].AccessorialDesc)
+              : modifiedObj.AccessorialOutput.AccessorialOutput[i]
+                  .AccessorialCharge
               ? (list[i].charge =
-                modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCharge)
+                  modifiedObj.AccessorialOutput.AccessorialOutput[
+                    i
+                  ].AccessorialCharge)
               : console.info("no charge");
           }
           AccessorialOutput = list;
         } else {
           const list = [];
-          
-          for (
-            let i = 0;
-            i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
-            i++
-          ) {
-            list[i] = {};
-            list[i].code =
-            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
-            list[i].description =
-            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
-            list[i].charge =
-            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+          if (modifiedObj.AccessorialOutput.AccessorialOutput) {
+            for (
+              let i = 0;
+              i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
+              i++
+            ) {
+              list[i] = {};
+              list[i].code =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialCode;
+              list[i].description =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialDesc;
+              list[i].charge =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialCharge;
+            }
+            AccessorialOutput = list;
           }
-          AccessorialOutput = list;
         }
 
         let EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
