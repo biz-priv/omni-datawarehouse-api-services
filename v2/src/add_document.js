@@ -93,16 +93,13 @@ module.exports.handler = async (event, context, callback) => {
       validated.docType = eventBody.documentUploadRequest.docType;
       docType = eventBody.documentUploadRequest.docType;
     } else {
-      validated.docType = eventBody.documentUploadRequest.docType.toString().slice(0,175);
-      docType = eventBody.documentUploadRequest.docType.toString().slice(0,175);
+      validated.docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
+      docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
     }
   }
   if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2) {
     fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
-    if(fileExtension.length >= 8){
-      fileExtension = fileExtension.slice(0,8)
-    }
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
       case "/9j/4":
