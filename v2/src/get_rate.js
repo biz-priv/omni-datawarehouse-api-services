@@ -393,27 +393,28 @@ function makeXmlToJson(data) {
           AccessorialOutput = list;
         } else {
           const list = [];
-
-          for (
-            let i = 0;
-            i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
-            i++
-          ) {
-            list[i] = {};
-            list[i].code =
-              modifiedObj.AccessorialOutput.AccessorialOutput[
-                i
-              ].AccessorialCode;
-            list[i].description =
-              modifiedObj.AccessorialOutput.AccessorialOutput[
-                i
-              ].AccessorialDesc;
-            list[i].charge =
-              modifiedObj.AccessorialOutput.AccessorialOutput[
-                i
-              ].AccessorialCharge;
+          if (modifiedObj.AccessorialOutput.AccessorialOutput) {
+            for (
+              let i = 0;
+              i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
+              i++
+            ) {
+              list[i] = {};
+              list[i].code =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialCode;
+              list[i].description =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialDesc;
+              list[i].charge =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialCharge;
+            }
+            AccessorialOutput = list;
           }
-          AccessorialOutput = list;
         }
 
         let EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
