@@ -48,14 +48,23 @@ module.exports.handler = async (event, context, callback) => {
     Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
   ) {
     fileNumber = await getFileNumber(eventBody.documentUploadRequest.housebill,customerId)
-    fileNumber = fileNumber["FileNumber"]
-    validated.housebill = eventBody.documentUploadRequest.housebill;
-    console.log('filenumber: ',fileNumber)
+    if(fileNumber == 'failure'){
+      return callback(response("[400]", "Invalid Housebill for this customer."));
+    } else {
+      fileNumber = fileNumber["FileNumber"]
+      validated.housebill = eventBody.documentUploadRequest.housebill;
+      console.log('filenumber: ',fileNumber)
+    }
   } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))){
-    fileNumber = eventBody.documentUploadRequest.fileNumber
     housebill = await getHousebillNumber(eventBody.documentUploadRequest.fileNumber,customerId);
-    validated.housebill = housebill['HouseBillNumber']
-    console.log('housebill: ', validated.housebill)
+    if(housebill == 'failure'){
+      return callback(response("[400]", "No Housebill found."))
+    } else {
+      fileNumber = eventBody.documentUploadRequest.fileNumber
+      validated.housebill = housebill['HouseBillNumber']
+      console.log('housebill: ', validated.housebill)
+    }
+   
   }
   if (
     "docType" in eventBody.documentUploadRequest &&
