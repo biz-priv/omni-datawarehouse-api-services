@@ -182,9 +182,8 @@ async function getFileNumber(housebill,customerId) {
       ExpressionAttributeValues: { ":Housebill": housebill, ":CustomerID":customerId},
     };
     const response = await documentClient.query(params).promise();
-    console.log("getFileNumber resp: ", response)
     if (response.Items && response.Items.length > 0) {
-      console.info("Dynamo resp: ", response.Items);
+      console.info("Get FileNumber Dynamo resp: ", response.Items);
       return response.Items[0];
     } else {
       return "failure";
@@ -206,9 +205,8 @@ async function getHousebillNumber(filenumber,customerId) {
       ExpressionAttributeValues: { ":FileNumber": filenumber, ":CustomerID":customerId },
     };
     const response = await documentClient.query(params).promise();
-    console.log('getHousebill resp:', response)
     if (response.Items && response.Items.length > 0) {
-      console.info("Dynamo resp: ", response.Items);
+      console.info("GetHousebill Dynamo resp: ", response.Items);
       return response.Items[0];
     } else {
       return "failure";
