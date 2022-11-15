@@ -4,8 +4,8 @@ const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
 const eventValidation = Joi.object().keys({
-  shipperZip: Joi.number().integer().max(99999).min(10000).required(),
-  consigneeZip: Joi.number().integer().max(99999).min(10000).required(),
+  shipperZip: Joi.number().integer().required(),
+  consigneeZip: Joi.number().integer().required(),
   pickupTime: Joi.date().iso().greater("now").required(),
   customerNumber: Joi.number().integer().max(999999),
 });
