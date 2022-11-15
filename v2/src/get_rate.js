@@ -162,7 +162,7 @@ module.exports.handler = async (event, context, callback) => {
       return callback(
         response(
           "[400]",
-          dataObj.shipmentRateResponse
+          dataObj.shipmentRateResponse.Error
         )
       );
     } else {
