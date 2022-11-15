@@ -51,11 +51,11 @@ module.exports.handler = async (event, context, callback) => {
     fileNumber = fileNumber["FileNumber"]
     validated.housebill = eventBody.documentUploadRequest.housebill;
     console.log('filenumber: ',fileNumber)
-  } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.housebill))){
+  } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))){
     fileNumber = eventBody.documentUploadRequest.fileNumber
     housebill = await getHousebillNumber(eventBody.documentUploadRequest.fileNumber,customerId);
     validated.housebill = housebill['HouseBillNumber']
-    console.log('housebill: ',validated.housebill)
+    console.log('housebill: ', validated.housebill)
   }
   if (
     "docType" in eventBody.documentUploadRequest &&
