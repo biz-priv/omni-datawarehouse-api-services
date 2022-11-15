@@ -107,6 +107,7 @@ module.exports.handler = async (event, context, callback) => {
 
   let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
   validated.filename = fileName;
+  let err;
   try {
     const postData = makeJsonToXml(validated);
     console.log("postData", postData);
@@ -118,10 +119,11 @@ module.exports.handler = async (event, context, callback) => {
     ) {
       return { documentUploadResponse: { message: "success" } };
     } else {
-      throw "Failed";
+      return {documentUploadResponse: {message: 'failed', error: dataObj['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.ErrorStatus}}
+      // throw "Failed";
     }
   } catch (error) {
-    return callback(response("[500]", {documentUploadResponse: {message: 'failed', error: dataObj['soap:Envelope']['soap:Body'].AttachFileToShipmentResponse.AttachFileToShipmentResult.ErrorStatus}}));
+    return callback(response("[500]", {documentUploadResponse: {message: 'failed', error: error}}));
   }
 };
 
