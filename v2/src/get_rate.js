@@ -359,7 +359,7 @@ function makeXmlToJson(data) {
             EstimatedDelivery.setMinutes(t[1]);
             EstimatedDelivery.setSeconds(t[2]);
           }
-          if(e.ServiceLevelID.length == undefined && e.DeliveryTime == undefined && e.Message != null){
+          if(e.ServiceLevelID.length == undefined && e.DeliveryTime.length == undefined && e.Message != null){
             return{Error: e.Message}
           }
 
@@ -453,19 +453,19 @@ function makeXmlToJson(data) {
           EstimatedDelivery.setSeconds(t[2]);
         }
 
-        if(modifiedObj.ServiceLevelID.length == undefined && modifiedObj.DeliveryTime == undefined && modifiedObj.Message != null){
-          return{Error: modifiedObj.Message}
+        if(modifiedObj.ServiceLevelID.length == undefined && modifiedObj.DeliveryTime.length == undefined && modifiedObj.Message != null){
+          return {Error: modifiedObj.Message}
+        } else{
+          return {
+            serviceLevel: modifiedObj.ServiceLevelID,
+            estimatedDelivery:
+              modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
+            totalRate: modifiedObj.StandardTotalRate,
+            freightCharge: modifiedObj.StandardFreightCharge,
+            accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
+            message: modifiedObj.Message,
+          };
         }
-
-        return {
-          serviceLevel: modifiedObj.ServiceLevelID,
-          estimatedDelivery:
-            modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-          totalRate: modifiedObj.StandardTotalRate,
-          freightCharge: modifiedObj.StandardFreightCharge,
-          accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
-          message: modifiedObj.Message,
-        };
       }
     } else {
       throw "Rate not found.";
