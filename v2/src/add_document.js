@@ -46,6 +46,12 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     customerId = event.enhancedAuthContext.customerId;
   }
+  let pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
+  let Base64 = eventBody.documentUploadRequest.b64str.match(pattern) ? "Base64" : "Not Base64";
+  if(Base64 != 'Base64'){
+    return callback(response("[400]", "b64str is an invalid format"));
+  }
+
   if (
     "housebill" in eventBody.documentUploadRequest &&
     Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
