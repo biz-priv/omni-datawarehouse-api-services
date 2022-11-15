@@ -74,7 +74,7 @@ module.exports.handler = async (event, context, callback) => {
     docType = eventBody.documentUploadRequest.docType;
   }
   if('contentType' in eventBody.documentUploadRequest){
-    fileExtension = eventBody.documentUploadRequest.contentType.split('/')[1]
+    fileExtension = "."+eventBody.documentUploadRequest.contentType.split('/')[1]
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
       case "/9j/4":
@@ -107,7 +107,7 @@ module.exports.handler = async (event, context, callback) => {
 
   let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
   validated.filename = fileName;
-  let err;
+
   try {
     const postData = makeJsonToXml(validated);
     console.log("postData", postData);
