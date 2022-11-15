@@ -51,11 +51,11 @@ module.exports.handler = async (event, context, callback) => {
     fileNumber = fileNumber["FileNumber"]
     validated.housebill = eventBody.documentUploadRequest.housebill;
     console.log('filenumber: ',fileNumber)
-  } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.housebill))){
+  } else if ('fileNumber' in eventBody.documentUploadRequest && Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))){
     fileNumber = eventBody.documentUploadRequest.fileNumber
     housebill = await getHousebillNumber(eventBody.documentUploadRequest.fileNumber,customerId);
     validated.housebill = housebill['HouseBillNumber']
-    console.log('housebill: ',validated.housebill)
+    console.log('housebill: ', validated.housebill)
   }
   if (
     "docType" in eventBody.documentUploadRequest &&
@@ -64,25 +64,28 @@ module.exports.handler = async (event, context, callback) => {
     validated.docType = eventBody.documentUploadRequest.docType;
     docType = eventBody.documentUploadRequest.docType;
   }
-
-  switch (eventBody.documentUploadRequest.b64str[0]) {
-    case "/9j/4":
-      fileExtension = ".jpeg";
-      break;
-    case "iVBOR":
-      fileExtension = ".png";
-      break;
-    case "R0lG":
-      fileExtension = ".gif";
-      break;
-    case "J":
-      fileExtension = ".pdf";
-      break;
-    case "TU0AK" || "SUkqA":
-      fileExtension = ".tiff";
-      break;
-    default:
-      fileExtension = "";
+  if('contentType' in eventBody.documentUploadRequest){
+    fileExtension = eventBody.documentUploadRequest.contentType.split('/')[1]
+  } else {
+    switch (eventBody.documentUploadRequest.b64str[0]) {
+      case "/9j/4":
+        fileExtension = ".jpeg";
+        break;
+      case "iVBOR":
+        fileExtension = ".png";
+        break;
+      case "R0lG":
+        fileExtension = ".gif";
+        break;
+      case "J":
+        fileExtension = ".pdf";
+        break;
+      case "TU0AK" || "SUkqA":
+        fileExtension = ".tiff";
+        break;
+      default:
+        fileExtension = "";
+    }
   }
 
   let formatDate =
@@ -182,9 +185,8 @@ async function getFileNumber(housebill,customerId) {
       ExpressionAttributeValues: { ":Housebill": housebill, ":CustomerID":customerId},
     };
     const response = await documentClient.query(params).promise();
-    console.log("getFileNumber resp: ", response)
     if (response.Items && response.Items.length > 0) {
-      console.info("Dynamo resp: ", response.Items);
+      console.info("Get FileNumber Dynamo resp: ", response.Items);
       return response.Items[0];
     } else {
       return "failure";
@@ -206,9 +208,8 @@ async function getHousebillNumber(filenumber,customerId) {
       ExpressionAttributeValues: { ":FileNumber": filenumber, ":CustomerID":customerId },
     };
     const response = await documentClient.query(params).promise();
-    console.log('getHousebill resp:', response)
     if (response.Items && response.Items.length > 0) {
-      console.info("Dynamo resp: ", response.Items);
+      console.info("GetHousebill Dynamo resp: ", response.Items);
       return response.Items[0];
     } else {
       return "failure";
