@@ -64,25 +64,28 @@ module.exports.handler = async (event, context, callback) => {
     validated.docType = eventBody.documentUploadRequest.docType;
     docType = eventBody.documentUploadRequest.docType;
   }
-
-  switch (eventBody.documentUploadRequest.b64str[0]) {
-    case "/9j/4":
-      fileExtension = ".jpeg";
-      break;
-    case "iVBOR":
-      fileExtension = ".png";
-      break;
-    case "R0lG":
-      fileExtension = ".gif";
-      break;
-    case "J":
-      fileExtension = ".pdf";
-      break;
-    case "TU0AK" || "SUkqA":
-      fileExtension = ".tiff";
-      break;
-    default:
-      fileExtension = "";
+  if('contentType' in eventBody.documentUploadRequest){
+    fileExtension = eventBody.documentUploadRequest.contentType.split('/')[1]
+  } else {
+    switch (eventBody.documentUploadRequest.b64str[0]) {
+      case "/9j/4":
+        fileExtension = ".jpeg";
+        break;
+      case "iVBOR":
+        fileExtension = ".png";
+        break;
+      case "R0lG":
+        fileExtension = ".gif";
+        break;
+      case "J":
+        fileExtension = ".pdf";
+        break;
+      case "TU0AK" || "SUkqA":
+        fileExtension = ".tiff";
+        break;
+      default:
+        fileExtension = "";
+    }
   }
 
   let formatDate =
