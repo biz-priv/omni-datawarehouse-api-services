@@ -97,11 +97,9 @@ module.exports.handler = async (event, context, callback) => {
       docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
     }
   }
-  if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2) {
-    if(eventBody.documentUploadRequest.contentType.split("/")[1] !=''){
+  if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2 && eventBody.documentUploadRequest.contentType.split("/")[1] !='') {
       fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
-    }
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
       case "/9j/4":
@@ -124,7 +122,7 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
   if(fileExtension==''){
-    return callback(response("[400]", "Unable to identify filetype. Please send contentType."));
+    return callback(response("[400]", "Unable to identify filetype."));
   }
 
   let formatDate =
