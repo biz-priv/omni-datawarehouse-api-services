@@ -98,8 +98,10 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
   if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2) {
-    fileExtension =
+    if(eventBody.documentUploadRequest.contentType.split("/")[1] !=''){
+      fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
+    }
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
       case "/9j/4":
