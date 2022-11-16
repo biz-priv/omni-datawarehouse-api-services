@@ -19,7 +19,15 @@ module.exports.handler = async (event, context, callback) => {
         .required(),
     })
     .required();
-  const { error, value } = eventValidation.validate(body);
+  let validator = {
+    documentUploadRequest: {},
+  };
+  for (let key in body.documentUploadRequest) {
+    if (!key.includes("//")) {
+      validator.documentUploadRequest[key] = body.documentUploadRequest[key];
+    }
+  }
+  const { error, value } = eventValidation.validate(validator);
   if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
@@ -32,7 +40,7 @@ module.exports.handler = async (event, context, callback) => {
   let fileNumber = "";
   let housebill = "";
   let docType = "";
-  let eventBody = body;
+  let eventBody = validator;
   let fileExtension = "";
   let validated = {};
   let currentDateTime = new Date();
@@ -47,9 +55,13 @@ module.exports.handler = async (event, context, callback) => {
     customerId = event.enhancedAuthContext.customerId;
   }
   let pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
-  let Base64 = eventBody.documentUploadRequest.b64str.match(pattern) ? "Base64" : "Not Base64";
-  if(Base64 != 'Base64'){
-    return callback(response("[400]", "Please ensure b64str field is a valid base64 string."));
+  let Base64 = eventBody.documentUploadRequest.b64str.match(pattern)
+    ? "Base64"
+    : "Not Base64";
+  if (Base64 != "Base64") {
+    return callback(
+      response("[400]", "Please ensure b64str field is a valid base64 string.")
+    );
   }
 
   if (
@@ -93,12 +105,18 @@ module.exports.handler = async (event, context, callback) => {
       validated.docType = eventBody.documentUploadRequest.docType;
       docType = eventBody.documentUploadRequest.docType;
     } else {
-      validated.docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
-      docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
+      validated.docType = eventBody.documentUploadRequest.docType
+        .toString()
+        .slice(0, 10);
+      docType = eventBody.documentUploadRequest.docType.toString().slice(0, 10);
     }
   }
-  if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2 && eventBody.documentUploadRequest.contentType.split("/")[1] !='') {
-      fileExtension =
+  if (
+    "contentType" in eventBody.documentUploadRequest &&
+    eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
+    eventBody.documentUploadRequest.contentType.split("/")[1] != ""
+  ) {
+    fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
   } else {
     switch (eventBody.documentUploadRequest.b64str[0]) {
@@ -121,8 +139,13 @@ module.exports.handler = async (event, context, callback) => {
         fileExtension = "";
     }
   }
-  if(fileExtension==''){
-    return callback(response("[400]", "Unable to identify filetype. Please send content type with file extension."));
+  if (fileExtension == "") {
+    return callback(
+      response(
+        "[400]",
+        "Unable to identify filetype. Please send content type with file extension."
+      )
+    );
   }
 
   let formatDate =
