@@ -104,7 +104,7 @@ module.exports.handler = async (event, context, callback) => {
       if (Number(body.shipmentRateRequest.insuredValue) > 0 && Number(body.shipmentRateRequest.insuredValue)<= 9999999999999999999999999999n) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
-          body.shipmentRateRequest.insuredValue.toString();
+         (body.shipmentRateRequest.insuredValue).toLocaleString('fullwide', {useGrouping:false});
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
