@@ -29,11 +29,11 @@ function:
               headers:
                 Content-Type: "'application/json'"
               template: ${file(responseTemplate.vtl)}
-        # authorizer:
-        #   name: custom-authorizer
-        #   resultTtlInSeconds: 0
-        #   identitySource: method.request.header.x-api-key
-        #   type: request
+        authorizer:
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
   package:
     include:
       - v2/src/add_document.js
@@ -41,3 +41,6 @@ function:
   environment:
     REGION: ${self:provider.region}
     ULOAD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/addDocument}
+    HOUSEBILL_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
+    HOUSEBILL_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
+    FILENUMBER_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/fileNumber/index}

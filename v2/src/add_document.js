@@ -8,10 +8,13 @@ module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   const eventValidation = Joi.object()
     .keys({
-      UploadPODDocument: Joi.object()
+      documentUploadRequest: Joi.object()
         .keys({
-          Housebill: Joi.string().required(),
-          b64str: Joi.string().required(),
+          housebill: Joi.any(),
+          b64str: Joi.string().min(20).required(),
+          contentType: Joi.any(),
+          docType: Joi.any(),
+          fileNumber: Joi.any(),
         })
         .required(),
     })
@@ -25,30 +28,146 @@ module.exports.handler = async (event, context, callback) => {
     console.log("[400]", key + " " + msg);
     return callback(response("[400]", key + " " + msg));
   }
+  let customerId;
+  let fileNumber = "";
+  let housebill = "";
+  let docType = "";
   let eventBody = body;
+  let fileExtension = "";
+  let validated = {};
+  let currentDateTime = new Date();
+  validated.b64str = eventBody.documentUploadRequest.b64str;
+
+  if (
+    !("enhancedAuthContext" in event) ||
+    !("customerId" in event.enhancedAuthContext)
+  ) {
+    return callback(response("[400]", "Unable to validate user"));
+  } else {
+    customerId = event.enhancedAuthContext.customerId;
+  }
+  let pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
+  let Base64 = eventBody.documentUploadRequest.b64str.match(pattern) ? "Base64" : "Not Base64";
+  if(Base64 != 'Base64'){
+    return callback(response("[400]", "Please ensure b64str field is a valid base64 string."));
+  }
+
+  if (
+    "housebill" in eventBody.documentUploadRequest &&
+    Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
+  ) {
+    fileNumber = await getFileNumber(
+      eventBody.documentUploadRequest.housebill,
+      customerId
+    );
+    if (fileNumber == "failure") {
+      return callback(
+        response("[400]", "Invalid Housebill for this customer.")
+      );
+    } else {
+      fileNumber = fileNumber["FileNumber"];
+      validated.housebill = eventBody.documentUploadRequest.housebill;
+      console.log("filenumber: ", fileNumber);
+    }
+  } else if (
+    "fileNumber" in eventBody.documentUploadRequest &&
+    Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))
+  ) {
+    housebill = await getHousebillNumber(
+      eventBody.documentUploadRequest.fileNumber,
+      customerId
+    );
+    if (housebill == "failure") {
+      return callback(response("[400]", "No Housebill found."));
+    } else {
+      fileNumber = eventBody.documentUploadRequest.fileNumber;
+      validated.housebill = housebill["HouseBillNumber"];
+      console.log("housebill: ", validated.housebill);
+    }
+  }
+  if (
+    "docType" in eventBody.documentUploadRequest &&
+    eventBody.documentUploadRequest.docType != ""
+  ) {
+    if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
+      validated.docType = eventBody.documentUploadRequest.docType;
+      docType = eventBody.documentUploadRequest.docType;
+    } else {
+      validated.docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
+      docType = eventBody.documentUploadRequest.docType.toString().slice(0,10);
+    }
+  }
+  if ("contentType" in eventBody.documentUploadRequest && eventBody.documentUploadRequest.contentType.split("/").length>=2) {
+    fileExtension =
+      "." + eventBody.documentUploadRequest.contentType.split("/")[1];
+  } else {
+    switch (eventBody.documentUploadRequest.b64str[0]) {
+      case "/9j/4":
+        fileExtension = ".jpeg";
+        break;
+      case "iVBOR":
+        fileExtension = ".png";
+        break;
+      case "R0lG":
+        fileExtension = ".gif";
+        break;
+      case "J":
+        fileExtension = ".pdf";
+        break;
+      case "TU0AK" || "SUkqA":
+        fileExtension = ".tiff";
+        break;
+      default:
+        fileExtension = "";
+    }
+  }
+
+  let formatDate =
+    currentDateTime.getFullYear().toString() +
+    pad2(currentDateTime.getMonth() + 1) +
+    pad2(currentDateTime.getDate()) +
+    pad2(currentDateTime.getHours()) +
+    pad2(currentDateTime.getMinutes()) +
+    pad2(currentDateTime.getSeconds());
+
+  let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
+  validated.filename = fileName;
+
   try {
-    const postData = makeJsonToXml(eventBody.UploadPODDocument);
+    const postData = makeJsonToXml(validated);
     console.log("postData", postData);
     const res = await getXmlResponse(postData);
-    console.log("res***", res);
+    console.log("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
     if (
-      dataObj["soap:Envelope"]["soap:Body"].UploadPODDocumentResponse
-        .UploadPODDocumentResult == "true"
+      dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+        .AttachFileToShipmentResult.Success == "true"
     ) {
-      return { msg: "Success" };
+      return { documentUploadResponse: { message: "success" } };
     } else {
-      throw "Failed";
+      return {
+        documentUploadResponse: {
+          message: "failed",
+          error:
+            dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+              .AttachFileToShipmentResult.ErrorStatus,
+        },
+      };
+      // throw "Failed";
     }
   } catch (error) {
-    return callback(response("[500]", "Failed"));
+    return callback(
+      response("[500]", {
+        documentUploadResponse: { message: "failed", error: error },
+      })
+    );
   }
 };
 
 async function getXmlResponse(postData) {
   let res;
   try {
-    res = await axios.post(process.env.ULOAD_POD_DOCUMENT_API, postData, {
+    res = await axios.post(process.env.ULOAD_DOCUMENT_API, postData, {
       headers: {
         Accept: "text/xml",
         "Content-Type": "application/soap+xml; charset=utf-8",
@@ -66,23 +185,17 @@ async function getXmlResponse(postData) {
 }
 function makeJsonToXml(data) {
   return convert({
-    "soap12:Envelope": {
+    "soap:Envelope": {
       "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
       "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-      "@xmlns:soap12": "http://www.w3.org/2003/05/soap-envelope",
-      "soap12:Header": {
-        AuthHeader: {
+      "@xmlns:soap": "http://www.w3.org/2003/05/soap-envelope",
+      "soap:Body": {
+        AttachFileToShipment: {
           "@xmlns": "http://tempuri.org/",
-          UserName: "biztest",
-          Password: "Api081020!",
-        },
-      },
-      "soap12:Body": {
-        UploadPODDocument: {
-          "@xmlns": "http://tempuri.org/",
-          HAWB: data.Housebill,
-          DocumentDataBase64: data.b64str,
-          DocumentExtension: "pdf",
+          Housebill: data.housebill,
+          FileDataBase64: data.b64str,
+          Filename: data.filename,
+          DocType: data.docType,
         },
       },
     },
@@ -102,4 +215,62 @@ function response(code, message) {
     httpStatus: code,
     message,
   });
+}
+
+function pad2(n) {
+  return n < 10 ? "0" + n : n;
+}
+
+async function getFileNumber(housebill, customerId) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const params = {
+      TableName: process.env.HOUSEBILL_TABLE,
+      IndexName: process.env.HOUSEBILL_TABLE_INDEX,
+      KeyConditionExpression:
+        "CustomerID = :CustomerID AND HouseBillNumber = :Housebill",
+      ExpressionAttributeValues: {
+        ":Housebill": housebill,
+        ":CustomerID": customerId,
+      },
+    };
+    const response = await documentClient.query(params).promise();
+    if (response.Items && response.Items.length > 0) {
+      console.info("Get FileNumber Dynamo resp: ", response.Items);
+      return response.Items[0];
+    } else {
+      return "failure";
+    }
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
+  }
+}
+
+async function getHousebillNumber(filenumber, customerId) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const params = {
+      TableName: process.env.HOUSEBILL_TABLE,
+      IndexName: process.env.FILENUMBER_TABLE_INDEX,
+      KeyConditionExpression:
+        "CustomerID = :CustomerID AND FileNumber = :FileNumber",
+      ExpressionAttributeValues: {
+        ":FileNumber": filenumber,
+        ":CustomerID": customerId,
+      },
+    };
+    const response = await documentClient.query(params).promise();
+    if (response.Items && response.Items.length > 0) {
+      console.info("GetHousebill Dynamo resp: ", response.Items);
+      return response.Items[0];
+    } else {
+      return "failure";
+    }
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
+  }
 }

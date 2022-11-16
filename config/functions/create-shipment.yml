@@ -3,6 +3,7 @@ function:
   handler: ${self:custom.alias}/src/create_shipment.handler
   name: ${self:service}-create-shipment-${self:provider.stage}
   description: create shipment api service - ${self:provider.stage}
+  memorySize: 2048
   events:
     - http:
         path: /create/shipment
