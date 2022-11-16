@@ -122,7 +122,7 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
   if(fileExtension==''){
-    return callback(response("[400]", "Unable to identify filetype."));
+    return callback(response("[400]", "Unable to identify filetype. Please send content type with file extension."));
   }
 
   let formatDate =
