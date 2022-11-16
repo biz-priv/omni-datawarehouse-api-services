@@ -121,6 +121,9 @@ module.exports.handler = async (event, context, callback) => {
         fileExtension = "";
     }
   }
+  if(fileExtension==''){
+    return callback(response("[400]", "Unable to identify filetype. Please send contentType."));
+  }
 
   let formatDate =
     currentDateTime.getFullYear().toString() +
