@@ -11,7 +11,7 @@ module.exports.handler = async (event, context, callback) => {
       documentUploadRequest: Joi.object()
         .keys({
           housebill: Joi.any(),
-          b64str: Joi.string().min(20).required(),
+          b64str: Joi.string().required(),
           contentType: Joi.any(),
           docType: Joi.any(),
           fileNumber: Joi.any(),
