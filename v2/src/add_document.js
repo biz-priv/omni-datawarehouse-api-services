@@ -119,24 +119,18 @@ module.exports.handler = async (event, context, callback) => {
     fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
   } else {
-    switch (eventBody.documentUploadRequest.b64str[0]) {
-      case "/9j/4":
-        fileExtension = ".jpeg";
-        break;
-      case "iVBOR":
-        fileExtension = ".png";
-        break;
-      case "R0lG":
-        fileExtension = ".gif";
-        break;
-      case "J":
-        fileExtension = ".pdf";
-        break;
-      case "TU0AK" || "SUkqA":
-        fileExtension = ".tiff";
-        break;
-      default:
-        fileExtension = "";
+    if(eventBody.documentUploadRequest.b64str.startsWith("/9j/4")){
+      fileExtension = ".jpeg";
+    } else if(eventBody.documentUploadRequest.b64str.startsWith("iVBOR")){
+      fileExtension = ".png";
+    } else if(eventBody.documentUploadRequest.b64str.startsWith("R0lG")){
+      fileExtension = ".gif";
+    } else if(eventBody.documentUploadRequest.b64str.startsWith("J")){
+      fileExtension = ".pdf";
+    } else if(eventBody.documentUploadRequest.b64str.startsWith("TU0AK") || eventBody.documentUploadRequest.b64str.startsWith("SUkqA")){
+      fileExtension = ".tiff";
+    } else {
+      fileExtension = "";
     }
   }
   if (fileExtension == "") {
