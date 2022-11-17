@@ -55,7 +55,7 @@ module.exports.handler = async (event, context, callback) => {
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    console.log("[400]", key + " " + msg);
+    console.info("[400]", key + " " + msg);
     return callback(response("[400]", key + " " + msg));
   }
   let customerId;
@@ -101,7 +101,7 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       fileNumber = fileNumber["FileNumber"];
       validated.housebill = eventBody.documentUploadRequest.housebill;
-      console.log("filenumber: ", fileNumber);
+      console.info("filenumber: ", fileNumber);
     }
   } else if (
     "fileNumber" in eventBody.documentUploadRequest &&
@@ -116,7 +116,7 @@ module.exports.handler = async (event, context, callback) => {
     } else {
       fileNumber = eventBody.documentUploadRequest.fileNumber;
       validated.housebill = housebill["HouseBillNumber"];
-      console.log("housebill: ", validated.housebill);
+      console.info("housebill: ", validated.housebill);
     }
   }
   if (
@@ -180,9 +180,9 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     const postData = makeJsonToXml(validated);
-    console.log("postData", postData);
+    console.info("postData", postData);
     const res = await getXmlResponse(postData);
-    console.log("resp: ", res);
+    console.info("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
     if (
       dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
@@ -225,7 +225,6 @@ async function getXmlResponse(postData) {
     };
   } catch (e) {
     throw "Error";
-    // console.log(e);
   }
 }
 function makeJsonToXml(data) {
