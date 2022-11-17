@@ -8,6 +8,17 @@ const eventValidation = Joi.object().keys({
   consigneeZip: Joi.string().required(),
   pickupTime: Joi.date().iso().greater("now").required(),
   customerNumber: Joi.number().integer().max(999999),
+  shipmentLines: Joi.object().keys({
+    pieces: Joi.number.integer().required(),
+    pieceType: Joi.any(),
+    weight: Joi.number.integer().max(999).required(),
+    length: Joi.number.integer().max(999).required(),
+    width: Joi.number.integer().max(999).required(),
+    height: Joi.number.integer().max(999).required(),
+    hazmat: Joi.any(),
+    dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM"),
+    weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB"),
+  }).required,
 });
 
 function isArray(a) {
@@ -101,10 +112,16 @@ module.exports.handler = async (event, context, callback) => {
   console.info("BillToFilled: ", newJSON);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
-      if (Number(body.shipmentRateRequest.insuredValue) > 0 && Number(body.shipmentRateRequest.insuredValue)<= 9999999999999999999999999999n) {
+      if (
+        Number(body.shipmentRateRequest.insuredValue) > 0 &&
+        Number(body.shipmentRateRequest.insuredValue) <=
+          9999999999999999999999999999n
+      ) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
-         (body.shipmentRateRequest.insuredValue).toLocaleString('fullwide', {useGrouping:false});
+          body.shipmentRateRequest.insuredValue.toLocaleString("fullwide", {
+            useGrouping: false,
+          });
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
@@ -124,11 +141,9 @@ module.exports.handler = async (event, context, callback) => {
   console.info("RatingInput Updated", newJSON);
 
   try {
-    if ("shipmentLines" in body.shipmentRateRequest) {
-      newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-        body.shipmentRateRequest
-      );
-    }
+    newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
+      body.shipmentRateRequest
+    );
     console.info("ShipLines ", newJSON);
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
@@ -158,13 +173,8 @@ module.exports.handler = async (event, context, callback) => {
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
-    if('Error' in dataObj.shipmentRateResponse){
-      return callback(
-        response(
-          "[400]",
-          dataObj.shipmentRateResponse.Error
-        )
-      );
+    if ("Error" in dataObj.shipmentRateResponse) {
+      return callback(response("[400]", dataObj.shipmentRateResponse.Error));
     } else {
       return dataObj;
     }
@@ -182,50 +192,21 @@ function addCommodityWeightPerPiece(inputData) {
   let commodityInput = {
     CommodityInput: {},
   };
-  for (const key in inputData.shipmentLines[0]) {
-    if (key == "dimUOM") {
-      if (inputData.shipmentLines[0][key].toLowerCase() == "cm") {
-        if ("length" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].length = Math.round(
-              inputData.shipmentLines[0].length * 2.54
-            );
-          } catch {
-            console.info("invalid value for length");
-          }
-        }
-        if ("width" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].width = Math.round(
-              inputData.shipmentLines[0].width * 2.54
-            );
-          } catch {
-            console.info("invalid value for width");
-          }
-        }
-        if ("height" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].height = Math.round(
-              inputData.shipmentLines[0].height * 2.54
-            );
-          } catch {
-            console.info("invalid value for height");
-          }
-        }
-      }
-    } else if (key == "weightUOM") {
-      if (inputData.shipmentLines[0][key].toLowerCase() == "kg") {
-        if ("weight" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].weight = Math.round(
-              inputData.shipmentLines[0].weight * 2.2046
-            );
-          } catch {
-            console.info("invalid value for weight");
-          }
-        }
-      }
-    }
+  if (inputData.shipmentLines[0].dimUOM.toLowerCase() == "cm") {
+    inputData.shipmentLines[0].length = Math.round(
+      inputData.shipmentLines[0].length * 2.54
+    );
+    inputData.shipmentLines[0].width = Math.round(
+      inputData.shipmentLines[0].width * 2.54
+    );
+    inputData.shipmentLines[0].height = Math.round(
+      inputData.shipmentLines[0].height * 2.54
+    );
+  }
+  if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
+    inputData.shipmentLines[0].weight = Math.round(
+      inputData.shipmentLines[0].weight * 2.2046
+    );
   }
   console.info("inputdata.ShipmentLines: ", inputData.shipmentLines);
   for (const shipKey in inputData.shipmentLines[0]) {
@@ -233,28 +214,10 @@ function addCommodityWeightPerPiece(inputData) {
       continue;
     }
     if (shipKey != "dimUOM" && shipKey != "weightUOM") {
-      if (
-        shipKey == "pieces" ||
-        shipKey == "weight" ||
-        shipKey == "length" ||
-        shipKey == "height" ||
-        shipKey == "width"
-      ) {
-        if (
-          Number.isInteger(Number(inputData.shipmentLines[0][shipKey])) &&
-          Number(inputData.shipmentLines[0][shipKey]) <= 999
-        ) {
-          new_key =
-            "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-          commodityInput.CommodityInput[new_key] =
-            inputData.shipmentLines[0][shipKey];
-        }
-      } else {
-        new_key =
-          "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-        commodityInput.CommodityInput[new_key] =
-          inputData.shipmentLines[0][shipKey];
-      }
+      new_key =
+        "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+      commodityInput.CommodityInput[new_key] =
+        inputData.shipmentLines[0][shipKey];
     }
   }
 
@@ -359,8 +322,12 @@ function makeXmlToJson(data) {
             EstimatedDelivery.setMinutes(t[1]);
             EstimatedDelivery.setSeconds(t[2]);
           }
-          if(e.ServiceLevelID.length == undefined && e.DeliveryTime.length == undefined && e.Message != null){
-            return{Error: e.Message}
+          if (
+            e.ServiceLevelID.length == undefined &&
+            e.DeliveryTime.length == undefined &&
+            e.Message != null
+          ) {
+            return { Error: e.Message };
           }
 
           return {
@@ -453,9 +420,13 @@ function makeXmlToJson(data) {
           EstimatedDelivery.setSeconds(t[2]);
         }
 
-        if(modifiedObj.ServiceLevelID.length == undefined && modifiedObj.DeliveryTime.length == undefined && modifiedObj.Message != null){
-          return {Error: modifiedObj.Message}
-        } else{
+        if (
+          modifiedObj.ServiceLevelID.length == undefined &&
+          modifiedObj.DeliveryTime.length == undefined &&
+          modifiedObj.Message != null
+        ) {
+          return { Error: modifiedObj.Message };
+        } else {
           return {
             serviceLevel: modifiedObj.ServiceLevelID,
             estimatedDelivery:
