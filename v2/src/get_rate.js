@@ -20,8 +20,8 @@ const eventValidation = Joi.object().keys({
       dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM"),
       weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB"),
     })
-  )
-})
+  ),
+});
 
 function isArray(a) {
   return !!a && a.constructor === Array;
@@ -63,17 +63,26 @@ module.exports.handler = async (event, context, callback) => {
     !("customerNumber" in body.shipmentRateRequest)
   ) {
     valError = "customerNumber is a required field for this request.";
-  } else if(!('shipmentLines'in body.shipmentRateRequest) || body.shipmentRateRequest.shipmentLines.length <=0) {
+  } else if (
+    !("shipmentLines" in body.shipmentRateRequest) ||
+    body.shipmentRateRequest.shipmentLines.length <= 0
+  ) {
     valError = "At least 1 shipmentLine is required for this request.";
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
     reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
-  }
+    reqFields.shipmentLines = [];
 
-  reqFields.shipmentLines = []
-  for(let i = 0;i<body.shipmentRateRequest.shipmentLines.length;i++){
-    reqFields.shipmentLines.push(body.shipmentRateRequest.shipmentLines[i])
+    for (let i = 0; i < body.shipmentRateRequest.shipmentLines.length; i++) {
+      reqFields.shipmentLines.push({});
+      for (let key in body.shipmentRateRequest.shipmentLines[i]) {
+        if (!key.includes("//")) {
+          reqFields.shipmentLines[i][key] =
+            body.shipmentRateRequest.shipmentLines[i][key];
+        }
+      }
+    }
   }
 
   const { error, value } = eventValidation.validate(reqFields);
