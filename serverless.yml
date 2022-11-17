@@ -78,7 +78,7 @@ functions:
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
   add-document: ${file(config/functions/shipment-add-document.yml):function}
-  # get-rate: ${file(config/functions/shipment-rate.yml):function}
+  shipment-rate: ${file(config/functions/shipment-rate.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
   wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
