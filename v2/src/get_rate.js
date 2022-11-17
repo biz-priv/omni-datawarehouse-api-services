@@ -8,18 +8,20 @@ const eventValidation = Joi.object().keys({
   consigneeZip: Joi.string().required(),
   pickupTime: Joi.date().iso().greater("now").required(),
   customerNumber: Joi.number().integer().max(999999),
-  shipmentLines: Joi.object().keys({
-    pieces: Joi.number.integer().required(),
-    pieceType: Joi.any(),
-    weight: Joi.number.integer().max(999).required(),
-    length: Joi.number.integer().max(999).required(),
-    width: Joi.number.integer().max(999).required(),
-    height: Joi.number.integer().max(999).required(),
-    hazmat: Joi.any(),
-    dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM"),
-    weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB"),
-  }).required,
-});
+  shipmentLines: Joi.array().items(
+    Joi.object({
+      pieces: Joi.number().integer().required(),
+      pieceType: Joi.any(),
+      weight: Joi.number().integer().max(999).required(),
+      length: Joi.number().integer().max(999).required(),
+      width: Joi.number().integer().max(999).required(),
+      height: Joi.number().integer().max(999).required(),
+      hazmat: Joi.any(),
+      dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM"),
+      weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB"),
+    })
+  )
+})
 
 function isArray(a) {
   return !!a && a.constructor === Array;
@@ -61,10 +63,17 @@ module.exports.handler = async (event, context, callback) => {
     !("customerNumber" in body.shipmentRateRequest)
   ) {
     valError = "customerNumber is a required field for this request.";
+  } else if(!('shipmentLines'in body.shipmentRateRequest) || body.shipmentRateRequest.shipmentLines.length <=0) {
+    valError = "At least 1 shipmentLine is required for this request.";
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
     reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
+  }
+
+  reqFields.shipmentLines = []
+  for(let i = 0;i<body.shipmentRateRequest.shipmentLines.length;i++){
+    reqFields.shipmentLines.push(body.shipmentRateRequest.shipmentLines[i])
   }
 
   const { error, value } = eventValidation.validate(reqFields);
