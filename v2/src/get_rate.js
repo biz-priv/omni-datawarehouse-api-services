@@ -17,8 +17,8 @@ const eventValidation = Joi.object().keys({
       width: Joi.number().integer().max(999).required(),
       height: Joi.number().integer().max(999).required(),
       hazmat: Joi.any(),
-      dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM"),
-      weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB"),
+      dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM").required(),
+      weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB").required(),
     })
   ),
 });
