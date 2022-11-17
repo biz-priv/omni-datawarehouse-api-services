@@ -20,7 +20,7 @@ const eventValidation = Joi.object().keys({
       dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM").required(),
       weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB").required(),
     })
-  ),
+  ).required(),
 });
 
 function isArray(a) {
