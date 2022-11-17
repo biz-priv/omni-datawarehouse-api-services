@@ -13,7 +13,29 @@ module.exports.handler = async (event, context, callback) => {
           housebill: Joi.any(),
           b64str: Joi.string().required(),
           contentType: Joi.any(),
-          docType: Joi.any(),
+          docType: Joi.string()
+            .validate(
+              "CONSULAR",
+              "CUST RATE",
+              "CUSTOMS",
+              "DCCL",
+              "DECON",
+              "HCPOD",
+              "IBU",
+              "INSURANCE",
+              "INVOICE",
+              "MSDS",
+              "OCCL",
+              "OMNI RA",
+              "ORIG BOL",
+              "PACKING",
+              "PO",
+              "POD",
+              "PRO FORMA",
+              "RA",
+              "WAYBILL"
+            )
+            .required(),
           fileNumber: Joi.any(),
         })
         .required(),
@@ -119,15 +141,18 @@ module.exports.handler = async (event, context, callback) => {
     fileExtension =
       "." + eventBody.documentUploadRequest.contentType.split("/")[1];
   } else {
-    if(eventBody.documentUploadRequest.b64str.startsWith("/9j/4")){
+    if (eventBody.documentUploadRequest.b64str.startsWith("/9j/4")) {
       fileExtension = ".jpeg";
-    } else if(eventBody.documentUploadRequest.b64str.startsWith("iVBOR")){
+    } else if (eventBody.documentUploadRequest.b64str.startsWith("iVBOR")) {
       fileExtension = ".png";
-    } else if(eventBody.documentUploadRequest.b64str.startsWith("R0lG")){
+    } else if (eventBody.documentUploadRequest.b64str.startsWith("R0lG")) {
       fileExtension = ".gif";
-    } else if(eventBody.documentUploadRequest.b64str.startsWith("J")){
+    } else if (eventBody.documentUploadRequest.b64str.startsWith("J")) {
       fileExtension = ".pdf";
-    } else if(eventBody.documentUploadRequest.b64str.startsWith("TU0AK") || eventBody.documentUploadRequest.b64str.startsWith("SUkqA")){
+    } else if (
+      eventBody.documentUploadRequest.b64str.startsWith("TU0AK") ||
+      eventBody.documentUploadRequest.b64str.startsWith("SUkqA")
+    ) {
       fileExtension = ".tiff";
     } else {
       fileExtension = "";
