@@ -123,7 +123,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   if (
     "customerNumber" in body.shipmentRateRequest &&
-    Number.isInteger(Number(body.shipmentRateRequest.customerNumber))
+    Number.isInteger(Number(body.shipmentRateRequest.customerNumber)) && newJSON.RatingInput.BillToNo == undefined
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
