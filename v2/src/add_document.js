@@ -14,7 +14,7 @@ module.exports.handler = async (event, context, callback) => {
           b64str: Joi.string().required(),
           contentType: Joi.any(),
           docType: Joi.string()
-            .validate(
+            .valid(
               "CONSULAR",
               "CUST RATE",
               "CUSTOMS",
