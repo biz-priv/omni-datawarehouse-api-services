@@ -18,7 +18,7 @@ const eventValidation = Joi.object().keys({
     hazmat: Joi.any(),
     dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM"),
     weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB"),
-  }).required,
+  }).required(),
 });
 
 function isArray(a) {
