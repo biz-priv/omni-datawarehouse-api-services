@@ -20,7 +20,7 @@ const eventValidation = Joi.object().keys({
       dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM").required(),
       weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB").required(),
     })
-  ),
+  ).required(),
 });
 
 function isArray(a) {
@@ -123,7 +123,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   if (
     "customerNumber" in body.shipmentRateRequest &&
-    Number.isInteger(Number(body.shipmentRateRequest.customerNumber))
+    Number.isInteger(Number(body.shipmentRateRequest.customerNumber)) && newJSON.RatingInput.BillToNo == undefined
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
