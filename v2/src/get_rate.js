@@ -72,8 +72,14 @@ module.exports.handler = async (event, context, callback) => {
   }
 
   reqFields.shipmentLines = []
+  
   for(let i = 0;i<body.shipmentRateRequest.shipmentLines.length;i++){
-    reqFields.shipmentLines.push(body.shipmentRateRequest.shipmentLines[i])
+    reqFields.shipmentLines.push({})
+    for(let key in body.shipmentRateRequest.shipmentLines[i]){
+      if(!(key.includes('//'))){
+        reqFields.shipmentLines[i][key] =body.shipmentRateRequest.shipmentLines[i][key]
+      }
+    }
   }
 
   const { error, value } = eventValidation.validate(reqFields);
