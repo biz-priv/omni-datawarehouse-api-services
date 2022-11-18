@@ -97,7 +97,7 @@ module.exports.handler = async (event, context, callback) => {
     let key = error.details[0].context.key;
     console.info("MessageError", "[400]", error);
     if(error.toString().includes('shipmentLines')){
-      return callback(response("[400]", "shipmentLines."+key + error.toString().split('"')[2]));
+      return callback(response("[400]", "shipmentLines."+key + error.details[0].message.split('"')[2]));
     } else {
       return callback(response("[400]", key + " " + error));
     } 
