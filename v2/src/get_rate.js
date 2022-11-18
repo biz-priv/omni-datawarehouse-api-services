@@ -4,10 +4,23 @@ const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
 const eventValidation = Joi.object().keys({
-  shipperZip: Joi.number().integer().max(99999).min(10000).required(),
-  consigneeZip: Joi.number().integer().max(99999).min(10000).required(),
+  shipperZip: Joi.string().required(),
+  consigneeZip: Joi.string().required(),
   pickupTime: Joi.date().iso().greater("now").required(),
   customerNumber: Joi.number().integer().max(999999),
+  shipmentLines: Joi.array().items(
+    Joi.object({
+      pieces: Joi.number().integer().required(),
+      pieceType: Joi.any(),
+      weight: Joi.number().integer().max(999).required(),
+      length: Joi.number().integer().max(999).required(),
+      width: Joi.number().integer().max(999).required(),
+      height: Joi.number().integer().max(999).required(),
+      hazmat: Joi.any(),
+      dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM").required(),
+      weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB").required(),
+    })
+  ).required(),
 });
 
 function isArray(a) {
@@ -41,14 +54,35 @@ module.exports.handler = async (event, context, callback) => {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
   } else if (
+    !Number.isInteger(Number(body.shipmentRateRequest.shipperZip)) ||
+    !Number.isInteger(Number(body.shipmentRateRequest.consigneeZip))
+  ) {
+    valError = "Invalid zip value.";
+  } else if (
     event.enhancedAuthContext.customerId == "customer-portal-admin" &&
     !("customerNumber" in body.shipmentRateRequest)
   ) {
     valError = "customerNumber is a required field for this request.";
+  } else if (
+    !("shipmentLines" in body.shipmentRateRequest) ||
+    body.shipmentRateRequest.shipmentLines.length <= 0
+  ) {
+    valError = "At least 1 shipmentLine is required for this request.";
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
     reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
+    reqFields.shipmentLines = [];
+
+    for (let i = 0; i < body.shipmentRateRequest.shipmentLines.length; i++) {
+      reqFields.shipmentLines.push({});
+      for (let key in body.shipmentRateRequest.shipmentLines[i]) {
+        if (!key.includes("//")) {
+          reqFields.shipmentLines[i][key] =
+            body.shipmentRateRequest.shipmentLines[i][key];
+        }
+      }
+    }
   }
 
   const { error, value } = eventValidation.validate(reqFields);
@@ -89,7 +123,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   if (
     "customerNumber" in body.shipmentRateRequest &&
-    Number.isInteger(Number(body.shipmentRateRequest.customerNumber))
+    Number.isInteger(Number(body.shipmentRateRequest.customerNumber)) && newJSON.RatingInput.BillToNo == undefined
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
@@ -99,11 +133,13 @@ module.exports.handler = async (event, context, callback) => {
       if (
         Number(body.shipmentRateRequest.insuredValue) > 0 &&
         Number(body.shipmentRateRequest.insuredValue) <=
-          9999999999999999999999999999
+          9999999999999999999999999999n
       ) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
-          body.shipmentRateRequest.insuredValue;
+          body.shipmentRateRequest.insuredValue.toLocaleString("fullwide", {
+            useGrouping: false,
+          });
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
@@ -123,11 +159,9 @@ module.exports.handler = async (event, context, callback) => {
   console.info("RatingInput Updated", newJSON);
 
   try {
-    if ("shipmentLines" in body.shipmentRateRequest) {
-      newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-        body.shipmentRateRequest
-      );
-    }
+    newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
+      body.shipmentRateRequest
+    );
     console.info("ShipLines ", newJSON);
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
@@ -157,11 +191,15 @@ module.exports.handler = async (event, context, callback) => {
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
-    return dataObj;
+    if ("Error" in dataObj.shipmentRateResponse) {
+      return callback(response("[400]", dataObj.shipmentRateResponse.Error));
+    } else {
+      return dataObj;
+    }
   } catch (error) {
     return callback(
       response(
-        "[500]",
+        "[400]",
         error != null && error.hasOwnProperty("message") ? error.message : error
       )
     );
@@ -172,50 +210,21 @@ function addCommodityWeightPerPiece(inputData) {
   let commodityInput = {
     CommodityInput: {},
   };
-  for (const key in inputData.shipmentLines[0]) {
-    if (key == "dimUOM") {
-      if (inputData.shipmentLines[0][key].toLowerCase() == "cm") {
-        if ("length" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].length = Math.round(
-              inputData.shipmentLines[0].length * 2.54
-            );
-          } catch {
-            console.info("invalid value for length");
-          }
-        }
-        if ("width" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].width = Math.round(
-              inputData.shipmentLines[0].width * 2.54
-            );
-          } catch {
-            console.info("invalid value for width");
-          }
-        }
-        if ("height" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].height = Math.round(
-              inputData.shipmentLines[0].height * 2.54
-            );
-          } catch {
-            console.info("invalid value for height");
-          }
-        }
-      }
-    } else if (key == "weightUOM") {
-      if (inputData.shipmentLines[0][key].toLowerCase() == "kg") {
-        if ("weight" in inputData.shipmentLines[0]) {
-          try {
-            inputData.shipmentLines[0].weight = Math.round(
-              inputData.shipmentLines[0].weight * 2.2046
-            );
-          } catch {
-            console.info("invalid value for weight");
-          }
-        }
-      }
-    }
+  if (inputData.shipmentLines[0].dimUOM.toLowerCase() == "cm") {
+    inputData.shipmentLines[0].length = Math.round(
+      inputData.shipmentLines[0].length * 2.54
+    );
+    inputData.shipmentLines[0].width = Math.round(
+      inputData.shipmentLines[0].width * 2.54
+    );
+    inputData.shipmentLines[0].height = Math.round(
+      inputData.shipmentLines[0].height * 2.54
+    );
+  }
+  if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
+    inputData.shipmentLines[0].weight = Math.round(
+      inputData.shipmentLines[0].weight * 2.2046
+    );
   }
   console.info("inputdata.ShipmentLines: ", inputData.shipmentLines);
   for (const shipKey in inputData.shipmentLines[0]) {
@@ -223,25 +232,10 @@ function addCommodityWeightPerPiece(inputData) {
       continue;
     }
     if (shipKey != "dimUOM" && shipKey != "weightUOM") {
-      if (
-        shipKey == "pieces" ||
-        shipKey == "weight" ||
-        shipKey == "length" ||
-        shipKey == "height" ||
-        shipKey == "width"
-      ) {
-        if (Number.isInteger(Number(inputData.shipmentLines[0][shipKey]))) {
-          new_key =
-            "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-          commodityInput.CommodityInput[new_key] =
-            inputData.shipmentLines[0][shipKey];
-        }
-      } else {
-        new_key =
-          "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-        commodityInput.CommodityInput[new_key] =
-          inputData.shipmentLines[0][shipKey];
-      }
+      new_key =
+        "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+      commodityInput.CommodityInput[new_key] =
+        inputData.shipmentLines[0][shipKey];
     }
   }
 
@@ -281,6 +275,7 @@ function makeXmlToJson(data) {
       console.info("modifiedObj", modifiedObj);
 
       if (isArray(modifiedObj)) {
+        console.info("isArray");
         return modifiedObj.map((e) => {
           if (isEmpty(e.Message)) {
             e.Message = "";
@@ -312,35 +307,46 @@ function makeXmlToJson(data) {
             AccessorialOutput = list;
           } else {
             const list = [];
-
-            for (
-              let i = 0;
-              i < e.AccessorialOutput.AccessorialOutput.length;
-              i++
-            ) {
-              list[i] = {};
-              list[i].code =
-                e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
-              list[i].description =
-                e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
-              list[i].charge =
-                e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+            if (e.AccessorialOutput.AccessorialOutput) {
+              for (
+                let i = 0;
+                i < e.AccessorialOutput.AccessorialOutput.length;
+                i++
+              ) {
+                list[i] = {};
+                list[i].code =
+                  e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+                list[i].description =
+                  e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
+                list[i].charge =
+                  e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+              }
+              AccessorialOutput = list;
             }
-            AccessorialOutput = list;
           }
-          let EstimatedDelivery = new Date(e.DeliveryDate);
+          let EstimatedDelivery;
+          if (e.DeliveryTime && e.DeliveryTime != null) {
+            EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
 
-          let ampm = e.DeliveryTime.split(" ");
-          let t = ampm[0].split(":");
+            let ampm = e.DeliveryTime.toString().split(" ");
+            let t = ampm[0].split(":");
 
-          if (ampm[1].toUpperCase() == "PM") {
-            EstimatedDelivery.setHours(Number(t[0]) + 12);
-          } else {
-            EstimatedDelivery.setHours(Number(t[0]));
+            if (ampm[1].toUpperCase() == "PM") {
+              EstimatedDelivery.setHours(Number(t[0]) + 12);
+            } else {
+              EstimatedDelivery.setHours(Number(t[0]));
+            }
+
+            EstimatedDelivery.setMinutes(t[1]);
+            EstimatedDelivery.setSeconds(t[2]);
           }
-
-          EstimatedDelivery.setMinutes(t[1]);
-          EstimatedDelivery.setSeconds(t[2]);
+          if (
+            e.ServiceLevelID.length == undefined &&
+            e.DeliveryTime.length == undefined &&
+            e.Message != null
+          ) {
+            return { Error: e.Message };
+          }
 
           return {
             serviceLevel: e.ServiceLevelID,
@@ -353,6 +359,7 @@ function makeXmlToJson(data) {
           };
         });
       } else {
+        console.info("object");
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
         }
@@ -391,51 +398,63 @@ function makeXmlToJson(data) {
           AccessorialOutput = list;
         } else {
           const list = [];
-
-          for (
-            let i = 0;
-            i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
-            i++
-          ) {
-            list[i] = {};
-            list[i].code =
-              modifiedObj.AccessorialOutput.AccessorialOutput[
-                i
-              ].AccessorialCode;
-            list[i].description =
-              modifiedObj.AccessorialOutput.AccessorialOutput[
-                i
-              ].AccessorialDesc;
-            list[i].charge =
-              modifiedObj.AccessorialOutput.AccessorialOutput[
-                i
-              ].AccessorialCharge;
+          if (modifiedObj.AccessorialOutput.AccessorialOutput) {
+            for (
+              let i = 0;
+              i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
+              i++
+            ) {
+              list[i] = {};
+              list[i].code =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialCode;
+              list[i].description =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialDesc;
+              list[i].charge =
+                modifiedObj.AccessorialOutput.AccessorialOutput[
+                  i
+                ].AccessorialCharge;
+            }
+            AccessorialOutput = list;
           }
-          AccessorialOutput = list;
+        }
+        let EstimatedDelivery;
+        if (modifiedObj.DeliveryTime && modifiedObj.DeliveryTime != null) {
+          EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
+
+          let ampm = modifiedObj.DeliveryTime.toString().split(" ");
+          let t = ampm[0].split(":");
+
+          if (ampm[1].toUpperCase() == "PM") {
+            EstimatedDelivery.setHours(Number(t[0]) + 12);
+          } else {
+            EstimatedDelivery.setHours(Number(t[0]));
+          }
+
+          EstimatedDelivery.setMinutes(t[1]);
+          EstimatedDelivery.setSeconds(t[2]);
         }
 
-        let EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
-
-        let ampm = modifiedObj.DeliveryTime.split(" ");
-        let t = ampm[0].split(":");
-
-        if (ampm[1].toUpperCase() == "PM") {
-          EstimatedDelivery.setHours(Number(t[0]) + 12);
+        if (
+          modifiedObj.ServiceLevelID.length == undefined &&
+          modifiedObj.DeliveryTime.length == undefined &&
+          modifiedObj.Message != null
+        ) {
+          return { Error: modifiedObj.Message };
         } else {
-          EstimatedDelivery.setHours(Number(t[0]));
+          return {
+            serviceLevel: modifiedObj.ServiceLevelID,
+            estimatedDelivery:
+              modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
+            totalRate: modifiedObj.StandardTotalRate,
+            freightCharge: modifiedObj.StandardFreightCharge,
+            accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
+            message: modifiedObj.Message,
+          };
         }
-
-        EstimatedDelivery.setMinutes(t[1]);
-        EstimatedDelivery.setSeconds(t[2]);
-        return {
-          serviceLevel: modifiedObj.ServiceLevelID,
-          estimatedDelivery:
-            modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-          totalRate: modifiedObj.StandardTotalRate,
-          freightCharge: modifiedObj.StandardFreightCharge,
-          accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
-          message: modifiedObj.Message,
-        };
       }
     } else {
       throw "Rate not found.";
