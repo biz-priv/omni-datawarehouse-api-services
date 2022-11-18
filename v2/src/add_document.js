@@ -10,7 +10,7 @@ module.exports.handler = async (event, context, callback) => {
     .keys({
       documentUploadRequest: Joi.object()
         .keys({
-          housebill: Joi.any(),
+          housebill: Joi.number().integer(),
           b64str: Joi.string().required(),
           contentType: Joi.any(),
           docType: Joi.string()
@@ -36,8 +36,8 @@ module.exports.handler = async (event, context, callback) => {
               "WAYBILL"
             )
             .required(),
-          fileNumber: Joi.any(),
-        })
+          fileNumber: Joi.number().integer(),
+        }).or('housebill','fileNumber')
         .required(),
     })
     .required();
