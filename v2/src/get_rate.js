@@ -34,11 +34,6 @@ module.exports.handler = async (event, context, callback) => {
   } else if (!("shipmentRateRequest" in body)) {
     valError = "shipmentRateRequest is required.";
   } else if (
-    !("housebill" in body.shipmentRateRequest) &&
-    !("fileNumber" in body.shipmentRateRequest)
-  ) {
-    valError = "Either Housebill or File Number must be sent with the request.";
-  } else if (
     !("shipperZip" in body.shipmentRateRequest) ||
     !("consigneeZip" in body.shipmentRateRequest) ||
     !("pickupTime" in body.shipmentRateRequest)
