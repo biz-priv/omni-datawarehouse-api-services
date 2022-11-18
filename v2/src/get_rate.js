@@ -96,7 +96,11 @@ module.exports.handler = async (event, context, callback) => {
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.info("MessageError", "[400]", error);
-    return callback(response("[400]", key + " " + error));
+    if(error.toString().includes('shipmentLines')){
+      return callback(response("[400]", "shipmentLines."+key + error.toString().split('"')[2]));
+    } else {
+      return callback(response("[400]", key + " " + error));
+    } 
   } else {
     newJSON.RatingInput.OriginZip = reqFields.shipperZip;
     newJSON.RatingInput.DestinationZip = reqFields.consigneeZip;
