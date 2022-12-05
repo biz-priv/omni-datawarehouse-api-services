@@ -86,39 +86,44 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 
-  if (
-    "housebill" in eventBody.documentUploadRequest &&
-    Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
-  ) {
-    fileNumber = await getFileNumber(
-      eventBody.documentUploadRequest.housebill,
-      customerId
-    );
-    if (fileNumber == "failure") {
-      return callback(
-        response("[400]", "Invalid Housebill for this customer.")
+  if(customerId != 'customer-portal-admin'){
+    if (
+      "housebill" in eventBody.documentUploadRequest &&
+      Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
+    ) {
+      fileNumber = await getFileNumber(
+        eventBody.documentUploadRequest.housebill,
+        customerId
       );
-    } else {
-      fileNumber = fileNumber["FileNumber"];
-      validated.housebill = eventBody.documentUploadRequest.housebill;
-      console.info("filenumber: ", fileNumber);
+      if (fileNumber == "failure") {
+        return callback(
+          response("[400]", "Invalid Housebill for this customer.")
+        );
+      } else {
+        fileNumber = fileNumber["FileNumber"];
+        validated.housebill = eventBody.documentUploadRequest.housebill;
+        console.info("filenumber: ", fileNumber);
+      }
+    } else if (
+      "fileNumber" in eventBody.documentUploadRequest &&
+      Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))
+    ) {
+      housebill = await getHousebillNumber(
+        eventBody.documentUploadRequest.fileNumber,
+        customerId
+      );
+      if (housebill == "failure") {
+        return callback(response("[400]", "No Housebill found."));
+      } else {
+        fileNumber = eventBody.documentUploadRequest.fileNumber;
+        validated.housebill = housebill["HouseBillNumber"];
+        console.info("housebill: ", validated.housebill);
+      }
     }
-  } else if (
-    "fileNumber" in eventBody.documentUploadRequest &&
-    Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))
-  ) {
-    housebill = await getHousebillNumber(
-      eventBody.documentUploadRequest.fileNumber,
-      customerId
-    );
-    if (housebill == "failure") {
-      return callback(response("[400]", "No Housebill found."));
-    } else {
-      fileNumber = eventBody.documentUploadRequest.fileNumber;
-      validated.housebill = housebill["HouseBillNumber"];
-      console.info("housebill: ", validated.housebill);
-    }
+  } else {
+    validated.housebill = eventBody.documentUploadRequest.housebill
   }
+  
   if (
     "docType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.docType != ""
@@ -175,7 +180,12 @@ module.exports.handler = async (event, context, callback) => {
     pad2(currentDateTime.getMinutes()) +
     pad2(currentDateTime.getSeconds());
 
-  let fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
+  let fileName;
+  if(fileNumber != ''){
+    fileName = fileNumber + "_" + docType + "_" + formatDate + fileExtension;
+  } else {
+    fileName = docType + "_" + formatDate + fileExtension;
+  }
   validated.filename = fileName;
 
   try {
