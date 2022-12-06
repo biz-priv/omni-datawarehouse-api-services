@@ -15,6 +15,9 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
+    if event.get("source") == "serverless-plugin-warmup":
+        print("WarmUp - Lambda is warm!")
+        return {}
     house_bill_nbr = event['query']['house_bill_nbr']
     
     #check whether housebill exists in shipment details dynamodb table
