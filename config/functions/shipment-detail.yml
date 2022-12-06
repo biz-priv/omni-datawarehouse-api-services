@@ -6,6 +6,7 @@ function:
   warmup:
     default:
       enabled: true
+      alias: ${self:custom.alias}
   events: 
     - http: 
         path: /shipment/detail
