@@ -49,6 +49,12 @@ custom:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
     "Access-Control-Allow-Headers": "'*'"
+  warmup:
+    default:
+      enabled: true
+      events:
+        - schedule: 'cron(0/5 8-17 ? * MON-FRI *)'
+      concurrency: 5
 
 plugins:
   - serverless-layers
@@ -56,6 +62,7 @@ plugins:
   - serverless-plugin-multiple-responses
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
+  - serverless-plugin-warmup
 
 package:
   individually: true
