@@ -6,6 +6,7 @@ function:
   warmup:
     default:
       enabled: true
+      prewarm: true
   events: 
     - http: 
         path: /shipment/detail
