@@ -48,6 +48,7 @@ custom:
   warmup:
     default:
       enabled: false
+      alias: ${self:custom.alias}
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
