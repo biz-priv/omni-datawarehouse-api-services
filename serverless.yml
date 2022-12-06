@@ -28,6 +28,10 @@ provider:
     Environment: ${self:provider.stage}
 
 custom:
+  warmup:
+      default:
+        enabled: false
+        alias: ${self:custom.alias}
   alias: ${opt:alias, 'v1'}
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
@@ -45,10 +49,6 @@ custom:
       - uploadpoddocument
       - freightlabel
     dependenciesPath: ./requirements.txt
-  warmup:
-    default:
-      enabled: false
-      alias: ${self:custom.alias}
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
@@ -58,9 +58,10 @@ plugins:
   - serverless-layers
   - serverless-add-api-key
   - serverless-plugin-multiple-responses
+  - serverless-plugin-warmup
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
-  - serverless-plugin-warmup
+
 
 package:
   individually: true
