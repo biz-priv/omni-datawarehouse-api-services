@@ -14,6 +14,9 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
+    if event.get("source") == "serverless-plugin-warmup":
+        print("WarmUp - Lambda is warm!")
+        return {}
     customer_id_parameter = " and api_shipment_info.cust_id = "
     customer_id = event["enhancedAuthContext"]["customerId"]
 
