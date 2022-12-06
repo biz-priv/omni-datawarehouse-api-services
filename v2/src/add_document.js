@@ -86,7 +86,7 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 
-  if(customerId != 'customer-portal-admin'){
+  if(customerId != 'customer-portal-admin' && customerId != process.env.IVIA_CUSTOMER_ID){
     if (
       "housebill" in eventBody.documentUploadRequest &&
       Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
