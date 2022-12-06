@@ -45,6 +45,9 @@ custom:
       - uploadpoddocument
       - freightlabel
     dependenciesPath: ./requirements.txt
+  warmup:
+    default:
+      enabled: false
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
     "Access-Control-Allow-Credentials": "'true'"
