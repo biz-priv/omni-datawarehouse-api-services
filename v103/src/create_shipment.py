@@ -1,4 +1,5 @@
 from src.common import dynamo_query
+from src.common import skip_execution_if
 import json
 import os
 import dicttoxml
@@ -18,7 +19,7 @@ LOGGER.setLevel(logging.INFO)
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
-
+@skip_execution_if
 def handler(event, context):
     
     event["body"]["oShipData"] = literal_eval(
