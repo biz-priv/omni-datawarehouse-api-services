@@ -32,6 +32,7 @@ custom:
       default:
         enabled: false
         alias: ${self:custom.alias}
+        role: WarmupRole
   alias: ${opt:alias, 'v1'}
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
@@ -90,6 +91,49 @@ functions:
 
 resources:
   Resources:
+    WarmupRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: WarmupRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: WarmUpLambdaPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+               # Warmer lambda to send logs to CloudWatch
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                  Resource: 
+                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${warmer.name}:*
+                - Effect: Allow
+                  Action:
+                    - logs:PutLogEvents
+                  Resource: 
+                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${warmer.name}:*:*
+                # Warmer lambda to invoke the functions to be warmed
+                - Effect: 'Allow'
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource:
+                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
+                # Warmer lambda to manage ENIS (only needed if deploying to VPC, https://docs.aws.amazon.com/lambda/latest/dg/vpc.html)
+                - Effect: Allow
+                  Action:
+                    - ec2:CreateNetworkInterface
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DetachNetworkInterface
+                    - ec2:DeleteNetworkInterface
+                  Resource: "*"
     BadRequestResponse:
       Type: "AWS::ApiGateway::GatewayResponse"
       Properties:
