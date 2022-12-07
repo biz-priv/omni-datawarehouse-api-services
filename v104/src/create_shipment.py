@@ -15,9 +15,11 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 from src.common import dynamo_query
+from src.common import skip_execution_if
 
 InternalErrorMessage = "Internal Error."
 
+@skip_execution_if
 def handler(event,context):
     
     event["body"]["oShipData"] = literal_eval(str(event["body"]["oShipData"]).replace("Weight","Weigth"))
