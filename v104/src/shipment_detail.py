@@ -2,6 +2,7 @@ from src.common import modify_response
 from src.common import modify_date
 from src.common import modify_float
 from src.common import process_input
+from src.common import skip_execution_if
 from v101.src.shipment_detail import get_shipment_detail
 import os
 import json
@@ -11,12 +12,9 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
-
+@skip_execution_if
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
-    if event.get("source") == "serverless-plugin-warmup":
-        print("WarmUp - Lambda is warm!")
-        return {}
     customer_id_parameter = " and api_shipment_info.cust_id = "
     customer_id = event["enhancedAuthContext"]["customerId"]
 

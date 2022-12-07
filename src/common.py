@@ -160,6 +160,14 @@ def modify_object_keys(array):
     return new_array
 
 
+def skip_execution_if(func):
+    def warmup_wrapper(event, context):
+        if event.get("source") == "serverless-plugin-warmup":
+            print("WarmUp - Lambda is warm!")
+            return {}
+        return func(event, context)
+    return warmup_wrapper
+
 class DynamoQueryError(Exception):
     pass
 
