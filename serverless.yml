@@ -125,7 +125,7 @@ resources:
                   Action:
                     - lambda:InvokeFunction
                   Resource:
-                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
+                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
                 # Warmer lambda to manage ENIS (only needed if deploying to VPC, https://docs.aws.amazon.com/lambda/latest/dg/vpc.html)
                 - Effect: Allow
                   Action:
