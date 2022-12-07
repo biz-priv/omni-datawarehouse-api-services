@@ -104,7 +104,7 @@ resources:
                   - lambda.amazonaws.com
               Action: sts:AssumeRole
         Policies:
-          - PolicyName: omni-dw-api-services-dev-warmup-plugin-default
+          - PolicyName: WarmUpLambdaPolicy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
