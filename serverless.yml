@@ -114,12 +114,12 @@ resources:
                     - logs:CreateLogGroup
                     - logs:CreateLogStream
                   Resource: 
-                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${warmer.name}:*
+                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*
                 - Effect: Allow
                   Action:
                     - logs:PutLogEvents
                   Resource: 
-                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${warmer.name}:*:*
+                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*:*
                 # Warmer lambda to invoke the functions to be warmed
                 - Effect: 'Allow'
                   Action:
