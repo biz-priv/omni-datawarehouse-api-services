@@ -4,10 +4,6 @@ const axios = require("axios");
 const { convert, create } = require("xmlbuilder2");
 
 module.exports.handler = async (event, context, callback) => {
-  if (event.source === 'serverless-plugin-warmup') {
-    console.log('WarmUp - Lambda is warm!');
-    return 'Lambda is warm!';
-  }
   const { body } = event;
   console.log("event", event);
   const eventValidation = Joi.object()
