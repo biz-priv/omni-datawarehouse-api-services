@@ -32,10 +32,6 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  if (event.source === 'serverless-plugin-warmup') {
-    console.log('WarmUp - Lambda is warm!');
-    return 'Lambda is warm!';
-  }
   const { body } = event;
   const LiabilityType = "LL";
 
