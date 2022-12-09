@@ -8,9 +8,11 @@ LOGGER.setLevel(logging.INFO)
 from src.common import modify_response
 from src.common import modify_date
 from src.common import process_input
+from src.common import skip_execution_if
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
+@skip_execution_if
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
     customer_id_parameter = " and api_shipment_info.cust_id = "

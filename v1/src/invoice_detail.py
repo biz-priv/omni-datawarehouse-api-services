@@ -8,9 +8,11 @@ LOGGER.setLevel(logging.INFO)
 
 from src.common import modify_date
 from src.common import modify_float
+from src.common import skip_execution_if
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
+@skip_execution_if
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
     try :
