@@ -15,13 +15,16 @@ module.exports.handler = async (event, context, callback) => {
           contentType: Joi.any(),
           docType: Joi.string()
             .valid(
+              "CERTIFICAT",
               "CONSULAR",
               "CUST RATE",
               "CUSTOMS",
+              "DANGEROUS",
               "DCCL",
               "DECON",
               "HCPOD",
               "IBU",
+              "IMPORT LIC",
               "INSURANCE",
               "INVOICE",
               "MSDS",
@@ -33,6 +36,8 @@ module.exports.handler = async (event, context, callback) => {
               "POD",
               "PRO FORMA",
               "RA",
+              "SED",
+              "SLI",
               "WAYBILL"
             )
             .required(),
