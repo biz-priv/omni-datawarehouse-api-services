@@ -520,7 +520,11 @@ async function getRating(postData) {
     }
   } catch (e) {
     console.log("getRating try-catch",e);
-    console.log("getRating try-catch e dat",e.data);
+    let errormsg = e.slice(e.lastIndexOf("data:"),e.lastIndexOf('`'))
+    console.log("errormsg",errormsg)
+    let returnedError = convert(errormsg)
+    console.log('converted error', returnedError)
+    console.log("getRating try-catch e dat", returnedError);
     throw e.hasOwnProperty("response") ? "Request failed" : e;
   }
 }
