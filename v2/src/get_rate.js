@@ -8,19 +8,25 @@ const eventValidation = Joi.object().keys({
   consigneeZip: Joi.string().required(),
   pickupTime: Joi.date().iso().greater("now").required(),
   customerNumber: Joi.number().integer().max(999999),
-  shipmentLines: Joi.array().items(
-    Joi.object({
-      pieces: Joi.number().integer().required(),
-      pieceType: Joi.any(),
-      weight: Joi.number().integer().max(99999).required(),
-      length: Joi.number().integer().max(999).required(),
-      width: Joi.number().integer().max(999).required(),
-      height: Joi.number().integer().max(999).required(),
-      hazmat: Joi.any(),
-      dimUOM: Joi.string().valid("in", "In", "IN", "cm", "Cm", "CM").required(),
-      weightUOM: Joi.string().valid("kg", "Kg", "KG", "lb", "Lb", "LB").required(),
-    })
-  ).required(),
+  shipmentLines: Joi.array()
+    .items(
+      Joi.object({
+        pieces: Joi.number().integer().required(),
+        pieceType: Joi.any(),
+        weight: Joi.number().integer().max(99999).required(),
+        length: Joi.number().integer().max(999).required(),
+        width: Joi.number().integer().max(999).required(),
+        height: Joi.number().integer().max(999).required(),
+        hazmat: Joi.any(),
+        dimUOM: Joi.string()
+          .valid("in", "In", "IN", "cm", "Cm", "CM")
+          .required(),
+        weightUOM: Joi.string()
+          .valid("kg", "Kg", "KG", "lb", "Lb", "LB")
+          .required(),
+      })
+    )
+    .required(),
 });
 
 function isArray(a) {
@@ -127,7 +133,8 @@ module.exports.handler = async (event, context, callback) => {
   }
   if (
     "customerNumber" in body.shipmentRateRequest &&
-    Number.isInteger(Number(body.shipmentRateRequest.customerNumber)) && newJSON.RatingInput.BillToNo == undefined
+    Number.isInteger(Number(body.shipmentRateRequest.customerNumber)) &&
+    newJSON.RatingInput.BillToNo == undefined
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
@@ -190,8 +197,12 @@ module.exports.handler = async (event, context, callback) => {
     const postData = makeJsonToXml(newJSON);
     console.info("postData", postData);
     // return {};
-    const dataResponse = await getRating(postData);
-    console.info("dataResponse", dataResponse);
+    try {
+      const dataResponse = await getRating(postData);
+      console.info("dataResponse", dataResponse);
+    } catch (f) {
+      console.log("try-catch dataResponse error",f);
+    }
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
@@ -513,11 +524,12 @@ async function getRating(postData) {
     if (res.status == 200) {
       return res.data;
     } else {
-      console.log("res",res)
-      console.log("e",e.response)
+      console.log("res", res);
+      console.log("e", e.response);
       throw e.response.statusText;
     }
   } catch (e) {
+    console.log("getRating try-catch",e);
     throw e.hasOwnProperty("response") ? "Request failed" : e;
   }
 }
