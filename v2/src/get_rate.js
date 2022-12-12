@@ -187,7 +187,7 @@ module.exports.handler = async (event, context, callback) => {
     console.info("postData", postData);
     // return {};
     const dataResponse = await getRating(postData);
-    console.info(dataResponse);
+    console.info("dataResponse", dataResponse);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
@@ -509,6 +509,8 @@ async function getRating(postData) {
     if (res.status == 200) {
       return res.data;
     } else {
+      console.log("res",res)
+      console.log("e",e.response)
       throw e.response.statusText;
     }
   } catch (e) {
