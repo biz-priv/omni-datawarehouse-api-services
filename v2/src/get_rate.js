@@ -193,12 +193,8 @@ module.exports.handler = async (event, context, callback) => {
     const postData = makeJsonToXml(newJSON);
     console.info("postData", postData);
     // return {};
-    try {
-      const dataResponse = await getRating(postData);
-      console.info("dataResponse", dataResponse);
-    } catch (f) {
-      console.log("try-catch dataResponse error",f);
-    }
+    const dataResponse = await getRating(postData);
+    console.info("dataResponse", dataResponse);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
@@ -520,12 +516,11 @@ async function getRating(postData) {
     if (res.status == 200) {
       return res.data;
     } else {
-      console.log("res", res);
-      console.log("e", e.response);
       throw e.response.statusText;
     }
   } catch (e) {
     console.log("getRating try-catch",e);
+    console.log("getRating try-catch e dat",e.data);
     throw e.hasOwnProperty("response") ? "Request failed" : e;
   }
 }
