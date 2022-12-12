@@ -12,7 +12,7 @@ const eventValidation = Joi.object().keys({
     Joi.object({
       pieces: Joi.number().integer().required(),
       pieceType: Joi.any(),
-      weight: Joi.number().integer().max(999).required(),
+      weight: Joi.number().integer().max(99999).required(),
       length: Joi.number().integer().max(999).required(),
       width: Joi.number().integer().max(999).required(),
       height: Joi.number().integer().max(999).required(),
