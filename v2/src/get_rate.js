@@ -523,11 +523,9 @@ async function getRating(postData) {
       throw e.response.statusText;
     }
   } catch (e) {
-    console.log("getRating try-catch",e);
-    console.log('errormsg',e.errorMessage)
-    console.log('response', e.response)
-    console.log('message', e.message)
-    console.log("getRating try-catch e dat", e);
-    throw e.hasOwnProperty("response") ? "Request failed" : e;
+    let obj = convert(e.response.data, { format: "object" });
+    let errorMessage = obj['soap:Envelope']['soap:Body']['soap:Fault']['soap:Reason']['soap:Text']["#"]
+    console.info('error response', e.response)
+    throw e.hasOwnProperty("response") ? errorMessage : e;
   }
 }
