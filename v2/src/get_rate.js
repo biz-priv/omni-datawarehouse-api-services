@@ -34,6 +34,10 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
+  if (event.source === 'serverless-plugin-warmup') {
+    console.log('WarmUp - Lambda is warm!');
+    return 'Lambda is warm!';
+  }
   console.info(event);
   const { body } = event;
   const apiKey = event.headers["x-api-key"];

@@ -6,6 +6,10 @@ const { convert, create } = require("xmlbuilder2");
 module.exports.handler = async (event, context, callback) => {
   const { body } = event;
   console.log("event", event);
+  if (event.source === 'serverless-plugin-warmup') {
+    console.log('WarmUp - Lambda is warm!');
+    return 'Lambda is warm!';
+  }
   const eventValidation = Joi.object()
     .keys({
       documentUploadRequest: Joi.object()
