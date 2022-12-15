@@ -37,6 +37,7 @@ function:
   package:
     include:
     - ${self:custom.alias}/src/bill_of_lading.py
+    - src/common.py
   environment:
     billOfLading_key: ${ssm:/omni-dw/${self:provider.stage}/bol/API_KEY~true}
     URL: ${ssm:/omni-dw/${self:provider.stage}/billOfLading/wt/url}
