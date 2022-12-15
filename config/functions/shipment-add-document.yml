@@ -39,7 +39,7 @@ function:
           type: request
   package:
     include:
-      - v2/src/add_document.js
+      - ${self:custom.alias}/src/add_document.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
