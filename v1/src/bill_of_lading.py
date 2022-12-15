@@ -5,6 +5,7 @@ import logging
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
+@skip_execution_if
 def handler(event, context):
     LOGGER.info("Event: %s", json.dumps(event))
     try :

@@ -3,6 +3,10 @@ function:
   handler: ${self:custom.alias}/src/add_document.handler
   name: ${self:service}-add-document-${self:provider.stage}
   description: add document api service - ${self:provider.stage
+  warmup:
+    default:
+      enabled: true
+      alias: ${self:custom.alias}
   runtime: nodejs14.x
   timeout: 500
   memorySize: 2048
