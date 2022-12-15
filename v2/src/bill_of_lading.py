@@ -4,6 +4,7 @@ import requests
 import logging
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
+from src.common import skip_execution_if
 
 @skip_execution_if
 def handler(event, context):
