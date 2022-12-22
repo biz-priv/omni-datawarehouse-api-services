@@ -548,18 +548,41 @@ def validate_input(event):
     #     raise InputError(json.dumps(
     #         {"httpStatus": 400, "message": "Service Level is missing in the request body shipmentCreateRequest."}))
     if('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
-        raise InputError(json.dumps(
+        raise InputError(json.dumps({"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+    elif('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
+        if(event["body"]["shipmentCreateRequest"]['readyTime']==''):
+            raise InputError(json.dumps({"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+        else:
+            readyTime = event["body"]["shipmentCreateRequest"]['readyTime']
+            if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
+                raise InputError(json.dumps({"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
+            elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
+                raise InputError(json.dumps({"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
+    elif('readyDate' in event["body"]["shipmentCreateRequest"] and 'readyTime' not in event["body"]["shipmentCreateRequest"]):
+        if(event["body"]["shipmentCreateRequest"]['readyDate']==''):
+            raise InputError(json.dumps(
             {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+        else:
+            readyTime = event["body"]["shipmentCreateRequest"]['readyDate']
+            if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
+                raise InputError(json.dumps({"httpStatus": 400, "message": 'readyDate is not in the correct date format.'}))
+            elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
+                raise InputError(json.dumps({"httpStatus": 400, "message": 'readyDate is not in the correct date format.'}))
+    elif('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' in event["body"]["shipmentCreateRequest"]):
+        if(event["body"]["shipmentCreateRequest"]['readyDate']=='' and event["body"]["shipmentCreateRequest"]['readyTime']==''):
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+        else:
+            for ready in ['readyDate', 'readyTime']:
+                readyTime = event["body"]["shipmentCreateRequest"][ready]
+                if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
+                    raise InputError(json.dumps({"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
+                elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
+                    raise InputError(json.dumps({"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
     else:
         acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
         errors = []
-        for ready in ['readyDate', 'readyTime']:
-            if ready in event["body"]["shipmentCreateRequest"]:
-                readyTime = event["body"]["shipmentCreateRequest"][ready]
-                if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
-                    errors.append(ready + ' is not in the correct date format.')
-                elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
-                    errors.append(ready + ' is not in the correct date format.')
+       
         if(event["enhancedAuthContext"]["customerId"] == 'customer-portal-admin'):
             for req_field in ["controllingStation","customerNumber"]:
                 if req_field not in event["body"]["shipmentCreateRequest"]:
