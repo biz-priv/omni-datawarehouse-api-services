@@ -575,14 +575,17 @@ def validate_input(event):
         else:
             for ready in ['readyDate', 'readyTime']:
                 readyTime = event["body"]["shipmentCreateRequest"][ready]
-                if((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
+                if(event["body"]["shipmentCreateRequest"][ready]==''):
+                    print('removing '+ready+' from event body as it is empty')
+                    event["body"]["shipmentCreateRequest"].pop(ready)
+                elif((readyTime[4] or readyTime[7] or readyTime[19])!='-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22])!=':' or readyTime[10]!='T'):
                     raise InputError(json.dumps({"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
                 elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10])>30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10])>31 or readyTime[5:7] =='02' and int(readyTime[8:10])>28):
                     raise InputError(json.dumps({"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
     else:
         acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
         errors = []
-       
+
         if(event["enhancedAuthContext"]["customerId"] == 'customer-portal-admin'):
             for req_field in ["controllingStation","customerNumber"]:
                 if req_field not in event["body"]["shipmentCreateRequest"]:
