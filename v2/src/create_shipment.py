@@ -551,7 +551,7 @@ def validate_input(event):
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
     else:
-        acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'BRO', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
+        acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
         errors = []
         for ready in ['readyDate', 'readyTime']:
             if ready in event["body"]["shipmentCreateRequest"]:
