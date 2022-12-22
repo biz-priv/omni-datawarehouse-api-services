@@ -1,7 +1,6 @@
 import json
 import os
 import dicttoxml
-dicttoxml.LOG.setLevel(logging.ERROR)
 import xmltodict
 import requests
 import logging
