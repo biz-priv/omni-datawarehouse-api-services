@@ -1,12 +1,12 @@
 from src.common import dynamo_query
 from src.common import skip_execution_if
+
+import logging
 import json
 import os
 import dicttoxml
-dicttoxml.LOG.setLevel(logging.ERROR)
 import xmltodict
 import requests
-import logging
 import boto3
 import psycopg2
 import pydash
@@ -17,6 +17,7 @@ client = boto3.client('dynamodb')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+dicttoxml.LOG.setLevel(logging.ERROR)
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
