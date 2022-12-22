@@ -550,6 +550,18 @@ def validate_input(event):
     if('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+    elif('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
+        if(event["body"]["shipmentCreateRequest"]['readyTime']==''):
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+    elif('readyDate' in event["body"]["shipmentCreateRequest"] and 'readyTime' not in event["body"]["shipmentCreateRequest"]):
+        if(event["body"]["shipmentCreateRequest"]['readyDate']==''):
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+    elif('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' in event["body"]["shipmentCreateRequest"]):
+         if(event["body"]["shipmentCreateRequest"]['readyDate']=='' and event["body"]["shipmentCreateRequest"]['readyTime']==''):
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
     else:
         acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH', 'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
         errors = []
