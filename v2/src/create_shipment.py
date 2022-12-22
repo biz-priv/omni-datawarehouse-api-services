@@ -16,6 +16,7 @@ client = boto3.client('dynamodb')
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
+
 dicttoxml.LOG.setLevel(logging.ERROR)
 
 
