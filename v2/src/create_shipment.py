@@ -1,10 +1,11 @@
 from re import template
 from src.common import dynamo_query
 from src.common import skip_execution_if
+
+import logging
 import dicttoxml
 import json
 import os
-import logging
 import xmltodict
 import requests
 import boto3
