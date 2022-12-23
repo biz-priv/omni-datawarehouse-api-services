@@ -56,6 +56,8 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
+                elif(key == 'billTo'):
+                    new_key = 'PayType'
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
                 elif(key == 'controllingStation'):
                     new_key = 'Station'
