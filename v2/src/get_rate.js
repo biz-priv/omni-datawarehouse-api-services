@@ -209,6 +209,11 @@ module.exports.handler = async (event, context, callback) => {
     if ("Error" in dataObj.shipmentRateResponse) {
       return callback(response("[400]", dataObj.shipmentRateResponse.Error));
     } else {
+      for(let m=0;m<dataObj.shipmentRateResponse.length;m++){
+        if(typeof(dataObj.shipmentRateResponse[m].accessorialList)=='string'){
+          dataObj.shipmentRateResponse[m].accessorialList = []
+        }
+      }
       return dataObj;
     }
   } catch (error) {
