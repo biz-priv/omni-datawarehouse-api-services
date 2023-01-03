@@ -44,7 +44,6 @@ function:
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
     ACCOUNT_INFO_TABLE: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/table}
     SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
-    CUSTOMER_ENTITLEMENT_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/customerId/index}
     REGION: ${self:provider.region}
     URL: ${ssm:/omni-dw/${self:provider.stage}/createShipment/wt/url}
