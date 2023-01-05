@@ -15,7 +15,7 @@ module.exports.handler = async (event, context, callback) => {
       documentUploadRequest: Joi.object()
         .keys({
           housebill: Joi.number().integer(),
-          b64str: Joi.string().required(),
+          b64str: Joi.string().required().max(13333333),
           contentType: Joi.any(),
           docType: Joi.string()
             .valid(
@@ -46,7 +46,8 @@ module.exports.handler = async (event, context, callback) => {
             )
             .required(),
           fileNumber: Joi.number().integer(),
-        }).or('housebill','fileNumber')
+        })
+        .or("housebill", "fileNumber")
         .required(),
     })
     .required();
@@ -65,7 +66,11 @@ module.exports.handler = async (event, context, callback) => {
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
-    return callback(response("[400]", key + " " + msg));
+    if (msg.includes(13333333)) {
+      return callback(response("[400]", "File must be limited to 3.2MB"));
+    } else {
+      return callback(response("[400]", key + " " + msg));
+    }
   }
   let customerId;
   let fileNumber = "";
@@ -86,13 +91,50 @@ module.exports.handler = async (event, context, callback) => {
     customerId = event.enhancedAuthContext.customerId;
   }
   let pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
+
+  if (eventBody.documentUploadRequest.b64str.length > 3000000) {
+    let longBase64 = [];
+    for (
+      let i = 0;
+      i < eventBody.documentUploadRequest.b64str.length / 3000000;
+      i++
+    ) {
+      longBase64.push(
+        eventBody.documentUploadRequest.b64str.slice(
+          i * 3000000,
+          i * 3000000 + 3000000
+        )
+      );
+    }
+    for (let x of longBase64) {
+      let Base64 = x.match(pattern) ? "Base64" : "Not Base64";
+      if (Base64 != "Base64") {
+        return callback(
+          response(
+            "[400]",
+            "Please ensure b64str field is a valid base64 string."
+          )
+        );
+      }
+    }
+  } else {
+    let Base64 = eventBody.documentUploadRequest.b64str.match(pattern)
+      ? "Base64"
+      : "Not Base64";
+    if (Base64 != "Base64") {
+      return callback(
+        response(
+          "[400]",
+          "Please ensure b64str field is a valid base64 string."
+        )
+      );
+    }
+  }
+
   let Base64 = eventBody.documentUploadRequest.b64str.match(pattern)
     ? "Base64"
     : "Not Base64";
   if (Base64 != "Base64") {
-    return callback(
-      response("[400]", "Please ensure b64str field is a valid base64 string.")
-    );
   }
 
   if(customerId != 'customer-portal-admin' && customerId != process.env.IVIA_CUSTOMER_ID){
