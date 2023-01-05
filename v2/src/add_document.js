@@ -67,7 +67,7 @@ module.exports.handler = async (event, context, callback) => {
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
     if (msg.includes(13333333)) {
-      return callback(response("[400]", "File must be limited to 3.2MB"));
+      return callback(response("[400]", "File must be limited to 10MB"));
     } else {
       return callback(response("[400]", key + " " + msg));
     }
