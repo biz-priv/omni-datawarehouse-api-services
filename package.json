@@ -18,7 +18,7 @@
   "homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
   "dependencies": {
     "axios": "^0.21.1",
-    "atob": "^2.1.2",
+    "is-base64": "^1.1.0",
     "joi": "^17.4.2",
     "lodash": "^4.17.21",
     "pg-promise": "^10.11.1",

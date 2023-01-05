@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
-const atob = require("atob");
+var isBase64 = require("is-base64");
 const { convert, create } = require("xmlbuilder2");
 
 module.exports.handler = async (event, context, callback) => {
@@ -92,18 +92,10 @@ module.exports.handler = async (event, context, callback) => {
     customerId = event.enhancedAuthContext.customerId;
   }
 
-  try {
-    atob(eventBody.documentUploadRequest.b64str);
-  } catch (e) {
-    if (e) {
-      console.info(e);
-      return callback(
-        response(
-          "[400]",
-          "Please ensure b64str field is a valid base64 string."
-        )
-      );
-    }
+  if (!isBase64(eventBody.documentUploadRequest.b64str)) {
+    return callback(
+      response("[400]", "Please ensure b64str field is a valid base64 string.")
+    );
   }
 
   if (
