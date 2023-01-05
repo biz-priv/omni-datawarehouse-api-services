@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
-var isBase64 = require("is-base64");
+const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
 
 module.exports.handler = async (event, context, callback) => {
@@ -92,7 +92,7 @@ module.exports.handler = async (event, context, callback) => {
     customerId = event.enhancedAuthContext.customerId;
   }
 
-  if (!isBase64(eventBody.documentUploadRequest.b64str)) {
+  if (!Base64.isValid(eventBody.documentUploadRequest.b64str)) {
     return callback(
       response("[400]", "Please ensure b64str field is a valid base64 string.")
     );
