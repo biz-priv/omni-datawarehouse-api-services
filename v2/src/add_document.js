@@ -131,12 +131,6 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
 
-  let Base64 = eventBody.documentUploadRequest.b64str.match(pattern)
-    ? "Base64"
-    : "Not Base64";
-  if (Base64 != "Base64") {
-  }
-
   if(customerId != 'customer-portal-admin' && customerId != process.env.IVIA_CUSTOMER_ID){
     if (
       "housebill" in eventBody.documentUploadRequest &&
