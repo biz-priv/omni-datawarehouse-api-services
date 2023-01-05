@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
+const atob = require("atob");
 const { convert, create } = require("xmlbuilder2");
 
 module.exports.handler = async (event, context, callback) => {
