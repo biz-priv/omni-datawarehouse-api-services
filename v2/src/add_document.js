@@ -223,7 +223,10 @@ module.exports.handler = async (event, context, callback) => {
   } catch (error) {
     return callback(
       response("[500]", {
-        documentUploadResponse: { message: "failed", error: error },
+        documentUploadResponse: {
+          message: "failed",
+          error: JSON.parse(error.errorMessage).message,
+        },
       })
     );
   }
