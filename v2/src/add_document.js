@@ -88,7 +88,21 @@ module.exports.handler = async (event, context, callback) => {
     customerId = event.enhancedAuthContext.customerId;
   }
 
-  if (!Base64.isValid(eventBody.documentUploadRequest.b64str)) {
+  if (eventBody.documentUploadRequest.b64str.length < 3000000) {
+    let pattern =
+      /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
+    let Base64 = eventBody.documentUploadRequest.b64str.match(pattern)
+      ? "Base64"
+      : "Not Base64";
+    if (Base64 != "Base64") {
+      return callback(
+        response(
+          "[400]",
+          "Please ensure b64str field is a valid base64 string."
+        )
+      );
+    }
+  } else if (!Base64.isValid(eventBody.documentUploadRequest.b64str)) {
     return callback(
       response("[400]", "Please ensure b64str field is a valid base64 string.")
     );
