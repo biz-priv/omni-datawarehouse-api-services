@@ -211,6 +211,7 @@ module.exports.handler = async (event, context, callback) => {
     ) {
       return { documentUploadResponse: { message: "success" } };
     } else {
+      console.log("Returned XML After Conversion: ", dataObj);
       return callback(
         response(
           "[400]",
@@ -225,7 +226,7 @@ module.exports.handler = async (event, context, callback) => {
       response("[500]", {
         documentUploadResponse: {
           message: "failed",
-          error: JSON.parse(error.errorMessage).message,
+          error: error.hasOwnProperty("message") ? error.message : error,
         },
       })
     );
@@ -241,38 +242,46 @@ async function getXmlResponse(postData) {
         "Content-Type": "application/soap+xml; charset=utf-8",
       },
     });
+    console.log("XML Response: Axios", res);
     return {
       xml_response: res.data,
       status_code: res.status,
       status: res.status == 200 ? "success" : "failed",
     };
   } catch (e) {
-    throw "Error";
+    console.log("XML Response Error: ", e);
+    throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
 function makeJsonToXml(data) {
-  return convert({
-    "soap:Envelope": {
-      "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-      "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-      "@xmlns:soap": "http://www.w3.org/2003/05/soap-envelope",
-      "soap:Body": {
-        AttachFileToShipment: {
-          "@xmlns": "http://tempuri.org/",
-          Housebill: data.housebill,
-          FileDataBase64: data.b64str,
-          Filename: data.filename,
-          DocType: data.docType,
+  try {
+    return convert({
+      "soap:Envelope": {
+        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+        "@xmlns:soap": "http://www.w3.org/2003/05/soap-envelope",
+        "soap:Body": {
+          AttachFileToShipment: {
+            "@xmlns": "http://tempuri.org/",
+            Housebill: data.housebill,
+            FileDataBase64: data.b64str,
+            Filename: data.filename,
+            DocType: data.docType,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (e) {
+    console.log("JSON to XML error: ", e);
+    throw e.hasOwnProperty("message") ? e.message : e;
+  }
 }
 
 function makeXmlToJson(data) {
   try {
     return convert(data, { format: "object" });
   } catch (e) {
+    console.log("XML to JSON error: ", e);
     throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
