@@ -212,18 +212,15 @@ module.exports.handler = async (event, context, callback) => {
       return { documentUploadResponse: { message: "success" } };
     } else {
       return callback(
-        response(
-          "[400]",
-          JSON.stringify({
-            documentUploadResponse: {
-              message: "failed",
-              error:
-                dataObj["soap:Envelope"]["soap:Body"]
-                  .AttachFileToShipmentResponse.AttachFileToShipmentResult
-                  .ErrorStatus,
-            },
-          })
-        )
+        JSON.stringify({
+          httpStatus: 400,
+          documentUploadResponse: {
+            message: "failed",
+            error:
+              dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+                .AttachFileToShipmentResult.ErrorStatus,
+          },
+        })
       );
       // throw "Failed";
     }
