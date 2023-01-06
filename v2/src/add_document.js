@@ -16,7 +16,7 @@ module.exports.handler = async (event, context, callback) => {
       documentUploadRequest: Joi.object()
         .keys({
           housebill: Joi.number().integer(),
-          b64str: Joi.string().required().max(13333333),
+          b64str: Joi.string().required(),
           contentType: Joi.any(),
           docType: Joi.string()
             .valid(
@@ -67,11 +67,7 @@ module.exports.handler = async (event, context, callback) => {
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
-    if (msg.includes(13333333)) {
-      return callback(response("[400]", "File must be limited to 10MB"));
-    } else {
-      return callback(response("[400]", key + " " + msg));
-    }
+    return callback(response("[400]", key + " " + msg));
   }
   let customerId;
   let fileNumber = "";
