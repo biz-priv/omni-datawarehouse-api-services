@@ -12,9 +12,9 @@ provider:
   role: ${ssm:/omni-dw/${self:provider.stage}/lambda/role}
   apiName: ${self:service}-api-${self:provider.stage}
   iamRoleStatements:
-    - Effect: 'Allow'
+    - Effect: "Allow"
       Action:
-        - 'lambda:InvokeFunction'
+        - "lambda:InvokeFunction"
       Resource: "*"
   vpc:
     securityGroupIds:
@@ -29,10 +29,10 @@ provider:
 
 custom:
   warmup:
-      default:
-        enabled: false
-        alias: ${self:custom.alias}
-        role: WarmupRole
+    default:
+      enabled: false
+      alias: ${self:custom.alias}
+      role: WarmupRole
   alias: ${opt:alias, 'v1'}
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
   serverless-layers:
@@ -63,7 +63,6 @@ plugins:
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
 
-
 package:
   individually: true
   exclude:
@@ -81,13 +80,11 @@ functions:
   update-shipment-status: ${file(config/functions/update-shipment-status.yml):function}
   customer-entitlement-sync: ${file(config/functions/customer-entitlement-sync.yml):function}
   get-rating: ${file(config/functions/get-rating.yml):function}
-  wd-api: ${file(config/functions/wd-api.yml):function}
   shipment-list: ${file(config/functions/shipment-list.yml):function}
   uploadpoddocument: ${file(config/functions/uploadpoddocument.yml):function}
   add-document: ${file(config/functions/shipment-add-document.yml):function}
   shipment-rate: ${file(config/functions/shipment-rate.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
-  wd-api-international: ${file(config/functions/wd-api-international.yml):function}
 
 resources:
   Resources:
@@ -96,7 +93,7 @@ resources:
       Properties:
         RoleName: WarmupRole
         AssumeRolePolicyDocument:
-          Version: '2012-10-17'
+          Version: "2012-10-17"
           Statement:
             - Effect: Allow
               Principal:
@@ -106,22 +103,22 @@ resources:
         Policies:
           - PolicyName: omni-dw-api-services-dev-warmup-plugin-default
             PolicyDocument:
-              Version: '2012-10-17'
+              Version: "2012-10-17"
               Statement:
-               # Warmer lambda to send logs to CloudWatch
+                # Warmer lambda to send logs to CloudWatch
                 - Effect: Allow
                   Action:
                     - logs:CreateLogGroup
                     - logs:CreateLogStream
-                  Resource: 
+                  Resource:
                     - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*
                 - Effect: Allow
                   Action:
                     - logs:PutLogEvents
-                  Resource: 
+                  Resource:
                     - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*:*
                 # Warmer lambda to invoke the functions to be warmed
-                - Effect: 'Allow'
+                - Effect: "Allow"
                   Action:
                     - lambda:InvokeFunction
                   Resource:
