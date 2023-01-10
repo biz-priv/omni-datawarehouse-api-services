@@ -46,7 +46,6 @@ custom:
       - update-shipment-status
       - customer-entitlement-sync
       - pod
-      - uploadpoddocument
       - freightlabel
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
