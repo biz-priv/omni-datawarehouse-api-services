@@ -45,7 +45,6 @@ custom:
       - custom-authorizer
       - update-shipment-status
       - customer-entitlement-sync
-      - get-rating
       - pod
       - uploadpoddocument
       - freightlabel
