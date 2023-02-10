@@ -7,3 +7,5 @@ Events.zip
 doc
 doc.txt
 pylint.cfg
+package-lock.json
+v2/src/sample.json
