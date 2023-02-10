@@ -37,9 +37,8 @@ function:
           type: request
   package:
     include:
-      - v2/src/get_document.js
+      - ${self:custom.alias}/src/get_document.js
       - node_modules/**
-      - v2/src/** 
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
