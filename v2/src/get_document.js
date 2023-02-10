@@ -62,7 +62,7 @@ let valError;
     valError = "fileNumber is required.";
   } else if (
     !("housebill" in event.queryStringParameters) ||
-    !("fileNumber" in event.queryStringParameters) ||
+    !("fileNumber" in event.queryStringParameters) &&
     !("docType" in event.queryStringParameters)
   ) {
     valError =
@@ -82,7 +82,7 @@ getdocument(event.queryStringParameters)
 async function getdocument(eventData) {
     let res;
     try {
-      res = await axios.get( process.env.GETDOCUMENT_API+"/housebill="+(eventData.housebill)+"/doctype=housebill%7Cdoctype=label%7Cdoctype="+(eventData.doctype)+"", {
+      res = await axios.get( process.env.GETDOCUMENT_API+"/housebill="+(eventData.housebill)+"&fileNumber="+(eventData.housebill)+"/doctype=housebill%7Cdoctype=label%7Cdoctype="+(eventData.doctype)+"", {
         headers: {
           Accept: "text/xml",
           "Content-Type": "application/soap+xml; charset=utf-8",
