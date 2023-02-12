@@ -35,11 +35,6 @@ const eventValidation = Joi.object({
 }).or('housebill', 'fileNumber');
 
 module.exports.handler = async (event, context, callback) => {
-  if (event.source === 'serverless-plugin-warmup') {
-    console.log('WarmUp - Lambda is warm!');
-    return 'Lambda is warm!';
-  }
-
   console.info(event);
   let reqFields = {};
   let valError;
