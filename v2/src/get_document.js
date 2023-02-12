@@ -3,7 +3,7 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 
-const eventValidation = Joi.object().keys({
+const eventValidation = Joi.object({
   housebill: Joi.string().length(13).required(),
   fileNumber: Joi.string().length(13).required(),
   docType: Joi.string().valid(
