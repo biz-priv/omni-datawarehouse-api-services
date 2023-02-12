@@ -9,3 +9,4 @@ doc.txt
 pylint.cfg
 package-lock.json
 v2/src/sample.json
+v2/src/event.json
