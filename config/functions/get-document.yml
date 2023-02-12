@@ -10,7 +10,7 @@ function:
   runtime: nodejs12.x
   events:
     - http:
-        path: /shipment/document
+        path: /shipment/getDocument
         method: GET
         integration: lambda
         private: true

@@ -1,3 +1,5 @@
+from jsonschema import validate
+from src.common import dynamo_query
 import os
 import json
 import logging
@@ -6,13 +8,12 @@ import jsonschema
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
-from src.common import dynamo_query
-from jsonschema import validate
 
-POLICY_ID="bizCloud|a1b2"
-INTERNAL_ERROR_MESSAGE="Internal Error."
+POLICY_ID = "bizCloud|a1b2"
+INTERNAL_ERROR_MESSAGE = "Internal Error."
 
-def generate_policy(principal_id, effect, method_arn, customer_id = None, message = None):
+
+def generate_policy(principal_id, effect, method_arn, customer_id=None, message=None):
     try:
         LOGGER.info("Inserting : policy on API Gateway %s", effect)
         policy = {}
@@ -34,14 +35,16 @@ def generate_policy(principal_id, effect, method_arn, customer_id = None, messag
         else:
             if customer_id:
                 policy["context"] = {"customerId": customer_id}
-        LOGGER.info("Policy: %s",policy)
+        LOGGER.info("Policy: %s", policy)
         return policy
     except Exception as generate_policy_error:
-        logging.exception("GeneratePolicyError: %s",generate_policy_error)
-        raise GeneratePolicyError(json.dumps({"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from generate_policy_error
+        logging.exception("GeneratePolicyError: %s", generate_policy_error)
+        raise GeneratePolicyError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from generate_policy_error
+
 
 def handler(event, context):
-    LOGGER.info("Event: %s",event)
+    LOGGER.info("Event: %s", event)
     try:
         api_key = event['headers']['x-api-key']
         params = event["queryStringParameters"]
@@ -49,21 +52,24 @@ def handler(event, context):
         LOGGER.info("Event params: %s", str(params))
     except Exception as api_key_error:
         LOGGER.info("API Key Error Exception loop")
-        logging.exception("ApiKeyError: %s",api_key_error)
-        raise ApiKeyError(json.dumps({"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
+        logging.exception("ApiKeyError: %s", api_key_error)
+        raise ApiKeyError(json.dumps(
+            {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
-    #Validating params only for the GET APIs
+    # Validating params only for the GET APIs
     if "/create/shipment" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
-    
-    #Get customer ID based on the api_key
-    response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"], os.environ["TOKEN_VALIDATION_TABLE_INDEX"],'ApiKey = :apikey', {":apikey": {"S": api_key}})
-    LOGGER.info("token validation table response : %s",json.dumps(response))
 
-    #Validate if the given fil_nbr or house_bill_nbr has an entry in the DB and get its customer_id
-    customer_id = validate_dynamo_query_response(response, event, None, "Invalid API Key")
+    # Get customer ID based on the api_key
+    response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"],
+                            os.environ["TOKEN_VALIDATION_TABLE_INDEX"], 'ApiKey = :apikey', {":apikey": {"S": api_key}})
+    LOGGER.info("token validation table response : %s", json.dumps(response))
+
+    # Validate if the given fil_nbr or house_bill_nbr has an entry in the DB and get its customer_id
+    customer_id = validate_dynamo_query_response(
+        response, event, None, "Invalid API Key")
     LOGGER.info("customer_id: %s", str(customer_id))
     if type(customer_id) != str:
         return customer_id
@@ -71,8 +77,10 @@ def handler(event, context):
     if "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/rate" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)   
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addDocument" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/shipment/getDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     else:
@@ -89,11 +97,13 @@ def handler(event, context):
             msg = "House bill number does not exist."
         try:
             bol_response = dynamo_query(os.environ["CUSTOMER_ENTITLEMENT_TABLE"], index, query,
-                        {":id": {"S": customer_id}, ":num": {"S": num}})
-            LOGGER.info("Customer Entitlement response for all GET API's : %s",bol_response)
-            return validate_dynamo_query_response(bol_response, event, customer_id,msg)
+                                        {":id": {"S": customer_id}, ":num": {"S": num}})
+            LOGGER.info(
+                "Customer Entitlement response for all GET API's : %s", bol_response)
+            return validate_dynamo_query_response(bol_response, event, customer_id, msg)
         except Exception as bol_response_error:
-            logging.exception("Bol_responseError: %s",bol_response_error)
+            logging.exception("Bol_responseError: %s", bol_response_error)
+
 
 def validate_dynamo_query_response(response, event, customer_id=None, message=None):
     try:
@@ -104,37 +114,50 @@ def validate_dynamo_query_response(response, event, customer_id=None, message=No
         else:
             return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     except Exception as customer_id_not_found_error:
-        logging.exception("CustomerIdNotFound: %s",customer_id_not_found_error)
-        raise CustomerIdNotFound(json.dumps({"httpStatus": 400, "message": "Customer Id not found."})) from customer_id_not_found_error
+        logging.exception("CustomerIdNotFound: %s",
+                          customer_id_not_found_error)
+        raise CustomerIdNotFound(json.dumps(
+            {"httpStatus": 400, "message": "Customer Id not found."})) from customer_id_not_found_error
 
-#Validate supplied input against the expected schema
+# Validate supplied input against the expected schema
+
+
 def validate_input(payload):
     schema = {
         "type": "object",
         "properties": {
             "house_bill_nbr": {"type": "string"},
             "file_nbr": {"type": "string"},
-            "milestone_history" : {"type": "string",
-                                "enum" : ["True","t","true","T","1","False","f","false","F","0"]}
+            "milestone_history": {"type": "string",
+                                  "enum": ["True", "t", "true", "T", "1", "False", "f", "false", "F", "0"]}
         },
         "additionalProperties": False,
         "minProperties": 1,
         "maxProperties": 2
     }
     try:
-        validate(instance=payload,schema=schema)
+        validate(instance=payload, schema=schema)
     except jsonschema.exceptions.ValidationError as validation_error:
-        logging.exception("Validation error: %s",validation_error)
+        logging.exception("Validation error: %s", validation_error)
         return {"status": "error", "message": validation_error.message}
     return {"status": "success"}
 
+
 class ApiKeyError(Exception):
     pass
+
+
 class HandlerError(Exception):
     pass
+
+
 class CustomerIdNotFound(Exception):
     pass
+
+
 class GeneratePolicyError(Exception):
     pass
+
+
 class InputError(Exception):
     pass
