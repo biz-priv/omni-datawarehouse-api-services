@@ -31,10 +31,8 @@ const eventValidation = Joi.object().keys({
     "SED",
     "SLI",
     "WAYBILL"
-  )
-    .required(),
-}).or('housebill', 'fileNumber').and('docType');
-
+  ).required(),
+}).or('housebill', 'fileNumber');
 
 module.exports.handler = async (event, context, callback) => {
   if (event.source === 'serverless-plugin-warmup') {
@@ -43,32 +41,31 @@ module.exports.handler = async (event, context, callback) => {
   }
 
   console.info(event);
-  const { body } = event;
-  const apiKey = event.headers["x-api-key"];
   let reqFields = {};
   let valError;
 
-  if (
-    !("enhancedAuthContext" in event) ||
-    !("customerId" in event.enhancedAuthContext)
-  ) {
-    valError = "customerId not found.";
-  } else if (!("housebill" in event.query)) {
-    valError = "housebill is required.";
+  // if (
+  //   !("enhancedAuthContext" in event) ||
+  //   !("customerId" in event.enhancedAuthContext)
+  // ) {
+  //   valError = "customerId not found.";
+  // } else if (!("housebill" in event.query)) {
+  //   valError = "housebill is required.";
 
-  } else if (!("filenumber" in event.query)) {
-    valError = "filenumber is required.";
-  }
-  else if (("docType" in event.query)) {
-    valError = "docType is required.";
-  }
+  // } else if (!("filenumber" in event.query)) {
+  //   valError = "filenumber is required.";
+  // }
+  // else if (("docType" in event.query)) {
+  //   valError = "docType is required.";
+  // }
   const { error, value } = eventValidation.validate(reqFields);
-  if (valError) {
-    console.info(valError);
-    return callback(("[400]", valError));
-  } else {
+  if (error) {
+    let msg = error.details[0].message
+      .split('" ')[1]
+      .replace(new RegExp('"', "g"), "");
+    let key = error.details[0].context.key;
+    return callback(response("[400]", key + " " + msg));
   }
-
   getdocument(event.query)
 }
 
