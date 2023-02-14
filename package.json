@@ -18,8 +18,8 @@
   "homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
   "dependencies": {
     "axios": "^0.21.1",
-    "js-base64": "^3.7.3",
     "joi": "^17.4.2",
+    "js-base64": "^3.7.3",
     "lodash": "^4.17.21",
     "pg-promise": "^10.11.1",
     "serverless": "2.11.1",
@@ -27,9 +27,10 @@
     "serverless-aws-alias-fixed": "2.0.1",
     "serverless-domain-manager": "5.0.0",
     "serverless-layers": "2.3.3",
+    "serverless-offline": "^8.8.0",
     "serverless-plugin-existing-s3": "2.4.0",
     "serverless-plugin-multiple-responses": "1.0.0",
-    "xmlbuilder2": "^3.0.2",
-    "serverless-plugin-warmup": "5.3.1"
+    "serverless-plugin-warmup": "5.3.1",
+    "xmlbuilder2": "^3.0.2"
   }
 }

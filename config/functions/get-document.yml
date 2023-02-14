@@ -38,4 +38,4 @@ function:
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
-    GETDOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/getdocument-websliapi}
+    GET_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
