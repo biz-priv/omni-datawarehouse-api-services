@@ -22,7 +22,7 @@
     "js-base64": "^3.7.3",
     "lodash": "^4.17.21",
     "pg-promise": "^10.11.1",
-    "serverless": "^2.11.1",
+    "serverless": "2.11.1",
     "serverless-add-api-key": "4.2.0",
     "serverless-aws-alias-fixed": "2.0.1",
     "serverless-domain-manager": "5.0.0",

@@ -75,7 +75,7 @@ module.exports.handler = async (event) => {
     let response;
     let newResponse;
     console.log(
-      "process.env./omni-dw/prod/websli/api/url",
+      "/websli/api/url",
       process.env.GET_DOCUMENT_API
     );
 
