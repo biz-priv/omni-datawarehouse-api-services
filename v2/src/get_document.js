@@ -70,11 +70,15 @@ module.exports.handler = async (event) => {
   try {
     console.log("Event", event);
     const eventParams = event.queryStringParameters;
-    const xApiKey = event.headers;
+    // const xApiKey = event.headers;
     // const eventParams = event;
     let response;
     let newResponse;
-    console.log("process.env.GETDOCUMENT_API", process.env.GETDOCUMENT_API);
+    console.log(
+      "process.env./omni-dw/prod/websli/api/url",
+      process.env.GET_DOCUMENT_API
+    );
+
     //2. valiadte the params
     if (!eventParams) {
       return { Msg: "housebill or fileNumber parameters are require" };
@@ -82,15 +86,10 @@ module.exports.handler = async (event) => {
       //3. if params are there and validated
       await housebillSchema.validateAsync(eventParams);
       console.log("housebill", eventParams);
+
       //4. hit the websli api get the response
-      const config = {
-        headers: {
-          "x-api-key": xApiKey["x-api-key"],
-        },
-      };
       response = await axios.get(
-        `https://websli.omnilogistics.com/wtTest/getwtdoc/v1/json/${xApiKey["x-api-key"]}/housebill=${eventParams.housebill}/doctype=${eventParams.docType}/`,
-        config
+        `${process.env.GET_DOCUMENT_API}/housebill=${eventParams.fileNumber}/doctype=${eventParams.docType}/`
       );
 
       console.log("response", response.data);
@@ -101,23 +100,18 @@ module.exports.handler = async (event) => {
       console.log("fileNumber", eventParams);
 
       //4. hit the websli api get the response
-      const config = {
-        headers: {
-          "x-api-key": xApiKey["x-api-key"],
-        },
-      };
       response = await axios.get(
-        // `${process.env.GETDOCUMENT_API}?fileNumber=${eventParams.housebill}&docType=${eventParams.docType}`,
-        `https://websli.omnilogistics.com/wtTest/getwtdoc/v1/json/${xApiKey["x-api-key"]}/fileNumber=${eventParams.fileNumber}/doctype=${eventParams.docType}/`,
-        config
+        `${process.env.GET_DOCUMENT_API}/fileNumber=${eventParams.fileNumber}/doctype=${eventParams.docType}/`
       );
 
       console.log("response", response.data);
       response = response.data;
     }
+
     //5. change the response structre
     newResponse = await newResponseStructureForV2(response);
     console.log("newResponse", newResponse);
+
     //6. send the response
     return {
       statusCode: 200,
