@@ -86,7 +86,7 @@ module.exports.handler = async (event) => {
 
       //4. hit the websli api get the response
       response = await axios.get(
-        `${process.env.GET_DOCUMENT_API}/housebill=${eventParams.fileNumber}/doctype=${eventParams.docType}/`
+        `${process.env.GET_DOCUMENT_API}/housebill=${eventParams.housebill}/doctype=${eventParams.docType}/`
       );
 
       console.log("response", response.data);
