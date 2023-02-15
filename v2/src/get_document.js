@@ -69,7 +69,7 @@ const fileNumberSchema = Joi.object({
 module.exports.handler = async (event) => {
   console.log("Event", event);
   try {
-    const eventParams = event.queryStringParameters;
+    const eventParams = event.query;
     // const xApiKey = event.headers;
     // const eventParams = event;
     let response;
