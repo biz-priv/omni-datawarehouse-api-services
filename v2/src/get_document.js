@@ -67,17 +67,14 @@ const fileNumberSchema = Joi.object({
 });
 
 module.exports.handler = async (event) => {
+  console.log("Event", event);
   try {
-    console.log("Event", event);
     const eventParams = event.queryStringParameters;
     // const xApiKey = event.headers;
     // const eventParams = event;
     let response;
     let newResponse;
-    console.log(
-      "/websli/api/url",
-      process.env.GET_DOCUMENT_API
-    );
+    console.log("/websli/api/url", process.env.GET_DOCUMENT_API);
 
     //2. valiadte the params
     if (!eventParams) {
