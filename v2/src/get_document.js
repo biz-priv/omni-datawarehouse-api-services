@@ -110,16 +110,7 @@ module.exports.handler = async (event) => {
     console.log("newResponse", newResponse);
 
     //6. send the response
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newResponse),
-    };
+    return newResponse;
   } catch (error) {
     console.log("error", error);
     return {
