@@ -6,7 +6,7 @@ function:
   runtime: nodejs14.x
   events:
     - http:
-        path: /shipment/getDocument
+        path: /shipment/getdocument
         method: GET
         integration: lambda
         private: true

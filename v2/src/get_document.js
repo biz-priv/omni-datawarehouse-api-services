@@ -66,66 +66,45 @@ const fileNumberSchema = Joi.object({
     ),
 });
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event, context, callback) => {
   console.log("Event", event);
   try {
     const eventParams = event.query;
     // const xApiKey = event.headers;
-    // const eventParams = event;
-    let response;
-    let newResponse;
-    console.log("/websli/api/url", process.env.GET_DOCUMENT_API);
 
-    //2. valiadte the params
-    if (!eventParams) {
-      return { Msg: "housebill or fileNumber parameters are require" };
-    } else if (eventParams.hasOwnProperty("housebill")) {
-      //3. if params are there and validated
-      await housebillSchema.validateAsync(eventParams);
-      console.log("housebill", eventParams);
+    console.log("websli-api-url", process.env.GET_DOCUMENT_API);
 
-      //4. hit the websli api get the response
-      response = await axios.get(
-        `${process.env.GET_DOCUMENT_API}/housebill=${eventParams.housebill}/doctype=${eventParams.docType}/`
-      );
-
-      console.log("response", response.data);
-      response = response.data;
-    } else {
-      //3. if params are there and validated
-      await fileNumberSchema.validateAsync(eventParams);
-      console.log("fileNumber", eventParams);
-
-      //4. hit the websli api get the response
-      response = await axios.get(
-        `${process.env.GET_DOCUMENT_API}/fileNumber=${eventParams.fileNumber}/doctype=${eventParams.docType}/`
-      );
-
-      console.log("response", response.data);
-      response = response.data;
+    const searchType = eventParams.hasOwnProperty("housebill")
+      ? "housebill"
+      : "fileNumber";
+    try {
+      searchType === "housebill"
+        ? await housebillSchema.validateAsync(eventParams)
+        : await fileNumberSchema.validateAsync(eventParams);
+    } catch (error) {
+      console.log("error", error);
+      return callback(response("[400]", error?.message ?? ""));
     }
 
+    const resp = await getData(eventParams, searchType);
+
     //5. change the response structre
-    newResponse = await newResponseStructureForV2(response);
+    const newResponse = await newResponseStructureForV2(resp.data);
     console.log("newResponse", newResponse);
 
     //6. send the response
     return newResponse;
   } catch (error) {
     console.log("error", error);
-    return {
-      statusCode: 400,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(error),
-    };
+    return callback(response("[400]", error?.message ?? ""));
   }
 };
 
+/**
+ *
+ * @param response
+ * @returns
+ */
 async function newResponseStructureForV2(response) {
   return new Promise((resolve, reject) => {
     const newResponse = {
@@ -137,5 +116,30 @@ async function newResponseStructureForV2(response) {
     };
 
     resolve({ getDocumentResponse: newResponse });
+  });
+}
+
+/**
+ *
+ * @param eventParams
+ * @param searchType
+ * @returns
+ */
+async function getData(eventParams, searchType) {
+  try {
+    const queryType = (response = await axios.get(
+      `${process.env.GET_DOCUMENT_API}/fileNumber=${eventParams[searchType]}/doctype=${eventParams.docType}/`
+    ));
+    return queryType;
+  } catch (error) {
+    console.log("error", error);
+    throw error;
+  }
+}
+
+function response(code, message) {
+  return JSON.stringify({
+    httpStatus: code,
+    message,
   });
 }
