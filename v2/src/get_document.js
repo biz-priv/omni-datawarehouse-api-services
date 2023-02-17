@@ -126,9 +126,11 @@ async function getData(eventParams, searchType) {
     const queryType = (resp = await axios.get(
       `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
     ));
-    console.log("websli query :", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
+    console.log("websli url :", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
     return queryType;
-  } catch (error) {
+  }
+  catch (error) {
+    console.log("websli error url:", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
     console.log("error", error);
     throw error;
   }
