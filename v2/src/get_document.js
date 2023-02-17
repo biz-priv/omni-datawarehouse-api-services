@@ -8,18 +8,18 @@ const housebillSchema = Joi.object({
   docType: Joi.string()
     .required()
     .valid(
-      "CERTIFICAT",
+      "BI",
       "CONSULAR",
       "CUST RATE",
       "CUSTOMS",
-      "DANGEROUS",
       "DCCL",
       "DECON",
       "HCPOD",
+      "HOUSEBILL",
       "IBU",
-      "IMPORT LIC",
       "INSURANCE",
       "INVOICE",
+      "LABEL",
       "MSDS",
       "OCCL",
       "OMNI RA",
@@ -29,8 +29,6 @@ const housebillSchema = Joi.object({
       "POD",
       "PRO FORMA",
       "RA",
-      "SED",
-      "SLI",
       "WAYBILL"
     ),
 });
