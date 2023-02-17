@@ -80,7 +80,7 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "shipment/getDocument" in event["methodArn"]:
+    elif "shipment/getdocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     else:
