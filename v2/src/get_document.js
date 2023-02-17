@@ -37,18 +37,18 @@ const fileNumberSchema = Joi.object({
   docType: Joi.string()
     .required()
     .valid(
-      "CERTIFICAT",
+      "BI",
       "CONSULAR",
       "CUST RATE",
       "CUSTOMS",
-      "DANGEROUS",
       "DCCL",
       "DECON",
       "HCPOD",
+      "HOUSEBILL",
       "IBU",
-      "IMPORT LIC",
       "INSURANCE",
       "INVOICE",
+      "LABEL",
       "MSDS",
       "OCCL",
       "OMNI RA",
@@ -58,8 +58,6 @@ const fileNumberSchema = Joi.object({
       "POD",
       "PRO FORMA",
       "RA",
-      "SED",
-      "SLI",
       "WAYBILL"
     ),
 });
@@ -126,8 +124,9 @@ async function newResponseStructureForV2(response) {
 async function getData(eventParams, searchType) {
   try {
     const queryType = (response = await axios.get(
-      `${process.env.GET_DOCUMENT_API}/fileNumber=${eventParams[searchType]}/doctype=${eventParams.docType}/`
+      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
     ));
+    console.log("websli query :", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
     return queryType;
   } catch (error) {
     console.log("error", error);
