@@ -57,7 +57,7 @@ def handler(event, context):
             {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
     # Validating params only for the GET APIs
-    if "/create/shipment" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getDocument" not in event["methodArn"]:
+    if "/create/shipment" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
