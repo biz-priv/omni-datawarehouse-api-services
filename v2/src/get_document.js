@@ -123,7 +123,7 @@ async function newResponseStructureForV2(response) {
  */
 async function getData(eventParams, searchType) {
   try {
-    const queryType = (response = await axios.get(
+    const queryType = (resp = await axios.get(
       `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
     ));
     console.log("websli query :", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
