@@ -5,68 +5,138 @@ const axios = require("axios");
 //1. do a joi valiation
 const housebillSchema = Joi.object({
   housebill: Joi.string().required().max(13),
-  docType: Joi.string()
-    .required()
-    .valid(
-      "BI",
-      "CONSULAR",
-      "CUST RATE",
-      "CUSTOMS",
-      "DCCL",
-      "DECON",
-      "HCPOD",
-      "HOUSEBILL",
-      "IBU",
-      "INSURANCE",
-      "INVOICE",
-      "LABEL",
-      "MSDS",
-      "OCCL",
-      "OMNI RA",
-      "ORIG BOL",
-      "PACKING",
-      "PO",
-      "POD",
-      "PRO FORMA",
-      "RA",
-      "WAYBILL"
-    ),
+  docType: Joi.alternatives().try(
+    Joi.string()
+      .required()
+      .valid(
+        "BI",
+        "CONSULAR",
+        "CUST RATE",
+        "CUSTOMS",
+        "DCCL",
+        "DECON",
+        "HCPOD",
+        "HOUSEBILL",
+        "IBU",
+        "INSURANCE",
+        "INVOICE",
+        "LABEL",
+        "MSDS",
+        "OCCL",
+        "OMNI RA",
+        "ORIG BOL",
+        "PACKING",
+        "PO",
+        "POD",
+        "PRO FORMA",
+        "RA",
+        "WAYBILL"
+      ),
+
+    Joi.array().items(
+      Joi.string()
+        .required()
+        .valid(
+          "BI",
+          "CONSULAR",
+          "CUST RATE",
+          "CUSTOMS",
+          "DCCL",
+          "DECON",
+          "HCPOD",
+          "HOUSEBILL",
+          "IBU",
+          "INSURANCE",
+          "INVOICE",
+          "LABEL",
+          "MSDS",
+          "OCCL",
+          "OMNI RA",
+          "ORIG BOL",
+          "PACKING",
+          "PO",
+          "POD",
+          "PRO FORMA",
+          "RA",
+          "WAYBILL"
+        )
+    )
+  ),
 });
 const fileNumberSchema = Joi.object({
   fileNumber: Joi.string().required().max(13),
-  docType: Joi.string()
-    .required()
-    .valid(
-      "BI",
-      "CONSULAR",
-      "CUST RATE",
-      "CUSTOMS",
-      "DCCL",
-      "DECON",
-      "HCPOD",
-      "HOUSEBILL",
-      "IBU",
-      "INSURANCE",
-      "INVOICE",
-      "LABEL",
-      "MSDS",
-      "OCCL",
-      "OMNI RA",
-      "ORIG BOL",
-      "PACKING",
-      "PO",
-      "POD",
-      "PRO FORMA",
-      "RA",
-      "WAYBILL"
-    ),
+  docType: Joi.alternatives().try(
+    Joi.string()
+      .required()
+      .valid(
+        "BI",
+        "CONSULAR",
+        "CUST RATE",
+        "CUSTOMS",
+        "DCCL",
+        "DECON",
+        "HCPOD",
+        "HOUSEBILL",
+        "IBU",
+        "INSURANCE",
+        "INVOICE",
+        "LABEL",
+        "MSDS",
+        "OCCL",
+        "OMNI RA",
+        "ORIG BOL",
+        "PACKING",
+        "PO",
+        "POD",
+        "PRO FORMA",
+        "RA",
+        "WAYBILL"
+      ),
+
+    Joi.array().items(
+      Joi.string()
+        .required()
+        .valid(
+          "BI",
+          "CONSULAR",
+          "CUST RATE",
+          "CUSTOMS",
+          "DCCL",
+          "DECON",
+          "HCPOD",
+          "HOUSEBILL",
+          "IBU",
+          "INSURANCE",
+          "INVOICE",
+          "LABEL",
+          "MSDS",
+          "OCCL",
+          "OMNI RA",
+          "ORIG BOL",
+          "PACKING",
+          "PO",
+          "POD",
+          "PRO FORMA",
+          "RA",
+          "WAYBILL"
+        )
+    )
+  ),
 });
 
 module.exports.handler = async (event, context, callback) => {
   console.log("Event", event);
   try {
     const eventParams = event.query;
+    const doctypeValue = eventParams.docType;
+
+    //for local test
+    // let eventParams = event;
+    // let doctypeValue = eventParams.docType;
+
+    console.log("eventParams", doctypeValue);
     // const xApiKey = event.headers;
+    // return {};
 
     console.log("websli-api-url", process.env.GET_DOCUMENT_API);
 
@@ -82,10 +152,10 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
-    const resp = await getData(eventParams, searchType);
+    const resp = await getData(eventParams, doctypeValue, searchType);
 
     //5. change the response structre
-    const newResponse = await newResponseStructureForV2(resp.data);
+    const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
 
     //6. send the response
@@ -121,16 +191,41 @@ async function newResponseStructureForV2(response) {
  * @param searchType
  * @returns
  */
-async function getData(eventParams, searchType) {
+async function getData(eventParams, doctypeValue, searchType) {
   try {
-    const queryType = (resp = await axios.get(
+    const getDocumentData = await Promise.all(
+      doctypeValue.map(async (e) => {
+        const queryType = await axios.get(
+          `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${e}`
+        );
+        console.log("queryType==>>>>>>", queryType);
+        console.log(
+          "websli url :",
+          `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}`
+        );
+        return queryType.data;
+      })
+    );
+    console.log("getDocumentData", getDocumentData);
+
+    let wtArr = [];
+    getDocumentData.map((e) => {
+      wtArr = [...wtArr, ...e.wtDocs.wtDoc];
+    });
+    const data = {
+      wtDocs: {
+        housebill: getDocumentData[0].wtDocs.housebill,
+        fileNumber: getDocumentData[0].wtDocs.fileNumber,
+        wtDoc: wtArr,
+      },
+    };
+    console.log("data", data);
+    return data;
+  } catch (error) {
+    console.log(
+      "websli error url:",
       `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
-    ));
-    console.log("websli url :", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
-    return queryType;
-  }
-  catch (error) {
-    console.log("websli error url:", `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`)
+    );
     console.log("error", error);
     throw error;
   }
