@@ -127,7 +127,7 @@ const fileNumberSchema = Joi.object({
 module.exports.handler = async (event, context, callback) => {
   console.log("Event", event);
   try {
-    const eventParams = event.query;
+    let eventParams = event.query;
     let doctypeValue = eventParams.docType;
     doctypeValue = doctypeValue.split(",");
 
@@ -144,6 +144,7 @@ module.exports.handler = async (event, context, callback) => {
     const searchType = eventParams.hasOwnProperty("housebill")
       ? "housebill"
       : "fileNumber";
+    eventParams.docType = doctypeValue;
     try {
       searchType === "housebill"
         ? await housebillSchema.validateAsync(eventParams)
