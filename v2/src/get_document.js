@@ -128,7 +128,8 @@ module.exports.handler = async (event, context, callback) => {
   console.log("Event", event);
   try {
     const eventParams = event.query;
-    const doctypeValue = eventParams.docType;
+    let doctypeValue = eventParams.docType;
+    doctypeValue = doctypeValue.split(",");
 
     //for local test
     // let eventParams = event;
