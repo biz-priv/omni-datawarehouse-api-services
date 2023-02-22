@@ -134,6 +134,7 @@ module.exports.handler = async (event, context, callback) => {
     //for local test
     // let eventParams = event;
     // let doctypeValue = eventParams.docType;
+    // doctypeValue = doctypeValue.split(",");
 
     console.log("eventParams", doctypeValue);
     // const xApiKey = event.headers;
@@ -159,7 +160,7 @@ module.exports.handler = async (event, context, callback) => {
     //5. change the response structre
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
-
+    // return {};
     //6. send the response
     return newResponse;
   } catch (error) {
@@ -197,15 +198,26 @@ async function getData(eventParams, doctypeValue, searchType) {
   try {
     const getDocumentData = await Promise.all(
       doctypeValue.map(async (e) => {
-        const queryType = await axios.get(
-          `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${e}`
-        );
-        console.log("queryType==>>>>>>", queryType);
-        console.log(
-          "websli url :",
-          `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}`
-        );
-        return queryType.data;
+        try {
+          const queryType = await axios.get(
+            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${e}`
+          );
+          console.log("queryType==>>>>>>", queryType);
+          console.log(
+            "websli url :",
+            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}`
+          );
+          return queryType.data;
+        } catch (error) {
+          console.log("error", error);
+          return {
+            wtDocs: {
+              housebill: "",
+              fileNumber: "",
+              wtDoc: [],
+            },
+          };
+        }
       })
     );
     console.log("getDocumentData", getDocumentData);
