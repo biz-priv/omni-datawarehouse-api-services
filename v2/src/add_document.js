@@ -3,16 +3,11 @@ const Joi = require("joi");
 const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
-const logs = require("serverless-aws-alias-fixed/lib/logs");
 
 module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   const { body } = event;
 
-  if (event.source === "serverless-plugin-warmup") {
-    console.log("WarmUp - Lambda is warm!");
-    return "Lambda is warm!";
-  }
   const eventValidation = Joi.object()
     .keys({
       documentUploadRequest: Joi.object()
@@ -183,7 +178,7 @@ module.exports.handler = async (event, context, callback) => {
 
     if (!PK_OrderNo) {
       console.log("PK_OrderNo no not found", paramsshipmentHeader);
-      return callback(response("[400]", "PK_OrderNo no not found"));
+      return callback(response("[400]", "file number not found"));
     }
 
     const paramsAddMap = {
@@ -217,12 +212,12 @@ module.exports.handler = async (event, context, callback) => {
           validated.housebill = housebill;
         } else {
           console.log("igored response");
-          return callback(response("[400]", "igored response"));
+          return callback(response("[400]", "igored response")); //TODO: check with will
         }
       }
     } else {
       console.log("igored response");
-      return callback(response("[400]", "igored response"));
+      return callback(response("[400]", "igored response")); //TODO: check with will
     }
   }
 
