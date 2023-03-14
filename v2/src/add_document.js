@@ -3,10 +3,12 @@ const Joi = require("joi");
 const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
+const logs = require("serverless-aws-alias-fixed/lib/logs");
 
 module.exports.handler = async (event, context, callback) => {
-  const { body } = event;
   console.log("event", event);
+  const { body } = event;
+
   if (event.source === "serverless-plugin-warmup") {
     console.log("WarmUp - Lambda is warm!");
     return "Lambda is warm!";
@@ -146,7 +148,82 @@ module.exports.handler = async (event, context, callback) => {
       }
     }
   } else {
-    validated.housebill = eventBody.documentUploadRequest.housebill;
+    // validated.housebill = eventBody.documentUploadRequest.housebill;
+
+    // based on housebill no query omni-wt-rt-shipment-header-dev ddb table to fetch the pk_ordernumber
+    // form pk_ordernumber==fk_ordernumber we query omni-wt-address-mapping-dev
+    // now we check cc_con_zip first and then cc_con_address = 1
+    // we can send that paylod to wt-api
+    // if cc_con_zip!=1 we ignore dont send it to wt
+    // if cc_con_address != 1 we check for the google_address  from the ddb table if that equal to 1 send it.
+
+    housebill = body.documentUploadRequest.housebill;
+    const paramsshipmentHeader = {
+      TableName: process.env.SHIPMENT_HEADER_TABLE,
+      IndexName: "Housebill-index",
+      KeyConditionExpression: "Housebill = :Housebill",
+      ExpressionAttributeValues: {
+        ":Housebill": housebill,
+      },
+    };
+
+    let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
+    console.log("shipmentHeaderResponse", shipmentHeaderResponse);
+    shipmentHeaderResponse =
+      shipmentHeaderResponse.Items.length > 0
+        ? shipmentHeaderResponse.Items[0]
+        : {};
+
+    const PK_OrderNo =
+      shipmentHeaderResponse?.PK_OrderNo?.length > 0
+        ? shipmentHeaderResponse.PK_OrderNo
+        : null;
+
+    console.log("PK_OrderNo", PK_OrderNo);
+
+    if (!PK_OrderNo) {
+      console.log("PK_OrderNo no not found", paramsshipmentHeader);
+      return callback(response("[400]", "PK_OrderNo no not found"));
+    }
+
+    const paramsAddMap = {
+      TableName: process.env.ADDRESS_MAPPING_TABLE,
+      KeyConditionExpression: "FK_OrderNo = :fkNumber",
+      ExpressionAttributeValues: {
+        ":fkNumber": PK_OrderNo,
+      },
+    };
+
+    let addressMappingResponse = await queryDynamo(paramsAddMap);
+
+    console.log("addressMappingResponse", addressMappingResponse);
+    if (addressMappingResponse.Items.length > 0) {
+      addressMappingResponse = addressMappingResponse.Items[0];
+    } else {
+      console.log("No data found on address mapping table", paramsAddMap);
+      return callback(
+        response("[400]", "No data found on address mapping table")
+      );
+    }
+
+    const { cc_con_zip, cc_con_address, cc_con_google_match } =
+      addressMappingResponse;
+
+    if (cc_con_zip == 1) {
+      if (cc_con_address == 1) {
+        validated.housebill = housebill;
+      } else {
+        if (cc_con_google_match == 1) {
+          validated.housebill = housebill;
+        } else {
+          console.log("igored response");
+          return callback(response("[400]", "igored response"));
+        }
+      }
+    } else {
+      console.log("igored response");
+      return callback(response("[400]", "igored response"));
+    }
   }
 
   if (
@@ -362,5 +439,19 @@ async function getHousebillNumber(filenumber, customerId) {
     }
   } catch (e) {
     throw e.hasOwnProperty("message") ? e.message : e;
+  }
+}
+
+//-------------------
+async function queryDynamo(params) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const response = await documentClient.query(params).promise();
+    return response;
+  } catch (error) {
+    console.log("error", error);
+    return { Items: [] };
   }
 }

@@ -48,3 +48,6 @@ function:
     HOUSEBILL_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
     FILENUMBER_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/fileNumber/index}
     IVIA_CUSTOMER_ID: ${ssm:/omni-dw/${self:provider.stage}/api/iviaId}
+
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    ADDRESS_MAPPING_TABLE: ${ssm:/omni-ivia/${self:provider.stage}/address-mapping/ddb.tableName}
