@@ -4,9 +4,30 @@ const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
 
+const { v4: uuidv4 } = require("uuid");
+const momentTZ = require("moment-timezone");
+
+let eventLogObj = {
+  id: "",
+  request_json: "",
+  request_xml: "",
+  response_xml: "",
+  response_json: "",
+  wt_status_code: "",
+  api_status_code: "",
+  inserted_time_stamp: "",
+};
+
 module.exports.handler = async (event, context, callback) => {
+  eventLogObj.id = uuidv4();
+  eventLogObj.inserted_time_stamp = momentTZ
+    .tz("America/Chicago")
+    .format("YYYY:MM:DD HH:mm:ss")
+    .toString();
+
   console.log("event", event);
   const { body } = event;
+  eventLogObj.request_json = JSON.stringify(body);
 
   const eventValidation = Joi.object()
     .keys({
@@ -64,6 +85,11 @@ module.exports.handler = async (event, context, callback) => {
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
+
+    eventLogObj.api_status_code = "400";
+    console.log("eventLogObj", eventLogObj);
+    await putItem(eventLogObj);
+
     return callback(response("[400]", key + " " + msg));
   }
   let customerId;
@@ -80,6 +106,10 @@ module.exports.handler = async (event, context, callback) => {
     !("enhancedAuthContext" in event) ||
     !("customerId" in event.enhancedAuthContext)
   ) {
+    eventLogObj.api_status_code = "400";
+    console.log("eventLogObj", eventLogObj);
+    await putItem(eventLogObj);
+
     return callback(response("[400]", "Unable to validate user"));
   } else {
     customerId = event.enhancedAuthContext.customerId;
@@ -92,6 +122,10 @@ module.exports.handler = async (event, context, callback) => {
       ? "Base64"
       : "Not Base64";
     if (Base64 != "Base64") {
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+
       return callback(
         response(
           "[400]",
@@ -100,6 +134,9 @@ module.exports.handler = async (event, context, callback) => {
       );
     }
   } else if (!Base64.isValid(eventBody.documentUploadRequest.b64str)) {
+    eventLogObj.api_status_code = "400";
+    console.log("eventLogObj", eventLogObj);
+    await putItem(eventLogObj);
     return callback(
       response("[400]", "Please ensure b64str field is a valid base64 string.")
     );
@@ -118,6 +155,9 @@ module.exports.handler = async (event, context, callback) => {
         customerId
       );
       if (fileNumber == "failure") {
+        eventLogObj.api_status_code = "400";
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
         return callback(
           response("[400]", "Invalid Housebill for this customer.")
         );
@@ -135,6 +175,9 @@ module.exports.handler = async (event, context, callback) => {
         customerId
       );
       if (housebill == "failure") {
+        eventLogObj.api_status_code = "400";
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
         return callback(response("[400]", "No Housebill found."));
       } else {
         fileNumber = eventBody.documentUploadRequest.fileNumber;
@@ -178,6 +221,9 @@ module.exports.handler = async (event, context, callback) => {
 
     if (!PK_OrderNo) {
       console.log("PK_OrderNo no not found", paramsshipmentHeader);
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
       return callback(response("[400]", "file number not found"));
     }
 
@@ -196,6 +242,9 @@ module.exports.handler = async (event, context, callback) => {
       addressMappingResponse = addressMappingResponse.Items[0];
     } else {
       console.log("No data found on address mapping table", paramsAddMap);
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
       return callback(
         response("[400]", "No data found on address mapping table")
       );
@@ -212,11 +261,17 @@ module.exports.handler = async (event, context, callback) => {
           validated.housebill = housebill;
         } else {
           console.log("igored response");
+          eventLogObj.api_status_code = "400";
+          console.log("eventLogObj", eventLogObj);
+          await putItem(eventLogObj);
           return callback(response("[400]", "igored response")); //TODO: check with will
         }
       }
     } else {
       console.log("igored response");
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
       return callback(response("[400]", "igored response")); //TODO: check with will
     }
   }
@@ -261,6 +316,9 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
   if (fileExtension == "") {
+    eventLogObj.api_status_code = "400";
+    console.log("eventLogObj", eventLogObj);
+    await putItem(eventLogObj);
     return callback(
       response(
         "[400]",
@@ -287,17 +345,25 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     const postData = makeJsonToXml(validated);
+    eventLogObj.request_xml = postData;
     console.info("postData", postData);
     const res = await getXmlResponse(postData);
     console.info("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
+    eventLogObj.response_json = JSON.stringify(dataObj);
     if (
       dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
         .AttachFileToShipmentResult.Success == "true"
     ) {
+      eventLogObj.api_status_code = "200";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
       return { documentUploadResponse: { message: "success" } };
     } else {
       console.log("Returned XML After Conversion: ", dataObj);
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
       return callback(
         response(
           "[400]",
@@ -308,6 +374,9 @@ module.exports.handler = async (event, context, callback) => {
       // throw "Failed";
     }
   } catch (error) {
+    eventLogObj.api_status_code = "500";
+    console.log("eventLogObj", eventLogObj);
+    await putItem(eventLogObj);
     return callback(
       response("[500]", {
         documentUploadResponse: {
@@ -329,6 +398,9 @@ async function getXmlResponse(postData) {
       },
     });
     console.log("XML Response: Axios", res);
+    eventLogObj.response_xml = JSON.stringify(res.data);
+    eventLogObj.wt_status_code = JSON.stringify(res.status);
+
     return {
       xml_response: res.data,
       status_code: res.status,
@@ -438,6 +510,7 @@ async function getHousebillNumber(filenumber, customerId) {
 }
 
 //-------------------
+
 async function queryDynamo(params) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
@@ -448,5 +521,24 @@ async function queryDynamo(params) {
   } catch (error) {
     console.log("error", error);
     return { Items: [] };
+  }
+}
+
+async function putItem(item) {
+  const dynamodb = new AWS.DynamoDB.DocumentClient({
+    region: process.env.REGION,
+  });
+
+  let params;
+  try {
+    params = {
+      TableName: process.env.ADD_DOCUMENT_LOG_TABLE,
+      Item: item,
+    };
+    console.log("Inserted");
+    return await dynamodb.put(params).promise();
+  } catch (e) {
+    console.error("Put Item Error: ", e, "\nPut params: ", params);
+    throw "PutItemError";
   }
 }

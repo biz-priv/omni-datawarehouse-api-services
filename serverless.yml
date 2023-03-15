@@ -156,3 +156,4 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
+    AddDocumentLogTable: ${file(config/dynamoDB/addDocumentLogTable.yml):AddDocumentLogTable}
