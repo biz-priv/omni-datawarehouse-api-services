@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 
 let eventLogObj = {
-  id: "",
+  Id: "",
   request_json: "",
   request_xml: "",
   response_xml: "",
@@ -19,7 +19,7 @@ let eventLogObj = {
 };
 
 module.exports.handler = async (event, context, callback) => {
-  eventLogObj.id = uuidv4();
+  eventLogObj.Id = uuidv4();
   eventLogObj.inserted_time_stamp = momentTZ
     .tz("America/Chicago")
     .format("YYYY:MM:DD HH:mm:ss")
@@ -196,6 +196,7 @@ module.exports.handler = async (event, context, callback) => {
     // if cc_con_address != 1 we check for the google_address  from the ddb table if that equal to 1 send it.
 
     housebill = body.documentUploadRequest.housebill;
+
     const paramsshipmentHeader = {
       TableName: process.env.SHIPMENT_HEADER_TABLE,
       IndexName: "Housebill-index",
@@ -227,6 +228,40 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", "file number not found"));
     }
 
+    //apar logic start----
+
+    const paramsShipmentApar = {
+      TableName: process.env.SHIPMENT_APAR_TABLE,
+      KeyConditionExpression: "FK_OrderNo = :PK_OrderNo",
+      FilterExpression: "FK_VendorId = :VendorId",
+      ExpressionAttributeValues: {
+        ":PK_OrderNo": PK_OrderNo,
+        ":VendorId": process.env.IVIA_VENDOR_ID,
+      },
+    };
+    let shipmentAparRes = await queryDynamo(paramsShipmentApar);
+
+    shipmentAparRes =
+      shipmentAparRes.Items.length > 0 ? shipmentAparRes.Items[0] : {};
+    console.log("shipmentAparRes", shipmentAparRes);
+
+    const FK_ServiceId =
+      shipmentAparRes?.FK_ServiceId?.length > 0
+        ? shipmentAparRes.FK_ServiceId
+        : null;
+
+    console.log("FK_ServiceId", FK_ServiceId);
+
+    if (!FK_ServiceId) {
+      console.log("FK_ServiceId Is Empty");
+      // setEventLogObj("errorMsg", "FK_ServiceId is empty");
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+
+      return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
+    }
+
     const paramsAddMap = {
       TableName: process.env.ADDRESS_MAPPING_TABLE,
       KeyConditionExpression: "FK_OrderNo = :fkNumber",
@@ -249,30 +284,22 @@ module.exports.handler = async (event, context, callback) => {
         response("[400]", "No data found on address mapping table")
       );
     }
+    const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
 
-    const { cc_con_zip, cc_con_address, cc_con_google_match } =
-      addressMappingResponse;
+    const { cc_con_google_match } = addressMappingResponse;
 
-    if (cc_con_zip == 1) {
-      if (cc_con_address == 1) {
+    if (conIsCu) {
+      validated.housebill = housebill;
+    } else {
+      if (cc_con_google_match == 1) {
         validated.housebill = housebill;
       } else {
-        if (cc_con_google_match == 1) {
-          validated.housebill = housebill;
-        } else {
-          console.log("igored response");
-          eventLogObj.api_status_code = "400";
-          console.log("eventLogObj", eventLogObj);
-          await putItem(eventLogObj);
-          return callback(response("[400]", "igored response")); //TODO: check with will
-        }
+        console.log("igored response");
+        eventLogObj.api_status_code = "400";
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(response("[400]", "igored response")); //TODO: check with will
       }
-    } else {
-      console.log("igored response");
-      eventLogObj.api_status_code = "400";
-      console.log("eventLogObj", eventLogObj);
-      await putItem(eventLogObj);
-      return callback(response("[400]", "igored response")); //TODO: check with will
     }
   }
 
@@ -350,7 +377,9 @@ module.exports.handler = async (event, context, callback) => {
     const res = await getXmlResponse(postData);
     console.info("resp: ", res);
     const dataObj = makeXmlToJson(res.xml_response);
-    eventLogObj.response_json = JSON.stringify(dataObj);
+    eventLogObj.response_json = JSON.stringify(
+      dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+    );
     if (
       dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
         .AttachFileToShipmentResult.Success == "true"
@@ -541,4 +570,20 @@ async function putItem(item) {
     console.error("Put Item Error: ", e, "\nPut params: ", params);
     throw "PutItemError";
   }
+}
+
+function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
+  let check = 0;
+  if (["HS", "TL"].includes(FK_ServiceId)) {
+    check =
+      addressMapRes.cc_con_zip === "1" && addressMapRes.cc_con_address === "1"
+        ? true
+        : false;
+  } else if (FK_ServiceId === "MT") {
+    check =
+      addressMapRes.csh_con_zip === "1" && addressMapRes.csh_con_address === "1"
+        ? true
+        : false;
+  }
+  return check;
 }
