@@ -25,6 +25,8 @@ module.exports.handler = async (event, context, callback) => {
     PK_OrderNo: "",
     FK_ServiceId: "",
     addressMapObj: "",
+    errorMsg: "",
+    consigneeIsCustomer: "0",
     inserted_time_stamp: momentTZ
       .tz("America/Chicago")
       .format("YYYY:MM:DD HH:mm:ss")
@@ -88,7 +90,11 @@ module.exports.handler = async (event, context, callback) => {
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
 
-    eventLogObj.api_status_code = "400";
+    eventLogObj = {
+      ...eventLogObj,
+      errorMsg: JSON.stringify(key + " " + msg),
+      api_status_code: "400",
+    };
     console.log("eventLogObj", eventLogObj);
     await putItem(eventLogObj);
 
@@ -108,7 +114,11 @@ module.exports.handler = async (event, context, callback) => {
     !("enhancedAuthContext" in event) ||
     !("customerId" in event.enhancedAuthContext)
   ) {
-    eventLogObj.api_status_code = "400";
+    eventLogObj = {
+      ...eventLogObj,
+      errorMsg: "Unable to validate user",
+      api_status_code: "400",
+    };
     console.log("eventLogObj", eventLogObj);
     await putItem(eventLogObj);
 
@@ -124,7 +134,11 @@ module.exports.handler = async (event, context, callback) => {
       ? "Base64"
       : "Not Base64";
     if (Base64 != "Base64") {
-      eventLogObj.api_status_code = "400";
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "Please ensure b64str field is a valid base64 string",
+        api_status_code: "400",
+      };
       console.log("eventLogObj", eventLogObj);
       await putItem(eventLogObj);
 
@@ -136,7 +150,11 @@ module.exports.handler = async (event, context, callback) => {
       );
     }
   } else if (!Base64.isValid(eventBody.documentUploadRequest.b64str)) {
-    eventLogObj.api_status_code = "400";
+    eventLogObj = {
+      ...eventLogObj,
+      errorMsg: "Please ensure b64str field is a valid base64 string",
+      api_status_code: "400",
+    };
     console.log("eventLogObj", eventLogObj);
     await putItem(eventLogObj);
     return callback(
@@ -157,7 +175,11 @@ module.exports.handler = async (event, context, callback) => {
         customerId
       );
       if (fileNumber == "failure") {
-        eventLogObj.api_status_code = "400";
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "Invalid Housebill for this customer.",
+          api_status_code: "400",
+        };
         console.log("eventLogObj", eventLogObj);
         await putItem(eventLogObj);
         return callback(
@@ -177,7 +199,12 @@ module.exports.handler = async (event, context, callback) => {
         customerId
       );
       if (housebill == "failure") {
-        eventLogObj.api_status_code = "400";
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "No Housebill found.",
+          api_status_code: "400",
+        };
+
         console.log("eventLogObj", eventLogObj);
         await putItem(eventLogObj);
         return callback(response("[400]", "No Housebill found."));
@@ -224,7 +251,11 @@ module.exports.handler = async (event, context, callback) => {
 
     if (!PK_OrderNo) {
       console.log("PK_OrderNo no not found", paramsshipmentHeader);
-      eventLogObj.api_status_code = "400";
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "PK_OrderNo no not found",
+        api_status_code: "400",
+      };
       console.log("eventLogObj", eventLogObj);
       await putItem(eventLogObj);
       return callback(response("[400]", "file number not found"));
@@ -255,8 +286,14 @@ module.exports.handler = async (event, context, callback) => {
 
     if (!FK_ServiceId) {
       console.log("FK_ServiceId Is Empty");
-      eventLogObj.api_status_code = "400";
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "FK_ServiceId Is Empty",
+        api_status_code: "400",
+      };
+
       console.log("eventLogObj", eventLogObj);
+
       await putItem(eventLogObj);
 
       return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
@@ -279,7 +316,11 @@ module.exports.handler = async (event, context, callback) => {
       addressMappingResponse = addressMappingResponse.Items[0];
     } else {
       console.log("No data found on address mapping table", paramsAddMap);
-      eventLogObj.api_status_code = "400";
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "No data found on address mapping table",
+        api_status_code: "400",
+      };
       console.log("eventLogObj", eventLogObj);
       await putItem(eventLogObj);
       return callback(
@@ -291,10 +332,15 @@ module.exports.handler = async (event, context, callback) => {
     const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
 
     if (conIsCu) {
+      eventLogObj.consigneeIsCustomer = "1";
       validated.housebill = housebill;
     } else {
       console.log("igored response");
-      eventLogObj.api_status_code = "400";
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "igored response",
+        api_status_code: "400",
+      };
       console.log("eventLogObj", eventLogObj);
       await putItem(eventLogObj);
       return callback(response("[400]", "igored response")); //TODO: check with will
@@ -341,7 +387,12 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
   if (fileExtension == "") {
-    eventLogObj.api_status_code = "400";
+    eventLogObj = {
+      ...eventLogObj,
+      errorMsg:
+        "Unable to identify filetype. Please send content type with file extension.",
+      api_status_code: "400",
+    };
     console.log("eventLogObj", eventLogObj);
     await putItem(eventLogObj);
     return callback(
@@ -388,7 +439,15 @@ module.exports.handler = async (event, context, callback) => {
       return { documentUploadResponse: { message: "success" } };
     } else {
       console.log("Returned XML After Conversion: ", dataObj);
-      eventLogObj.api_status_code = "400";
+
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: JSON.stringify(
+          dataObj["soap:Envelope"]["soap:Body"].AttachFileToShipmentResponse
+            .AttachFileToShipmentResult.ErrorStatus
+        ),
+        api_status_code: "400",
+      };
       console.log("eventLogObj", eventLogObj);
       await putItem(eventLogObj);
       return callback(
@@ -402,6 +461,11 @@ module.exports.handler = async (event, context, callback) => {
     }
   } catch (error) {
     eventLogObj.api_status_code = "500";
+    eventLogObj = {
+      ...eventLogObj,
+      errorMsg: JSON.stringify(error.message),
+      api_status_code: "500",
+    };
     console.log("eventLogObj", eventLogObj);
     await putItem(eventLogObj);
     return callback(
