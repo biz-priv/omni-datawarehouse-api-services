@@ -14,8 +14,8 @@ module.exports.handler = async (event, context, callback) => {
   const { body } = event;
   eventLogObj = {
     Id: uuidv4(),
-    housebill: body.housebill,
-    fileNumber: body.fileNumber,
+    housebill: body?.documentUploadRequest?.housebill ?? "",
+    fileNumber: body?.documentUploadRequest?.fileNumber ?? "",
     request_json: JSON.stringify(body),
     request_xml: "",
     response_xml: "",
