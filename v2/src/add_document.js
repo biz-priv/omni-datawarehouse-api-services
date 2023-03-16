@@ -7,27 +7,29 @@ const { convert, create } = require("xmlbuilder2");
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 
-let eventLogObj = {
-  Id: "",
-  request_json: "",
-  request_xml: "",
-  response_xml: "",
-  response_json: "",
-  wt_status_code: "",
-  api_status_code: "",
-  inserted_time_stamp: "",
-};
+let eventLogObj = {};
 
 module.exports.handler = async (event, context, callback) => {
-  eventLogObj.Id = uuidv4();
-  eventLogObj.inserted_time_stamp = momentTZ
-    .tz("America/Chicago")
-    .format("YYYY:MM:DD HH:mm:ss")
-    .toString();
-
   console.log("event", event);
   const { body } = event;
-  eventLogObj.request_json = JSON.stringify(body);
+  eventLogObj = {
+    Id: uuidv4(),
+    housebill: body.housebill,
+    fileNumber: body.fileNumber,
+    request_json: JSON.stringify(body),
+    request_xml: "",
+    response_xml: "",
+    response_json: "",
+    wt_status_code: "",
+    api_status_code: "",
+    PK_OrderNo: "",
+    FK_ServiceId: "",
+    addressMapObj: "",
+    inserted_time_stamp: momentTZ
+      .tz("America/Chicago")
+      .format("YYYY:MM:DD HH:mm:ss")
+      .toString(),
+  };
 
   const eventValidation = Joi.object()
     .keys({
@@ -227,8 +229,7 @@ module.exports.handler = async (event, context, callback) => {
       await putItem(eventLogObj);
       return callback(response("[400]", "file number not found"));
     }
-
-    //apar logic start----
+    eventLogObj.PK_OrderNo = PK_OrderNo;
 
     const paramsShipmentApar = {
       TableName: process.env.SHIPMENT_APAR_TABLE,
@@ -254,13 +255,14 @@ module.exports.handler = async (event, context, callback) => {
 
     if (!FK_ServiceId) {
       console.log("FK_ServiceId Is Empty");
-      // setEventLogObj("errorMsg", "FK_ServiceId is empty");
       eventLogObj.api_status_code = "400";
       console.log("eventLogObj", eventLogObj);
       await putItem(eventLogObj);
 
       return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
     }
+
+    eventLogObj.FK_ServiceId = FK_ServiceId;
 
     const paramsAddMap = {
       TableName: process.env.ADDRESS_MAPPING_TABLE,
@@ -284,22 +286,18 @@ module.exports.handler = async (event, context, callback) => {
         response("[400]", "No data found on address mapping table")
       );
     }
-    const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
+    eventLogObj.addressMapObj = addressMappingResponse;
 
-    const { cc_con_google_match } = addressMappingResponse;
+    const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
 
     if (conIsCu) {
       validated.housebill = housebill;
     } else {
-      if (cc_con_google_match == 1) {
-        validated.housebill = housebill;
-      } else {
-        console.log("igored response");
-        eventLogObj.api_status_code = "400";
-        console.log("eventLogObj", eventLogObj);
-        await putItem(eventLogObj);
-        return callback(response("[400]", "igored response")); //TODO: check with will
-      }
+      console.log("igored response");
+      eventLogObj.api_status_code = "400";
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+      return callback(response("[400]", "igored response")); //TODO: check with will
     }
   }
 
@@ -576,12 +574,16 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
   let check = 0;
   if (["HS", "TL"].includes(FK_ServiceId)) {
     check =
-      addressMapRes.cc_con_zip === "1" && addressMapRes.cc_con_address === "1"
+      addressMapRes.cc_con_zip === "1" &&
+      (addressMapRes.cc_con_address === "1" ||
+        addressMapRes.cc_con_google_match === "1")
         ? true
         : false;
   } else if (FK_ServiceId === "MT") {
     check =
-      addressMapRes.csh_con_zip === "1" && addressMapRes.csh_con_address === "1"
+      addressMapRes.csh_con_zip === "1" &&
+      (addressMapRes.csh_con_address === "1" ||
+        addressMapRes.csh_con_google_match === "1")
         ? true
         : false;
   }
