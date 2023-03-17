@@ -295,8 +295,9 @@ function makeXmlToJson(data) {
       console.info("modifiedObj", modifiedObj);
 
       if (isArray(modifiedObj)) {
+        console.info("isArray");
         return modifiedObj.map((e) => {
-          console.info("isArray : ", JSON.stringify(e.AccessorialOutput));
+          console.info("AccessorialOutput Object : ", JSON.stringify(e.AccessorialOutput));
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
@@ -306,42 +307,10 @@ function makeXmlToJson(data) {
             e.AccessorialOutput.AccessorialOutput &&
             e.AccessorialOutput.AccessorialOutput[0] == null
           ) {
-            const list = [];
-            for (
-              let i = 0;
-              i < e.AccessorialOutput.AccessorialOutput.length;
-              i++
-            ) {
-              list[i] = {};
-              e.AccessorialOutput.AccessorialOutput[i].AccessorialCode
-                ? (list[i].code =
-                    e.AccessorialOutput.AccessorialOutput[i].AccessorialCode)
-                : e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc
-                ? (list[i].description =
-                    e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc)
-                : e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge
-                ? (list[i].charge =
-                    e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge)
-                : console.info("no charge");
-            }
-            AccessorialOutput = list;
+            AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);            
           } else {
-            const list = [];
             if (e.AccessorialOutput.AccessorialOutput) {
-              for (
-                let i = 0;
-                i < e.AccessorialOutput.AccessorialOutput.length;
-                i++
-              ) {
-                list[i] = {};
-                list[i].code =
-                  e.AccessorialOutput.AccessorialOutput[i].AccessorialCode;
-                list[i].description =
-                  e.AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
-                list[i].charge =
-                  e.AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
-              }
-              AccessorialOutput = list;
+              AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);
             }
           }
           let EstimatedDelivery;
@@ -482,6 +451,37 @@ function makeXmlToJson(data) {
   } catch (e) {
     throw e.hasOwnProperty("message") ? e.message : e;
   }
+}
+
+function getAccessorialOutput(AccessorialOutput) {
+  let list = [];
+  if ( Array.isArray(AccessorialOutput.AccessorialOutput) ) {
+    if (AccessorialOutput.AccessorialOutput) {
+      for (
+        let i = 0;
+        i < AccessorialOutput.AccessorialOutput.length;
+        i++
+      ) {
+        list[i] = {};
+        list[i].code =
+          AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+        list[i].description =
+          AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
+        list[i].charge =
+          AccessorialOutput.AccessorialOutput[i].AccessorialCharge;
+      }
+    }
+  } else {
+      let i = 0;
+    list[i] = {};
+    list[i].code =
+      AccessorialOutput.AccessorialOutput.AccessorialCode;
+    list[i].description =
+      AccessorialOutput.AccessorialOutput.AccessorialDesc;
+    list[i].charge =
+      AccessorialOutput.AccessorialOutput.AccessorialCharge;
+  }
+  return list
 }
 
 function isEmpty(obj) {
