@@ -11,7 +11,7 @@ function:
   events:
     - http:
         path: /shipment/rate
-        method: POST
+        method: GET
         integration: lambda
         private: true
         cors: true
