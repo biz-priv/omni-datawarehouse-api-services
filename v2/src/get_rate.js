@@ -295,8 +295,8 @@ function makeXmlToJson(data) {
       console.info("modifiedObj", modifiedObj);
 
       if (isArray(modifiedObj)) {
-        console.info("isArray : ", JSON.stringify(e.AccessorialOutput));
         return modifiedObj.map((e) => {
+          console.info("isArray : ", JSON.stringify(e.AccessorialOutput));
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
