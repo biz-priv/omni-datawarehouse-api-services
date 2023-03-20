@@ -77,11 +77,18 @@ module.exports.handler = async (event, context, callback) => {
   let validator = {
     documentUploadRequest: {},
   };
+
+  /**
+   * remove comment out keys before adding to the validator object
+   */
   for (let key in body.documentUploadRequest) {
     if (!key.includes("//")) {
       validator.documentUploadRequest[key] = body.documentUploadRequest[key];
     }
   }
+
+  // validating the validator object with joi validation
+
   const { error, value } = eventValidation.validate(validator);
   if (error) {
     let msg = error.details[0].message
@@ -110,6 +117,8 @@ module.exports.handler = async (event, context, callback) => {
   let currentDateTime = new Date();
   validated.b64str = eventBody.documentUploadRequest.b64str;
 
+  //checking for customerId from event if not present throw error else set the customerId
+
   if (
     !("enhancedAuthContext" in event) ||
     !("customerId" in event.enhancedAuthContext)
@@ -126,6 +135,8 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     customerId = event.enhancedAuthContext.customerId;
   }
+
+  // checking b64str is valid in the event or not
 
   if (eventBody.documentUploadRequest.b64str.length < 3000000) {
     let pattern =
@@ -161,6 +172,14 @@ module.exports.handler = async (event, context, callback) => {
       response("[400]", "Please ensure b64str field is a valid base64 string.")
     );
   }
+
+  /**
+   * matching customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID
+   * if its not a match then
+   * checking housebill number
+   * if have housebill then checking fileNumber from HOUSEBILL_TABLE with the housebill number, if found fileNumber then adding it in the validator obj else throw error
+   * else if have fileNumber then checking housebill from HOUSEBILL_TABLE with the fileNumber, if found housebill then adding it in the validator obj else through error
+   */
 
   if (
     customerId != "customer-portal-admin" &&
@@ -217,12 +236,8 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     // validated.housebill = eventBody.documentUploadRequest.housebill;
 
-    // based on housebill no query omni-wt-rt-shipment-header-dev ddb table to fetch the pk_ordernumber
-    // form pk_ordernumber==fk_ordernumber we query omni-wt-address-mapping-dev
-    // now we check cc_con_zip first and then cc_con_address = 1
-    // we can send that paylod to wt-api
-    // if cc_con_zip!=1 we ignore dont send it to wt
-    // if cc_con_address != 1 we check for the google_address  from the ddb table if that equal to 1 send it.
+    //  if customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID matches
+    //  query the shipment-header table with the housebill number to find the PK_OrderNo
 
     housebill = body.documentUploadRequest.housebill;
 
@@ -261,6 +276,8 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", "file number not found"));
     }
     eventLogObj.PK_OrderNo = PK_OrderNo;
+
+    //  using PK_OrderNo and FK_VendorId (in shipment-header table), to query shipment-apar table and find the FK_ServiceId.
 
     const paramsShipmentApar = {
       TableName: process.env.SHIPMENT_APAR_TABLE,
@@ -301,6 +318,15 @@ module.exports.handler = async (event, context, callback) => {
 
     eventLogObj.FK_ServiceId = FK_ServiceId;
 
+    //  using PK_OrderNo query address-mapping table and find the
+    //  cc_con_zip //HS or TL,
+    // cc_con_address //HS or TL,
+    // cc_conname //HS or TL,
+    // csh_con_zip //MT,
+    // csh_con_address //MT,
+    // cc_con_google_match //HS or TL,
+    // csh_con_google_match //MT
+
     const paramsAddMap = {
       TableName: process.env.ADDRESS_MAPPING_TABLE,
       KeyConditionExpression: "FK_OrderNo = :fkNumber",
@@ -331,6 +357,8 @@ module.exports.handler = async (event, context, callback) => {
 
     const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
 
+    //if customer is consignee then setting the housebill in the validator obj else ignoring the event
+
     if (conIsCu) {
       eventLogObj.consigneeIsCustomer = "1";
       validated.housebill = housebill;
@@ -347,6 +375,9 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
 
+  /**
+   * checking docType inside the event and seting the doctype in the validator obj
+   */
   if (
     "docType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.docType != ""
@@ -361,6 +392,15 @@ module.exports.handler = async (event, context, callback) => {
       docType = eventBody.documentUploadRequest.docType.toString().slice(0, 10);
     }
   }
+
+  /**
+   * checking content type
+   * if content type present then setting the fileExtenction
+   * else checking the content type depending on the starting of b64str string
+   * and setting the extensiton values according to this match "/9j/4" =.jpeg, iVBOR=png, R0lG=gif, J=pdf, TU0AK or SUkqA = tiff
+   * if no extensiton then throwing error
+   */
+
   if (
     "contentType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
@@ -479,6 +519,11 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
+/**
+ * send the xml payload to the UPLOAD_DOCUMENT_API and receive a xml response
+ * @param {*} postData
+ * @returns
+ */
 async function getXmlResponse(postData) {
   let res;
   try {
@@ -502,6 +547,11 @@ async function getXmlResponse(postData) {
     throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
+/**
+ * convert a json file to xml
+ * @param {*} data
+ * @returns
+ */
 function makeJsonToXml(data) {
   try {
     return convert({
@@ -526,6 +576,11 @@ function makeJsonToXml(data) {
   }
 }
 
+/**
+ * convert a xml file to json
+ * @param {'*'} data
+ * @returns
+ */
 function makeXmlToJson(data) {
   try {
     return convert(data, { format: "object" });
@@ -535,6 +590,12 @@ function makeXmlToJson(data) {
   }
 }
 
+/**
+ * return the response message
+ * @param {*} code
+ * @param {*} message
+ * @returns
+ */
 function response(code, message) {
   return JSON.stringify({
     httpStatus: code,
@@ -546,6 +607,12 @@ function pad2(n) {
   return n < 10 ? "0" + n : n;
 }
 
+/**
+ *  query omni-dw-customer-entitlement-dev table depending on the CustomerId and HouseBillNumber
+ * @param {*} housebill
+ * @param {*} customerId
+ * @returns
+ */
 async function getFileNumber(housebill, customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
@@ -573,6 +640,12 @@ async function getFileNumber(housebill, customerId) {
   }
 }
 
+/**
+ *  query omni-dw-customer-entitlement-dev table depending on the CustomerId and FileNumber
+ * @param {*} filenumber
+ * @param {*} customerId
+ * @returns
+ */
 async function getHousebillNumber(filenumber, customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
@@ -601,7 +674,7 @@ async function getHousebillNumber(filenumber, customerId) {
 }
 
 //-------------------
-
+// query dynamodb tables
 async function queryDynamo(params) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
@@ -615,6 +688,7 @@ async function queryDynamo(params) {
   }
 }
 
+//put the eventLogObj into the "omni-add-document-logs-dev" dynamodb
 async function putItem(item) {
   const dynamodb = new AWS.DynamoDB.DocumentClient({
     region: process.env.REGION,
@@ -634,6 +708,16 @@ async function putItem(item) {
   }
 }
 
+/**
+ * checking the FK_ServiceId is HS, TL or MT from the omni-wt-address-mapping-dev table
+ * is consignee the customer check
+ * If the FK_ServiceId = 'HS' or 'TL', checking for the zip codes match and address match from consignee table and confirmation_cost table. i,e. in the address-mapping dynamodb table cc_con_zip and cc_con_address has to be "1".
+ * If the FK_ServiceId = 'MT', checking for the zip codes match and address match from consignee table and consol_stop_headers table. i,e. in the address-mapping dynamodb table csh_con_address and csh_con_zip has to be "1".
+ * If zip codes and address dose not match then checnk google address i.e. address-mapping(omni-wt-address-mapping-dev) dynamodb table cc_con_google_match and csh_con_google_match has to be "1"
+ * @param {*} addressMapRes
+ * @param {*} FK_ServiceId
+ * @returns
+ */
 function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
   let check = 0;
   if (["HS", "TL"].includes(FK_ServiceId)) {
