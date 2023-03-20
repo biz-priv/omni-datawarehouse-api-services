@@ -35,10 +35,10 @@ function isArray(a) {
 
 module.exports.handler = async (event, context, callback) => {
   if (event.source === 'serverless-plugin-warmup') {
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": "WarmUp - Lambda is warm!", "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+    console.log(( { "environment": process.env.stage,"message": "WarmUp - Lambda is warm!", "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
     return 'Lambda is warm!';
   }
-  console.log(JSON.stringify( { "environment": process.env.stage,"message": {"event: ":event}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+  console.log(( { "environment": process.env.stage,"message": {"event: ":event}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
   const { body } = event;
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
@@ -98,14 +98,14 @@ module.exports.handler = async (event, context, callback) => {
   const { error, value } = eventValidation.validate(reqFields);
 
   if (valError) {
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"valError: ":valError}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+    console.log(( { "environment": process.env.stage,"message": {"valError: ":valError}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
     return callback(response("[400]", valError));
   } else if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"MessageError [400]:":error}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+    console.log(( { "environment": process.env.stage,"message": {"MessageError [400]:":error}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
     if(error.toString().includes('shipmentLines')){
       return callback(response("[400]", "shipmentLines."+key + error.details[0].message.split('"')[2]));
     } else {
@@ -121,7 +121,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
-  console.log(JSON.stringify( { "environment": process.env.stage,"message": {"ReqFields Filled: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+  console.log(( { "environment": process.env.stage,"message": {"ReqFields Filled: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
   if (customer_id != "customer-portal-admin") {
     let resp = await getCustomerId(customer_id);
     if (resp == "failure") {
@@ -142,7 +142,7 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
-  console.log(JSON.stringify( { "environment": process.env.stage,"message": {"BillToFilled: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+  console.log(( { "environment": process.env.stage,"message": {"BillToFilled: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (
@@ -171,13 +171,13 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 
-  console.log(JSON.stringify( { "environment": process.env.stage,"message": {"RatingInput Updated: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+  console.log(( { "environment": process.env.stage,"message": {"RatingInput Updated: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
 
   try {
     newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
       body.shipmentRateRequest
     );
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"ShipLines: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));
+    console.log(( { "environment": process.env.stage,"message": {"ShipLines: ":newJSON}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
@@ -196,13 +196,13 @@ module.exports.handler = async (event, context, callback) => {
         );
       }
     }
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"accessorialList: ":newJSON.AccessorialInput}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+    console.log(( { "environment": process.env.stage,"message": {"accessorialList: ":newJSON.AccessorialInput}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
 
     const postData = makeJsonToXml(newJSON);
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"postData: ":postData}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+    console.log(( { "environment": process.env.stage,"message": {"postData: ":postData}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
     // return {};
     const dataResponse = await getRating(postData);
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"dataResponse: ":dataResponse}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+    console.log(( { "environment": process.env.stage,"message": {"dataResponse: ":dataResponse}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
 
@@ -246,7 +246,7 @@ function addCommodityWeightPerPiece(inputData) {
       inputData.shipmentLines[0].weight * 2.2046
     );
   }
-  console.log(JSON.stringify( { "environment": process.env.stage,"message": {"inputdata.ShipmentLines: ":inputData.shipmentLines}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+  console.log(( { "environment": process.env.stage,"message": {"inputdata.ShipmentLines: ":inputData.shipmentLines}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
   for (const shipKey in inputData.shipmentLines[0]) {
     if (shipKey.includes("//")) {
       continue;
@@ -281,7 +281,7 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"obj: ":obj}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+    console.log(( { "environment": process.env.stage,"message": {"obj: ":obj}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
     if (
       obj["soap:Envelope"][
         "soap:Body"
@@ -292,10 +292,10 @@ function makeXmlToJson(data) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
           .GetRatingByCustomerResult.RatingOutput;
-      console.log(JSON.stringify( { "environment": process.env.stage,"message": {"modifiedObj: ":modifiedObj}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+      console.log(( { "environment": process.env.stage,"message": {"modifiedObj: ":modifiedObj}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
 
       if (isArray(modifiedObj)) {
-        console.log(JSON.stringify( { "environment": process.env.stage,"message": "isArray", "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+        console.log(( { "environment": process.env.stage,"message": "isArray", "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
         return modifiedObj.map((e) => {
           if (isEmpty(e.Message)) {
             e.Message = "";
@@ -379,7 +379,7 @@ function makeXmlToJson(data) {
           };
         });
       } else {
-        console.log(JSON.stringify( { "environment": process.env.stage,"message": "object", "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+        console.log(( { "environment": process.env.stage,"message": "object", "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
         }
@@ -489,7 +489,7 @@ function isEmpty(obj) {
 }
 
 function response(code, message) {
-  return JSON.stringify({
+  return ({
     httpStatus: code,
     message,
   });
@@ -508,7 +508,7 @@ async function getCustomerId(customerId) {
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
-      console.log(JSON.stringify( { "environment": process.env.stage,"message": {"Dynamo resp: ":response.Items}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+      console.log(( { "environment": process.env.stage,"message": {"Dynamo resp: ":response.Items}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
       return response.Items[0];
     } else {
       return "failure";
@@ -534,7 +534,7 @@ async function getRating(postData) {
   } catch (e) {
     let obj = convert(e.response.data, { format: "object" });
     let errorMessage = obj['soap:Envelope']['soap:Body']['soap:Fault']['soap:Reason']['soap:Text']["#"]
-    console.log(JSON.stringify( { "environment": process.env.stage,"message": {"error response: ":e.response}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region, "functionName": context.functionName }));    
+    console.log(( { "environment": process.env.stage,"message": {"error response: ":e.response}, "service-name": "omni-dw-api-services", "application": "DataWarehouse", "region": process.env.region }));    
     throw e.hasOwnProperty("response") ? errorMessage : e;
   }
 }
