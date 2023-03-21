@@ -21,6 +21,7 @@
     "joi": "^17.4.2",
     "js-base64": "^3.7.3",
     "lodash": "^4.17.21",
+    "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
     "pg-promise": "^10.11.1",
     "serverless": "2.11.1",

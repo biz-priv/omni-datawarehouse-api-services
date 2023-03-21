@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
+const moment = require("moment");
 
 const eventValidation = Joi.object().keys({
   shipperZip: Joi.string().required(),
@@ -34,9 +35,9 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  if (event.source === 'serverless-plugin-warmup') {
-    console.log('WarmUp - Lambda is warm!');
-    return 'Lambda is warm!';
+  if (event.source === "serverless-plugin-warmup") {
+    console.log("WarmUp - Lambda is warm!");
+    return "Lambda is warm!";
   }
   console.info(event);
   const { body } = event;
@@ -106,11 +107,16 @@ module.exports.handler = async (event, context, callback) => {
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.info("MessageError", "[400]", error);
-    if(error.toString().includes('shipmentLines')){
-      return callback(response("[400]", "shipmentLines."+key + error.details[0].message.split('"')[2]));
+    if (error.toString().includes("shipmentLines")) {
+      return callback(
+        response(
+          "[400]",
+          "shipmentLines." + key + error.details[0].message.split('"')[2]
+        )
+      );
     } else {
       return callback(response("[400]", key + " " + error));
-    } 
+    }
   } else {
     newJSON.RatingInput.OriginZip = reqFields.shipperZip;
     newJSON.RatingInput.DestinationZip = reqFields.consigneeZip;
@@ -201,17 +207,19 @@ module.exports.handler = async (event, context, callback) => {
     const postData = makeJsonToXml(newJSON);
     console.info("postData", postData);
     // return {};
-    const dataResponse = await getRating(postData);
-    console.info("dataResponse", dataResponse);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
+    // console.log("dataObj====>", dataObj);
 
+    // return {};
     if ("Error" in dataObj.shipmentRateResponse) {
       return callback(response("[400]", dataObj.shipmentRateResponse.Error));
     } else {
-      for(let m=0;m<dataObj.shipmentRateResponse.length;m++){
-        if(typeof(dataObj.shipmentRateResponse[m].accessorialList)=='string'){
-          dataObj.shipmentRateResponse[m].accessorialList = []
+      for (let m = 0; m < dataObj.shipmentRateResponse.length; m++) {
+        if (
+          typeof dataObj.shipmentRateResponse[m].accessorialList == "string"
+        ) {
+          dataObj.shipmentRateResponse[m].accessorialList = [];
         }
       }
       return dataObj;
@@ -297,7 +305,10 @@ function makeXmlToJson(data) {
       if (isArray(modifiedObj)) {
         console.info("isArray");
         return modifiedObj.map((e) => {
-          console.info("AccessorialOutput Object : ", JSON.stringify(e.AccessorialOutput));
+          console.info(
+            "AccessorialOutput Object : ",
+            JSON.stringify(e.AccessorialOutput)
+          );
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
@@ -307,7 +318,7 @@ function makeXmlToJson(data) {
             e.AccessorialOutput.AccessorialOutput &&
             e.AccessorialOutput.AccessorialOutput[0] == null
           ) {
-            AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);            
+            AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);
           } else {
             if (e.AccessorialOutput.AccessorialOutput) {
               AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);
@@ -315,19 +326,16 @@ function makeXmlToJson(data) {
           }
           let EstimatedDelivery;
           if (e.DeliveryTime && e.DeliveryTime != null) {
-            EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
-
-            let ampm = e.DeliveryTime.toString().split(" ");
-            let t = ampm[0].split(":");
-
-            if (ampm[1].toUpperCase() == "PM") {
-              EstimatedDelivery.setHours(Number(t[0]) + 12);
-            } else {
-              EstimatedDelivery.setHours(Number(t[0]));
-            }
-
-            EstimatedDelivery.setMinutes(t[1]);
-            EstimatedDelivery.setSeconds(t[2]);
+            // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
+            console.log("EstimatedDelivery-----");
+            //----------------------------------------------------------------
+            const dateStr = JSON.stringify(
+              e.DeliveryDate + " " + e.DeliveryTime
+            );
+            const dateObj = moment(dateStr, "M/D/YYYY h:mm:ssA");
+            const deliveryStr = dateObj.format("YYYY-MM-DDTHH:mm:ss");
+            EstimatedDelivery = deliveryStr;
+            //----------------------------------------------------------------
           }
           if (
             e.ServiceLevelID.length == undefined &&
@@ -336,7 +344,10 @@ function makeXmlToJson(data) {
           ) {
             return { Error: e.Message };
           }
-
+          console.log(
+            "EstimatedDelivery=========>",
+            JSON.stringify(EstimatedDelivery)
+          );
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
@@ -412,19 +423,16 @@ function makeXmlToJson(data) {
         }
         let EstimatedDelivery;
         if (modifiedObj.DeliveryTime && modifiedObj.DeliveryTime != null) {
-          EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
-
-          let ampm = modifiedObj.DeliveryTime.toString().split(" ");
-          let t = ampm[0].split(":");
-
-          if (ampm[1].toUpperCase() == "PM") {
-            EstimatedDelivery.setHours(Number(t[0]) + 12);
-          } else {
-            EstimatedDelivery.setHours(Number(t[0]));
-          }
-
-          EstimatedDelivery.setMinutes(t[1]);
-          EstimatedDelivery.setSeconds(t[2]);
+          // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
+          console.log("EstimatedDelivery-----");
+          //----------------------------------------------------------------
+          const dateStr = JSON.stringify(
+            modifiedObj.DeliveryDate + " " + modifiedObj.DeliveryTime
+          );
+          const dateObj = moment(dateStr, "M/D/YYYY h:mm:ssA");
+          const deliveryStr = dateObj.format("YYYY-MM-DDTHH:mm:ss");
+          EstimatedDelivery = deliveryStr;
+          //----------------------------------------------------------------
         }
 
         if (
@@ -455,16 +463,11 @@ function makeXmlToJson(data) {
 
 function getAccessorialOutput(AccessorialOutput) {
   let list = [];
-  if ( Array.isArray(AccessorialOutput.AccessorialOutput) ) {
+  if (Array.isArray(AccessorialOutput.AccessorialOutput)) {
     if (AccessorialOutput.AccessorialOutput) {
-      for (
-        let i = 0;
-        i < AccessorialOutput.AccessorialOutput.length;
-        i++
-      ) {
+      for (let i = 0; i < AccessorialOutput.AccessorialOutput.length; i++) {
         list[i] = {};
-        list[i].code =
-          AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+        list[i].code = AccessorialOutput.AccessorialOutput[i].AccessorialCode;
         list[i].description =
           AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
         list[i].charge =
@@ -472,16 +475,13 @@ function getAccessorialOutput(AccessorialOutput) {
       }
     }
   } else {
-      let i = 0;
+    let i = 0;
     list[i] = {};
-    list[i].code =
-      AccessorialOutput.AccessorialOutput.AccessorialCode;
-    list[i].description =
-      AccessorialOutput.AccessorialOutput.AccessorialDesc;
-    list[i].charge =
-      AccessorialOutput.AccessorialOutput.AccessorialCharge;
+    list[i].code = AccessorialOutput.AccessorialOutput.AccessorialCode;
+    list[i].description = AccessorialOutput.AccessorialOutput.AccessorialDesc;
+    list[i].charge = AccessorialOutput.AccessorialOutput.AccessorialCharge;
   }
-  return list
+  return list;
 }
 
 function isEmpty(obj) {
@@ -533,8 +533,11 @@ async function getRating(postData) {
     }
   } catch (e) {
     let obj = convert(e.response.data, { format: "object" });
-    let errorMessage = obj['soap:Envelope']['soap:Body']['soap:Fault']['soap:Reason']['soap:Text']["#"]
-    console.info('error response', e.response)
+    let errorMessage =
+      obj["soap:Envelope"]["soap:Body"]["soap:Fault"]["soap:Reason"][
+        "soap:Text"
+      ]["#"];
+    console.info("error response", e.response);
     throw e.hasOwnProperty("response") ? errorMessage : e;
   }
 }
