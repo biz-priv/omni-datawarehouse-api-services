@@ -50,6 +50,7 @@ custom:
     enabled: true
     destinationArn: arn:aws:logs:${self:provider.region}:332753493246:destination:bce-logs-cw-destination-${self:provider.region}-${self:provider.stage}
     filterPattern: '{$.service-name = "*"}'
-
+    
 plugins:
  - serverless-plugin-log-subscription
+ 
