@@ -207,6 +207,8 @@ module.exports.handler = async (event, context, callback) => {
     const postData = makeJsonToXml(newJSON);
     console.info("postData", postData);
     // return {};
+    const dataResponse = await getRating(postData);
+    console.info("dataResponse", dataResponse);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
     // console.log("dataObj====>", dataObj);
