@@ -107,6 +107,7 @@ module.exports.handler = async (event, context, callback) => {
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
     console.log(({ "environment": process.env.stage, "message": { "MessageError [400]:": error }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+
     if (error.toString().includes("shipmentLines")) {
       return callback(
         response(
@@ -327,7 +328,6 @@ function makeXmlToJson(data) {
           if (e.DeliveryTime && e.DeliveryTime != null) {
             // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
             console.log(({ "environment": process.env.stage, "message": "EstimatedDelivery-----", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
-
             //----------------------------------------------------------------
             const dateStr = JSON.stringify(
               e.DeliveryDate + " " + e.DeliveryTime
@@ -345,7 +345,6 @@ function makeXmlToJson(data) {
             return { Error: e.Message };
           }
           console.log(({ "environment": process.env.stage, "message": { "EstimatedDelivery=========>": EstimatedDelivery }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
-
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
@@ -423,7 +422,6 @@ function makeXmlToJson(data) {
         if (modifiedObj.DeliveryTime && modifiedObj.DeliveryTime != null) {
           // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
           console.log(({ "environment": process.env.stage, "message": "EstimatedDelivery=========>", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
-
           //----------------------------------------------------------------
           const dateStr = JSON.stringify(
             modifiedObj.DeliveryDate + " " + modifiedObj.DeliveryTime
