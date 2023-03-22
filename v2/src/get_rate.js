@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
+const log4js = require('log4js');
 const moment = require("moment");
 
 const eventValidation = Joi.object().keys({
@@ -35,11 +36,16 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
+  log4js.configure({
+    appenders: { out: { type: "stdout", layout: { type: "messagePassThrough" } } },
+    categories: { default: { appenders: ["out"], level: "info" } }
+  });
+  const logger = log4js.getLogger("out");
   if (event.source === "serverless-plugin-warmup") {
-    console.log(({ "environment": process.env.stage, "message": "WarmUp - Lambda is warm!", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": "WarmUp - Lambda is warm!", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName}));
     return "Lambda is warm!";
   }
-  console.log(({ "environment": process.env.stage, "message": { "event: ": event }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "event: ": event }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName}));
   const { body } = event;
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
@@ -99,14 +105,14 @@ module.exports.handler = async (event, context, callback) => {
   const { error, value } = eventValidation.validate(reqFields);
 
   if (valError) {
-    console.log(({ "environment": process.env.stage, "message": { "valError: ": valError }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "valError: ": valError }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     return callback(response("[400]", valError));
   } else if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    console.log(({ "environment": process.env.stage, "message": { "MessageError [400]:": error }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "MessageError [400]:": error }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
 
     if (error.toString().includes("shipmentLines")) {
       return callback(
@@ -128,7 +134,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
-  console.log(({ "environment": process.env.stage, "message": { "ReqFields Filled: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "ReqFields Filled: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
   if (customer_id != "customer-portal-admin") {
     let resp = await getCustomerId(customer_id);
     if (resp == "failure") {
@@ -149,7 +155,7 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
-  console.log(({ "environment": process.env.stage, "message": { "BillToFilled: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "BillToFilled: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (
@@ -178,13 +184,13 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 
-  console.log(({ "environment": process.env.stage, "message": { "RatingInput Updated: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "RatingInput Updated: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
 
   try {
     newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
       body.shipmentRateRequest
     );
-    console.log(({ "environment": process.env.stage, "message": { "ShipLines: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "ShipLines: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
@@ -203,13 +209,13 @@ module.exports.handler = async (event, context, callback) => {
         );
       }
     }
-    console.log(({ "environment": process.env.stage, "message": { "accessorialList: ": newJSON.AccessorialInput }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "accessorialList: ": newJSON.AccessorialInput }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
 
     const postData = makeJsonToXml(newJSON);
-    console.log(({ "environment": process.env.stage, "message": { "postData: ": postData }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "postData: ": postData }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     // return {};
     const dataResponse = await getRating(postData);
-    console.log(({ "environment": process.env.stage, "message": { "dataResponse: ": dataResponse }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "dataResponse: ": dataResponse }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
     // console.log("dataObj====>", dataObj);
@@ -257,7 +263,7 @@ function addCommodityWeightPerPiece(inputData) {
       inputData.shipmentLines[0].weight * 2.2046
     );
   }
-  console.log(({ "environment": process.env.stage, "message": { "inputdata.ShipmentLines: ": inputData.shipmentLines }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "inputdata.ShipmentLines: ": inputData.shipmentLines }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
   for (const shipKey in inputData.shipmentLines[0]) {
     if (shipKey.includes("//")) {
       continue;
@@ -292,7 +298,7 @@ function makeJsonToXml(data) {
 function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
-    console.log(({ "environment": process.env.stage, "message": { "obj: ": obj }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "obj: ": obj }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     if (
       obj["soap:Envelope"][
         "soap:Body"
@@ -303,12 +309,12 @@ function makeXmlToJson(data) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
           .GetRatingByCustomerResult.RatingOutput;
-      console.log(({ "environment": process.env.stage, "message": { "modifiedObj: ": modifiedObj }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "modifiedObj: ": modifiedObj }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
 
       if (isArray(modifiedObj)) {
-        console.log(({ "environment": process.env.stage, "message": "isArray", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+        logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": "isArray", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
         return modifiedObj.map((e) => {
-          console.log(({ "environment": process.env.stage, "message": { "AccessorialOutput Object : ": JSON.stringify(e.AccessorialOutput) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "AccessorialOutput Object : ": JSON.stringify(e.AccessorialOutput) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
@@ -327,7 +333,7 @@ function makeXmlToJson(data) {
           let EstimatedDelivery;
           if (e.DeliveryTime && e.DeliveryTime != null) {
             // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
-            console.log(({ "environment": process.env.stage, "message": "EstimatedDelivery-----", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+            logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": "EstimatedDelivery-----", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
             //----------------------------------------------------------------
             const dateStr = JSON.stringify(
               e.DeliveryDate + " " + e.DeliveryTime
@@ -344,7 +350,7 @@ function makeXmlToJson(data) {
           ) {
             return { Error: e.Message };
           }
-          console.log(({ "environment": process.env.stage, "message": { "EstimatedDelivery=========>": EstimatedDelivery }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "EstimatedDelivery=========>": EstimatedDelivery }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
@@ -356,7 +362,7 @@ function makeXmlToJson(data) {
           };
         });
       } else {
-        console.log(({ "environment": process.env.stage, "message": "object", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+        logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": "object", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
         if (isEmpty(modifiedObj.Message)) {
           modifiedObj.Message = "";
         }
@@ -421,7 +427,7 @@ function makeXmlToJson(data) {
         let EstimatedDelivery;
         if (modifiedObj.DeliveryTime && modifiedObj.DeliveryTime != null) {
           // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
-          console.log(({ "environment": process.env.stage, "message": "EstimatedDelivery=========>", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": "EstimatedDelivery=========>", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
           //----------------------------------------------------------------
           const dateStr = JSON.stringify(
             modifiedObj.DeliveryDate + " " + modifiedObj.DeliveryTime
@@ -495,7 +501,7 @@ function response(code, message) {
 async function getCustomerId(customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
-      region: process.env.REGION,
+      region: process.env.REGION, "functionName": context.functionName,
     });
     const params = {
       TableName: process.env.ACCOUNT_INFO_TABLE,
@@ -505,7 +511,7 @@ async function getCustomerId(customerId) {
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
-      console.log(({ "environment": process.env.stage, "message": { "Dynamo resp: ": response.Items }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+      logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "Dynamo resp: ": response.Items }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
       return response.Items[0];
     } else {
       return "failure";
@@ -534,7 +540,7 @@ async function getRating(postData) {
       obj["soap:Envelope"]["soap:Body"]["soap:Fault"]["soap:Reason"][
       "soap:Text"
       ]["#"];
-    console.log(({ "environment": process.env.stage, "message": { "error response: ": e.response }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.region }));
+      logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "error response: ": e.response }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     throw e.hasOwnProperty("response") ? errorMessage : e;
   }
 }
