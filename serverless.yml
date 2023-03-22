@@ -61,6 +61,7 @@ plugins:
   - serverless-aws-alias-fixed
   - serverless-plugin-existing-s3
   - serverless-offline
+  - serverless-plugin-log-subscription
 
 package:
   individually: true
