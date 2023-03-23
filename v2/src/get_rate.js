@@ -45,7 +45,7 @@ module.exports.handler = async (event, context, callback) => {
     logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": "WarmUp - Lambda is warm!", "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName}));
     return "Lambda is warm!";
   }
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "event: ": event }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName}));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "event: ": JSON.stringify(event) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName}));
   const { body } = event;
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
@@ -134,9 +134,9 @@ module.exports.handler = async (event, context, callback) => {
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "ReqFields Filled: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "ReqFields Filled: ": JSON.stringify(newJSON) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
   if (customer_id != "customer-portal-admin") {
-    let resp = await getCustomerId(customer_id);
+    let resp = await getCustomerId(customer_id, logger);
     if (resp == "failure") {
       return callback(
         response(
@@ -155,7 +155,7 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "BillToFilled: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "BillToFilled: ": JSON.stringify(newJSON) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (
@@ -184,13 +184,13 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "RatingInput Updated: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "RatingInput Updated: ": JSON.stringify(newJSON) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
 
   try {
     newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-      body.shipmentRateRequest
+      body.shipmentRateRequest, logger
     );
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "ShipLines: ": newJSON }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "ShipLines: ": JSON.stringify(newJSON) }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
@@ -214,10 +214,10 @@ module.exports.handler = async (event, context, callback) => {
     const postData = makeJsonToXml(newJSON);
     logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "postData: ": postData }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     // return {};
-    const dataResponse = await getRating(postData);
+    const dataResponse = await getRating(postData, logger);
     logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "dataResponse: ": dataResponse }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
     const dataObj = {};
-    dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
+    dataObj.shipmentRateResponse = makeXmlToJson(dataResponse, logger);
     // console.log("dataObj====>", dataObj);
 
     // return {};
@@ -243,7 +243,7 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-function addCommodityWeightPerPiece(inputData) {
+function addCommodityWeightPerPiece(inputData, logger) {
   let commodityInput = {
     CommodityInput: {},
   };
@@ -295,7 +295,7 @@ function makeJsonToXml(data) {
   });
 }
 
-function makeXmlToJson(data) {
+function makeXmlToJson(data, logger) {
   try {
     let obj = convert(data, { format: "object" });
     logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": { "obj: ": obj }, "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
@@ -498,7 +498,7 @@ function response(code, message) {
   });
 }
 
-async function getCustomerId(customerId) {
+async function getCustomerId(customerId, logger) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
       region: process.env.REGION, "functionName": context.functionName,
@@ -521,7 +521,7 @@ async function getCustomerId(customerId) {
   }
 }
 
-async function getRating(postData) {
+async function getRating(postData, logger) {
   try {
     const res = await axios.post(process.env.RATING_API, postData, {
       headers: {
