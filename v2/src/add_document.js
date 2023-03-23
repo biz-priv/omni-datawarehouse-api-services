@@ -12,11 +12,13 @@ let eventLogObj = {};
 module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   const { body } = event;
+  let request_json = body;
+  request_json.documentUploadRequest.b64str = "";
   eventLogObj = {
     Id: uuidv4(),
     housebill: body?.documentUploadRequest?.housebill ?? "",
     fileNumber: body?.documentUploadRequest?.fileNumber ?? "",
-    request_json: JSON.stringify(body),
+    request_json: JSON.stringify(request_json),
     request_xml: "",
     response_xml: "",
     response_json: "",
