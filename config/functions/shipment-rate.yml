@@ -8,6 +8,7 @@ function:
       enabled: true
       alias: ${self:custom.alias}
   runtime: nodejs12.x
+  logSubscription: true
   events:
     - http:
         path: /shipment/rate
@@ -44,9 +45,3 @@ function:
     RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rate}
     ACCOUNT_INFO_TABLE: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/table}
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/customerId/index}
-
-custom:
-  logSubscription:
-    enabled: true
-    destinationArn: arn:aws:logs:${self:provider.region}:332753493246:destination:bce-logs-cw-destination-${self:provider.region}-${self:provider.stage}
-    filterPattern: '{$.service-name = "*"}'
