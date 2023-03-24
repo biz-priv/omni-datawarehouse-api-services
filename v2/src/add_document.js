@@ -13,7 +13,7 @@ let eventLogObj = {};
 module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
   const { body } = event;
-  let request_json = body;
+  let request_json = JSON.parse(JSON.stringify(body));
   request_json.documentUploadRequest.b64str = "";
   eventLogObj = {
     Id: uuidv4(),
