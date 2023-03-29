@@ -362,7 +362,7 @@ module.exports.handler = async (event, context, callback) => {
 
     //if customer is consignee then setting the housebill in the validator obj else ignoring the event
 
-    if (conIsCu) {
+    if (conIsCu || shipmentAparRes.ConsolNo === "0") {
       eventLogObj.consigneeIsCustomer = "1";
       validated.housebill = housebill;
     } else {
