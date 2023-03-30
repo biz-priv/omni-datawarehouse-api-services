@@ -223,13 +223,14 @@ async function getData(eventParams, doctypeValue, searchType) {
     console.log("getDocumentData", getDocumentData);
 
     let wtArr = [];
+    getDocumentData = getDocumentData.filter( (item) => item.housebill != '' );
     getDocumentData.map((e) => {
       wtArr = [...wtArr, ...e.wtDocs.wtDoc];
     });
     const data = {
       wtDocs: {
-        housebill: getDocumentData[0].wtDocs.housebill,
-        fileNumber: getDocumentData[0].wtDocs.fileNumber,
+        housebill: getDocumentData.length != 0 ? getDocumentData[0].wtDocs.housebill : '',
+        fileNumber: getDocumentData.length != 0 ? getDocumentData[0].wtDocs.fileNumber : '',
         wtDoc: wtArr,
       },
     };
