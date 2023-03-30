@@ -22,7 +22,6 @@ module.exports.handler = async (event, context, callback) => {
     request_json: JSON.stringify(request_json),
     request_xml: "",
     response_xml: "",
-    sendPayload: {},
     response_json: "",
     wt_status_code: "",
     api_status_code: "",
@@ -138,6 +137,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", "Unable to validate user"));
   } else {
     customerId = event.enhancedAuthContext.customerId;
+    console.log("customerId===============>", customerId);
   }
 
   // checking b64str is valid in the event or not
@@ -185,59 +185,11 @@ module.exports.handler = async (event, context, callback) => {
    * else if have fileNumber then checking housebill from HOUSEBILL_TABLE with the fileNumber, if found housebill then adding it in the validator obj else through error
    */
 
+  //------------------------
   if (
-    customerId != "customer-portal-admin" &&
-    customerId != process.env.IVIA_CUSTOMER_ID
+    customerId == "customer-portal-admin" &&
+    customerId == process.env.IVIA_CUSTOMER_ID
   ) {
-    if (
-      "housebill" in eventBody.documentUploadRequest &&
-      Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
-    ) {
-      fileNumber = await getFileNumber(
-        eventBody.documentUploadRequest.housebill,
-        customerId
-      );
-      if (fileNumber == "failure") {
-        eventLogObj = {
-          ...eventLogObj,
-          errorMsg: "Invalid Housebill for this customer.",
-          api_status_code: "400",
-        };
-        console.log("eventLogObj", eventLogObj);
-        await putItem(eventLogObj);
-        return callback(
-          response("[400]", "Invalid Housebill for this customer.")
-        );
-      } else {
-        fileNumber = fileNumber["FileNumber"];
-        validated.housebill = eventBody.documentUploadRequest.housebill;
-        console.info("filenumber: ", fileNumber);
-      }
-    } else if (
-      "fileNumber" in eventBody.documentUploadRequest &&
-      Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))
-    ) {
-      housebill = await getHousebillNumber(
-        eventBody.documentUploadRequest.fileNumber,
-        customerId
-      );
-      if (housebill == "failure") {
-        eventLogObj = {
-          ...eventLogObj,
-          errorMsg: "No Housebill found.",
-          api_status_code: "400",
-        };
-
-        console.log("eventLogObj", eventLogObj);
-        await putItem(eventLogObj);
-        return callback(response("[400]", "No Housebill found."));
-      } else {
-        fileNumber = eventBody.documentUploadRequest.fileNumber;
-        validated.housebill = housebill["HouseBillNumber"];
-        console.info("housebill: ", validated.housebill);
-      }
-    }
-  } else {
     // validated.housebill = eventBody.documentUploadRequest.housebill;
 
     //  if customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID matches
@@ -377,75 +329,127 @@ module.exports.handler = async (event, context, callback) => {
       await putItem(eventLogObj);
       return callback(response("[400]", "igored response")); //TODO: check with will
     }
-  }
-
-  /**
-   * checking docType inside the event and seting the doctype in the validator obj
-   */
-  if (
-    "docType" in eventBody.documentUploadRequest &&
-    eventBody.documentUploadRequest.docType != ""
-  ) {
-    if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
-      validated.docType = eventBody.documentUploadRequest.docType;
-      docType = eventBody.documentUploadRequest.docType;
-    } else {
-      validated.docType = eventBody.documentUploadRequest.docType
-        .toString()
-        .slice(0, 10);
-      docType = eventBody.documentUploadRequest.docType.toString().slice(0, 10);
-    }
-  }
-
-  /**
-   * checking content type
-   * if content type present then setting the fileExtenction
-   * else checking the content type depending on the starting of b64str string
-   * and setting the extensiton values according to this match "/9j/4" =.jpeg, iVBOR=png, R0lG=gif, J=pdf, TU0AK or SUkqA = tiff
-   * if no extensiton then throwing error
-   */
-
-  if (
-    "contentType" in eventBody.documentUploadRequest &&
-    eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
-    eventBody.documentUploadRequest.contentType.split("/")[1] != ""
-  ) {
-    fileExtension =
-      "." + eventBody.documentUploadRequest.contentType.split("/")[1];
   } else {
-    if (eventBody.documentUploadRequest.b64str.startsWith("/9j/4")) {
-      fileExtension = ".jpeg";
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("iVBOR")) {
-      fileExtension = ".png";
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("R0lG")) {
-      fileExtension = ".gif";
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("J")) {
-      fileExtension = ".pdf";
-    } else if (
-      eventBody.documentUploadRequest.b64str.startsWith("TU0AK") ||
-      eventBody.documentUploadRequest.b64str.startsWith("SUkqA")
+    if (
+      "housebill" in eventBody.documentUploadRequest &&
+      Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
     ) {
-      fileExtension = ".tiff";
+      fileNumber = await getFileNumber(
+        eventBody.documentUploadRequest.housebill,
+        customerId
+      );
+      if (fileNumber == "failure") {
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "Invalid Housebill for this customer.",
+          api_status_code: "400",
+        };
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(
+          response("[400]", "Invalid Housebill for this customer.")
+        );
+      } else {
+        fileNumber = fileNumber["FileNumber"];
+        validated.housebill = eventBody.documentUploadRequest.housebill;
+        console.info("filenumber: ", fileNumber);
+      }
+    } else if (
+      "fileNumber" in eventBody.documentUploadRequest &&
+      Number.isInteger(Number(eventBody.documentUploadRequest.fileNumber))
+    ) {
+      housebill = await getHousebillNumber(
+        eventBody.documentUploadRequest.fileNumber,
+        customerId
+      );
+      if (housebill == "failure") {
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "No Housebill found.",
+          api_status_code: "400",
+        };
+
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(response("[400]", "No Housebill found."));
+      } else {
+        fileNumber = eventBody.documentUploadRequest.fileNumber;
+        validated.housebill = housebill["HouseBillNumber"];
+        console.info("housebill: ", validated.housebill);
+      }
+    }
+
+    /**
+     * checking docType inside the event and seting the doctype in the validator obj
+     */
+    if (
+      "docType" in eventBody.documentUploadRequest &&
+      eventBody.documentUploadRequest.docType != ""
+    ) {
+      if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
+        validated.docType = eventBody.documentUploadRequest.docType;
+        docType = eventBody.documentUploadRequest.docType;
+      } else {
+        validated.docType = eventBody.documentUploadRequest.docType
+          .toString()
+          .slice(0, 10);
+        docType = eventBody.documentUploadRequest.docType
+          .toString()
+          .slice(0, 10);
+      }
+    }
+
+    /**
+     * checking content type
+     * if content type present then setting the fileExtenction
+     * else checking the content type depending on the starting of b64str string
+     * and setting the extensiton values according to this match "/9j/4" =.jpeg, iVBOR=png, R0lG=gif, J=pdf, TU0AK or SUkqA = tiff
+     * if no extensiton then throwing error
+     */
+
+    if (
+      "contentType" in eventBody.documentUploadRequest &&
+      eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
+      eventBody.documentUploadRequest.contentType.split("/")[1] != ""
+    ) {
+      fileExtension =
+        "." + eventBody.documentUploadRequest.contentType.split("/")[1];
     } else {
-      fileExtension = "";
+      if (eventBody.documentUploadRequest.b64str.startsWith("/9j/4")) {
+        fileExtension = ".jpeg";
+      } else if (eventBody.documentUploadRequest.b64str.startsWith("iVBOR")) {
+        fileExtension = ".png";
+      } else if (eventBody.documentUploadRequest.b64str.startsWith("R0lG")) {
+        fileExtension = ".gif";
+      } else if (eventBody.documentUploadRequest.b64str.startsWith("J")) {
+        fileExtension = ".pdf";
+      } else if (
+        eventBody.documentUploadRequest.b64str.startsWith("TU0AK") ||
+        eventBody.documentUploadRequest.b64str.startsWith("SUkqA")
+      ) {
+        fileExtension = ".tiff";
+      } else {
+        fileExtension = "";
+      }
+    }
+    if (fileExtension == "") {
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg:
+          "Unable to identify filetype. Please send content type with file extension.",
+        api_status_code: "400",
+      };
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+      return callback(
+        response(
+          "[400]",
+          "Unable to identify filetype. Please send content type with file extension."
+        )
+      );
     }
   }
-  if (fileExtension == "") {
-    eventLogObj = {
-      ...eventLogObj,
-      errorMsg:
-        "Unable to identify filetype. Please send content type with file extension.",
-      api_status_code: "400",
-    };
-    console.log("eventLogObj", eventLogObj);
-    await putItem(eventLogObj);
-    return callback(
-      response(
-        "[400]",
-        "Unable to identify filetype. Please send content type with file extension."
-      )
-    );
-  }
+  //------------------------
 
   let formatDate =
     currentDateTime.getFullYear().toString() +
@@ -708,7 +712,7 @@ async function putItem(item) {
     return await dynamodb.put(params).promise();
   } catch (e) {
     console.error("Put Item Error: ", e, "\nPut params: ", params);
-    throw "PutItemError";
+    return "Unable to Insert";
   }
 }
 
