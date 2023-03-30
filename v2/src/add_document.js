@@ -12,60 +12,6 @@ let eventLogObj = {};
 //-----
 module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
-  event = {
-    body: {
-      documentUploadRequest: {
-        housebill: "8423136",
-        contentType: "application/pdf",
-        docType: "PACKING",
-        b64str: "aGVsbG8gd29ybGQgLSBJVklBIC0gQml6dGVzdA==",
-      },
-    },
-    method: "POST",
-    principalId: "bizCloud|a1b2",
-    stage: "v2",
-    cognitoPoolClaims: { sub: "" },
-    enhancedAuthContext: {
-      customerId: "customer-portal-admin",
-      principalId: "bizCloud|a1b2",
-      integrationLatency: "1623",
-    },
-    headers: {
-      accept: "*/*",
-      "accept-encoding": "gzip, deflate, br",
-      "cache-control": "no-cache",
-      "content-type": "application/json",
-      Host: "dev-api.omnilogistics.com",
-      "Postman-Token": "e484613d-6101-4eb4-8d19-b2c89944875f",
-      "User-Agent": "PostmanRuntime/7.31.3",
-      "X-Amzn-Trace-Id": "Root=1-64253212-2f88f9de2cdb10a047f4a5b3",
-      "x-api-key": "7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn",
-      "X-Forwarded-For": "122.160.53.233",
-      "X-Forwarded-Port": "443",
-      "X-Forwarded-Proto": "https",
-    },
-    query: {},
-    path: {},
-    identity: {
-      cognitoIdentityPoolId: "",
-      cognitoIdentityId: "",
-      apiKey: "7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn",
-      principalOrgId: "",
-      cognitoAuthenticationType: "",
-      userArn: "",
-      apiKeyId: "3t7b1eoe3m",
-      userAgent: "PostmanRuntime/7.31.3",
-      accountId: "",
-      caller: "",
-      sourceIp: "122.160.53.233",
-      accessKey: "",
-      cognitoAuthenticationProvider: "",
-      user: "",
-    },
-    stageVariables: { SERVERLESS_STAGE: "dev", SERVERLESS_ALIAS: "v2" },
-    requestPath: "/shipment/addDocument",
-  };
-
   const { body } = event;
   let request_json = JSON.parse(JSON.stringify(body));
   request_json.documentUploadRequest.b64str = "";
@@ -191,6 +137,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", "Unable to validate user"));
   } else {
     customerId = event.enhancedAuthContext.customerId;
+    console.log("customerId====================>", customerId);
   }
 
   // checking b64str is valid in the event or not
