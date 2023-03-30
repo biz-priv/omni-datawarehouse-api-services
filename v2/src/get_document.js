@@ -223,14 +223,19 @@ async function getData(eventParams, doctypeValue, searchType) {
     console.log("getDocumentData", getDocumentData);
 
     let wtArr = [];
-    getDocumentData = getDocumentData.filter( (item) => item.housebill != '' );
+    let housebill = '';
+    let fileNumber = '';
     getDocumentData.map((e) => {
-      wtArr = [...wtArr, ...e.wtDocs.wtDoc];
+      if ( e.wtDocs.housebill != '' ) {
+        housebill = e.wtDocs.housebill;
+        fileNumber = e.wtDocs.fileNumber;
+        wtArr = [...wtArr, ...e.wtDocs.wtDoc];
+      }
     });
     const data = {
       wtDocs: {
-        housebill: getDocumentData.length != 0 ? getDocumentData[0].wtDocs.housebill : '',
-        fileNumber: getDocumentData.length != 0 ? getDocumentData[0].wtDocs.fileNumber : '',
+        housebill,
+        fileNumber,
         wtDoc: wtArr,
       },
     };
