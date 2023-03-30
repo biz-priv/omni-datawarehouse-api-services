@@ -12,6 +12,60 @@ let eventLogObj = {};
 //-----
 module.exports.handler = async (event, context, callback) => {
   console.log("event", event);
+  event = {
+    body: {
+      documentUploadRequest: {
+        housebill: "8423136",
+        contentType: "application/pdf",
+        docType: "PACKING",
+        b64str: "aGVsbG8gd29ybGQgLSBJVklBIC0gQml6dGVzdA==",
+      },
+    },
+    method: "POST",
+    principalId: "bizCloud|a1b2",
+    stage: "v2",
+    cognitoPoolClaims: { sub: "" },
+    enhancedAuthContext: {
+      customerId: "customer-portal-admin",
+      principalId: "bizCloud|a1b2",
+      integrationLatency: "1623",
+    },
+    headers: {
+      accept: "*/*",
+      "accept-encoding": "gzip, deflate, br",
+      "cache-control": "no-cache",
+      "content-type": "application/json",
+      Host: "dev-api.omnilogistics.com",
+      "Postman-Token": "e484613d-6101-4eb4-8d19-b2c89944875f",
+      "User-Agent": "PostmanRuntime/7.31.3",
+      "X-Amzn-Trace-Id": "Root=1-64253212-2f88f9de2cdb10a047f4a5b3",
+      "x-api-key": "7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn",
+      "X-Forwarded-For": "122.160.53.233",
+      "X-Forwarded-Port": "443",
+      "X-Forwarded-Proto": "https",
+    },
+    query: {},
+    path: {},
+    identity: {
+      cognitoIdentityPoolId: "",
+      cognitoIdentityId: "",
+      apiKey: "7HDsIVa2Ke5VPRwIAwtqI8U9q2wO2tZY18ib6Cpn",
+      principalOrgId: "",
+      cognitoAuthenticationType: "",
+      userArn: "",
+      apiKeyId: "3t7b1eoe3m",
+      userAgent: "PostmanRuntime/7.31.3",
+      accountId: "",
+      caller: "",
+      sourceIp: "122.160.53.233",
+      accessKey: "",
+      cognitoAuthenticationProvider: "",
+      user: "",
+    },
+    stageVariables: { SERVERLESS_STAGE: "dev", SERVERLESS_ALIAS: "v2" },
+    requestPath: "/shipment/addDocument",
+  };
+
   const { body } = event;
   let request_json = JSON.parse(JSON.stringify(body));
   request_json.documentUploadRequest.b64str = "";
@@ -137,7 +191,6 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", "Unable to validate user"));
   } else {
     customerId = event.enhancedAuthContext.customerId;
-    console.log("customerId===============>", customerId);
   }
 
   // checking b64str is valid in the event or not
@@ -185,151 +238,10 @@ module.exports.handler = async (event, context, callback) => {
    * else if have fileNumber then checking housebill from HOUSEBILL_TABLE with the fileNumber, if found housebill then adding it in the validator obj else through error
    */
 
-  //------------------------
   if (
-    customerId == "customer-portal-admin" &&
-    customerId == process.env.IVIA_CUSTOMER_ID
+    customerId != "customer-portal-admin" &&
+    customerId != process.env.IVIA_CUSTOMER_ID
   ) {
-    // validated.housebill = eventBody.documentUploadRequest.housebill;
-
-    //  if customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID matches
-    //  query the shipment-header table with the housebill number to find the PK_OrderNo
-
-    housebill = body.documentUploadRequest.housebill;
-
-    const paramsshipmentHeader = {
-      TableName: process.env.SHIPMENT_HEADER_TABLE,
-      IndexName: "Housebill-index",
-      KeyConditionExpression: "Housebill = :Housebill",
-      ExpressionAttributeValues: {
-        ":Housebill": housebill,
-      },
-    };
-
-    let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
-    console.log("shipmentHeaderResponse", shipmentHeaderResponse);
-    shipmentHeaderResponse =
-      shipmentHeaderResponse.Items.length > 0
-        ? shipmentHeaderResponse.Items[0]
-        : {};
-
-    const PK_OrderNo =
-      shipmentHeaderResponse?.PK_OrderNo?.length > 0
-        ? shipmentHeaderResponse.PK_OrderNo
-        : null;
-
-    console.log("PK_OrderNo", PK_OrderNo);
-
-    if (!PK_OrderNo) {
-      console.log("PK_OrderNo no not found", paramsshipmentHeader);
-      eventLogObj = {
-        ...eventLogObj,
-        errorMsg: "PK_OrderNo no not found",
-        api_status_code: "400",
-      };
-      console.log("eventLogObj", eventLogObj);
-      await putItem(eventLogObj);
-      return callback(response("[400]", "file number not found"));
-    }
-    eventLogObj.PK_OrderNo = PK_OrderNo;
-
-    //  using PK_OrderNo and FK_VendorId (in shipment-header table), to query shipment-apar table and find the FK_ServiceId.
-
-    const paramsShipmentApar = {
-      TableName: process.env.SHIPMENT_APAR_TABLE,
-      KeyConditionExpression: "FK_OrderNo = :PK_OrderNo",
-      FilterExpression: "FK_VendorId = :VendorId",
-      ExpressionAttributeValues: {
-        ":PK_OrderNo": PK_OrderNo,
-        ":VendorId": process.env.IVIA_VENDOR_ID,
-      },
-    };
-    let shipmentAparRes = await queryDynamo(paramsShipmentApar);
-
-    shipmentAparRes =
-      shipmentAparRes.Items.length > 0 ? shipmentAparRes.Items[0] : {};
-    console.log("shipmentAparRes", shipmentAparRes);
-
-    const FK_ServiceId =
-      shipmentAparRes?.FK_ServiceId?.length > 0
-        ? shipmentAparRes.FK_ServiceId
-        : null;
-
-    console.log("FK_ServiceId", FK_ServiceId);
-
-    if (!FK_ServiceId) {
-      console.log("FK_ServiceId Is Empty");
-      eventLogObj = {
-        ...eventLogObj,
-        errorMsg: "FK_ServiceId Is Empty",
-        api_status_code: "400",
-      };
-
-      console.log("eventLogObj", eventLogObj);
-
-      await putItem(eventLogObj);
-
-      return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
-    }
-
-    eventLogObj.FK_ServiceId = FK_ServiceId;
-
-    //  using PK_OrderNo query address-mapping table and find the
-    //  cc_con_zip //HS or TL,
-    // cc_con_address //HS or TL,
-    // cc_conname //HS or TL,
-    // csh_con_zip //MT,
-    // csh_con_address //MT,
-    // cc_con_google_match //HS or TL,
-    // csh_con_google_match //MT
-
-    const paramsAddMap = {
-      TableName: process.env.ADDRESS_MAPPING_TABLE,
-      KeyConditionExpression: "FK_OrderNo = :fkNumber",
-      ExpressionAttributeValues: {
-        ":fkNumber": PK_OrderNo,
-      },
-    };
-
-    let addressMappingResponse = await queryDynamo(paramsAddMap);
-
-    console.log("addressMappingResponse", addressMappingResponse);
-    if (addressMappingResponse.Items.length > 0) {
-      addressMappingResponse = addressMappingResponse.Items[0];
-    } else {
-      console.log("No data found on address mapping table", paramsAddMap);
-      eventLogObj = {
-        ...eventLogObj,
-        errorMsg: "No data found on address mapping table",
-        api_status_code: "400",
-      };
-      console.log("eventLogObj", eventLogObj);
-      await putItem(eventLogObj);
-      return callback(
-        response("[400]", "No data found on address mapping table")
-      );
-    }
-    eventLogObj.addressMapObj = addressMappingResponse;
-
-    const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
-
-    //if customer is consignee then setting the housebill in the validator obj else ignoring the event
-
-    if (conIsCu || shipmentAparRes.ConsolNo === "0") {
-      eventLogObj.consigneeIsCustomer = "1";
-      validated.housebill = housebill;
-    } else {
-      console.log("igored response");
-      eventLogObj = {
-        ...eventLogObj,
-        errorMsg: "igored response",
-        api_status_code: "400",
-      };
-      console.log("eventLogObj", eventLogObj);
-      await putItem(eventLogObj);
-      return callback(response("[400]", "igored response")); //TODO: check with will
-    }
-  } else {
     if (
       "housebill" in eventBody.documentUploadRequest &&
       Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
@@ -378,78 +290,217 @@ module.exports.handler = async (event, context, callback) => {
         console.info("housebill: ", validated.housebill);
       }
     }
+  } else {
+    //  if customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID matches
+    //  query the shipment-header table with the housebill number to find the PK_OrderNo
 
-    /**
-     * checking docType inside the event and seting the doctype in the validator obj
-     */
-    if (
-      "docType" in eventBody.documentUploadRequest &&
-      eventBody.documentUploadRequest.docType != ""
-    ) {
-      if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
-        validated.docType = eventBody.documentUploadRequest.docType;
-        docType = eventBody.documentUploadRequest.docType;
-      } else {
-        validated.docType = eventBody.documentUploadRequest.docType
-          .toString()
-          .slice(0, 10);
-        docType = eventBody.documentUploadRequest.docType
-          .toString()
-          .slice(0, 10);
-      }
-    }
-
-    /**
-     * checking content type
-     * if content type present then setting the fileExtenction
-     * else checking the content type depending on the starting of b64str string
-     * and setting the extensiton values according to this match "/9j/4" =.jpeg, iVBOR=png, R0lG=gif, J=pdf, TU0AK or SUkqA = tiff
-     * if no extensiton then throwing error
-     */
-
-    if (
-      "contentType" in eventBody.documentUploadRequest &&
-      eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
-      eventBody.documentUploadRequest.contentType.split("/")[1] != ""
-    ) {
-      fileExtension =
-        "." + eventBody.documentUploadRequest.contentType.split("/")[1];
+    if (customerId == "customer-portal-admin") {
+      validated.housebill = eventBody.documentUploadRequest.housebill;
     } else {
-      if (eventBody.documentUploadRequest.b64str.startsWith("/9j/4")) {
-        fileExtension = ".jpeg";
-      } else if (eventBody.documentUploadRequest.b64str.startsWith("iVBOR")) {
-        fileExtension = ".png";
-      } else if (eventBody.documentUploadRequest.b64str.startsWith("R0lG")) {
-        fileExtension = ".gif";
-      } else if (eventBody.documentUploadRequest.b64str.startsWith("J")) {
-        fileExtension = ".pdf";
-      } else if (
-        eventBody.documentUploadRequest.b64str.startsWith("TU0AK") ||
-        eventBody.documentUploadRequest.b64str.startsWith("SUkqA")
-      ) {
-        fileExtension = ".tiff";
-      } else {
-        fileExtension = "";
-      }
-    }
-    if (fileExtension == "") {
-      eventLogObj = {
-        ...eventLogObj,
-        errorMsg:
-          "Unable to identify filetype. Please send content type with file extension.",
-        api_status_code: "400",
+      housebill = body.documentUploadRequest.housebill;
+
+      const paramsshipmentHeader = {
+        TableName: process.env.SHIPMENT_HEADER_TABLE,
+        IndexName: "Housebill-index",
+        KeyConditionExpression: "Housebill = :Housebill",
+        ExpressionAttributeValues: {
+          ":Housebill": housebill,
+        },
       };
-      console.log("eventLogObj", eventLogObj);
-      await putItem(eventLogObj);
-      return callback(
-        response(
-          "[400]",
-          "Unable to identify filetype. Please send content type with file extension."
-        )
-      );
+
+      let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
+      console.log("shipmentHeaderResponse", shipmentHeaderResponse);
+      shipmentHeaderResponse =
+        shipmentHeaderResponse.Items.length > 0
+          ? shipmentHeaderResponse.Items[0]
+          : {};
+
+      const PK_OrderNo =
+        shipmentHeaderResponse?.PK_OrderNo?.length > 0
+          ? shipmentHeaderResponse.PK_OrderNo
+          : null;
+
+      console.log("PK_OrderNo", PK_OrderNo);
+
+      if (!PK_OrderNo) {
+        console.log("PK_OrderNo no not found", paramsshipmentHeader);
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "PK_OrderNo no not found",
+          api_status_code: "400",
+        };
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(response("[400]", "file number not found"));
+      }
+      eventLogObj.PK_OrderNo = PK_OrderNo;
+
+      //  using PK_OrderNo and FK_VendorId (in shipment-header table), to query shipment-apar table and find the FK_ServiceId.
+
+      const paramsShipmentApar = {
+        TableName: process.env.SHIPMENT_APAR_TABLE,
+        KeyConditionExpression: "FK_OrderNo = :PK_OrderNo",
+        FilterExpression: "FK_VendorId = :VendorId",
+        ExpressionAttributeValues: {
+          ":PK_OrderNo": PK_OrderNo,
+          ":VendorId": process.env.IVIA_VENDOR_ID,
+        },
+      };
+      let shipmentAparRes = await queryDynamo(paramsShipmentApar);
+
+      shipmentAparRes =
+        shipmentAparRes.Items.length > 0 ? shipmentAparRes.Items[0] : {};
+      console.log("shipmentAparRes", shipmentAparRes);
+
+      const FK_ServiceId =
+        shipmentAparRes?.FK_ServiceId?.length > 0
+          ? shipmentAparRes.FK_ServiceId
+          : null;
+
+      console.log("FK_ServiceId", FK_ServiceId);
+
+      if (!FK_ServiceId) {
+        console.log("FK_ServiceId Is Empty");
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "FK_ServiceId Is Empty",
+          api_status_code: "400",
+        };
+
+        console.log("eventLogObj", eventLogObj);
+
+        await putItem(eventLogObj);
+
+        return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
+      }
+
+      eventLogObj.FK_ServiceId = FK_ServiceId;
+
+      //  using PK_OrderNo query address-mapping table and find the
+      //  cc_con_zip //HS or TL,
+      // cc_con_address //HS or TL,
+      // cc_conname //HS or TL,
+      // csh_con_zip //MT,
+      // csh_con_address //MT,
+      // cc_con_google_match //HS or TL,
+      // csh_con_google_match //MT
+
+      const paramsAddMap = {
+        TableName: process.env.ADDRESS_MAPPING_TABLE,
+        KeyConditionExpression: "FK_OrderNo = :fkNumber",
+        ExpressionAttributeValues: {
+          ":fkNumber": PK_OrderNo,
+        },
+      };
+
+      let addressMappingResponse = await queryDynamo(paramsAddMap);
+
+      console.log("addressMappingResponse", addressMappingResponse);
+      if (addressMappingResponse.Items.length > 0) {
+        addressMappingResponse = addressMappingResponse.Items[0];
+      } else {
+        console.log("No data found on address mapping table", paramsAddMap);
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "No data found on address mapping table",
+          api_status_code: "400",
+        };
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(
+          response("[400]", "No data found on address mapping table")
+        );
+      }
+      eventLogObj.addressMapObj = addressMappingResponse;
+
+      const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
+
+      //if customer is consignee then setting the housebill in the validator obj else ignoring the event
+
+      if (conIsCu || shipmentAparRes.ConsolNo === "0") {
+        eventLogObj.consigneeIsCustomer = "1";
+        validated.housebill = housebill;
+      } else {
+        console.log("igored response");
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "igored response",
+          api_status_code: "400",
+        };
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(response("[400]", "igored response")); //TODO: check with will
+      }
     }
   }
-  //------------------------
+
+  /**
+   * checking docType inside the event and seting the doctype in the validator obj
+   */
+  if (
+    "docType" in eventBody.documentUploadRequest &&
+    eventBody.documentUploadRequest.docType != ""
+  ) {
+    if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
+      validated.docType = eventBody.documentUploadRequest.docType;
+      docType = eventBody.documentUploadRequest.docType;
+    } else {
+      validated.docType = eventBody.documentUploadRequest.docType
+        .toString()
+        .slice(0, 10);
+      docType = eventBody.documentUploadRequest.docType.toString().slice(0, 10);
+    }
+  }
+
+  /**
+   * checking content type
+   * if content type present then setting the fileExtenction
+   * else checking the content type depending on the starting of b64str string
+   * and setting the extensiton values according to this match "/9j/4" =.jpeg, iVBOR=png, R0lG=gif, J=pdf, TU0AK or SUkqA = tiff
+   * if no extensiton then throwing error
+   */
+
+  if (
+    "contentType" in eventBody.documentUploadRequest &&
+    eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
+    eventBody.documentUploadRequest.contentType.split("/")[1] != ""
+  ) {
+    fileExtension =
+      "." + eventBody.documentUploadRequest.contentType.split("/")[1];
+  } else {
+    if (eventBody.documentUploadRequest.b64str.startsWith("/9j/4")) {
+      fileExtension = ".jpeg";
+    } else if (eventBody.documentUploadRequest.b64str.startsWith("iVBOR")) {
+      fileExtension = ".png";
+    } else if (eventBody.documentUploadRequest.b64str.startsWith("R0lG")) {
+      fileExtension = ".gif";
+    } else if (eventBody.documentUploadRequest.b64str.startsWith("J")) {
+      fileExtension = ".pdf";
+    } else if (
+      eventBody.documentUploadRequest.b64str.startsWith("TU0AK") ||
+      eventBody.documentUploadRequest.b64str.startsWith("SUkqA")
+    ) {
+      fileExtension = ".tiff";
+    } else {
+      fileExtension = "";
+    }
+  }
+  if (fileExtension == "") {
+    eventLogObj = {
+      ...eventLogObj,
+      errorMsg:
+        "Unable to identify filetype. Please send content type with file extension.",
+      api_status_code: "400",
+    };
+    console.log("eventLogObj", eventLogObj);
+    await putItem(eventLogObj);
+    return callback(
+      response(
+        "[400]",
+        "Unable to identify filetype. Please send content type with file extension."
+      )
+    );
+  }
 
   let formatDate =
     currentDateTime.getFullYear().toString() +
@@ -709,10 +760,9 @@ async function putItem(item) {
       Item: item,
     };
     console.log("Inserted");
-    return await dynamodb.put(params).promise();
+    await dynamodb.put(params).promise();
   } catch (e) {
     console.error("Put Item Error: ", e, "\nPut params: ", params);
-    return "Unable to Insert";
   }
 }
 
@@ -732,14 +782,16 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
     check =
       addressMapRes.cc_con_zip === "1" &&
       (addressMapRes.cc_con_address === "1" ||
-        addressMapRes.cc_con_google_match === "1")
+        addressMapRes.cc_con_google_match === "1" ||
+        addressMapRes.cc_con_google_match === "2")
         ? true
         : false;
   } else if (FK_ServiceId === "MT") {
     check =
       addressMapRes.csh_con_zip === "1" &&
       (addressMapRes.csh_con_address === "1" ||
-        addressMapRes.csh_con_google_match === "1")
+        addressMapRes.csh_con_google_match === "1" ||
+        addressMapRes.csh_con_google_match === "2")
         ? true
         : false;
   }
