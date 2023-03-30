@@ -22,6 +22,7 @@ module.exports.handler = async (event, context, callback) => {
     request_json: JSON.stringify(request_json),
     request_xml: "",
     response_xml: "",
+    sendPayload: {},
     response_json: "",
     wt_status_code: "",
     api_status_code: "",
@@ -464,7 +465,7 @@ module.exports.handler = async (event, context, callback) => {
 
   try {
     const postData = makeJsonToXml(validated);
-    eventLogObj.request_xml = postData;
+    // eventLogObj.request_xml = postData;
     console.info("postData", postData);
     const res = await getXmlResponse(postData);
     console.info("resp: ", res);
