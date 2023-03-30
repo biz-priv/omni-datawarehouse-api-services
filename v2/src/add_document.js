@@ -729,16 +729,14 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
     check =
       addressMapRes.cc_con_zip === "1" &&
       (addressMapRes.cc_con_address === "1" ||
-        addressMapRes.cc_con_google_match === "1" ||
-        addressMapRes.cc_con_google_match === "2")
+        addressMapRes.cc_con_google_match === "1")
         ? true
         : false;
   } else if (FK_ServiceId === "MT") {
     check =
       addressMapRes.csh_con_zip === "1" &&
       (addressMapRes.csh_con_address === "1" ||
-        addressMapRes.csh_con_google_match === "1" ||
-        addressMapRes.csh_con_google_match === "2")
+        addressMapRes.csh_con_google_match === "1")
         ? true
         : false;
   }
