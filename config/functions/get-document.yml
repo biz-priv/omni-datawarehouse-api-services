@@ -4,7 +4,6 @@ function:
   name: ${self:service}-get-document-${self:provider.stage}
   description: get document api service-${self:provider.stage}
   runtime: nodejs14.x
-  memorySize: 2048
   events:
     - http:
         path: /shipment/getdocument
