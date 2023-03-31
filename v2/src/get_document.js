@@ -130,6 +130,11 @@ module.exports.handler = async (event, context, callback) => {
     let eventParams = event.query;
     let doctypeValue = eventParams.docType;
     doctypeValue = doctypeValue.split(",");
+    const parameterString = doctypeValue
+      .map((value) => `doctype=${value}`)
+      .join("|");
+    console.log(parameterString);
+    // return {};
 
     //for local test
     // let eventParams = event;
@@ -155,7 +160,7 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
-    const resp = await getData(eventParams, doctypeValue, searchType);
+    const resp = await getData2(eventParams, parameterString, searchType);
 
     //5. change the response structre
     const newResponse = await newResponseStructureForV2(resp);
@@ -175,6 +180,7 @@ module.exports.handler = async (event, context, callback) => {
  * @returns
  */
 async function newResponseStructureForV2(response) {
+  console.log("response====>", response);
   return new Promise((resolve, reject) => {
     const newResponse = {
       housebill: response?.wtDocs?.housebill ? response.wtDocs.housebill : "",
@@ -205,7 +211,7 @@ async function getData(eventParams, doctypeValue, searchType) {
           console.log("queryType==>>>>>>", queryType);
           console.log(
             "websli url :",
-            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}`
+            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${e}`
           );
           return queryType.data;
         } catch (error) {
@@ -223,10 +229,10 @@ async function getData(eventParams, doctypeValue, searchType) {
     console.log("getDocumentData", getDocumentData);
 
     let wtArr = [];
-    let housebill = '';
-    let fileNumber = '';
+    let housebill = "";
+    let fileNumber = "";
     getDocumentData.map((e) => {
-      if ( e.wtDocs.housebill != '' ) {
+      if (e.wtDocs.housebill != "") {
         housebill = e.wtDocs.housebill;
         fileNumber = e.wtDocs.fileNumber;
         wtArr = [...wtArr, ...e.wtDocs.wtDoc];
@@ -245,6 +251,35 @@ async function getData(eventParams, doctypeValue, searchType) {
     console.log(
       "websli error url:",
       `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
+    );
+    console.log("error", error);
+    throw error;
+  }
+}
+
+async function getData2(eventParams, parameterString, searchType) {
+  try {
+    let queryType;
+
+    queryType = await axios.get(
+      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`
+    );
+    console.log("queryType==>>>>>>", queryType);
+    console.log(
+      "websli url :",
+      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`
+    );
+
+    console.log("getDocumentData", queryType.data);
+    // return {};
+    const data = queryType.data;
+
+    console.log("data", data);
+    return data;
+  } catch (error) {
+    console.log(
+      "websli error url:",
+      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`
     );
     console.log("error", error);
     throw error;
