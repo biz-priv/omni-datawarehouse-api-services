@@ -259,35 +259,6 @@ async function getData(eventParams, parameterString, searchType) {
   }
 }
 
-async function getData2(eventParams, parameterString, searchType) {
-  try {
-    let queryType;
-
-    queryType = await axios.get(
-      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`
-    );
-    console.log("queryType==>>>>>>", queryType);
-    console.log(
-      "websli url :",
-      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`
-    );
-
-    console.log("getDocumentData", queryType.data);
-    // return {};
-    const data = queryType.data;
-
-    console.log("data", data);
-    return data;
-  } catch (error) {
-    console.log(
-      "websli error url:",
-      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`
-    );
-    console.log("error", error);
-    throw error;
-  }
-}
-
 function response(code, message) {
   return JSON.stringify({
     httpStatus: code,
