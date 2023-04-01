@@ -130,9 +130,10 @@ module.exports.handler = async (event, context, callback) => {
     let eventParams = event.query;
     let doctypeValue = eventParams.docType;
     doctypeValue = doctypeValue.split(",");
-    const parameterString = doctypeValue
+    let parameterString = doctypeValue
       .map((value) => `doctype=${value}`)
-      .join("|");
+      .join("|,");
+    parameterString = parameterString.split(",");
     console.log(parameterString);
     // return {};
 
@@ -160,8 +161,8 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
-    const resp = await getData2(eventParams, parameterString, searchType);
-
+    const resp = await getData(eventParams, parameterString, searchType);
+    // return {};
     //5. change the response structre
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
@@ -200,18 +201,18 @@ async function newResponseStructureForV2(response) {
  * @param searchType
  * @returns
  */
-async function getData(eventParams, doctypeValue, searchType) {
+async function getData(eventParams, parameterString, searchType) {
   try {
     const getDocumentData = await Promise.all(
-      doctypeValue.map(async (e) => {
+      parameterString.map(async (e) => {
         try {
           const queryType = await axios.get(
-            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${e}`
+            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
           );
           console.log("queryType==>>>>>>", queryType);
           console.log(
             "websli url :",
-            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${e}`
+            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
           );
           return queryType.data;
         } catch (error) {
@@ -250,7 +251,8 @@ async function getData(eventParams, doctypeValue, searchType) {
   } catch (error) {
     console.log(
       "websli error url:",
-      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
+      // `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
+      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}`
     );
     console.log("error", error);
     throw error;
