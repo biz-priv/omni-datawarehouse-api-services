@@ -45,3 +45,6 @@ function:
     RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rate}
     ACCOUNT_INFO_TABLE: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/table}
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/customerId/index}
+    FUNCTION_NAME: ${self:service}-shipment-rate-${self:provider.stage}
+    SERVICE_NAME: ${self:service}
+    APPLICATION: DataWarehouse
