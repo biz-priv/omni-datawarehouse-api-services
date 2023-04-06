@@ -39,6 +39,7 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/get_rate.js
+      - src/shared/logger.js
       - node_modules/**
   environment:
     REGION: ${self:provider.region}
