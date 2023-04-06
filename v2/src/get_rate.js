@@ -2,8 +2,9 @@ const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
-const log4js = require('log4js');
 const moment = require("moment");
+const { v4: uuidv4 } = require('uuid');
+const { log, logUtilization} = require("../../src/shared/logger")
 
 const eventValidation = Joi.object().keys({
   shipperZip: Joi.string().required(),
@@ -36,17 +37,15 @@ function isArray(a) {
 }
 
 module.exports.handler = async (event, context, callback) => {
-  log4js.configure({
-    appenders: { out: { type: "stdout", layout: { type: "messagePassThrough" } } },
-    categories: { default: { appenders: ["out"], level: "info" } }
-  });
-  const logger = log4js.getLogger("out");
+  const correlationId = uuidv4();
   if (event.source === "serverless-plugin-warmup") {
     console.log('WarmUp - Lambda is warm!');
     return "Lambda is warm!";
   }
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(event), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName}));
+  log(correlationId, JSON.stringify(event), 200);
   const { body } = event;
+  const customerNumber = body.shipmentRateRequest.customerNumber;
+  logUtilization(customerNumber)
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
   let valError;
@@ -105,15 +104,14 @@ module.exports.handler = async (event, context, callback) => {
   const { error, value } = eventValidation.validate(reqFields);
 
   if (valError) {
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(valError), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+    log(correlationId, JSON.stringify(valError), 200);
     return callback(response("[400]", valError));
   } else if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
       .replace(new RegExp('"', "g"), "");
     let key = error.details[0].context.key;
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(error), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
-
+    log(correlationId, JSON.stringify(error), 200);
     if (error.toString().includes("shipmentLines")) {
       return callback(
         response(
@@ -134,9 +132,9 @@ module.exports.handler = async (event, context, callback) => {
   }
   newJSON.RatingInput.RequestID = 20221104;
   customer_id = event.enhancedAuthContext.customerId;
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(newJSON), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+  log(correlationId, JSON.stringify(newJSON), 200);
   if (customer_id != "customer-portal-admin") {
-    let resp = await getCustomerId(customer_id, logger);
+    let resp = await getCustomerId(customer_id);
     if (resp == "failure") {
       return callback(
         response(
@@ -155,7 +153,7 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
   }
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(newJSON), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+  log(correlationId, JSON.stringify(newJSON), 200);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (
@@ -183,14 +181,12 @@ module.exports.handler = async (event, context, callback) => {
       body.shipmentRateRequest.commodityClass
     );
   }
-
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(newJSON), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
-
+  log(correlationId, JSON.stringify(newJSON), 200);
   try {
     newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-      body.shipmentRateRequest, logger
+      body.shipmentRateRequest
     );
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(newJSON), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+    log(correlationId, JSON.stringify(newJSON), 200);
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
     // );
@@ -209,15 +205,14 @@ module.exports.handler = async (event, context, callback) => {
         );
       }
     }
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(newJSON.AccessorialInput), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
-
+    log(correlationId, JSON.stringify(newJSON.AccessorialInput), 200);
     const postData = makeJsonToXml(newJSON);
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(postData), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+    log(correlationId, JSON.stringify(postData), 200);
     // return {};
-    const dataResponse = await getRating(postData, logger);
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(dataResponse), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+    const dataResponse = await getRating(postData);
+    log(correlationId, JSON.stringify(dataResponse), 200);
     const dataObj = {};
-    dataObj.shipmentRateResponse = makeXmlToJson(dataResponse, logger);
+    dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
     // console.log("dataObj====>", dataObj);
 
     // return {};
@@ -243,7 +238,7 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 
-function addCommodityWeightPerPiece(inputData, logger) {
+function addCommodityWeightPerPiece(inputData) {
   let commodityInput = {
     CommodityInput: {},
   };
@@ -263,7 +258,7 @@ function addCommodityWeightPerPiece(inputData, logger) {
       inputData.shipmentLines[0].weight * 2.2046
     );
   }
-  logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(inputData.shipmentLines), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+  log(correlationId, JSON.stringify(inputData.shipmentLines), 200);
   for (const shipKey in inputData.shipmentLines[0]) {
     if (shipKey.includes("//")) {
       continue;
@@ -295,10 +290,10 @@ function makeJsonToXml(data) {
   });
 }
 
-function makeXmlToJson(data, logger) {
+function makeXmlToJson(data) {
   try {
     let obj = convert(data, { format: "object" });
-    logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(obj), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+    log(correlationId, JSON.stringify(obj), 200);
     if (
       obj["soap:Envelope"][
         "soap:Body"
@@ -309,12 +304,11 @@ function makeXmlToJson(data, logger) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
           .GetRatingByCustomerResult.RatingOutput;
-          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(modifiedObj), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
-
+          log(correlationId, JSON.stringify(modifiedObj), 200);
       if (isArray(modifiedObj)) {
         console.info("isArray");
         return modifiedObj.map((e) => {
-          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(e.AccessorialOutput), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+          log(correlationId, JSON.stringify(e.AccessorialOutput), 200);
           if (isEmpty(e.Message)) {
             e.Message = "";
           }
@@ -350,7 +344,7 @@ function makeXmlToJson(data, logger) {
           ) {
             return { Error: e.Message };
           }
-          logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(EstimatedDelivery), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+          log(correlationId, JSON.stringify(EstimatedDelivery), 200);
           return {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
@@ -498,10 +492,10 @@ function response(code, message) {
   });
 }
 
-async function getCustomerId(customerId, logger) {
+async function getCustomerId(customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
-      region: process.env.REGION, "functionName": context.functionName,
+      region: process.env.REGION, "functionName": process.env.FUNCTION_NAME,
     });
     const params = {
       TableName: process.env.ACCOUNT_INFO_TABLE,
@@ -511,7 +505,7 @@ async function getCustomerId(customerId, logger) {
     };
     const response = await documentClient.query(params).promise();
     if (response.Items && response.Items.length > 0) {
-      logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(response.Items), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+      log(correlationId, JSON.stringify(response.Items), 200);
       return response.Items[0];
     } else {
       return "failure";
@@ -521,7 +515,7 @@ async function getCustomerId(customerId, logger) {
   }
 }
 
-async function getRating(postData, logger) {
+async function getRating(postData) {
   try {
     const res = await axios.post(process.env.RATING_API, postData, {
       headers: {
@@ -540,7 +534,7 @@ async function getRating(postData, logger) {
       obj["soap:Envelope"]["soap:Body"]["soap:Fault"]["soap:Reason"][
       "soap:Text"
       ]["#"];
-      logger.info(JSON.stringify({ "@timestamp": moment().format(), "message": JSON.stringify(e.response), "service-name": "shipment-rating-api", "application": "DataWarehouse", "region": process.env.REGION, "functionName": context.functionName }));
+      log(correlationId, JSON.stringify(e.response), 200);
     throw e.hasOwnProperty("response") ? errorMessage : e;
   }
 }
