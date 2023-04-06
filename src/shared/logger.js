@@ -24,7 +24,7 @@ async function log(correlationId, message, status=null, type='info'){
 
 async function logUtilization(customerNumber){
     logger.info(JSON.stringify({
-        "@timestamp": moment(date).format(),
+        "@timestamp": moment().format(),
         "service-name": process.env.SERVICE_NAME,
         "application": process.env.APPLICATION,
         "functionName": process.env.FUNCTION_NAME,
