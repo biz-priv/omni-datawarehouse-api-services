@@ -44,7 +44,7 @@ module.exports.handler = async (event, context, callback) => {
   log(correlationId, JSON.stringify(event), 200);
   const { body } = event;
   const customerNumber = body.shipmentRateRequest.customerNumber;
-  logUtilization(customerNumber)
+  await logUtilization(customerNumber)
   const apiKey = event.headers["x-api-key"];
   let reqFields = {};
   let valError;
