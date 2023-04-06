@@ -35,9 +35,8 @@ const eventValidation = Joi.object().keys({
 function isArray(a) {
   return !!a && a.constructor === Array;
 }
-
+const correlationId = uuidv4();
 module.exports.handler = async (event, context, callback) => {
-  const correlationId = uuidv4();
   if (event.source === "serverless-plugin-warmup") {
     console.log('WarmUp - Lambda is warm!');
     return "Lambda is warm!";
