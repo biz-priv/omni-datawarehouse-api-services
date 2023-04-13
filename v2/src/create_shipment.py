@@ -145,7 +145,7 @@ def handler(event, context):
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
         xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
             xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
-                    <UserName>"""+ (event["body"]["shipmentCreateRequest"]["UserID"] if (customer_id == 'customer-portal-admin' and "UserID" in event["body"]["shipmentCreateRequest"])else os.environ["wt_soap_username"])+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
+                    <UserName>"""+ os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
                     </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
                     xmlns="http://tempuri.org/"><oShipData>"""
     end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
