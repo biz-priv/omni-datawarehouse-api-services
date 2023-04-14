@@ -95,6 +95,7 @@ functions:
   shipment-rate: ${file(config/functions/shipment-rate.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
   get-document: ${file(config/functions/get-document.yml):function}
+  add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
 
 resources:
   Resources:

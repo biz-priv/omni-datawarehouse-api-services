@@ -1,0 +1,42 @@
+function:
+  handler: ${self:custom.alias}/src/add_milestone.handler
+  name: ${self:service}-add-milestone-${self:provider.stage}
+  description: add milestone api service - ${self:provider.stage}
+  runtime: nodejs14.x
+  timeout: 60
+  memorySize: 512
+  environment:
+    ADD_MILESTONE_URL: ${ssm:/omni-ivia/${self:provider.stage}/addMilestone/url}
+    SHIPMENT_APAR_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-apar/ddb.tableName~true}
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    ADDRESS_MAPPING_TABLE: ${ssm:/omni-ivia/${self:provider.stage}/address-mapping/ddb.tableName}
+    MILESTONE_LOG_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/ivia-add-milestone-log/ddb.tableName}
+    MILESTONE_ORDER_STATUS: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/add-milestone/status-code}
+    IVIA_VENDOR_ID: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/ivia/shipmentApar/filterVendorId~true} #"T19262"
+  events:
+    - http:
+        path: /shipment/addmilestone
+        method: POST
+        integration: lambda
+        private: true
+        cors: true
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ""
+            400:
+              pattern: '[\s\S]*\[400\][\s\S]*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+            500:
+              pattern: '[\s\S]*\[500\][\s\S]*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+        authorizer:
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
