@@ -132,8 +132,8 @@ module.exports.handler = async (event, context, callback) => {
     doctypeValue = doctypeValue.split(",");
     let parameterString = doctypeValue
       .map((value) => `doctype=${value}`)
-      .join("|,");
-    parameterString = parameterString.split(",");
+      .join("|");
+    // parameterString = parameterString.split(",");
     console.log(parameterString);
     // return {};
 
@@ -203,50 +203,65 @@ async function newResponseStructureForV2(response) {
  */
 async function getData(eventParams, parameterString, searchType) {
   try {
-    const getDocumentData = await Promise.all(
-      parameterString.map(async (e) => {
-        try {
-          const queryType = await axios.get(
-            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
-          );
-          console.log("queryType==>>>>>>", queryType);
-          console.log(
-            "websli url :",
-            `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
-          );
-          return queryType.data;
-        } catch (error) {
-          console.log("error", error);
-          return {
-            wtDocs: {
-              housebill: "",
-              fileNumber: "",
-              wtDoc: [],
-            },
-          };
-        }
-      })
-    );
-    console.log("getDocumentData", getDocumentData);
-
-    let wtArr = [];
-    let housebill = "";
-    let fileNumber = "";
-    getDocumentData.map((e) => {
-      if (e.wtDocs.housebill != "") {
-        housebill = e.wtDocs.housebill;
-        fileNumber = e.wtDocs.fileNumber;
-        wtArr = [...wtArr, ...e.wtDocs.wtDoc];
-      }
-    });
-    const data = {
+    
+    let url = `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`;
+    console.log("websli url :", url);
+    
+    let getDocumentData = {
       wtDocs: {
-        housebill,
-        fileNumber,
-        wtDoc: wtArr,
+        housebill: "",
+        fileNumber: "",
+        wtDoc: [],
       },
-    };
-    console.log("data", data);
+    }
+
+    const queryType = await axios.get(`${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`);
+    getDocumentData =  queryType.data;
+
+    // const getDocumentData = await Promise.all(
+    //   parameterString.map(async (e) => {
+    //     try {
+    //       const queryType = await axios.get(
+    //         `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
+    //       );
+    //       console.log("queryType==>>>>>>", queryType);
+    //       console.log(
+    //         "websli url :",
+    //         `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
+    //       );
+    //       return queryType.data;
+    //     } catch (error) {
+    //       console.log("error", error);
+    //       return {
+    //         wtDocs: {
+    //           housebill: "",
+    //           fileNumber: "",
+    //           wtDoc: [],
+    //         },
+    //       };
+    //     }
+    //   })
+    // );
+    // console.log("getDocumentData", getDocumentData);
+
+    // let wtArr = [];
+    // let housebill = "";
+    // let fileNumber = "";
+    // getDocumentData.map((e) => {
+    //   if (e.wtDocs.housebill != "") {
+    //     housebill = e.wtDocs.housebill;
+    //     fileNumber = e.wtDocs.fileNumber;
+    //     wtArr = [...wtArr, ...e.wtDocs.wtDoc];
+    //   }
+    // });
+    // const data = {
+    //   wtDocs: {
+    //     housebill,
+    //     fileNumber,
+    //     wtDoc: wtArr,
+    //   },
+    // };
+    console.log("data", getDocumentData);
     return data;
   } catch (error) {
     console.log(
