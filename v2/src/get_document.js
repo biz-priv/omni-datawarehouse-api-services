@@ -217,63 +217,9 @@ async function getData(eventParams, parameterString, searchType) {
 
     const queryType = await axios.get(url);
     getDocumentData = queryType.data;
-    // getDocumentData =  {
-    //   housebill : queryType.data.housebill,
-    //   fileNumber : queryType.data.fileNumber,
-    //   wtDoc : queryType.data.wtDoc,
-    // };
-
-    // const getDocumentData = await Promise.all(
-    //   parameterString.map(async (e) => {
-    //     try {
-    //       const queryType = await axios.get(
-    //         `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
-    //       );
-    //       console.log("queryType==>>>>>>", queryType);
-    //       console.log(
-    //         "websli url :",
-    //         `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`
-    //       );
-    //       return queryType.data;
-    //     } catch (error) {
-    //       console.log("error", error);
-    //       return {
-    //         wtDocs: {
-    //           housebill: "",
-    //           fileNumber: "",
-    //           wtDoc: [],
-    //         },
-    //       };
-    //     }
-    //   })
-    // );
-    // console.log("getDocumentData", getDocumentData);
-
-    // let wtArr = [];
-    // let housebill = "";
-    // let fileNumber = "";
-    // getDocumentData.map((e) => {
-    //   if (e.wtDocs.housebill != "") {
-    //     housebill = e.wtDocs.housebill;
-    //     fileNumber = e.wtDocs.fileNumber;
-    //     wtArr = [...wtArr, ...e.wtDocs.wtDoc];
-    //   }
-    // });
-    // const data = {
-    //   wtDocs: {
-    //     housebill,
-    //     fileNumber,
-    //     wtDoc: wtArr,
-    //   },
-    // };
     console.log("data", getDocumentData);
     return getDocumentData;
   } catch (error) {
-    console.log(
-      "websli error url:",
-      // `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/doctype=${eventParams.docType}/`
-      `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}`
-    );
     console.log("error", error);
     throw error;
   }
