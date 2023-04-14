@@ -57,7 +57,7 @@ def handler(event, context):
             {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
     # Validating params only for the GET APIs
-    if "/create/shipment" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"]:
+    if "/create/shipment" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
@@ -81,6 +81,8 @@ def handler(event, context):
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/getdocument" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "shipment/addmilestone" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
 
     else:
