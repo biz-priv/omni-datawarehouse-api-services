@@ -215,8 +215,13 @@ async function getData(eventParams, parameterString, searchType) {
       },
     }
 
-    const queryType = await axios.get(`${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${e}`);
-    getDocumentData =  queryType.data;
+    const queryType = await axios.get(url);
+    getDocumentData = queryType.data;
+    // getDocumentData =  {
+    //   housebill : queryType.data.housebill,
+    //   fileNumber : queryType.data.fileNumber,
+    //   wtDoc : queryType.data.wtDoc,
+    // };
 
     // const getDocumentData = await Promise.all(
     //   parameterString.map(async (e) => {
@@ -262,7 +267,7 @@ async function getData(eventParams, parameterString, searchType) {
     //   },
     // };
     console.log("data", getDocumentData);
-    return data;
+    return getDocumentData;
   } catch (error) {
     console.log(
       "websli error url:",
