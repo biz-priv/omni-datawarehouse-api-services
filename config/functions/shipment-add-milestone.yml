@@ -7,12 +7,10 @@ function:
   memorySize: 512
   environment:
     ADD_MILESTONE_URL: ${ssm:/omni-ivia/${self:provider.stage}/addMilestone/url}
-    SHIPMENT_APAR_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-apar/ddb.tableName~true}
-    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
-    ADDRESS_MAPPING_TABLE: ${ssm:/omni-ivia/${self:provider.stage}/address-mapping/ddb.tableName}
-    MILESTONE_LOG_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/ivia-add-milestone-log/ddb.tableName}
-    MILESTONE_ORDER_STATUS: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/add-milestone/status-code}
-    IVIA_VENDOR_ID: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/ivia/shipmentApar/filterVendorId~true} #"T19262"
+  package:
+    include:
+      - ${self:custom.alias}/src/add_milestone.js
+      - node_modules/**
   events:
     - http:
         path: /shipment/addmilestone
