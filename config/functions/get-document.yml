@@ -4,6 +4,7 @@ function:
   name: ${self:service}-get-document-${self:provider.stage}
   description: get document api service-${self:provider.stage}
   runtime: nodejs14.x
+  timeout: 60
   events:
     - http:
         path: /shipment/getdocument
