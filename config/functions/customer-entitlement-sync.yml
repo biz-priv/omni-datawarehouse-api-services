@@ -4,7 +4,7 @@ function:
   name: ${self:service}-customer-entitlement-sync-${self:provider.stage}
   description: customer entitlement sync - ${self:provider.stage}
   timeout: 900
-  memorySize: 4096
+  memorySize: 10240
   events: 
     - existingS3:
         bucket: ${ssm:/omni-dw/${self:provider.stage}/s3/datapipeline/bucket}
