@@ -16,22 +16,24 @@ def handler(event, context):
         LOGGER.info("Event: %s", json.dumps(event))
         table_name = os.environ['tableName']
         key = os.environ['s3_key']
-        s3_client = boto3.resource('s3')
+        s3_client = boto3.client('s3')
         if event['Records'][0]['s3']['object']['key'] == key:
             LOGGER.info("key matches")
-            csv_obj = s3_client.Object(os.environ['bucket'], key).get()['Body']
+            csv_obj = s3_client.get_object(
+                Bucket=os.environ['bucket'], Key=key)['Body']
             batch_size = 100
             batch = []
-            fieldnames = ['FileNumber', 'HouseBillNumber', 'CustomerID']
-            for row in csv.DictReader(codecs.getreader('utf-8')(csv_obj), fieldnames=fieldnames, delimiter='|'):
-                if len(batch) >= batch_size:
-                    write_to_dynamo(batch, table_name)
-                    batch.clear()
-                batch.append(row)
+            with csv.reader(codecs.getreader('utf-8')(csv_obj), delimiter='|') as reader:
+                for row in reader:
+                    if len(batch) >= batch_size:
+                        write_to_dynamo(batch, table_name)
+                        batch.clear()
+                    batch.append(
+                        {'FileNumber': row[0], 'HouseBillNumber': row[1], 'CustomerID': row[2]})
             if batch:
                 write_to_dynamo(batch, table_name)
             LOGGER.info(
-                "Sucessfully added records to omni-dw-customer-entitlement dynamo table")
+                "Successfully added records to omni-dw-customer-entitlement DynamoDB table")
         else:
             LOGGER.info("No Action Required")
     except Exception as handler_error:
@@ -42,11 +44,9 @@ def handler(event, context):
 
 def write_to_dynamo(rows, table_name):
     try:
-        dynamodb = boto3.resource('dynamodb')
-        table = dynamodb.Table(table_name)
-        with table.batch_writer() as batch:
-            for i in range(len(rows)):
-                batch.put_item(Item=rows[i])
+        dynamodb = boto3.client('dynamodb')
+        with dynamodb.batch_write_item(TableName=table_name) as batch:
+            batch.put_items(Items=rows)
     except Exception as dynamo_write_error:
         logging.exception("WriteToDynamoError: %s",
                           json.dumps(dynamo_write_error))
