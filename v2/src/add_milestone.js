@@ -4,7 +4,7 @@ const Joi = require("joi");
 
 const statusCodeSchema = Joi.object({
   addMilestoneRequest: Joi.object({
-    houseBill: Joi.string(),
+    housebill: Joi.string(),
     statusCode: Joi.string().valid("CAN").required(),
     eventTime: Joi.string(),
   }),
@@ -82,7 +82,7 @@ function makeJsonToXml(data) {
         UpdateStatus: {
           "@xmlns": "http://tempuri.org/",
           HandlingStation: "",
-          HAWB: data.houseBill,
+          HAWB: data.housebill,
           UserName: "BIZCLOUD",
           StatusCode: data.statusCode,
           EventDateTime: data.eventTime,
