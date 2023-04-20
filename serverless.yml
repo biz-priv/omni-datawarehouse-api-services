@@ -46,6 +46,7 @@ custom:
       - shipment-detail
       - invoice-detail
       - create-shipment
+      - shipment-create
       - bill-of-lading
       - custom-authorizer
       - update-shipment-status
@@ -96,6 +97,7 @@ functions:
   freightlabel: ${file(config/functions/freightlabel.yml):function}
   get-document: ${file(config/functions/get-document.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
+  shipment-create: ${file(config/functions/shipment-create.yml):function}
 
 resources:
   Resources:

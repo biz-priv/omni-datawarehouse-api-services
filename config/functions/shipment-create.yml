@@ -1,0 +1,56 @@
+---
+function:
+  handler: ${self:custom.alias}/src/shipment_create.handler
+  name: ${self:service}-shipment-create-${self:provider.stage}
+  description: shipment create api service - ${self:provider.stage}
+  warmup:
+    default:
+      enabled: true
+      alias: ${self:custom.alias}
+  memorySize: 2048
+  events:
+    - http:
+        path: /shipment/create
+        method: POST
+        cors: true
+        integration: lambda
+        private: true
+        authorizer: 
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ''
+            400:
+              pattern: '.*httpStatus\": 400.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+            501:
+              pattern: '.*httpStatus\": 501.*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+  package:
+    include:
+    - ${self:custom.alias}/src/shipment_create.py
+    - src/common.py
+    - psycopg2/*
+  environment:
+    CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
+    ACCOUNT_INFO_TABLE: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/table}
+    SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
+    ACCOUNT_INFO_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/customerId/index}
+    REGION: ${self:provider.region}
+    URL: ${ssm:/omni-dw/${self:provider.stage}/createShipment/wt/url}
+    wt_soap_username: ${ssm:/omni-dw/${self:provider.stage}/wt/soap/username~true}
+    wt_soap_password: ${ssm:/omni-dw/${self:provider.stage}/wt/soap/password~true}
+    db_username: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
+    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
+    db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
+    db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
+    db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port} 
