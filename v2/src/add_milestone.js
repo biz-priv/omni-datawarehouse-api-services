@@ -1,10 +1,21 @@
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
+const Joi = require("joi");
+
+const statusCodeSchema = Joi.object({
+  addMilestoneRequest: Joi.object({
+    houseBill: Joi.string(),
+    statusCode: Joi.string().valid("CAN").required(),
+    eventTime: Joi.string(),
+  }),
+});
 
 module.exports.handler = async (event, context, callback) => {
   console.info("event", JSON.stringify(event));
 
   const { body } = event;
+
+  await statusCodeSchema.validateAsync(body);
 
   console.log("body", body);
 
@@ -61,44 +72,25 @@ async function sendEvent(value, callback) {
  */
 function makeJsonToXml(data) {
   let xml = "";
-  if (data.statusCode === "DEL") {
-    xml = convert({
-      "soap:Envelope": {
-        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-        "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
-        "soap:Body": {
-          SubmitPOD: {
-            "@xmlns": "http://tempuri.org/",
-            HAWB: data.houseBill,
-            UserName: "BIZCLOUD",
-            UserInitials: "BIZCLOUD",
-            Signer: data.signatory,
-            PODDateTime: data.eventTime,
-            LatLon: data.latitude + "," + data.longitude,
-          },
+
+  xml = convert({
+    "soap:Envelope": {
+      "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+      "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+      "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+      "soap:Body": {
+        UpdateStatus: {
+          "@xmlns": "http://tempuri.org/",
+          HandlingStation: "",
+          HAWB: data.houseBill,
+          UserName: "BIZCLOUD",
+          StatusCode: data.statusCode,
+          EventDateTime: data.eventTime,
         },
       },
-    });
-  } else {
-    xml = convert({
-      "soap:Envelope": {
-        "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-        "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-        "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
-        "soap:Body": {
-          UpdateStatus: {
-            "@xmlns": "http://tempuri.org/",
-            HandlingStation: "",
-            HAWB: data.houseBill,
-            UserName: "BIZCLOUD",
-            StatusCode: data.statusCode,
-            EventDateTime: data.eventTime,
-          },
-        },
-      },
-    });
-  }
+    },
+  });
+
   console.info("xml payload", xml);
   return xml;
 }
@@ -114,14 +106,10 @@ function makeXmlToJson(data, statusCode) {
     let obj = convert(data, { format: "object" });
     console.log("obj:makeXmlToJson", JSON.stringify(obj));
     let message = "failed";
-    if (statusCode === "DEL") {
-      message =
-        obj["soap:Envelope"]["soap:Body"].SubmitPODResponse.SubmitPODResult;
-    } else {
-      message =
-        obj["soap:Envelope"]["soap:Body"].UpdateStatusResponse
-          .UpdateStatusResult;
-    }
+
+    message =
+      obj["soap:Envelope"]["soap:Body"].UpdateStatusResponse.UpdateStatusResult;
+
     return {
       addMilestoneResponse: {
         message: message === "true" ? "success" : "failed",
