@@ -3,8 +3,8 @@ const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 const moment = require("moment");
-const { v4: uuidv4 } = require('uuid');
-const { log, logUtilization} = require("../../src/shared/logger")
+const { v4: uuidv4 } = require("uuid");
+const { log, logUtilization } = require("../../src/shared/logger");
 
 const eventValidation = Joi.object().keys({
   shipperZip: Joi.string().required(),
@@ -37,15 +37,17 @@ function isArray(a) {
 }
 const correlationId = uuidv4();
 module.exports.handler = async (event, context, callback) => {
+  console.log("Event", JSON.stringify(event));
+
   if (event.source === "serverless-plugin-warmup") {
-    console.log('WarmUp - Lambda is warm!');
+    console.log("WarmUp - Lambda is warm!");
     return "Lambda is warm!";
   }
   log(correlationId, JSON.stringify(event), 200);
   const { body } = event;
-  const customerNumber = body.shipmentRateRequest.customerNumber;
-  await logUtilization(customerNumber)
   const apiKey = event.headers["x-api-key"];
+  console.log("apiKey", apiKey);
+
   let reqFields = {};
   let valError;
   let newJSON = {
@@ -54,6 +56,19 @@ module.exports.handler = async (event, context, callback) => {
       CommodityInput: {},
     },
   };
+  let customerNumber;
+
+  if (!body.shipmentRateRequest.hasOwnProperty("customerNumber")) {
+    customerNumber = await getCustomerNumber(apiKey);
+    console.log("customerNumber", customerNumber);
+    customerNumber = customerNumber.BillToAcct;
+  } else {
+    customerNumber = body.shipmentRateRequest.customerNumber;
+  }
+  console.log("customerNumber===>", customerNumber);
+  await logUtilization(customerNumber);
+
+  // return {};
   if (
     !("enhancedAuthContext" in event) ||
     !("customerId" in event.enhancedAuthContext)
@@ -129,12 +144,16 @@ module.exports.handler = async (event, context, callback) => {
     newJSON.RatingInput.PickupLocationCloseTime =
       reqFields.pickupTime.toString();
   }
+
   newJSON.RatingInput.RequestID = 20221104;
-  customer_id = event.enhancedAuthContext.customerId;
+
+  const customer_id = event.enhancedAuthContext.customerId;
   log(correlationId, JSON.stringify(newJSON), 200);
   if (customer_id != "customer-portal-admin") {
     let resp = await getCustomerId(customer_id);
     if (resp == "failure") {
+      console.log("e");
+
       return callback(
         response(
           "[400]",
@@ -142,23 +161,29 @@ module.exports.handler = async (event, context, callback) => {
         )
       );
     } else {
+      console.log("ee");
+
       newJSON.RatingInput.BillToNo = resp["BillToAcct"];
     }
   }
+
   if (
     "customerNumber" in body.shipmentRateRequest &&
-    Number.isInteger(Number(body.shipmentRateRequest.customerNumber)) &&
+    Number.isInteger(Number(customerNumber)) &&
     newJSON.RatingInput.BillToNo == undefined
   ) {
-    newJSON.RatingInput.BillToNo = body.shipmentRateRequest.customerNumber;
+    console.log("eeee");
+
+    newJSON.RatingInput.BillToNo = customerNumber;
   }
+
   log(correlationId, JSON.stringify(newJSON), 200);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
       if (
         Number(body.shipmentRateRequest.insuredValue) > 0 &&
         Number(body.shipmentRateRequest.insuredValue) <=
-        9999999999999999999999999999n
+          9999999999999999999999999999n
       ) {
         newJSON.RatingInput.LiabilityType = "INSP";
         newJSON.RatingInput.DeclaredValue =
@@ -172,6 +197,7 @@ module.exports.handler = async (event, context, callback) => {
       newJSON.RatingInput.LiabilityType = "LL";
     }
   }
+
   if (
     "commodityClass" in body.shipmentRateRequest &&
     Number(body.shipmentRateRequest.commodityClass) != NaN
@@ -180,6 +206,7 @@ module.exports.handler = async (event, context, callback) => {
       body.shipmentRateRequest.commodityClass
     );
   }
+
   log(correlationId, JSON.stringify(newJSON), 200);
   try {
     newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
@@ -204,10 +231,13 @@ module.exports.handler = async (event, context, callback) => {
         );
       }
     }
+
+    console.log("newJSON", newJSON);
+    // return {};
     log(correlationId, JSON.stringify(newJSON.AccessorialInput), 200);
     const postData = makeJsonToXml(newJSON);
+    console.log("postData", postData);
     log(correlationId, JSON.stringify(postData), 200);
-    // return {};
     const dataResponse = await getRating(postData);
     log(correlationId, JSON.stringify(dataResponse), 200);
     const dataObj = {};
@@ -303,7 +333,7 @@ function makeXmlToJson(data) {
       const modifiedObj =
         obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
           .GetRatingByCustomerResult.RatingOutput;
-          log(correlationId, JSON.stringify(modifiedObj), 200);
+      log(correlationId, JSON.stringify(modifiedObj), 200);
       if (isArray(modifiedObj)) {
         console.info("isArray");
         return modifiedObj.map((e) => {
@@ -374,22 +404,22 @@ function makeXmlToJson(data) {
             list[i] = {};
             modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode
               ? (list[i].code =
-                modifiedObj.AccessorialOutput.AccessorialOutput[
-                  i
-                ].AccessorialCode)
+                  modifiedObj.AccessorialOutput.AccessorialOutput[
+                    i
+                  ].AccessorialCode)
               : modifiedObj.AccessorialOutput.AccessorialOutput[i]
-                .AccessorialDesc
-                ? (list[i].description =
+                  .AccessorialDesc
+              ? (list[i].description =
                   modifiedObj.AccessorialOutput.AccessorialOutput[
                     i
                   ].AccessorialDesc)
-                : modifiedObj.AccessorialOutput.AccessorialOutput[i]
+              : modifiedObj.AccessorialOutput.AccessorialOutput[i]
                   .AccessorialCharge
-                  ? (list[i].charge =
-                    modifiedObj.AccessorialOutput.AccessorialOutput[
-                      i
-                    ].AccessorialCharge)
-                  : console.info("no charge");
+              ? (list[i].charge =
+                  modifiedObj.AccessorialOutput.AccessorialOutput[
+                    i
+                  ].AccessorialCharge)
+              : console.info("no charge");
           }
           AccessorialOutput = list;
         } else {
@@ -494,7 +524,8 @@ function response(code, message) {
 async function getCustomerId(customerId) {
   try {
     const documentClient = new AWS.DynamoDB.DocumentClient({
-      region: process.env.REGION, "functionName": process.env.FUNCTION_NAME,
+      region: process.env.REGION,
+      functionName: process.env.FUNCTION_NAME,
     });
     const params = {
       TableName: process.env.ACCOUNT_INFO_TABLE,
@@ -531,9 +562,45 @@ async function getRating(postData) {
     let obj = convert(e.response.data, { format: "object" });
     let errorMessage =
       obj["soap:Envelope"]["soap:Body"]["soap:Fault"]["soap:Reason"][
-      "soap:Text"
+        "soap:Text"
       ]["#"];
-      log(correlationId, JSON.stringify(e.response), 200);
+    log(correlationId, JSON.stringify(e.response), 200);
     throw e.hasOwnProperty("response") ? errorMessage : e;
+  }
+}
+
+async function getCustomerNumber(xApiKey) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+      functionName: process.env.FUNCTION_NAME,
+    });
+    const validatorParams = {
+      TableName: process.env.TOKEN_VALIDATOR_TABLE,
+      IndexName: "ApiKey-index",
+      KeyConditionExpression: "ApiKey = :val",
+      ExpressionAttributeValues: {
+        ":val": xApiKey,
+      },
+    };
+    const validatorResp = await documentClient.query(validatorParams).promise();
+    console.log("validatorResp", validatorResp);
+
+    if (validatorResp.Items && validatorResp.Items.length > 0) {
+      log(correlationId, JSON.stringify(validatorResp.Items), 200);
+      const customerId = validatorResp.Items[0].CustomerID;
+      const response = await getCustomerId(customerId);
+      console.log("CustomerIdResponse", response);
+      if (response.Items && response.Items.length > 0) {
+        log(correlationId, JSON.stringify(response.Items), 200);
+        return response.Items[0];
+      } else {
+        return "failure";
+      }
+    } else {
+      return "No response from Validator Table";
+    }
+  } catch (e) {
+    throw e.hasOwnProperty("message") ? e.message : e;
   }
 }
