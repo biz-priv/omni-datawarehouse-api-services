@@ -36,9 +36,9 @@ function isArray(a) {
   return !!a && a.constructor === Array;
 }
 const correlationId = uuidv4();
+
 module.exports.handler = async (event, context, callback) => {
   console.log("Event", JSON.stringify(event));
-
   if (event.source === "serverless-plugin-warmup") {
     console.log("WarmUp - Lambda is warm!");
     return "Lambda is warm!";
@@ -61,12 +61,24 @@ module.exports.handler = async (event, context, callback) => {
   if (!body.shipmentRateRequest.hasOwnProperty("customerNumber")) {
     customerNumber = await getCustomerNumber(apiKey);
     console.log("customerNumber", customerNumber);
-    customerNumber = customerNumber.BillToAcct;
+    if (customerNumber == "failure") {
+      return callback(
+        response(
+          "[400]",
+          "Customer Information does not exist. Please raise a support ticket to add the customer"
+        )
+      );
+    } else {
+      customerNumber = customerNumber.BillToAcct;
+    }
   } else {
     customerNumber = body.shipmentRateRequest.customerNumber;
   }
   console.log("customerNumber===>", customerNumber);
   await logUtilization(customerNumber);
+
+  newJSON.RatingInput.BillToNo = customerNumber;
+  log(correlationId, JSON.stringify(newJSON), 200);
 
   // return {};
   if (
@@ -147,35 +159,35 @@ module.exports.handler = async (event, context, callback) => {
 
   newJSON.RatingInput.RequestID = 20221104;
 
-  const customer_id = event.enhancedAuthContext.customerId;
-  log(correlationId, JSON.stringify(newJSON), 200);
-  if (customer_id != "customer-portal-admin") {
-    let resp = await getCustomerId(customer_id);
-    if (resp == "failure") {
-      console.log("e");
+  // const customer_id = event.enhancedAuthContext.customerId;
+  // log(correlationId, JSON.stringify(newJSON), 200);
+  // if (customer_id != "customer-portal-admin") {
+  //   let resp = await getCustomerId(customer_id);
+  //   if (resp == "failure") {
+  //     console.log("e");
 
-      return callback(
-        response(
-          "[400]",
-          "Customer Information does not exist. Please raise a support ticket to add the customer"
-        )
-      );
-    } else {
-      console.log("ee");
+  //     return callback(
+  //       response(
+  //         "[400]",
+  //         "Customer Information does not exist. Please raise a support ticket to add the customer"
+  //       )
+  //     );
+  //   } else {
+  //     console.log("ee");
 
-      newJSON.RatingInput.BillToNo = resp["BillToAcct"];
-    }
-  }
+  //     newJSON.RatingInput.BillToNo = resp["BillToAcct"];
+  //   }
+  // }
 
-  if (
-    "customerNumber" in body.shipmentRateRequest &&
-    Number.isInteger(Number(customerNumber)) &&
-    newJSON.RatingInput.BillToNo == undefined
-  ) {
-    console.log("eeee");
+  // if (
+  //   "customerNumber" in body.shipmentRateRequest &&
+  //   Number.isInteger(Number(customerNumber)) &&
+  //   newJSON.RatingInput.BillToNo == undefined
+  // ) {
+  //   console.log("eeee");
 
-    newJSON.RatingInput.BillToNo = customerNumber;
-  }
+  //   newJSON.RatingInput.BillToNo = customerNumber;
+  // }
 
   log(correlationId, JSON.stringify(newJSON), 200);
   if ("insuredValue" in body.shipmentRateRequest) {
@@ -591,14 +603,14 @@ async function getCustomerNumber(xApiKey) {
       const customerId = validatorResp.Items[0].CustomerID;
       const response = await getCustomerId(customerId);
       console.log("CustomerIdResponse", response);
-      if (response.Items && response.Items.length > 0) {
+      if (Object.keys(response).length > 0) {
         log(correlationId, JSON.stringify(response.Items), 200);
-        return response.Items[0];
+        return response;
       } else {
         return "failure";
       }
     } else {
-      return "No response from Validator Table";
+      return callback(response("[400]", "No response from Validator Table"));
     }
   } catch (e) {
     throw e.hasOwnProperty("message") ? e.message : e;
