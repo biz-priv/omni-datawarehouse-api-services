@@ -159,36 +159,6 @@ module.exports.handler = async (event, context, callback) => {
 
   newJSON.RatingInput.RequestID = 20221104;
 
-  // const customer_id = event.enhancedAuthContext.customerId;
-  // log(correlationId, JSON.stringify(newJSON), 200);
-  // if (customer_id != "customer-portal-admin") {
-  //   let resp = await getCustomerId(customer_id);
-  //   if (resp == "failure") {
-  //     console.log("e");
-
-  //     return callback(
-  //       response(
-  //         "[400]",
-  //         "Customer Information does not exist. Please raise a support ticket to add the customer"
-  //       )
-  //     );
-  //   } else {
-  //     console.log("ee");
-
-  //     newJSON.RatingInput.BillToNo = resp["BillToAcct"];
-  //   }
-  // }
-
-  // if (
-  //   "customerNumber" in body.shipmentRateRequest &&
-  //   Number.isInteger(Number(customerNumber)) &&
-  //   newJSON.RatingInput.BillToNo == undefined
-  // ) {
-  //   console.log("eeee");
-
-  //   newJSON.RatingInput.BillToNo = customerNumber;
-  // }
-
   log(correlationId, JSON.stringify(newJSON), 200);
   if ("insuredValue" in body.shipmentRateRequest) {
     try {
