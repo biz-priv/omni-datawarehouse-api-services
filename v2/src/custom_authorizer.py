@@ -13,6 +13,8 @@ POLICY_ID = "bizCloud|a1b2"
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 
+# TODO - if customer id is "agistics" or "customer-portal-admin" then allow all
+
 def generate_policy(principal_id, effect, method_arn, customer_id=None, message=None):
     try:
         LOGGER.info("Inserting : policy on API Gateway %s", effect)
@@ -56,11 +58,26 @@ def handler(event, context):
         raise ApiKeyError(json.dumps(
             {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
+    
+    if hasattr(params, "houseBill"):
+        params["house_bill_nbr"] = params["houseBill"]
+
     # Validating params only for the GET APIs
     if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
+
+    # TODO - Add param validation for getDocument and addMilestone
+
+    # Request for add milestone
+    #     {
+    #     "addMilestoneRequest": {
+    #         "housebill": "1234567", // Field name is different in othe apis
+    #         "statusCode": "COB",
+    #         "eventTime": "2022-11-01T23:15:00-05:00"
+    #     }
+    # }
 
     # Get customer ID based on the api_key
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"],
@@ -74,7 +91,11 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
 
-    if "/create/shipment" in event["methodArn"]:
+    allowed_customer_ids = json.dumps(os.environ["ALLOWED_CUSTOMER_IDS"])
+
+    if customer_id in allowed_customer_ids:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/create" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
@@ -82,11 +103,12 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "shipment/getdocument" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "shipment/addmilestone" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-
+    # Remove from here
+    # elif "shipment/getdocument" in event["methodArn"]:
+    #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    # elif "shipment/addmilestone" in event["methodArn"]:
+    #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    # end remove
     else:
         query = "CustomerID = :id AND "
         if "file_nbr" in params:
