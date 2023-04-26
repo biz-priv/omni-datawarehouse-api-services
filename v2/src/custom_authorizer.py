@@ -12,9 +12,6 @@ LOGGER.setLevel(logging.INFO)
 POLICY_ID = "bizCloud|a1b2"
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
-
-# TODO - if customer id is "agistics" or "customer-portal-admin" then allow all
-
 def generate_policy(principal_id, effect, method_arn, customer_id=None, message=None):
     try:
         LOGGER.info("Inserting : policy on API Gateway %s", effect)
@@ -61,6 +58,8 @@ def handler(event, context):
     
     if  "housebill" in params:
         params["house_bill_nbr"] = params["housebill"]
+    if  "fileNumber" in params:
+        params["file_nbr"] = params["fileNumber"]
     LOGGER.info("Event params: %s", str(params))
 
     # Validating params only for the GET APIs
@@ -68,17 +67,6 @@ def handler(event, context):
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
-
-    # TODO - Add param validation for getDocument and addMilestone
-
-    # Request for add milestone
-    #     {
-    #     "addMilestoneRequest": {
-    #         "housebill": "1234567", // Field name is different in othe apis
-    #         "statusCode": "COB",
-    #         "eventTime": "2022-11-01T23:15:00-05:00"
-    #     }
-    # }
 
     # Get customer ID based on the api_key
     response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"],
@@ -104,12 +92,8 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    # Remove from here
-    # elif "shipment/getdocument" in event["methodArn"]:
-    #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addmilestone" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    # end remove
     else:
         query = "CustomerID = :id AND "
         if "file_nbr" in params:
