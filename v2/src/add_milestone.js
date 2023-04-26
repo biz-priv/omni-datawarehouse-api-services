@@ -20,8 +20,8 @@ module.exports.handler = async (event, context, callback) => {
 
   await statusCodeSchema.validateAsync(body);
 
-  let validationResult = validateApiForHouseBill(event.identity.apiKey, body.houseBill) 
-  if ( validateApiForHouseBill(event.identity.apiKey, body.houseBill)  ) {
+  let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.houseBill) 
+  if ( validationResult ) {
     callback(response("[401]", "Invalid Token"))
   }
 
