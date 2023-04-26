@@ -133,19 +133,9 @@ module.exports.handler = async (event, context, callback) => {
     let parameterString = doctypeValue
       .map((value) => `doctype=${value}`)
       .join("|");
-    // parameterString = parameterString.split(",");
+
     console.log(parameterString);
-    // return {};
-
-    //for local test
-    // let eventParams = event;
-    // let doctypeValue = eventParams.docType;
-    // doctypeValue = doctypeValue.split(",");
-
     console.log("eventParams", doctypeValue);
-    // const xApiKey = event.headers;
-    // return {};
-
     console.log("websli-api-url", process.env.GET_DOCUMENT_API);
 
     const searchType = eventParams.hasOwnProperty("housebill")
@@ -162,12 +152,9 @@ module.exports.handler = async (event, context, callback) => {
     }
 
     const resp = await getData(eventParams, parameterString, searchType);
-    // return {};
-    //5. change the response structre
+
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
-    // return {};
-    //6. send the response
     return newResponse;
   } catch (error) {
     console.log("error", error);
@@ -203,10 +190,10 @@ async function newResponseStructureForV2(response) {
  */
 async function getData(eventParams, parameterString, searchType) {
   try {
-    
+
     let url = `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`;
     console.log("websli url :", url);
-    
+
     let getDocumentData = {
       wtDocs: {
         housebill: "",
