@@ -22,7 +22,7 @@ module.exports.handler = async (event, context, callback) => {
 
   let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill) 
   if ( !validationResult ) {
-    return callback(response("[401]", "Invalid Token"))
+    return { statusCode : 400, message : "House bill number does not exist."}
   }
 
   console.log("body", body);
@@ -30,7 +30,7 @@ module.exports.handler = async (event, context, callback) => {
   if (body.addMilestoneRequest.statusCode == "CAN") {
     return await sendEvent(body, callback);
   } else {
-    return callback(response("[400]", "Milestone event is not accepted"));
+    return { statusCode : 400, message : "Milestone event is not accepted"}
   }
 };
 //*******************************************************************//
