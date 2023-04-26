@@ -61,6 +61,7 @@ def handler(event, context):
     
     if hasattr(params, "housebill"):
         params["house_bill_nbr"] = params["housebill"]
+    LOGGER.info("Event params: %s", str(params))
 
     # Validating params only for the GET APIs
     if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"]:
