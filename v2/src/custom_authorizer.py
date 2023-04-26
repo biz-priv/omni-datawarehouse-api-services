@@ -59,7 +59,7 @@ def handler(event, context):
             {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
     
-    if hasattr(params, "housebill"):
+    if  "housebill" in params:
         params["house_bill_nbr"] = params["housebill"]
     LOGGER.info("Event params: %s", str(params))
 
