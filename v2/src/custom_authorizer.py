@@ -59,8 +59,8 @@ def handler(event, context):
             {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
     
-    if hasattr(params, "houseBill"):
-        params["house_bill_nbr"] = params["houseBill"]
+    if hasattr(params, "housebill"):
+        params["house_bill_nbr"] = params["housebill"]
 
     # Validating params only for the GET APIs
     if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"]:
