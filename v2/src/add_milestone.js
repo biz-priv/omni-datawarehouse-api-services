@@ -20,9 +20,14 @@ module.exports.handler = async (event, context, callback) => {
 
   await statusCodeSchema.validateAsync(body);
 
-  let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill) 
-  if ( !validationResult ) {
-    callback(new Error( "[400] House bill number does not exist"));
+  let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill)
+  if (!validationResult) {
+    return callback(
+      response(
+        "[400]",
+        "House bill number does not exist"
+      )
+    );
   }
 
   console.log("body", body);
@@ -30,22 +35,27 @@ module.exports.handler = async (event, context, callback) => {
   if (body.addMilestoneRequest.statusCode == "CAN") {
     return await sendEvent(body, callback);
   } else {
-    callback(new Error( "[400] Milestone event is not accepted"));
+    return callback(
+      response(
+        "[400]",
+        "Milestone event is not accepted"
+      )
+    );
   }
 };
 //*******************************************************************//
 async function validateApiForHouseBill(apiKey, housebill) {
   try {
     let params = {
-      TableName : process.env.TOKEN_VALIDATION_TABLE,
-      IndexName : process.env.TOKEN_VALIDATION_TABLE_INDEX,
+      TableName: process.env.TOKEN_VALIDATION_TABLE,
+      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
       KeyConditionExpression: "ApiKey = :apikey",
       ExpressionAttributeValues: {
         ":apikey": apiKey
       }
     }
     let result = await dynamodb.query(params).promise();
-    
+
     if (result.Items.length == 0) {
       return false;
     }
@@ -53,27 +63,27 @@ async function validateApiForHouseBill(apiKey, housebill) {
     let customerId = result.Items[0].CustomerID;
     let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
 
-    if ( allowedCustomerIds.includes(customerId) ) {
+    if (allowedCustomerIds.includes(customerId)) {
       return true
     }
 
     console.log("House Bill : ", housebill);
     console.log("Customer Id : ", customerId);
     params = {
-      TableName : process.env.CUSTOMER_ENTITLEMENT_TABLE,
-      IndexName : process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
+      TableName: process.env.CUSTOMER_ENTITLEMENT_TABLE,
+      IndexName: process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
       KeyConditionExpression: "CustomerID = :id AND HouseBillNumber = :houseBill",
       ExpressionAttributeValues: {
         ":id": customerId,
-        ":houseBill" : housebill
+        ":houseBill": housebill
       }
     }
     result = await dynamodb.query(params).promise();
-    
+
     if (result.Items.length > 0) {
       return true;
     }
-  } catch(e) {
+  } catch (e) {
     console.log("Error in validateApiForHouseBill", e)
   }
   return false;
