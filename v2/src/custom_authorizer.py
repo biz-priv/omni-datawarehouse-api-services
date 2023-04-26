@@ -107,8 +107,8 @@ def handler(event, context):
     # Remove from here
     # elif "shipment/getdocument" in event["methodArn"]:
     #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    # elif "shipment/addmilestone" in event["methodArn"]:
-    #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "shipment/addmilestone" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     # end remove
     else:
         query = "CustomerID = :id AND "
