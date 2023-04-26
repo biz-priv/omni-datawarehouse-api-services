@@ -22,7 +22,9 @@ module.exports.handler = async (event, context, callback) => {
 
   let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill) 
   if ( !validationResult ) {
-    return { statusCode : 400, message : "House bill number does not exist."}
+    callback(null, { statusCode: 404, body: 'House bill number does not exist.', headers: { 'Content-Type': 'text/plain' } });
+    module.exports.hello = (event, context, callback) => {
+    };
   }
 
   console.log("body", body);
@@ -30,7 +32,7 @@ module.exports.handler = async (event, context, callback) => {
   if (body.addMilestoneRequest.statusCode == "CAN") {
     return await sendEvent(body, callback);
   } else {
-    return { statusCode : 400, message : "Milestone event is not accepted"}
+    callback(null, { statusCode: 404, body: 'Milestone event is not accepted.', headers: { 'Content-Type': 'text/plain' } });
   }
 };
 //*******************************************************************//
