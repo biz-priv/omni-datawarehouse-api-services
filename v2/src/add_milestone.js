@@ -22,7 +22,7 @@ module.exports.handler = async (event, context, callback) => {
 
   let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.houseBill) 
   if ( validationResult ) {
-    callback(response("[401]", "Invalid Token"))
+    return callback(response("[401]", "Invalid Token"))
   }
 
   console.log("body", body);
@@ -53,7 +53,7 @@ async function validateApiForHouseBill(apiKey, housebill) {
     let customerId = result.Items[0].CustomerID;
     let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
 
-    if ( allowedCustomerIds.contains(customerId) ) {
+    if ( allowedCustomerIds.includes(customerId) ) {
       return true
     }
 
