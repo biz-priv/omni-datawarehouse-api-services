@@ -58,6 +58,10 @@ def handler(event, context):
         raise ApiKeyError(json.dumps(
             {"httpStatus": 400, "message": "API Key not passed."})) from api_key_error
 
+    
+    if hasattr(params, "houseBill"):
+        params["house_bill_nbr"] = params["houseBill"]
+
     # Validating params only for the GET APIs
     if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"]:
         validation_response = validate_input(params)
@@ -87,7 +91,11 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
 
-    if "/create/shipment" in event["methodArn"]:
+    allowed_customer_ids = json.dumps(os.environ["ALLOWED_CUSTOMER_IDS"])
+
+    if customer_id in allowed_customer_ids:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/create" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
@@ -96,10 +104,10 @@ def handler(event, context):
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     # Remove from here
-    elif "shipment/getdocument" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "shipment/addmilestone" in event["methodArn"]:
-        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    # elif "shipment/getdocument" in event["methodArn"]:
+    #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    # elif "shipment/addmilestone" in event["methodArn"]:
+    #     return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     # end remove
     else:
         query = "CustomerID = :id AND "

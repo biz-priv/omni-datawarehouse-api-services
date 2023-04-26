@@ -1,10 +1,13 @@
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
 const Joi = require("joi");
+const AWS = require('aws-sdk');
+var dynamodb = new AWS.DynamoDB.DocumentClient();
+
 
 const statusCodeSchema = Joi.object({
   addMilestoneRequest: Joi.object({
-    housebill: Joi.string(),
+    housebill: Joi.string().required(),
     statusCode: Joi.string().valid("CAN").required(),
     eventTime: Joi.string(),
   }),
@@ -17,6 +20,11 @@ module.exports.handler = async (event, context, callback) => {
 
   await statusCodeSchema.validateAsync(body);
 
+  let validationResult = validateApiForHouseBill(event.identity.apiKey, body.houseBill) 
+  if ( validateApiForHouseBill(event.identity.apiKey, body.houseBill)  ) {
+    callback(response("[401]", "Invalid Token"))
+  }
+
   console.log("body", body);
 
   if (body.addMilestoneRequest.statusCode == "CAN") {
@@ -26,6 +34,48 @@ module.exports.handler = async (event, context, callback) => {
   }
 };
 //*******************************************************************//
+async function validateApiForHouseBill(apiKey, housebill) {
+  try {
+    let params = {
+      TableName : process.env.TOKEN_VALIDATION_TABLE,
+      IndexName : process.env.TOKEN_VALIDATION_TABLE_INDEX,
+      KeyConditionExpression: "ApiKey = :apikey",
+      ExpressionAttributeValues: {
+        ":apikey": apiKey
+      }
+    }
+    let result = await dynamodb.query(params).promise();
+    
+    if (result.Items.length == 0) {
+      return false;
+    }
+
+    let customerId = result.Items[0].CustomerID;
+    let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
+
+    if ( allowedCustomerIds.contains(customerId) ) {
+      return true
+    }
+
+    params = {
+      TableName : process.env.CUSTOMER_ENTITLEMENT_TABLE,
+      IndexName : process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
+      KeyConditionExpression: "CustomerID = :id AND HouseBillNumber = :houseBill",
+      ExpressionAttributeValues: {
+        ":id": customerId,
+        ":houseBill" : housebill
+      }
+    }
+    result = await dynamodb.query(params).promise();
+    
+    if (result.Items.length > 0) {
+      return true;
+    }
+  } catch(e) {
+    console.log("Error in validateApiForHouseBill", e)
+  }
+  return false;
+}
 
 /**
  * send the event data to the addMilestone api
