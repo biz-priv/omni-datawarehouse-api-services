@@ -20,7 +20,7 @@ module.exports.handler = async (event, context, callback) => {
 
   await statusCodeSchema.validateAsync(body);
 
-  let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.housebill) 
+  let validationResult = await validateApiForHouseBill(event.identity.apiKey, event.body.housebill) 
   if ( validationResult ) {
     return callback(response("[401]", "Invalid Token"))
   }
@@ -57,6 +57,8 @@ async function validateApiForHouseBill(apiKey, housebill) {
       return true
     }
 
+    console.log("House Bill : ", housebill);
+    console.log("Customer Id : ", customerId);
     params = {
       TableName : process.env.CUSTOMER_ENTITLEMENT_TABLE,
       IndexName : process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
