@@ -58,7 +58,7 @@ module.exports.handler = async (event, context, callback) => {
   };
   let customerNumber;
 
-  if (!body.shipmentRateRequest.hasOwnProperty("customerNumber")) {
+  if (event.enhancedAuthContext.customerId != "customer-portal-admin") {
     customerNumber = await getCustomerNumber(apiKey);
     console.log("customerNumber", customerNumber);
     if (customerNumber == "failure") {
