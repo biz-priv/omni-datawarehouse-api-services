@@ -10,3 +10,7 @@ Create Shipment
 Get Rating
 WD API
 Bill of Lading
+Shipment Rate
+Add Document
+Add Milestone
+Get Document
