@@ -9,6 +9,7 @@ function:
       alias: ${self:custom.alias}
   runtime: nodejs12.x
   logSubscription: true
+  timeout: 90
   events:
     - http:
         path: /shipment/rate
