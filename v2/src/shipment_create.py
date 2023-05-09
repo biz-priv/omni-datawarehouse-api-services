@@ -91,7 +91,8 @@ def handler(event, context):
                 elif(key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = event["body"]["shipmentCreateRequest"][key]
                 elif(key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
-                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = event["body"]["shipmentCreateRequest"][key]
+                    temp_var = event["body"]["shipmentCreateRequest"][key].replace('Z', '-00:00')
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = temp_var
                 # LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
         if('accessorialList' in event["body"]["shipmentCreateRequest"]):
