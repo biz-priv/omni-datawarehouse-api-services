@@ -13,6 +13,7 @@ import psycopg2
 import pydash
 from ast import literal_eval
 from datetime import date
+from dateutil.parser import parse
 client = boto3.client('dynamodb')
 
 LOGGER = logging.getLogger()
@@ -589,12 +590,13 @@ def validate_input(event):
                 {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
         else:
             readyTime = event["body"]["shipmentCreateRequest"]['readyTime']
-            if((readyTime[4] or readyTime[7] or readyTime[19]) != '-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22]) != ':' or readyTime[10] != 'T'):
+            if not validate_date(readyTime):
+            # if((readyTime[4] or readyTime[7] or readyTime[19]) != '-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22]) != ':' or readyTime[10] != 'T'):
                 raise InputError(json.dumps(
                     {"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
-            elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 31 or readyTime[5:7] == '02' and int(readyTime[8:10]) > 28):
-                raise InputError(json.dumps(
-                    {"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
+            # elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 31 or readyTime[5:7] == '02' and int(readyTime[8:10]) > 28):
+            #     raise InputError(json.dumps(
+            #         {"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
     elif('readyDate' in event["body"]["shipmentCreateRequest"] and 'readyTime' not in event["body"]["shipmentCreateRequest"]):
         if(event["body"]["shipmentCreateRequest"]['readyDate'] == ''):
             raise InputError(json.dumps(
@@ -652,6 +654,12 @@ def validate_input(event):
                 {"httpStatus": 400, "message": ", ".join(list(map(str, errors)))}))
     return event["enhancedAuthContext"]["customerId"]
 
+def validate_date(date_text):
+    try:
+        parse(date_text)
+        return True
+    except ValueError:
+        return False
 
 class InputError(Exception):
     pass
