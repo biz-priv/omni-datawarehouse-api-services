@@ -450,7 +450,7 @@ function makeXmlToJson(data) {
         ) {
           return { Error: modifiedObj.Message };
         } else {
-          return {
+          return [{
             serviceLevel: modifiedObj.ServiceLevelID,
             estimatedDelivery:
               modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
@@ -458,7 +458,7 @@ function makeXmlToJson(data) {
             freightCharge: modifiedObj.StandardFreightCharge,
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: modifiedObj.Message,
-          };
+          }];
         }
       }
     } else {
