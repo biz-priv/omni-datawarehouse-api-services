@@ -113,7 +113,7 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
-    reqFields.pickupTime = body.shipmentRateRequest.pickupTime;
+    reqFields.pickupTime = body.shipmentRateRequest.pickupTime.replace('Z', '+00:00');
     reqFields.shipmentLines = [];
 
     for (let i = 0; i < body.shipmentRateRequest.shipmentLines.length; i++) {
