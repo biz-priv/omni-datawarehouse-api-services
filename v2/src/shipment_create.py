@@ -90,7 +90,8 @@ def handler(event, context):
                 elif(key == 'projectCode'):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
                 elif(key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
-                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = event["body"]["shipmentCreateRequest"][key]
+                    temp_var = event["body"]["shipmentCreateRequest"][key].replace('Z', '-00:00')
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = temp_var
                 elif(key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
                     temp_var = event["body"]["shipmentCreateRequest"][key].replace('Z', '-00:00')
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = temp_var
