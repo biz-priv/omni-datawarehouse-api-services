@@ -30,7 +30,8 @@ const housebillSchema = Joi.object({
         "POD",
         "PRO FORMA",
         "RA",
-        "WAYBILL"
+        "WAYBILL",
+        "LABELZPL"
       ),
 
     Joi.array().items(
@@ -58,7 +59,8 @@ const housebillSchema = Joi.object({
           "POD",
           "PRO FORMA",
           "RA",
-          "WAYBILL"
+          "WAYBILL",
+          "LABELZPL"
         )
     )
   ),
