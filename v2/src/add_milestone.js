@@ -63,12 +63,14 @@ async function validateApiForHouseBill(apiKey, housebill) {
     let customerId = result.Items[0].CustomerID;
     let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
 
+    console.log("House Bill : ", housebill);
+    console.log("Customer Id : ", customerId);
+    console.log("allowedCustomerIds : ", allowedCustomerIds)
+    console.log("condition : ", allowedCustomerIds.includes(customerId))
     if (allowedCustomerIds.includes(customerId)) {
       return true
     }
 
-    console.log("House Bill : ", housebill);
-    console.log("Customer Id : ", customerId);
     params = {
       TableName: process.env.CUSTOMER_ENTITLEMENT_TABLE,
       IndexName: process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
