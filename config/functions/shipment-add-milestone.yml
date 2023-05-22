@@ -12,6 +12,8 @@ function:
     CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index}
     ALLOWED_CUSTOMER_IDS: ${ssm:/omni-dw/allowedCustomerIds}
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    SHIPMENT_MILESTONE_TABLE : ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone/ddb.tableName~true}
   package:
     include:
       - ${self:custom.alias}/src/add_milestone.js
