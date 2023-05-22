@@ -52,14 +52,14 @@ module.exports.handler = async (event, context, callback) => {
     TableName: process.env.SHIPMENT_MILESTONE_TABLE,
     KeyConditionExpression: "FK_OrderNo = :FK_OrderNo",
     ExpressionAttributeValues: {
-      ":FK_OrderNo": "2554225",
+      ":FK_OrderNo": PK_OrderNo ,
     },
   };
 
   const shipmentMilestoneResponse = await queryDynamo(paramsshipmentMilestone);
   console.log("shipmentMilestoneResponse",shipmentMilestoneResponse)
  shipmentMilestoneResponse.Items.map(item => {
-    const { FK_OrderStatusId, FK_OrderNo } = item;
+    const { FK_OrderStatusId } = item;
     console.log("FK_OrderStatusId",FK_OrderStatusId)
   
     if (FK_OrderStatusId === 'NEW' || FK_OrderStatusId === 'WEB') {
@@ -74,8 +74,7 @@ module.exports.handler = async (event, context, callback) => {
         )
       );
     } else {
-      console.log('Send CAN milestone for order:', FK_OrderNo);
-      return  sendEvent(body, callback);
+      return sendEvent(body, callback);
     }
   });
   
