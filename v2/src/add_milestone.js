@@ -21,6 +21,7 @@ module.exports.handler = async (event, context, callback) => {
   await statusCodeSchema.validateAsync(body);
 
   let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill)
+  console.log("validationResult",validationResult)
   if (!validationResult) {
     return callback(
       response(
@@ -31,17 +32,63 @@ module.exports.handler = async (event, context, callback) => {
   }
 
   console.log("body", body);
+ const housebill= body.addMilestoneRequest.housebill;
+  const paramsshipmentHeader = {
+    TableName: process.env.SHIPMENT_HEADER_TABLE,
+    IndexName: "Housebill-index",
+    KeyConditionExpression: "Housebill = :Housebill",
+    ExpressionAttributeValues: {
+      ":Housebill": housebill,
+    },
+  };
 
-  if (body.addMilestoneRequest.statusCode == "CAN") {
-    return await sendEvent(body, callback);
-  } else {
-    return callback(
-      response(
-        "[400]",
-        "Milestone event is not accepted"
-      )
-    );
-  }
+  let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
+  console.log("shipmentHeaderResponse",shipmentHeaderResponse)
+
+  const PK_OrderNo = shipmentHeaderResponse.Items[0].PK_OrderNo;
+  console.log("PK_OrderNo",PK_OrderNo)
+
+  const paramsshipmentMilestone = {
+    TableName: process.env.SHIPMENT_MILESTONE_TABLE,
+    KeyConditionExpression: "FK_OrderNo = :FK_OrderNo",
+    ExpressionAttributeValues: {
+      ":FK_OrderNo": "2554225",
+    },
+  };
+
+  const shipmentMilestoneResponse = await queryDynamo(paramsshipmentMilestone);
+  console.log("shipmentMilestoneResponse",shipmentMilestoneResponse)
+ shipmentMilestoneResponse.Items.map(item => {
+    const { FK_OrderStatusId, FK_OrderNo } = item;
+    console.log("FK_OrderStatusId",FK_OrderStatusId)
+  
+    if (FK_OrderStatusId === 'NEW' || FK_OrderStatusId === 'WEB') {
+      return callback(
+        response(
+          400,
+          {
+            addMilestoneResponse: {
+              message: "shipment in process"
+            }
+          }
+        )
+      );
+    } else {
+      console.log('Send CAN milestone for order:', FK_OrderNo);
+      return  sendEvent(body, callback);
+    }
+  });
+  
+  // if (body.addMilestoneRequest.statusCode == "CAN") {
+  //   return await sendEvent(body, callback);
+  // } else {
+  //   return callback(
+  //     response(
+  //       "[400]",
+  //       "Milestone event is not accepted"
+  //     )
+  //   );
+  // }
 };
 //*******************************************************************//
 async function validateApiForHouseBill(apiKey, housebill) {
@@ -219,5 +266,19 @@ async function addMilestoneApi(postData) {
   } catch (e) {
     console.log("e:addMilestoneApi", e);
     throw "Request Failed";
+  }
+}
+
+
+async function queryDynamo(params) {
+  try {
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+      region: process.env.REGION,
+    });
+    const response = await documentClient.query(params).promise();
+    return response;
+  } catch (error) {
+    console.log("error", error);
+    return { Items: [] };
   }
 }
