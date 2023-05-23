@@ -48,7 +48,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(
       response(
         400,
-        "PK_OrderNo not found for the housebill"
+        "Housebill does not exist"
       )
     );
   }
@@ -70,7 +70,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(
       response(
         400,
-        "No shipment milestone found for the PK_OrderNo"
+        "Housebill does not exist"
       )
     );
   }
