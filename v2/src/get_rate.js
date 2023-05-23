@@ -168,16 +168,26 @@ module.exports.handler = async (event, context, callback) => {
           9999999999999999999999999999n
       ) {
         newJSON.RatingInput.LiabilityType = "INSP";
-        newJSON.RatingInput.DeclaredValue =
-          body.shipmentRateRequest.insuredValue.toLocaleString("fullwide", {
-            useGrouping: false,
-          });
+        // newJSON.RatingInput.DeclaredValue = Number
+        //   body.shipmentRateRequest.insuredValue.toLocaleString("fullwide", {
+        //     useGrouping: false,
+        //   });
+        newJSON.RatingInput.DeclaredValue = Number(body.shipmentRateRequest.insuredValue);
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
     } catch {
       newJSON.RatingInput.LiabilityType = "LL";
     }
+  }
+
+  if (
+    "commodityClass" in body.shipmentRateRequest &&
+    Number(body.shipmentRateRequest.commodityClass) != NaN
+  ) {
+    newJSON.RatingInput.CommodityClass = Number(
+      body.shipmentRateRequest.commodityClass
+    );
   }
 
   if (
@@ -274,12 +284,16 @@ function addCommodityWeightPerPiece(inputData) {
     if (shipKey.includes("//")) {
       continue;
     }
-    if (shipKey != "dimUOM" && shipKey != "weightUOM") {
+    if (shipKey == "hazmat") {
+        commodityInput.CommodityInput.CommodityHazmat = inputData.shipmentLines[0].hazmat ? 'Y' : 'N';
+    }
+    else if (shipKey != "dimUOM" && shipKey != "weightUOM") {
       new_key =
         "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
       commodityInput.CommodityInput[new_key] =
         inputData.shipmentLines[0][shipKey];
     }
+   
   }
 
   return commodityInput.CommodityInput;
@@ -360,8 +374,8 @@ function makeXmlToJson(data) {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
               e.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: e.StandardTotalRate,
-            freightCharge: e.StandardFreightCharge,
+            totalRate: Number(e.StandardTotalRate),
+            freightCharge: Number(e.StandardFreightCharge),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: e.Message,
           };
@@ -398,9 +412,9 @@ function makeXmlToJson(data) {
               : modifiedObj.AccessorialOutput.AccessorialOutput[i]
                   .AccessorialCharge
               ? (list[i].charge =
-                  modifiedObj.AccessorialOutput.AccessorialOutput[
+                  Number(modifiedObj.AccessorialOutput.AccessorialOutput[
                     i
-                  ].AccessorialCharge)
+                  ].AccessorialCharge))
               : console.info("no charge");
           }
           AccessorialOutput = list;
