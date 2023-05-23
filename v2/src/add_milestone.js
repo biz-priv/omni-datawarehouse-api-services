@@ -44,7 +44,14 @@ module.exports.handler = async (event, context, callback) => {
 
   let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
   console.log("shipmentHeaderResponse",shipmentHeaderResponse)
-
+  if (shipmentHeaderResponse.Items.length === 0) {
+    return callback(
+      response(
+        400,
+        "PK_OrderNo not found for the housebill"
+      )
+    );
+  }
   const PK_OrderNo = shipmentHeaderResponse.Items[0].PK_OrderNo;
   console.log("PK_OrderNo",PK_OrderNo)
 
@@ -58,6 +65,16 @@ module.exports.handler = async (event, context, callback) => {
 
   const shipmentMilestoneResponse = await queryDynamo(paramsshipmentMilestone);
   console.log("shipmentMilestoneResponse",shipmentMilestoneResponse)
+
+  if (shipmentMilestoneResponse.Items.length === 0) {
+    return callback(
+      response(
+        400,
+        "No shipment milestone found for the PK_OrderNo"
+      )
+    );
+  }
+
  shipmentMilestoneResponse.Items.map(item => {
     const { FK_OrderStatusId } = item;
     console.log("FK_OrderStatusId",FK_OrderStatusId)
