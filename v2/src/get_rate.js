@@ -374,8 +374,8 @@ function makeXmlToJson(data) {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
               e.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: Number(e.StandardTotalRate),
-            freightCharge: Number(e.StandardFreightCharge),
+            totalRate: parseFloat(e.StandardTotalRate),
+            freightCharge: parseFloat(e.StandardFreightCharge),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: e.Message,
           };
@@ -412,7 +412,7 @@ function makeXmlToJson(data) {
               : modifiedObj.AccessorialOutput.AccessorialOutput[i]
                   .AccessorialCharge
               ? (list[i].charge =
-                  Number(modifiedObj.AccessorialOutput.AccessorialOutput[
+                parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
                     i
                   ].AccessorialCharge))
               : console.info("no charge");
@@ -436,7 +436,7 @@ function makeXmlToJson(data) {
                   i
                 ].AccessorialDesc;
               list[i].charge =
-                Number(modifiedObj.AccessorialOutput.AccessorialOutput[
+              parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
                   i
                 ].AccessorialCharge);
             }
@@ -468,8 +468,8 @@ function makeXmlToJson(data) {
             serviceLevel: modifiedObj.ServiceLevelID,
             estimatedDelivery:
               modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: Number(modifiedObj.StandardTotalRate),
-            freightCharge: Number(modifiedObj.StandardFreightCharge),
+            totalRate: parseFloat(modifiedObj.StandardTotalRate),
+            freightCharge: parseFloat(modifiedObj.StandardFreightCharge),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: modifiedObj.Message,
           }];
@@ -493,7 +493,7 @@ function getAccessorialOutput(AccessorialOutput) {
         list[i].description =
           AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
         list[i].charge =
-          Number(AccessorialOutput.AccessorialOutput[i].AccessorialCharge);
+        parseFloat(AccessorialOutput.AccessorialOutput[i].AccessorialCharge);
       }
     }
   } else {
@@ -501,7 +501,7 @@ function getAccessorialOutput(AccessorialOutput) {
     list[i] = {};
     list[i].code = AccessorialOutput.AccessorialOutput.AccessorialCode;
     list[i].description = AccessorialOutput.AccessorialOutput.AccessorialDesc;
-    list[i].charge = Number(AccessorialOutput.AccessorialOutput.AccessorialCharge);
+    list[i].charge = parseFloat(AccessorialOutput.AccessorialOutput.AccessorialCharge);
   }
   return list;
 }
