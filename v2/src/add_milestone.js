@@ -21,7 +21,7 @@ module.exports.handler = async (event, context, callback) => {
   await statusCodeSchema.validateAsync(body);
 
   let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill)
-  console.log("validationResult",validationResult)
+  console.log("validationResult", validationResult)
   if (!validationResult) {
     return callback(
       response(
@@ -32,7 +32,7 @@ module.exports.handler = async (event, context, callback) => {
   }
 
   console.log("body", body);
- const housebill= body.addMilestoneRequest.housebill;
+  const housebill = body.addMilestoneRequest.housebill;
   const paramsshipmentHeader = {
     TableName: process.env.SHIPMENT_HEADER_TABLE,
     IndexName: "Housebill-index",
@@ -43,7 +43,7 @@ module.exports.handler = async (event, context, callback) => {
   };
 
   let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
-  console.log("shipmentHeaderResponse",shipmentHeaderResponse)
+  console.log("shipmentHeaderResponse", shipmentHeaderResponse)
   if (shipmentHeaderResponse.Items.length === 0) {
     return callback(
       response(
@@ -52,49 +52,23 @@ module.exports.handler = async (event, context, callback) => {
       )
     );
   }
-  const PK_OrderNo = shipmentHeaderResponse.Items[0].PK_OrderNo;
-  console.log("PK_OrderNo",PK_OrderNo)
+  const data = shipmentHeaderResponse.Items[0]
 
-  const paramsshipmentMilestone = {
-    TableName: process.env.SHIPMENT_MILESTONE_TABLE,
-    KeyConditionExpression: "FK_OrderNo = :FK_OrderNo",
-    ExpressionAttributeValues: {
-      ":FK_OrderNo": PK_OrderNo ,
-    },
-  };
-
-  const shipmentMilestoneResponse = await queryDynamo(paramsshipmentMilestone);
-  console.log("shipmentMilestoneResponse",shipmentMilestoneResponse)
-
-  if (shipmentMilestoneResponse.Items.length === 0) {
+  if (data.FK_OrderStatusId === 'NEW' || data.FK_OrderStatusId === 'WEB') {
+    return sendEvent(body, callback);
+  } else {
     return callback(
       response(
         400,
-        "Housebill does not exist"
+        {
+          addMilestoneResponse: {
+            message: "Shipment cannot be Cancelled. Order Status of the Shipment is <>"
+          }
+        }
       )
     );
   }
 
- shipmentMilestoneResponse.Items.map(item => {
-    const { FK_OrderStatusId } = item;
-    console.log("FK_OrderStatusId",FK_OrderStatusId)
-  
-    if (FK_OrderStatusId === 'NEW' || FK_OrderStatusId === 'WEB') {
-      return callback(
-        response(
-          400,
-          {
-            addMilestoneResponse: {
-              message: "shipment in process"
-            }
-          }
-        )
-      );
-    } else {
-      return sendEvent(body, callback);
-    }
-  });
-  
   // if (body.addMilestoneRequest.statusCode == "CAN") {
   //   return await sendEvent(body, callback);
   // } else {
