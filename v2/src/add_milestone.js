@@ -47,7 +47,7 @@ module.exports.handler = async (event, context, callback) => {
   if (shipmentHeaderResponse.Items.length === 0) {
     return callback(
       response(
-        400,
+        "[400]",
         "Housebill does not exist"
       )
     );
@@ -60,7 +60,7 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     return callback(
       response(
-        400,
+        "[400]",
         {
           addMilestoneResponse: {
             message: "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
@@ -70,16 +70,6 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
 
-  // if (body.addMilestoneRequest.statusCode == "CAN") {
-  //   return await sendEvent(body, callback);
-  // } else {
-  //   return callback(
-  //     response(
-  //       "[400]",
-  //       "Milestone event is not accepted"
-  //     )
-  //   );
-  // }
 };
 //*******************************************************************//
 async function validateApiForHouseBill(apiKey, housebill) {
