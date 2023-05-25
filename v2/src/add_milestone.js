@@ -53,8 +53,9 @@ module.exports.handler = async (event, context, callback) => {
     );
   }
   const data = shipmentHeaderResponse.Items[0]
+  const FK_OrderStatusId = data.FK_OrderStatusId
 
-  if (data.FK_OrderStatusId === 'NEW' || data.FK_OrderStatusId === 'WEB') {
+  if (FK_OrderStatusId === 'NEW' || FK_OrderStatusId === 'WEB') {
     return sendEvent(body, callback);
   } else {
     return callback(
@@ -62,7 +63,7 @@ module.exports.handler = async (event, context, callback) => {
         400,
         {
           addMilestoneResponse: {
-            message: "Shipment cannot be Cancelled. Order Status of the Shipment is <>"
+            message: "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
           }
         }
       )
