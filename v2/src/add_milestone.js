@@ -61,11 +61,12 @@ module.exports.handler = async (event, context, callback) => {
     return callback(
       response(
         "[400]",
-        {
-          addMilestoneResponse: {
-            message: "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
-          }
-        }
+        // {
+        //   "addMilestoneResponse": {
+        //     "message": "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
+        //   }
+        // }
+        "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
       )
     );
   }
