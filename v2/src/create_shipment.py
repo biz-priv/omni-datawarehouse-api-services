@@ -177,6 +177,8 @@ def handler(event, context):
         raise AirtrakShipmentApiError(json.dumps(
             {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
+    add_tracking_notes( event["body"]["shipmentCreateRequest"]["billTo"] , event["body"]["shipmentCreateRequest"]["UserId"] )
+
     shipment_data = update_response(response)
     update_authorizer_table(shipment_data, customer_id)
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]
@@ -651,6 +653,39 @@ def validate_input(event):
                 {"httpStatus": 400, "message": ", ".join(list(map(str, errors)))}))
     return event["enhancedAuthContext"]["customerId"]
 
+def add_tracking_notes( houseBill, username ):
+    payload = f'''
+        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+            <soap:Header>
+                <AuthHeader xmlns="http://tempuri.org/">
+                    <UserName>{os.environ["wt_soap_username"]}</UserName>
+                    <Password>{os.environ["wt_soap_password"]}</Password>
+                </AuthHeader>
+            </soap:Header>
+            <soap:Body>
+                <WriteTrackingNote xmlns="http://tempuri.org/">
+                    <HandlingStation></HandlingStation>
+                    <HouseBill>{houseBill}</HouseBill>
+                    <TrackingNotes>
+                        <TrackingNotes>
+                            <TrackingNoteMessage>Added by {username}</TrackingNoteMessage>
+                        </TrackingNotes>
+                    </TrackingNotes>
+                </WriteTrackingNote>
+            </soap:Body>
+        </soap:Envelope>
+    '''
+    url = os.environ["URL"]
+    try:
+        req = requests.post(url, headers={'Content-Type': 'text/xml; charset=utf-8'}, data=payload)
+        response = req.text
+        LOGGER.info("Response is : %s", json.dumps(response))
+    except Exception as airtrak_error:
+        LOGGER.exception("AirtrakShipmentApiError: %s",
+                         json.dumps(airtrak_error))
+        raise AirtrakShipmentApiError(json.dumps(
+            {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
 class InputError(Exception):
     pass
