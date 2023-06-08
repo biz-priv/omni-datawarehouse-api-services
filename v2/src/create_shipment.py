@@ -676,6 +676,7 @@ def add_tracking_notes( houseBill, username ):
             </soap:Body>
         </soap:Envelope>
     '''
+    LOGGER.info("Payload is : %s", json.dumps(payload))
     url = os.environ["URL"]
     try:
         req = requests.post(url, headers={'Content-Type': 'text/xml; charset=utf-8'}, data=payload)
