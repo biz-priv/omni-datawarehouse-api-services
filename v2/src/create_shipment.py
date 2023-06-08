@@ -177,9 +177,9 @@ def handler(event, context):
         raise AirtrakShipmentApiError(json.dumps(
             {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
-    add_tracking_notes( event["body"]["shipmentCreateRequest"]["billTo"] , event["body"]["shipmentCreateRequest"]["UserID"] )
-
     shipment_data = update_response(response)
+    add_tracking_notes( shipment_data["shipmentCreateResponse"]["housebill"] , event["body"]["shipmentCreateRequest"]["UserID"] )
+
     update_authorizer_table(shipment_data, customer_id)
     house_bill_info = temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]
     LOGGER.info("House Bill Details are: %s", json.dumps(house_bill_info))
@@ -653,7 +653,7 @@ def validate_input(event):
                 {"httpStatus": 400, "message": ", ".join(list(map(str, errors)))}))
     return event["enhancedAuthContext"]["customerId"]
 
-def add_tracking_notes( houseBill, username ):
+def add_tracking_notes( housebill, username ):
     payload = f'''
         <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
             xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -666,7 +666,7 @@ def add_tracking_notes( houseBill, username ):
             <soap:Body>
                 <WriteTrackingNote xmlns="http://tempuri.org/">
                     <HandlingStation></HandlingStation>
-                    <HouseBill>{houseBill}</HouseBill>
+                    <HouseBill>{housebill}</HouseBill>
                     <TrackingNotes>
                         <TrackingNotes>
                             <TrackingNoteMessage>Added by {username}</TrackingNoteMessage>
