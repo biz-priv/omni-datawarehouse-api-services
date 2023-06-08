@@ -654,7 +654,8 @@ def validate_input(event):
     return event["enhancedAuthContext"]["customerId"]
 
 def add_tracking_notes( housebill, username ):
-    payload = f'''
+    try:
+        payload = f'''
         <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
             xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
             <soap:Header>
@@ -675,18 +676,15 @@ def add_tracking_notes( housebill, username ):
                 </WriteTrackingNote>
             </soap:Body>
         </soap:Envelope>
-    '''
-    LOGGER.info("Payload is : %s", json.dumps(payload))
-    url = os.environ["URL"]
-    try:
+        '''
+        LOGGER.info("Payload is : %s", json.dumps(payload))
+        url = os.environ["URL"]
         req = requests.post(url, headers={'Content-Type': 'text/xml; charset=utf-8'}, data=payload)
         response = req.text
         LOGGER.info("Response is : %s", json.dumps(response))
     except Exception as airtrak_error:
         LOGGER.exception("AirtrakShipmentApiError: %s",
                          json.dumps(airtrak_error))
-        raise AirtrakShipmentApiError(json.dumps(
-            {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
 class InputError(Exception):
     pass
