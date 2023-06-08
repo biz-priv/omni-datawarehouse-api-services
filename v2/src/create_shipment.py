@@ -177,7 +177,7 @@ def handler(event, context):
         raise AirtrakShipmentApiError(json.dumps(
             {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
-    add_tracking_notes( event["body"]["shipmentCreateRequest"]["billTo"] , event["body"]["shipmentCreateRequest"]["UserId"] )
+    add_tracking_notes( event["body"]["shipmentCreateRequest"]["billTo"] , event["body"]["shipmentCreateRequest"]["UserID"] )
 
     shipment_data = update_response(response)
     update_authorizer_table(shipment_data, customer_id)
