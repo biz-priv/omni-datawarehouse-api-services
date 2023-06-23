@@ -153,8 +153,8 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
-    const resp = await getData(eventParams, parameterString, searchType);
     await getDataWithoutGateway(eventParams, parameterString, searchType);
+    const resp = await getData(eventParams, parameterString, searchType);
 
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
@@ -224,7 +224,7 @@ async function getData(eventParams, parameterString, searchType) {
 async function getDataWithoutGateway(eventParams, parameterString, searchType) {
     try {
   
-      let url = `https://jsi-websli.omni.local/wtTest/getwtdoc/v1/json/abea8d7f29fb385d64b327574d42e0/${searchType}=${eventParams[searchType]}/${parameterString}`;
+      let url = `https://jsi-websli.omni.local/wtProd/getwtdoc/v1/json/fa75bbb8-9a10-4c64-80e8-e48d48f34088/${searchType}=${eventParams[searchType]}/${parameterString}`;
       console.log("websli url :", url);
   
       let getDocumentData = {
