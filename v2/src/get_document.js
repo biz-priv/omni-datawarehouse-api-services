@@ -154,6 +154,7 @@ module.exports.handler = async (event, context, callback) => {
     }
 
     const resp = await getData(eventParams, parameterString, searchType);
+    await getDataWithoutGateway(eventParams, parameterString, searchType);
 
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
@@ -213,6 +214,36 @@ async function getData(eventParams, parameterString, searchType) {
     throw error;
   }
 }
+
+/**
+ *
+ * @param eventParams
+ * @param searchType
+ * @returns
+ */
+async function getDataWithoutGateway(eventParams, parameterString, searchType) {
+    try {
+  
+      let url = `https://jsi-websli.omni.local/wtTest/getwtdoc/v1/json/abea8d7f29fb385d64b327574d42e0/${searchType}=${eventParams[searchType]}/${parameterString}`;
+      console.log("websli url :", url);
+  
+      let getDocumentData = {
+        wtDocs: {
+          housebill: "",
+          fileNumber: "",
+          wtDoc: [],
+        },
+      }
+  
+      const queryType = await axios.get(url);
+      getDocumentData = queryType.data;
+      console.log("data", getDocumentData);
+    //   return getDocumentData;
+    } catch (error) {
+      console.log("error", error);
+    //   throw error;
+    }
+  }
 
 function response(code, message) {
   return JSON.stringify({
