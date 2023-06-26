@@ -157,6 +157,12 @@ module.exports.handler = async (event, context, callback) => {
     const resp = await getData(eventParams, parameterString, searchType);
 
     const newResponse = await newResponseStructureForV2(resp);
+
+    for (item in getDocumentResponse.documents) {
+        let s3Result = await createS3File(item.filename, item.b64str);
+        console.log("s3Result", s3Result);
+    }
+
     console.log("newResponse", newResponse);
     return newResponse;
   } catch (error) {
@@ -250,4 +256,16 @@ function response(code, message) {
     httpStatus: code,
     message,
   });
+}
+
+
+async function createS3File(filename, body) {
+    const S3 = new AWS.S3();
+    const params = {
+        Key: filename,
+        Body: body,
+        Bucket: process.env.DOCUMENTS_BUCKET,
+        ContentType: 'application/pdf'
+    };
+    return await S3.upload(params).promise();
 }
