@@ -153,7 +153,7 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
-    await getDataWithoutGateway(eventParams, parameterString, searchType);
+    // await getDataWithoutGateway(eventParams, parameterString, searchType);
     const resp = await getData(eventParams, parameterString, searchType);
 
     const newResponse = await newResponseStructureForV2(resp);
