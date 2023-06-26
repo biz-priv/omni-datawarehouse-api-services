@@ -170,6 +170,6 @@ resources:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
     DocumentsBucket:
-      type: AWS::S3::Bucket
+      Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:service}-documents-${self:provider.stage}
