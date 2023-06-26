@@ -162,7 +162,8 @@ module.exports.handler = async (event, context, callback) => {
     for (let index = 0; index < newResponse.getDocumentResponse.documents.length; index++) {
         const item = newResponse.getDocumentResponse.documents[index];
         let s3Result = await createS3File(item.filename, item.b64str);
-        console.log("s3Result", s3Result);
+        let url = await generatePreSignedURL(item.filename);
+        console.log("url", url);
     }
     // console.log("updated", newResponse);
 
@@ -271,4 +272,15 @@ async function createS3File(filename, body) {
         ContentType: 'application/pdf'
     };
     return await S3.upload(params).promise();
+}
+
+async function generatePreSignedURL( filename ) {
+    const S3 = new AWS.S3();
+    const params = {
+        Key: filename,
+        Bucket: process.env.DOCUMENTS_BUCKET,
+        Expires: 15*60
+    };
+    let url = await S3.getSignedUrlPromise('getObject', params)
+    return url;
 }
