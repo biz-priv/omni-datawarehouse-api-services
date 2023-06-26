@@ -158,7 +158,7 @@ module.exports.handler = async (event, context, callback) => {
 
     const newResponse = await newResponseStructureForV2(resp);
 
-    for (item in getDocumentResponse.documents) {
+    for (item in newResponse.getDocumentResponse.documents) {
         let s3Result = await createS3File(item.filename, item.b64str);
         console.log("s3Result", s3Result);
     }
