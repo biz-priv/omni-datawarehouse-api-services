@@ -40,3 +40,4 @@ function:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     GET_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
+    DOCUMENTS_BUCKET: !Ref DocumentsBucket
