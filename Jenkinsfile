@@ -9,7 +9,7 @@ pipeline {
                 script{
                     echo "GIT_BRANCH: ${GIT_BRANCH}"
                     echo "ALIAS_VERSION: ${ALIAS_VERSION}"
-                    env.ALIAS_VERSION="${ALIAS_VERSION}"
+                    export ALIAS_VERSION=${ALIAS_VERSION}
                     echo sh(script: 'env|sort', returnStdout: true)
                     if ("${GIT_BRANCH}".startsWith("PR-")){
                         if("${CHANGE_TARGET}".contains("develop")){
@@ -34,7 +34,6 @@ pipeline {
                 anyOf {
                     branch 'master';
                     branch 'develop';
-                    branch 'feature/*';
                 }
                 expression {
                     return true;
