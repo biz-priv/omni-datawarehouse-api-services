@@ -22,11 +22,11 @@ function:
               headers:
                 Content-Type: "'application/json'"
               template: ${file(responseTemplate.vtl)}
-            # 500:
-            #   pattern: '[\s\S]*\[500\][\s\S]*'
-            #   headers:
-            #     Content-Type: "'application/json'"
-            #   template: ${file(responseTemplate.vtl)}
+            500:
+              pattern: '[\s\S]*\[500\][\s\S]*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
         authorizer:
           name: custom-authorizer
           resultTtlInSeconds: 0
