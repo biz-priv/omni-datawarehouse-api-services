@@ -163,7 +163,8 @@ module.exports.handler = async (event, context, callback) => {
         const item = newResponse.getDocumentResponse.documents[index];
         let s3Result = await createS3File(item.filename, new Buffer(item.b64str,'base64'));
         let url = await generatePreSignedURL(item.filename);
-        item.url = url
+        item.url = url;
+        delete item.b64str;
         console.log("document url", url);
     }
     console.log("updatedResponse", newResponse);
