@@ -158,16 +158,6 @@ module.exports.handler = async (event, context, callback) => {
 
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
-
-    for (let index = 0; index < newResponse.getDocumentResponse.documents.length; index++) {
-        const item = newResponse.getDocumentResponse.documents[index];
-        let s3Result = await createS3File(item.filename, new Buffer(item.b64str,'base64'));
-        let url = await generatePreSignedURL(item.filename);
-        item.url = url
-        console.log("document url", url);
-    }
-    console.log("updatedResponse", newResponse);
-
     return newResponse;
   } catch (error) {
     console.log("error", error);
@@ -260,27 +250,4 @@ function response(code, message) {
     httpStatus: code,
     message,
   });
-}
-
-
-async function createS3File(filename, body) {
-    const S3 = new AWS.S3();
-    const params = {
-        Key: filename,
-        Body: body,
-        Bucket: process.env.DOCUMENTS_BUCKET,
-        ContentType: 'application/pdf'
-    };
-    return await S3.upload(params).promise();
-}
-
-async function generatePreSignedURL( filename ) {
-    const S3 = new AWS.S3();
-    const params = {
-        Key: filename,
-        Bucket: process.env.DOCUMENTS_BUCKET,
-        Expires: 15*60
-    };
-    let url = await S3.getSignedUrlPromise('getObject', params)
-    return url;
 }
