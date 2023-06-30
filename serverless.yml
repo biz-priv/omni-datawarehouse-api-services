@@ -173,3 +173,9 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:service}-documents-${self:provider.stage}
+        LifecycleConfiguration:
+          Rules:
+            - Prefix: "expiry"
+              Status: Enabled
+              Expiration:
+                Days: 1

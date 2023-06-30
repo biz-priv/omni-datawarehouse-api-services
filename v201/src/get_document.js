@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
+const { v4: uuidv4 } = require("uuid");
 
 //1. do a joi valiation
 const housebillSchema = Joi.object({
@@ -185,6 +186,7 @@ async function newResponseStructureForV2(response) {
   console.log("response====>", response);
   return new Promise((resolve, reject) => {
     const newResponse = {
+      id: uuidv4(),
       housebill: response?.wtDocs?.housebill ? response.wtDocs.housebill : "",
       fileNumber: response?.wtDocs?.fileNumber
         ? response.wtDocs.fileNumber
