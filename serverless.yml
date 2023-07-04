@@ -177,5 +177,4 @@ resources:
           Rules:
             - Prefix: "expiry"
               Status: Enabled
-              Expiration:
-                Days: 1
+              ExpirationInDays: 1
