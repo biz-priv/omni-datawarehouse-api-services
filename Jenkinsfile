@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'ecs' }
     parameters {
-        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v1')
+        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v2')
     }
     stages {
         stage('Set parameters') {
@@ -34,6 +34,7 @@ pipeline {
                 anyOf {
                     branch 'master';
                     branch 'develop';
+                    branch 'feature/*';
                 }
                 expression {
                     return true;
@@ -46,7 +47,7 @@ pipeline {
                     npm i
                     serverless --version
                     echo ${env.ALIAS_VERSION}
-                    sls deploy --alias v2 -s ${env.ENVIRONMENT}
+                    sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
                     """
                 }
             }

@@ -169,3 +169,12 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
+    DocumentBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-document-${self:provider.stage}
+        LifecycleConfiguration:
+          Rules:
+            - Prefix: "expiry"
+              Status: Enabled
+              ExpirationInDays: 1

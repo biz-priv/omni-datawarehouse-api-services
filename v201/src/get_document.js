@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
+const { v4: uuidv4 } = require("uuid");
 
 //1. do a joi valiation
 const housebillSchema = Joi.object({
@@ -158,6 +159,17 @@ module.exports.handler = async (event, context, callback) => {
 
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
+
+    for (let index = 0; index < newResponse.getDocumentResponse.documents.length; index++) {
+        const item = newResponse.getDocumentResponse.documents[index];
+        let s3Result = await createS3File(item.filename, new Buffer(item.b64str,'base64'));
+        let url = await generatePreSignedURL(item.filename);
+        item.url = url;
+        delete item.b64str;
+        console.log("document url", url);
+    }
+    console.log("updatedResponse", newResponse);
+
     return newResponse;
   } catch (error) {
     console.log("error", error);
@@ -174,6 +186,7 @@ async function newResponseStructureForV2(response) {
   console.log("response====>", response);
   return new Promise((resolve, reject) => {
     const newResponse = {
+      id: uuidv4(),
       housebill: response?.wtDocs?.housebill ? response.wtDocs.housebill : "",
       fileNumber: response?.wtDocs?.fileNumber
         ? response.wtDocs.fileNumber
@@ -250,4 +263,27 @@ function response(code, message) {
     httpStatus: code,
     message,
   });
+}
+
+
+async function createS3File(filename, body) {
+    const S3 = new AWS.S3();
+    const params = {
+        Key: filename,
+        Body: body,
+        Bucket: process.env.DOCUMENTS_BUCKET,
+        ContentType: 'application/pdf'
+    };
+    return await S3.upload(params).promise();
+}
+
+async function generatePreSignedURL( filename ) {
+    const S3 = new AWS.S3();
+    const params = {
+        Key: filename,
+        Bucket: process.env.DOCUMENTS_BUCKET,
+        Expires: 15*60
+    };
+    let url = await S3.getSignedUrlPromise('getObject', params)
+    return url;
 }
