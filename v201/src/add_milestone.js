@@ -3,7 +3,53 @@ const { convert } = require("xmlbuilder2");
 const Joi = require("joi");
 const AWS = require('aws-sdk');
 var dynamodb = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
+const { v4: uuidv4 } = require("uuid");
+const momentTZ = require("moment-timezone");
 
+const {
+  SHIPMENT_APAR_TABLE,
+  SHIPMENT_HEADER_TABLE,
+  ADDRESS_MAPPING_TABLE,
+  MILESTONE_LOG_TABLE,
+  MILESTONE_ORDER_STATUS,
+  IVIA_VENDOR_ID,
+} = process.env;
+
+const statusCodes = MILESTONE_ORDER_STATUS.split(",");
+console.log(statusCodes);
+
+const statusCodeValidation = Joi.string()
+  .alphanum()
+  .required()
+  .valid(...statusCodes);
+
+const eventValidation = Joi.object()
+.keys({
+  addMilestoneRequest: Joi.object()
+    .keys({
+      housebill: Joi.string().alphanum().required(),
+      statusCode: statusCodeValidation,
+      eventTime: Joi.string().required(),
+    })
+    .required(),
+})
+.required();
+
+const eventDeliveredValidation = Joi.object()
+  .keys({
+    addMilestoneRequest: Joi.object()
+      .keys({
+        housebill: Joi.string().required(),
+        statusCode: statusCodeValidation,
+        eventTime: Joi.string().required(),
+        latitude: Joi.number(),
+        longitude: Joi.number(),
+        signatory: Joi.string().required(),
+      })
+      .required(),
+  })
+  .required();
 
 const statusCodeSchema = Joi.object({
   addMilestoneRequest: Joi.object({
@@ -13,34 +59,119 @@ const statusCodeSchema = Joi.object({
   }),
 });
 
+let eventLogObj = {
+  Id: "",
+  createdAt: "",
+  housebill: "",
+  statusCode: "",
+  latitude: "",
+  longitude: "",
+  eventTime: "",
+  signatory: "",
+  payload: "",
+  sentPayload: "",
+  xmlPayload: "",
+  xmlResponse: "",
+  FK_OrderNo: "",
+  FK_ServiceId: "",
+  consineeIsCustomer: "0",
+  consineeIsCustomerObj: "",
+  isEventStatusIgnored: "0",
+  response: "",
+  errorMsg: "",
+  isSuccess: "F",
+};
+
+function setEventLogObj(key, value, isJson = false) {
+  eventLogObj = {
+    ...eventLogObj,
+    [key]: isJson ? JSON.stringify(value) : value,
+  };
+}
+
+
 module.exports.handler = async (event, context, callback) => {
   console.info("event", JSON.stringify(event));
 
+  eventLogObj = {
+    Id: "",
+    createdAt: "",
+    houseBill: "",
+    statusCode: "",
+    latitude: "",
+    longitude: "",
+    eventTime: "",
+    signatory: "",
+    payload: "",
+    sentPayload: "",
+    xmlPayload: "",
+    xmlResponse: "",
+    FK_OrderNo: "",
+    FK_ServiceId: "",
+    consineeIsCustomer: "0",
+    consineeIsCustomerObj: "",
+    isEventStatusIgnored: "0",
+    response: "",
+    errorMsg: "",
+    isSuccess: "F",
+  };
+  
+  eventLogObj.Id = uuidv4();
+  eventLogObj.createdAt = momentTZ
+    .tz("America/Chicago")
+    .format("YYYY-MM-DD HH:mm:ss")
+    .toString();
+
+
   const { body } = event;
 
-  await statusCodeSchema.validateAsync(body);
+  let validationData = "";
+  eventLogObj = {
+    ...eventLogObj,
+    houseBill: body.addMilestoneRequest?.housebill?.toString() ?? "",
+    statusCode: body.addMilestoneRequest?.statusCode?.toString() ?? "",
+    eventTime: body.addMilestoneRequest?.eventTime?.toString() ?? "",
+    latitude: body.addMilestoneRequest?.latitude?.toString() ?? "",
+    longitude: body.addMilestoneRequest?.longitude?.toString() ?? "",
+    signatory: body.addMilestoneRequest?.signatory?.toString() ?? "",
+  };
 
-  let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill)
-  console.log("validationResult", validationResult)
-  if (!validationResult) {
-    return callback(
-      response(
-        "[400]",
-        "House bill number does not exist"
-      )
-    );
+  if (!body.hasOwnProperty("addMilestoneRequest")) {
+    console.log("eventLogObj", eventLogObj);
+    return callback(response("[400]", "addMilestoneRequest is required"));
   }
 
-  console.log("body", body);
-  const housebill = body.addMilestoneRequest.housebill;
+  if (body.addMilestoneRequest.statusCode === "DEL") {
+    validationData = eventDeliveredValidation.validate(body);
+  } else {
+    validationData = eventValidation.validate(body);
+  }
+
+  const { error, value } = validationData;
+  console.info("validated data", value);
+  if (error) {
+    let msg = error.details[0].message
+      .split('" ')[1]
+      .replace(new RegExp('"', "g"), "");
+    let key = error.details[0].context.key;
+
+    setEventLogObj("errorMsg", key + " " + msg);
+    console.log("eventLogObj", eventLogObj);
+    return callback(response("[400]", key + " " + msg));
+  }
+
+  const statusCode = body.addMilestoneRequest.statusCode;
+  const houseBillNumber = body.addMilestoneRequest.housebill;
+
   const paramsshipmentHeader = {
     TableName: process.env.SHIPMENT_HEADER_TABLE,
     IndexName: "Housebill-index",
     KeyConditionExpression: "Housebill = :Housebill",
     ExpressionAttributeValues: {
-      ":Housebill": housebill,
+      ":Housebill": houseBillNumber,
     },
   };
+
 
   let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
   console.log("shipmentHeaderResponse", shipmentHeaderResponse)
@@ -52,24 +183,31 @@ module.exports.handler = async (event, context, callback) => {
       )
     );
   }
-  const data = shipmentHeaderResponse.Items[0]
-  const FK_OrderStatusId = data.FK_OrderStatusId
 
-  if (FK_OrderStatusId === 'NEW' || FK_OrderStatusId === 'WEB') {
-    return sendEvent(body, callback);
-  } else {
-    return callback(
-      response(
-        "[400]",
-        // {
-        //   "addMilestoneResponse": {
-        //     "message": "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
-        //   }
-        // }
-        "Shipment cannot be Cancelled. Order Status of the Shipment is " + FK_OrderStatusId
-      )
-    );
+  const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
+  // Append timestamp to the file name
+  const fileNameWithTimestamp = 'add_milestone_' +`${timestamp}.json`;
+
+  const payload = JSON.stringify(event);
+  const params = {
+    Bucket: 'dw-test-etl-job',
+    Key: `Test/${fileNameWithTimestamp}`,
+    Body: payload,
+    ContentType: 'application/json'
   }
+
+  const s3Response = await s3.putObject(params).promise();
+
+  console.log("S3 Response", s3Response);
+
+  return {
+    addMilestoneResponse: {
+      message: 'Success',
+      id: eventLogObj.Id
+    },
+  };
+
+  
 
 };
 //*******************************************************************//
@@ -262,5 +400,23 @@ async function queryDynamo(params) {
   } catch (error) {
     console.log("error", error);
     return { Items: [] };
+  }
+}
+
+async function queryWithIndex(tableName, index, keys, otherParams = null) {
+  let params;
+  try {
+    const [expression, expressionAtts] = await getQueryExpression(keys);
+    params = {
+      TableName: tableName,
+      IndexName: index,
+      KeyConditionExpression: expression,
+      ExpressionAttributeValues: expressionAtts,
+    };
+    if (otherParams) params = { ...params, ...otherParams };
+    return await dynamodb.query(params).promise();
+  } catch (e) {
+    console.error("Query Item Error: ", e, "\nQuery params: ", params);
+    throw "QueryItemError";
   }
 }
