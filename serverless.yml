@@ -175,6 +175,5 @@ resources:
         BucketName: ${self:service}-document-${self:provider.stage}
         LifecycleConfiguration:
           Rules:
-            - Prefix: "expiry"
-              Status: Enabled
+            - Status: Enabled
               ExpirationInDays: 1
