@@ -160,29 +160,29 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", key + " " + msg));
   }
 
-  const statusCode = body.addMilestoneRequest.statusCode;
-  const houseBillNumber = body.addMilestoneRequest.housebill;
+  // const statusCode = body.addMilestoneRequest.statusCode;
+  // const houseBillNumber = body.addMilestoneRequest.housebill;
 
-  const paramsshipmentHeader = {
-    TableName: process.env.SHIPMENT_HEADER_TABLE,
-    IndexName: "Housebill-index",
-    KeyConditionExpression: "Housebill = :Housebill",
-    ExpressionAttributeValues: {
-      ":Housebill": houseBillNumber,
-    },
-  };
+  // const paramsshipmentHeader = {
+  //   TableName: process.env.SHIPMENT_HEADER_TABLE,
+  //   IndexName: "Housebill-index",
+  //   KeyConditionExpression: "Housebill = :Housebill",
+  //   ExpressionAttributeValues: {
+  //     ":Housebill": houseBillNumber,
+  //   },
+  // };
 
 
-  let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
-  console.log("shipmentHeaderResponse", shipmentHeaderResponse)
-  if (shipmentHeaderResponse.Items.length === 0) {
-    return callback(
-      response(
-        "[400]",
-        "Housebill does not exist"
-      )
-    );
-  }
+  // let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
+  // console.log("shipmentHeaderResponse", shipmentHeaderResponse)
+  // if (shipmentHeaderResponse.Items.length === 0) {
+  //   return callback(
+  //     response(
+  //       "[400]",
+  //       "Housebill does not exist"
+  //     )
+  //   );
+  // }
 
   const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
   // Append timestamp to the file name
