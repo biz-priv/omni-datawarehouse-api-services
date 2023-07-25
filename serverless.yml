@@ -177,3 +177,35 @@ resources:
           Rules:
             - Status: Enabled
               ExpirationInDays: 1
+            
+    ALBLambdaPermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:${self:service}-get-document-${self:provider.stage}
+        Action: lambda:InvokeFunction
+        Principal: elasticloadbalancing.amazonaws.com
+    
+    ALBLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Scheme: internet-facing 
+        # Subnets: !Ref Subnets      
+        # SecurityGroups: [!Ref mySecurityGroup]
+
+    ALBTargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      DependsOn: ALBLambdaPermission
+      Properties:
+        TargetType: lambda
+        Targets:
+          - Id: arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:${self:service}-get-document-${self:provider.stage}
+
+    ALBHttpListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        LoadBalancerArn: !Ref ALBLoadBalancer
+        Port: 80
+        Protocol: HTTP
+        DefaultActions:
+          - TargetGroupArn: !Ref ALBTargetGroup
+            Type: forward
