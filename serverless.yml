@@ -189,8 +189,10 @@ resources:
       Type: AWS::ElasticLoadBalancingV2::LoadBalancer
       Properties:
         Scheme: internet-facing 
-        # Subnets: !Ref Subnets      
-        # SecurityGroups: [!Ref mySecurityGroup]
+        Subnets: 
+          - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}     
+        SecurityGroups: 
+          - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
 
     ALBTargetGroup:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
