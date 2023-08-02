@@ -4,7 +4,10 @@ import logging
 import botocore.session
 import dicttoxml
 import datetime
+import boto3
+
 session = botocore.session.get_session()
+sns = boto3.client('sns', region_name='us-east-1')
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
@@ -159,6 +162,10 @@ def modify_object_keys(array):
         new_array.append(new_obj)
     return new_array
 
+def send_notification_to_sns(error):
+    # Send a notification to the SNS topic
+    message = f"An error occurred in function {os.environ['FUNCTION_NAME']}. Error details: {error}."
+    sns.publish(Message=message, TopicArn=os.environ['ERROR_SNS_ARN']) 
 
 def skip_execution_if(func):
     def warmup_wrapper(event, context):
