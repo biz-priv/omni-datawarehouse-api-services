@@ -151,7 +151,16 @@ module.exports.handler = async (event, context, callback) => {
         : await fileNumberSchema.validateAsync(eventParams);
     } catch (error) {
       console.log("error", error);
-      return callback(response("[400]", error?.message ?? ""));
+      // return callback(response("[400]", error?.message ?? ""));
+      return {
+        "statusCode": 400,
+        "statusDescription": "400 Bad Request",
+        "isBase64Encoded": False,
+        "headers": {
+          "Content-Type": "text/html"
+        },
+        "body": error?.message ?? ""
+      }
     }
 
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
@@ -161,19 +170,37 @@ module.exports.handler = async (event, context, callback) => {
     console.log("newResponse", newResponse);
 
     for (let index = 0; index < newResponse.getDocumentResponse.documents.length; index++) {
-        const item = newResponse.getDocumentResponse.documents[index];
-        let s3Result = await createS3File(item.filename, new Buffer(item.b64str,'base64'));
-        let url = await generatePreSignedURL(item.filename);
-        item.url = url;
-        delete item.b64str;
-        console.log("document url", url);
+      const item = newResponse.getDocumentResponse.documents[index];
+      let s3Result = await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
+      let url = await generatePreSignedURL(item.filename);
+      item.url = url;
+      delete item.b64str;
+      console.log("document url", url);
     }
     console.log("updatedResponse", newResponse);
 
-    return newResponse;
+    // return newResponse;
+    return {
+      "statusCode": 200,
+      "statusDescription": "200 OK",
+      "isBase64Encoded": False,
+      "headers": {
+        "Content-Type": "text/html"
+      },
+      "body": newResponse
+    }
   } catch (error) {
     console.log("error", error);
-    return callback(response("[400]", error?.message ?? ""));
+    // return callback(response("[400]", error?.message ?? ""));
+    return {
+      "statusCode": 400,
+      "statusDescription": "400 Bad Request",
+      "isBase64Encoded": False,
+      "headers": {
+        "Content-Type": "text/html"
+      },
+      "body": error?.message ?? ""
+    }
   }
 };
 
@@ -235,28 +262,28 @@ async function getData(eventParams, parameterString, searchType) {
  * @returns
  */
 async function getDataWithoutGateway(eventParams, parameterString, searchType) {
-    try {
-  
-      let url = `https://jsi-websli.omni.local/wtProd/getwtdoc/v1/json/fa75bbb8-9a10-4c64-80e8-e48d48f34088/${searchType}=${eventParams[searchType]}/${parameterString}`;
-      console.log("websli url :", url);
-  
-      let getDocumentData = {
-        wtDocs: {
-          housebill: "",
-          fileNumber: "",
-          wtDoc: [],
-        },
-      }
-  
-      const queryType = await axios.get(url);
-      getDocumentData = queryType.data;
-      console.log("data", getDocumentData);
-    //   return getDocumentData;
-    } catch (error) {
-      console.log("error", error);
-    //   throw error;
+  try {
+
+    let url = `https://jsi-websli.omni.local/wtProd/getwtdoc/v1/json/fa75bbb8-9a10-4c64-80e8-e48d48f34088/${searchType}=${eventParams[searchType]}/${parameterString}`;
+    console.log("websli url :", url);
+
+    let getDocumentData = {
+      wtDocs: {
+        housebill: "",
+        fileNumber: "",
+        wtDoc: [],
+      },
     }
+
+    const queryType = await axios.get(url);
+    getDocumentData = queryType.data;
+    console.log("data", getDocumentData);
+    //   return getDocumentData;
+  } catch (error) {
+    console.log("error", error);
+    //   throw error;
   }
+}
 
 function response(code, message) {
   return JSON.stringify({
@@ -267,23 +294,23 @@ function response(code, message) {
 
 
 async function createS3File(filename, body) {
-    const S3 = new AWS.S3();
-    const params = {
-        Key: filename,
-        Body: body,
-        Bucket: process.env.DOCUMENTS_BUCKET,
-        ContentType: 'application/pdf'
-    };
-    return await S3.upload(params).promise();
+  const S3 = new AWS.S3();
+  const params = {
+    Key: filename,
+    Body: body,
+    Bucket: process.env.DOCUMENTS_BUCKET,
+    ContentType: 'application/pdf'
+  };
+  return await S3.upload(params).promise();
 }
 
-async function generatePreSignedURL( filename ) {
-    const S3 = new AWS.S3();
-    const params = {
-        Key: filename,
-        Bucket: process.env.DOCUMENTS_BUCKET,
-        Expires: 15*60
-    };
-    let url = await S3.getSignedUrlPromise('getObject', params)
-    return url;
+async function generatePreSignedURL(filename) {
+  const S3 = new AWS.S3();
+  const params = {
+    Key: filename,
+    Bucket: process.env.DOCUMENTS_BUCKET,
+    Expires: 15 * 60
+  };
+  let url = await S3.getSignedUrlPromise('getObject', params)
+  return url;
 }
