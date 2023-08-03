@@ -181,7 +181,7 @@ resources:
     ALBLambdaPermission:
       Type: AWS::Lambda::Permission
       Properties:
-        FunctionName: arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:${self:service}-get-document-${self:provider.stage}
+        FunctionName: arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:service}-get-document-${self:provider.stage}
         Action: lambda:InvokeFunction
         Principal: elasticloadbalancing.amazonaws.com
     
@@ -200,7 +200,7 @@ resources:
       Properties:
         TargetType: lambda
         Targets:
-          - Id: arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:${self:service}-get-document-${self:provider.stage}
+          - Id: arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:service}-get-document-${self:provider.stage}
 
     ALBHttpListener:
       Type: AWS::ElasticLoadBalancingV2::Listener
