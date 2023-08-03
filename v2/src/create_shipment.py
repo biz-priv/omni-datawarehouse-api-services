@@ -1,6 +1,7 @@
 from re import template
 from src.common import dynamo_query
 from src.common import skip_execution_if
+from src.common import send_notification_to_sns
 
 import logging
 import dicttoxml
@@ -26,169 +27,177 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 @skip_execution_if
 def handler(event, context):
-    LOGGER.info("Event: %s", event)
-    # event["body"]["shipmentCreateRequest"] = literal_eval(
-    #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
-
-    customer_id = validate_input(event)
-    if(customer_id != 'customer-portal-admin'):
-        customer_info = validate_dynamodb(customer_id)
-        for key in ['controllingStation', 'customerNumber']:
-            if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
-                event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
-
-            if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
-                event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-                event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
-
-        if customer_info == 'Failure':
-            return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
-
     try:
-        temp_ship_data = {}
-        temp_ship_data["AddNewShipmentV3"] = {}
-        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"] = {}
-        for key in event["body"]["shipmentCreateRequest"]:
-            if type(event["body"]["shipmentCreateRequest"][key]) is str:
-                new_key = key.replace(" ", "")
-                new_key = new_key[0].capitalize() + new_key[1:]
-                if(key == 'incoterm'):
-                    new_key = 'IncoTermsCode'
-                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
-                elif(key == 'customerNumber'):
-                    new_key = 'CustomerNo'
-                elif(key == 'billTo'):
-                    new_key = 'PayType'
-                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
-                elif(key == 'controllingStation'):
-                    new_key = 'Station'
-                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
-                elif(key == 'UserID'):
-                    new_key = 'WebtrakUserID'
-                elif(key == 'mode'):
-                    if(event["body"]["shipmentCreateRequest"][key] == 'FTL' or event["body"]["shipmentCreateRequest"][key] == 'Truckload'):
-                        event["body"]["shipmentCreateRequest"][key] = 'Truckload'
-                    else:
-                        event["body"]["shipmentCreateRequest"][key] = 'Domestic'
-                elif(key == 'deliveryWindowFrom'):
-                    new_key = 'DeliveryTime'
-                elif(key == 'deliveryWindowTo'):
-                    new_key = 'DeliveryTime2'
-                elif(key == 'delBy'):
-                    if(event["body"]["shipmentCreateRequest"][key].lower() in ['between', 'by', 'only']):
-                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize(
-                        )
-                    else:
-                        event["body"]["shipmentCreateRequest"][key] = 'By'
-                elif(key == 'serviceLevel'):
-                    acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM',
-                                                   'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD']
-                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
-                    if(event["body"]["shipmentCreateRequest"][key] not in acceptableServiceLevelCodes):
-                        continue
-                elif(key == 'projectCode'):
-                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
-                elif(key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
-                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = event["body"]["shipmentCreateRequest"][key]
-                elif(key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
-                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = event["body"]["shipmentCreateRequest"][key]
-                # LOGGER.info("New Key: %s",new_key)
-                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        if('accessorialList' in event["body"]["shipmentCreateRequest"]):
-            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
-                event["body"]["shipmentCreateRequest"]['accessorialList'])
+        LOGGER.info("Event: %s", event)
+        # event["body"]["shipmentCreateRequest"] = literal_eval(
+        #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
+
+        customer_id = validate_input(event)
+        if(customer_id != 'customer-portal-admin'):
+            customer_info = validate_dynamodb(customer_id)
+            for key in ['controllingStation', 'customerNumber']:
+                if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
+                    event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+
+                if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
+                    event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+                    event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+
+            if customer_info == 'Failure':
+                return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
+
         try:
-            if('insuredValue' in event["body"]["shipmentCreateRequest"] and isinstance(float(event["body"]["shipmentCreateRequest"]["insuredValue"]), float) and float(event["body"]["shipmentCreateRequest"]["insuredValue"]) >= 0):
-                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'INSP'
-                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][
-                    'DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
-            else:
+            temp_ship_data = {}
+            temp_ship_data["AddNewShipmentV3"] = {}
+            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"] = {}
+            for key in event["body"]["shipmentCreateRequest"]:
+                if type(event["body"]["shipmentCreateRequest"][key]) is str:
+                    new_key = key.replace(" ", "")
+                    new_key = new_key[0].capitalize() + new_key[1:]
+                    if(key == 'incoterm'):
+                        new_key = 'IncoTermsCode'
+                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
+                    elif(key == 'customerNumber'):
+                        new_key = 'CustomerNo'
+                    elif(key == 'billTo'):
+                        new_key = 'PayType'
+                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
+                    elif(key == 'controllingStation'):
+                        new_key = 'Station'
+                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
+                    elif(key == 'UserID'):
+                        new_key = 'WebtrakUserID'
+                    elif(key == 'mode'):
+                        if(event["body"]["shipmentCreateRequest"][key] == 'FTL' or event["body"]["shipmentCreateRequest"][key] == 'Truckload'):
+                            event["body"]["shipmentCreateRequest"][key] = 'Truckload'
+                        else:
+                            event["body"]["shipmentCreateRequest"][key] = 'Domestic'
+                    elif(key == 'deliveryWindowFrom'):
+                        new_key = 'DeliveryTime'
+                    elif(key == 'deliveryWindowTo'):
+                        new_key = 'DeliveryTime2'
+                    elif(key == 'delBy'):
+                        if(event["body"]["shipmentCreateRequest"][key].lower() in ['between', 'by', 'only']):
+                            event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize(
+                            )
+                        else:
+                            event["body"]["shipmentCreateRequest"][key] = 'By'
+                    elif(key == 'serviceLevel'):
+                        acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM',
+                                                    'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD']
+                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
+                        if(event["body"]["shipmentCreateRequest"][key] not in acceptableServiceLevelCodes):
+                            continue
+                    elif(key == 'projectCode'):
+                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
+                    elif(key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
+                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = event["body"]["shipmentCreateRequest"][key]
+                    elif(key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
+                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = event["body"]["shipmentCreateRequest"][key]
+                    # LOGGER.info("New Key: %s",new_key)
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+            if('accessorialList' in event["body"]["shipmentCreateRequest"]):
+                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
+                    event["body"]["shipmentCreateRequest"]['accessorialList'])
+            try:
+                if('insuredValue' in event["body"]["shipmentCreateRequest"] and isinstance(float(event["body"]["shipmentCreateRequest"]["insuredValue"]), float) and float(event["body"]["shipmentCreateRequest"]["insuredValue"]) >= 0):
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'INSP'
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][
+                        'DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
+                else:
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
+            except (ValueError):
+                LOGGER.info('string exception')
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
-        except (ValueError):
-            LOGGER.info('string exception')
-            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
-        if('shipper' in event["body"]["shipmentCreateRequest"]):
-            for key in event["body"]["shipmentCreateRequest"]["shipper"]:
-                new_key = "Shipper"+key[0].capitalize()+key[1:]
-                if(key == 'address'):
-                    new_key = "ShipperAddress1"
-                elif(key == 'venueName'):
-                    new_key = "ShipperShowVenue"
-                elif(key == 'booth'):
-                    new_key = "ShipperShowBooth"
-                elif(key == 'decorator'):
-                    new_key = "ShipperShowDecorator"
-                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
-        if('consignee' in event["body"]["shipmentCreateRequest"]):
-            for key in event["body"]["shipmentCreateRequest"]["consignee"]:
-                new_key = "Consignee"+key[0].capitalize()+key[1:]
-                if(key == 'address'):
-                    new_key = "ConsigneeAddress1"
-                elif(key == 'venueName'):
-                    new_key = "ConsigneeShowVenue"
-                elif(key == 'booth'):
-                    new_key = "ConsigneeShowBooth"
-                elif(key == 'decorator'):
-                    new_key = "ConsigneeShowDecorator"
-                temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][
-                    new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
-    except Exception as transform_error:
-        logging.exception("DataTransformError: %s", transform_error)
-        raise DataTransformError(json.dumps(
-            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from transform_error
+            if('shipper' in event["body"]["shipmentCreateRequest"]):
+                for key in event["body"]["shipmentCreateRequest"]["shipper"]:
+                    new_key = "Shipper"+key[0].capitalize()+key[1:]
+                    if(key == 'address'):
+                        new_key = "ShipperAddress1"
+                    elif(key == 'venueName'):
+                        new_key = "ShipperShowVenue"
+                    elif(key == 'booth'):
+                        new_key = "ShipperShowBooth"
+                    elif(key == 'decorator'):
+                        new_key = "ShipperShowDecorator"
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
+            if('consignee' in event["body"]["shipmentCreateRequest"]):
+                for key in event["body"]["shipmentCreateRequest"]["consignee"]:
+                    new_key = "Consignee"+key[0].capitalize()+key[1:]
+                    if(key == 'address'):
+                        new_key = "ConsigneeAddress1"
+                    elif(key == 'venueName'):
+                        new_key = "ConsigneeShowVenue"
+                    elif(key == 'booth'):
+                        new_key = "ConsigneeShowBooth"
+                    elif(key == 'decorator'):
+                        new_key = "ConsigneeShowDecorator"
+                    temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][
+                        new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
+        except Exception as transform_error:
+            logging.exception("DataTransformError: %s", transform_error)
+            raise DataTransformError(json.dumps(
+                {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from transform_error
 
-    temp_ship_data = ready_date_time(temp_ship_data)
-    shipment_line_list = get_shipment_line_list(
-        event["body"]["shipmentCreateRequest"])
-    reference_list = get_reference_list(event["body"]["shipmentCreateRequest"])
-    accessorial_list = get_accessorial_list(
-        event["body"]["shipmentCreateRequest"])
+        temp_ship_data = ready_date_time(temp_ship_data)
+        shipment_line_list = get_shipment_line_list(
+            event["body"]["shipmentCreateRequest"])
+        reference_list = get_reference_list(event["body"]["shipmentCreateRequest"])
+        accessorial_list = get_accessorial_list(
+            event["body"]["shipmentCreateRequest"])
 
-    ship_data = dicttoxml.dicttoxml(
-        temp_ship_data, attr_type=False, custom_root='soap:Body')
-    ship_data = str(ship_data).\
-        replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><shipmentCreateRequest>""", """""").\
-        replace("""</shipmentCreateRequest></AddNewShipmentV3></soap:Body>'""", """""")
-    start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-        xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
-            xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
-                    <UserName>""" + os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
-                    </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
-                    xmlns="http://tempuri.org/"><oShipData>"""
-    end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
-    payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
-    LOGGER.info("Payload xml data is : %s", json.dumps(payload))
-    try:
-        url = os.environ["URL"]
-    except Exception as url_error:
-        LOGGER.exception("Environment variable URL not set.")
-        raise EnvironmentVariableError(json.dumps(
-            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from url_error
-    pars = {'op': 'AddNewShipmentV3'}
-    try:
-        req = requests.post(url, headers={
-                            'Content-Type': 'text/xml; charset=utf-8'}, data=payload, params=pars)
-        response = req.text
-        LOGGER.info("Response is : %s", json.dumps(response))
-    except Exception as airtrak_error:
-        LOGGER.exception("AirtrakShipmentApiError: %s",
-                         json.dumps(airtrak_error))
-        raise AirtrakShipmentApiError(json.dumps(
-            {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
+        ship_data = dicttoxml.dicttoxml(
+            temp_ship_data, attr_type=False, custom_root='soap:Body')
+        ship_data = str(ship_data).\
+            replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><shipmentCreateRequest>""", """""").\
+            replace("""</shipmentCreateRequest></AddNewShipmentV3></soap:Body>'""", """""")
+        start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
+                xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
+                        <UserName>""" + os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
+                        </AuthHeader></soap:Header><soap:Body><AddNewShipmentV3 \
+                        xmlns="http://tempuri.org/"><oShipData>"""
+        end = """</oShipData></AddNewShipmentV3></soap:Body></soap:Envelope>"""
+        payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+end
+        LOGGER.info("Payload xml data is : %s", json.dumps(payload))
+        try:
+            url = os.environ["URL"]
+        except Exception as url_error:
+            LOGGER.exception("Environment variable URL not set.")
+            raise EnvironmentVariableError(json.dumps(
+                {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from url_error
+        pars = {'op': 'AddNewShipmentV3'}
+        try:
+            req = requests.post(url, headers={
+                                'Content-Type': 'text/xml; charset=utf-8'}, data=payload, params=pars)
+            response = req.text
+            LOGGER.info("Response is : %s", json.dumps(response))
+        except Exception as airtrak_error:
+            LOGGER.exception("AirtrakShipmentApiError: %s",
+                            json.dumps(airtrak_error))
+            raise AirtrakShipmentApiError(json.dumps(
+                {"httpStatus": 400, "message": "WorldTrack Airtrak Shipment Api Error"})) from airtrak_error
 
-    shipment_data = update_response(response)
-    add_tracking_notes( shipment_data["shipmentCreateResponse"]["housebill"] , event["body"]["shipmentCreateRequest"]["UserID"] )
+        shipment_data = update_response(response)
+        add_tracking_notes( shipment_data["shipmentCreateResponse"]["housebill"] , event["body"]["shipmentCreateRequest"]["UserID"] )
 
-    update_authorizer_table(shipment_data, customer_id)
-    house_bill_info = temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]
-    LOGGER.info("House Bill Details are: %s", json.dumps(house_bill_info))
-    service_level_desc = get_service_level(
-        event["body"]["shipmentCreateRequest"])
-    current_date = (date.today()).strftime("%Y-%m-%d")
-    update_shipment_table(shipment_data, house_bill_info,
-                          service_level_desc, current_date)
-    return shipment_data
+        update_authorizer_table(shipment_data, customer_id)
+        house_bill_info = temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]
+        LOGGER.info("House Bill Details are: %s", json.dumps(house_bill_info))
+        service_level_desc = get_service_level(
+            event["body"]["shipmentCreateRequest"])
+        current_date = (date.today()).strftime("%Y-%m-%d")
+        update_shipment_table(shipment_data, house_bill_info,
+                            service_level_desc, current_date)
+        return shipment_data
+    
+    except Exception as error:
+        send_notification_to_sns(str(error))
+
+
+
+
 
 
 def ready_date_time(old_shipment_list):
