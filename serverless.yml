@@ -181,7 +181,7 @@ resources:
     ALBLambdaPermission:
       Type: AWS::Lambda::Permission
       Properties:
-        FunctionName: arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:service}-get-document-${self:provider.stage}
+        FunctionName: ${self:service}-get-document-${self:provider.stage}
         Action: lambda:InvokeFunction
         Principal: elasticloadbalancing.amazonaws.com
     
