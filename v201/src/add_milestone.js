@@ -60,7 +60,7 @@ const eventDeliveredValidation = Joi.object()
         eventTime: Joi.string().required(),
         latitude: Joi.number().required(),
         longitude: Joi.number().required(),
-        signatory: Joi.string().required(),
+        signatory: Joi.string(),
       })
       .required(),
   })
