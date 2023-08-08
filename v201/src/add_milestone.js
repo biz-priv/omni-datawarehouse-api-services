@@ -51,6 +51,22 @@ const eventDeliveredValidation = Joi.object()
   })
   .required();
 
+  const eventLocationValidation = Joi.object()
+  .keys({
+    addMilestoneRequest: Joi.object()
+      .keys({
+        housebill: Joi.string().required(),
+        statusCode: statusCodeValidation,
+        eventTime: Joi.string().required(),
+        latitude: Joi.number().required(),
+        longitude: Joi.number().required(),
+        signatory: Joi.string(),
+      })
+      .required(),
+  })
+  .required();
+
+
 const statusCodeSchema = Joi.object({
   addMilestoneRequest: Joi.object({
     housebill: Joi.string().required(),
@@ -143,6 +159,8 @@ module.exports.handler = async (event, context, callback) => {
 
   if (body.addMilestoneRequest.statusCode === "DEL") {
     validationData = eventDeliveredValidation.validate(body);
+  } else if(body.addMilestoneRequest.statusCode === "LOC"){
+    validationData = eventLocationValidation.validate(body);
   } else {
     validationData = eventValidation.validate(body);
   }

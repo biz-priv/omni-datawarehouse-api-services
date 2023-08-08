@@ -54,3 +54,5 @@ function:
     db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
     db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port} 
+    ERROR_SNS_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
+    FUNCTION_NAME: ${self:service}-create-shipment-${self:provider.stage}
