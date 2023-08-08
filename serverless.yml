@@ -190,8 +190,8 @@ resources:
       Properties:
         Scheme: internet-facing 
         Subnets: 
-          - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}
-          - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetB}     
+          # - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}
+          # - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetB}     
           - subnet-0bea77a53ac477865
           - subnet-0ef561068edb6a9ae    
         SecurityGroups: 
