@@ -179,11 +179,9 @@ module.exports.handler = async (event, context, callback) => {
   }
 
 
-  const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
+  // const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
   // Append timestamp to the file name
-  const fileNameWithTimestamp = 'add_milestone_' +`${timestamp}.json`;
-
-  const payload = JSON.stringify(event);
+  // const fileNameWithTimestamp = 'add_milestone_' +`${timestamp}.json`;
 
   // const params = {
   //   Bucket: 'dw-test-etl-job',
@@ -195,6 +193,9 @@ module.exports.handler = async (event, context, callback) => {
   // const s3Response = await s3.putObject(params).promise();
 
   // console.log("S3 Response", s3Response);
+  
+  const payload = JSON.stringify(event);
+
   try{
     const apiRespone = await sendPayloadtoApi(payload);
     console.log("Covenant API Response", apiRespone);
