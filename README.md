@@ -12,4 +12,4 @@ Bill of Lading
 Shipment Rate
 Add Document
 Add Milestone
-Get Document
+Get Document.
