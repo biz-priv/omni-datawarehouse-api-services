@@ -188,6 +188,7 @@ resources:
     
     ALBLoadBalancer:
       Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      DependsOn: ALBTargetGroup
       Properties:
         Scheme: internet-facing 
         Subnets: 
@@ -208,6 +209,7 @@ resources:
 
     ALBHttpListener:
       Type: AWS::ElasticLoadBalancingV2::Listener
+      DependsOn: ALBTargetGroup
       Properties:
         LoadBalancerArn: !Ref ALBLoadBalancer
         Port: 80
