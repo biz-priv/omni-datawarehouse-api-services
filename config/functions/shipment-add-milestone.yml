@@ -15,6 +15,8 @@ function:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     SHIPMENT_MILESTONE_TABLE : ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone/ddb.tableName~true}
     MILESTONE_ORDER_STATUS: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/add-milestone/status-code}
+    CONVENANT_TRACKING_URL: ${ssm:/omni-dw-api-sevices/${self:provider.stage}/covenant-tracking/api.url}
+    CONVENANT_TRACKING_API_KEY: ${ssm:/omni-dw-api-sevices/${self:provider.stage}/covenant-tracking/x-api-key}
   package:
     include:
       - ${self:custom.alias}/src/add_milestone.js
