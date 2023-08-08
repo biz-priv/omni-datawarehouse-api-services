@@ -203,8 +203,8 @@ resources:
       DependsOn: ALBLambdaPermission
       Properties:
         TargetType: lambda
-        Targets:
-          - Id: arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:service}-get-document-${self:provider.stage}
+        # Targets:
+        #   - Id: arn:aws:lambda:${self:provider.region}:${AWS::AccountId}:function:${self:service}-get-document-${self:provider.stage}
 
     ALBHttpListener:
       Type: AWS::ElasticLoadBalancingV2::Listener
