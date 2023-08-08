@@ -178,197 +178,62 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", key + " " + msg));
   }
 
-  // const statusCode = body.addMilestoneRequest.statusCode;
-  // const houseBillNumber = body.addMilestoneRequest.housebill;
 
-  // const paramsshipmentHeader = {
-  //   TableName: process.env.SHIPMENT_HEADER_TABLE,
-  //   IndexName: "Housebill-index",
-  //   KeyConditionExpression: "Housebill = :Housebill",
-  //   ExpressionAttributeValues: {
-  //     ":Housebill": houseBillNumber,
-  //   },
-  // };
+  // const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
+  // Append timestamp to the file name
+  // const fileNameWithTimestamp = 'add_milestone_' +`${timestamp}.json`;
 
-
-  // let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
-  // console.log("shipmentHeaderResponse", shipmentHeaderResponse)
-  // if (shipmentHeaderResponse.Items.length === 0) {
-  //   return callback(
-  //     response(
-  //       "[400]",
-  //       "Housebill does not exist"
-  //     )
-  //   );
+  // const params = {
+  //   Bucket: 'dw-test-etl-job',
+  //   Key: `Test/${fileNameWithTimestamp}`,
+  //   Body: payload,
+  //   ContentType: 'application/json'
   // }
 
-  const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
-  // Append timestamp to the file name
-  const fileNameWithTimestamp = 'add_milestone_' +`${timestamp}.json`;
+  // const s3Response = await s3.putObject(params).promise();
 
-  const payload = JSON.stringify(event);
-  const params = {
-    Bucket: 'dw-test-etl-job',
-    Key: `Test/${fileNameWithTimestamp}`,
-    Body: payload,
-    ContentType: 'application/json'
-  }
-
-  const s3Response = await s3.putObject(params).promise();
-
-  console.log("S3 Response", s3Response);
-
-  return {
-    addMilestoneResponse: {
-      message: 'Success',
-      id: eventLogObj.Id
-    },
-  };
-
+  // console.log("S3 Response", s3Response);
   
+  const payload = JSON.stringify(event);
 
-};
-//*******************************************************************//
-async function validateApiForHouseBill(apiKey, housebill) {
-  try {
-    let params = {
-      TableName: process.env.TOKEN_VALIDATION_TABLE,
-      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
-      KeyConditionExpression: "ApiKey = :apikey",
-      ExpressionAttributeValues: {
-        ":apikey": apiKey
-      }
-    }
-    let result = await dynamodb.query(params).promise();
-
-    if (result.Items.length == 0) {
-      return false;
-    }
-
-    let customerId = result.Items[0].CustomerID;
-    let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
-
-    console.log("House Bill : ", housebill);
-    console.log("Customer Id : ", customerId);
-    console.log("allowedCustomerIds : ", allowedCustomerIds)
-    console.log("condition : ", allowedCustomerIds.includes(customerId))
-    if (allowedCustomerIds.includes(customerId)) {
-      return true
-    }
-
-    params = {
-      TableName: process.env.CUSTOMER_ENTITLEMENT_TABLE,
-      IndexName: process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
-      KeyConditionExpression: "CustomerID = :id AND HouseBillNumber = :houseBill",
-      ExpressionAttributeValues: {
-        ":id": customerId,
-        ":houseBill": housebill
-      }
-    }
-    result = await dynamodb.query(params).promise();
-
-    if (result.Items.length > 0) {
-      return true;
-    }
-  } catch (e) {
-    console.log("Error in validateApiForHouseBill", e)
-  }
-  return false;
-}
-
-/**
- * send the event data to the addMilestone api
- * @param {*} value
- * @param {*} callback
- * @returns
- */
-async function sendEvent(value, callback) {
-  const addMilestoneData = value.addMilestoneRequest;
-  const eventBody = {
-    ...addMilestoneData,
-    eventTime: addMilestoneData.eventTime.replace("Z", "+00:00"),
-  };
-
-  try {
-    const postData = makeJsonToXml(eventBody);
-    console.log("postData", postData);
-
-    const dataResponse = await addMilestoneApi(postData);
-    console.log("dataResponse", dataResponse);
-
-    const dataObj = makeXmlToJson(dataResponse, eventBody.statusCode);
-    console.log("dataObj", dataObj);
-
-    if (dataObj.addMilestoneResponse.message === "success") {
-      return dataObj;
-    } else {
-      return callback(response("[400]", "failed"));
-    }
-  } catch (error) {
-    return callback(
-      response(
-        "[500]",
-        error != null && error.hasOwnProperty("message") ? error.message : error
-      )
-    );
-  }
-}
-
-/**
- * depending on staus_code create a xml_payload form json
- * @param {*} data
- * @returns
- */
-function makeJsonToXml(data) {
-  let xml = "";
-
-  xml = convert({
-    "soap:Envelope": {
-      "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-      "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-      "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
-      "soap:Body": {
-        UpdateStatus: {
-          "@xmlns": "http://tempuri.org/",
-          HandlingStation: "",
-          HAWB: data.housebill,
-          UserName: "BIZCLOUD",
-          StatusCode: data.statusCode,
-          EventDateTime: data.eventTime,
-        },
-      },
-    },
-  });
-
-  console.info("xml payload", xml);
-  return xml;
-}
-
-/**
- * depending on the stausCode convert Xml to json
- * @param {*} data
- * @param {*} statusCode
- * @returns
- */
-function makeXmlToJson(data, statusCode) {
-  try {
-    let obj = convert(data, { format: "object" });
-    console.log("obj:makeXmlToJson", JSON.stringify(obj));
-    let message = "failed";
-
-    message =
-      obj["soap:Envelope"]["soap:Body"].UpdateStatusResponse.UpdateStatusResult;
-
+  try{
+    const apiRespone = await sendPayloadtoApi(payload);
+    console.log("Covenant API Response", apiRespone);
     return {
       addMilestoneResponse: {
-        message: message === "true" ? "success" : "failed",
+        message: 'Success',
+        id: eventLogObj.Id
       },
     };
+
+  } catch (error){
+    return callback(response("[400]", error));
+  }
+
+};
+
+/**
+ * send postData to the CONVENANT_TRACKING_URL api
+ * @param {*} postData
+ * @returns
+ */
+async function sendPayloadtoApi(postData) {
+  try {
+    const res = await axios.post(process.env.CONVENANT_TRACKING_URL, postData, {
+      headers: {
+        'x-api-key': process.env.CONVENANT_TRACKING_API_KEY
+      },
+    });
+    return res.data;
+    
   } catch (e) {
-    console.log("e:makeXmlToJson", e);
-    throw "Unable to convert xml to json";
+    console.log("e:addMilestoneApi", e);
+    throw "Request Failed";
   }
 }
+
+//*******************************************************************//
+
 
 /**
  * return response
@@ -383,30 +248,6 @@ function response(code, message) {
   });
 }
 
-/**
- * send postData to the ADD_MILESTONE_URL api
- * @param {*} postData
- * @returns
- */
-async function addMilestoneApi(postData) {
-  try {
-    const res = await axios.post(process.env.ADD_MILESTONE_URL, postData, {
-      headers: {
-        Accept: "text/xml",
-        "Content-Type": "text/xml",
-      },
-    });
-    if (res.status == 200) {
-      return res.data;
-    } else {
-      throw "Request Failed";
-    }
-  } catch (e) {
-    console.log("e:addMilestoneApi", e);
-    throw "Request Failed";
-  }
-}
-
 
 async function queryDynamo(params) {
   try {
@@ -418,23 +259,5 @@ async function queryDynamo(params) {
   } catch (error) {
     console.log("error", error);
     return { Items: [] };
-  }
-}
-
-async function queryWithIndex(tableName, index, keys, otherParams = null) {
-  let params;
-  try {
-    const [expression, expressionAtts] = await getQueryExpression(keys);
-    params = {
-      TableName: tableName,
-      IndexName: index,
-      KeyConditionExpression: expression,
-      ExpressionAttributeValues: expressionAtts,
-    };
-    if (otherParams) params = { ...params, ...otherParams };
-    return await dynamodb.query(params).promise();
-  } catch (e) {
-    console.error("Query Item Error: ", e, "\nQuery params: ", params);
-    throw "QueryItemError";
   }
 }
