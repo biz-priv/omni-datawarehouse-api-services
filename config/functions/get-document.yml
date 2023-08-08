@@ -6,12 +6,12 @@ function:
   runtime: nodejs14.x
   timeout: 60
   events:
-    - alb:
-        listenerArn: !Ref ALBLoadBalancer
-        priority: 1
-        targetGroupName: !GetAtt ALBTargetGroup.TargetGroupName
-        conditions:
-          path: /shipment/getdocument
+    # - alb:
+    #     listenerArn: !Ref ALBLoadBalancer
+    #     priority: 1
+    #     targetGroupName: !GetAtt ALBTargetGroup.TargetGroupName
+    #     conditions:
+    #       path: /shipment/getdocument
     - http:
         path: /shipment/getdocument
         method: GET
