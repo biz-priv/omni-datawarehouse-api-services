@@ -1,23 +1,16 @@
 const axios = require("axios");
-const { convert } = require("xmlbuilder2");
 const Joi = require("joi");
 const AWS = require('aws-sdk');
 var dynamodb = new AWS.DynamoDB.DocumentClient();
-const s3 = new AWS.S3();
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 
 const {
-  SHIPMENT_APAR_TABLE,
-  SHIPMENT_HEADER_TABLE,
-  ADDRESS_MAPPING_TABLE,
-  MILESTONE_LOG_TABLE,
   MILESTONE_ORDER_STATUS,
-  IVIA_VENDOR_ID,
 } = process.env;
 
 const statusCodes = MILESTONE_ORDER_STATUS.split(",");
-console.log(statusCodes);
+console.log("statusCodes",statusCodes);
 
 const statusCodeValidation = Joi.string()
   .alphanum()
@@ -64,13 +57,13 @@ const eventDeliveredValidation = Joi.object()
   .required();
 
 
-const statusCodeSchema = Joi.object({
-  addMilestoneRequest: Joi.object({
-    housebill: Joi.string().required(),
-    statusCode: Joi.string().valid("CAN").required(),
-    eventTime: Joi.string(),
-  }),
-});
+// const statusCodeSchema = Joi.object({
+//   addMilestoneRequest: Joi.object({
+//     housebill: Joi.string().required(),
+//     statusCode: Joi.string().valid("CAN").required(),
+//     eventTime: Joi.string(),
+//   }),
+// });
 
 let eventLogObj = {
   Id: "",
@@ -137,6 +130,8 @@ module.exports.handler = async (event, context, callback) => {
 
 
   const { body } = event;
+  
+  console.log("body:",body);
 
   let validationResult = await validateApi(event.identity.apiKey)
   console.log("validationResult", validationResult)
@@ -185,22 +180,6 @@ module.exports.handler = async (event, context, callback) => {
     console.log("eventLogObj", eventLogObj);
     return callback(response("[400]", key + " " + msg));
   }
-
-
-  // const timestamp = momentTZ().format('YYYYMMDD_HHmmss');
-  // Append timestamp to the file name
-  // const fileNameWithTimestamp = 'add_milestone_' +`${timestamp}.json`;
-
-  // const params = {
-  //   Bucket: 'dw-test-etl-job',
-  //   Key: `Test/${fileNameWithTimestamp}`,
-  //   Body: payload,
-  //   ContentType: 'application/json'
-  // }
-
-  // const s3Response = await s3.putObject(params).promise();
-
-  // console.log("S3 Response", s3Response);
 
   const payload = JSON.stringify(event.body);
   console.log("Payload", payload);
@@ -257,18 +236,18 @@ function response(code, message) {
 }
 
 
-async function queryDynamo(params) {
-  try {
-    const documentClient = new AWS.DynamoDB.DocumentClient({
-      region: process.env.REGION,
-    });
-    const response = await documentClient.query(params).promise();
-    return response;
-  } catch (error) {
-    console.log("error", error);
-    return { Items: [] };
-  }
-}
+// async function queryDynamo(params) {
+//   try {
+//     const documentClient = new AWS.DynamoDB.DocumentClient({
+//       region: process.env.REGION,
+//     });
+//     const response = await documentClient.query(params).promise();
+//     return response;
+//   } catch (error) {
+//     console.log("error", error);
+//     return { Items: [] };
+//   }
+// }
 
 
 async function validateApi(apiKey) {
@@ -288,31 +267,6 @@ async function validateApi(apiKey) {
     }
     return true;
 
-    // let customerId = result.Items[0].CustomerID;
-    // let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
-
-    // console.log("House Bill : ", housebill);
-    // console.log("Customer Id : ", customerId);
-    // console.log("allowedCustomerIds : ", allowedCustomerIds)
-    // console.log("condition : ", allowedCustomerIds.includes(customerId))
-    // if (allowedCustomerIds.includes(customerId)) {
-    //   return true
-    // }
-
-    // params = {
-    //   TableName: process.env.CUSTOMER_ENTITLEMENT_TABLE,
-    //   IndexName: process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
-    //   KeyConditionExpression: "CustomerID = :id AND HouseBillNumber = :houseBill",
-    //   ExpressionAttributeValues: {
-    //     ":id": customerId,
-    //     ":houseBill": housebill
-    //   }
-    // }
-    // result = await dynamodb.query(params).promise();
-
-    // if (result.Items.length > 0) {
-    //   return true;
-    // }
   } catch (e) {
     console.log("Error in validateApiForHouseBill", e)
   }
