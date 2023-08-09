@@ -248,7 +248,11 @@ async function getDynamodbData(eventType, value) {
 
     const FK_ServiceLevelId = get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_ServiceLevelId`, null)
     const FK_OrderStatusId = get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_OrderStatusId`, null)
-    if (FK_ServiceLevelId != null || FK_ServiceLevelId != "" || FK_OrderStatusId != null || FK_OrderStatusId != "") {
+    if (FK_ServiceLevelId == null || FK_ServiceLevelId == ' ' || FK_ServiceLevelId == '' || FK_OrderStatusId == null || FK_OrderStatusId == "") {
+      console.log("no servicelevelId for ", get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_OrderNo
+      
+      `, null))
+    }else{
       const milestoneTableParams = {
         TableName: process.env.MILESTONE_TABLE,
         KeyConditionExpression: `#pKey = :pKey and #sKey = :sKey`,
@@ -347,6 +351,36 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
       };
       const timeZoneTableResult = await ddb.scan(timeZoneTableParams).promise();
       console.log(timeZoneTableResult.Items)
+      await Promise.all(timeZoneTableResult.Items.map(async (item) => {
+        let params = {
+          TableName: process.env.SHIPMENT_MILESTONE_TABLE,
+          IndexName: "PODDateTimeZone-index-dev",
+          KeyConditionExpression: "#PODDateTimeZone = :PODDateTimeZone and OrderDate BETWEEN :start AND :end",
+          ExpressionAttributeNames: {
+            "#PODDateTimeZone": "PODDateTimeZone"
+          },
+          ExpressionAttributeValues: {
+            ":PODDateTimeZone": item.PK_TimeZoneCode,
+            ":start": fromDate,
+            ":end": toDate
+          }
+        }
+        console.log("params of shipment header table", params)
+        const data = await ddb.query(params).promise();
+        console.log("data from shipment header", pKeyValue, data)
+        await Promise.all(data.Items.map(async (item) => {
+          fileNumberArray.push(item?.FK_OrderNo)
+          const data1 = await getDynamodbData("fileNumber", item.FK_OrderNo)
+          dynamodbData = data1.dynamodbData
+          timeZoneTable = data1.timeZoneTable
+          // console.log(dynamodbData)
+          mainResponse["shipmentDetailResponse"] = []
+          const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
+          // console.log("parsedData", parsedData)
+          mainResponse["shipmentDetailResponse"].push(parsedData)
+        }))
+        PK_OrderNo
+      }))
     }
     // console.log(fileNumberArray)
     // console.log("final main Response ===>",mainResponse)
