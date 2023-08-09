@@ -43,8 +43,6 @@ const eventDeliveredValidation = Joi.object()
         housebill: Joi.string().required(),
         statusCode: statusCodeValidation,
         eventTime: Joi.string().required(),
-        latitude: Joi.number(),
-        longitude: Joi.number(),
         signatory: Joi.string().required(),
       })
       .required(),
@@ -60,7 +58,6 @@ const eventDeliveredValidation = Joi.object()
         eventTime: Joi.string().required(),
         latitude: Joi.number().required(),
         longitude: Joi.number().required(),
-        signatory: Joi.string(),
       })
       .required(),
   })
@@ -141,6 +138,17 @@ module.exports.handler = async (event, context, callback) => {
 
   const { body } = event;
 
+  let validationResult = await validateApi(event.identity.apiKey)
+  console.log("validationResult", validationResult)
+  if (!validationResult) {
+    return callback(
+      response(
+        "[400]",
+        "Invalid API Key"
+      )
+    );
+  }
+
   let validationData = "";
   eventLogObj = {
     ...eventLogObj,
@@ -193,9 +201,9 @@ module.exports.handler = async (event, context, callback) => {
   // const s3Response = await s3.putObject(params).promise();
 
   // console.log("S3 Response", s3Response);
-  
-  const payload = JSON.stringify(event);
 
+  const payload = JSON.stringify(event.body);
+  console.log("Payload", payload);
   try{
     const apiRespone = await sendPayloadtoApi(payload);
     console.log("Covenant API Response", apiRespone);
@@ -224,7 +232,7 @@ async function sendPayloadtoApi(postData) {
         'x-api-key': process.env.CONVENANT_TRACKING_API_KEY
       },
     });
-    return res.data;
+    return res.status;
     
   } catch (e) {
     console.log("e:addMilestoneApi", e);
@@ -259,5 +267,53 @@ async function queryDynamo(params) {
   } catch (error) {
     console.log("error", error);
     return { Items: [] };
+  }
+}
+
+
+async function validateApi(apiKey) {
+  try {
+    let params = {
+      TableName: process.env.TOKEN_VALIDATION_TABLE,
+      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
+      KeyConditionExpression: "ApiKey = :apikey",
+      ExpressionAttributeValues: {
+        ":apikey": apiKey
+      }
+    }
+    let result = await dynamodb.query(params).promise();
+
+    if (result.Items.length == 0) {
+      return false;
+    }
+    return true;
+
+    // let customerId = result.Items[0].CustomerID;
+    // let allowedCustomerIds = JSON.parse(process.env.ALLOWED_CUSTOMER_IDS);
+
+    // console.log("House Bill : ", housebill);
+    // console.log("Customer Id : ", customerId);
+    // console.log("allowedCustomerIds : ", allowedCustomerIds)
+    // console.log("condition : ", allowedCustomerIds.includes(customerId))
+    // if (allowedCustomerIds.includes(customerId)) {
+    //   return true
+    // }
+
+    // params = {
+    //   TableName: process.env.CUSTOMER_ENTITLEMENT_TABLE,
+    //   IndexName: process.env.CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX,
+    //   KeyConditionExpression: "CustomerID = :id AND HouseBillNumber = :houseBill",
+    //   ExpressionAttributeValues: {
+    //     ":id": customerId,
+    //     ":houseBill": housebill
+    //   }
+    // }
+    // result = await dynamodb.query(params).promise();
+
+    // if (result.Items.length > 0) {
+    //   return true;
+    // }
+  } catch (e) {
+    console.log("Error in validateApiForHouseBill", e)
   }
 }
