@@ -65,68 +65,68 @@ const eventDeliveredValidation = Joi.object()
 //   }),
 // });
 
-// let eventLogObj = {
-//   Id: "",
-//   createdAt: "",
-//   housebill: "",
-//   statusCode: "",
-//   latitude: "",
-//   longitude: "",
-//   eventTime: "",
-//   signatory: "",
-//   payload: "",
-//   sentPayload: "",
-//   xmlPayload: "",
-//   xmlResponse: "",
-//   FK_OrderNo: "",
-//   FK_ServiceId: "",
-//   consineeIsCustomer: "0",
-//   consineeIsCustomerObj: "",
-//   isEventStatusIgnored: "0",
-//   response: "",
-//   errorMsg: "",
-//   isSuccess: "F",
-// };
+let eventLogObj = {
+  Id: "",
+  createdAt: "",
+  housebill: "",
+  statusCode: "",
+  latitude: "",
+  longitude: "",
+  eventTime: "",
+  signatory: "",
+  payload: "",
+  sentPayload: "",
+  xmlPayload: "",
+  xmlResponse: "",
+  FK_OrderNo: "",
+  FK_ServiceId: "",
+  consineeIsCustomer: "0",
+  consineeIsCustomerObj: "",
+  isEventStatusIgnored: "0",
+  response: "",
+  errorMsg: "",
+  isSuccess: "F",
+};
 
-// function setEventLogObj(key, value, isJson = false) {
-//   eventLogObj = {
-//     ...eventLogObj,
-//     [key]: isJson ? JSON.stringify(value) : value,
-//   };
-// }
+function setEventLogObj(key, value, isJson = false) {
+  eventLogObj = {
+    ...eventLogObj,
+    [key]: isJson ? JSON.stringify(value) : value,
+  };
+}
 
 
 module.exports.handler = async (event, context, callback) => {
   console.info("event", JSON.stringify(event));
 
-  // eventLogObj = {
-  //   Id: "",
-  //   createdAt: "",
-  //   houseBill: "",
-  //   statusCode: "",
-  //   latitude: "",
-  //   longitude: "",
-  //   eventTime: "",
-  //   signatory: "",
-  //   payload: "",
-  //   sentPayload: "",
-  //   xmlPayload: "",
-  //   xmlResponse: "",
-  //   FK_OrderNo: "",
-  //   FK_ServiceId: "",
-  //   consineeIsCustomer: "0",
-  //   consineeIsCustomerObj: "",
-  //   isEventStatusIgnored: "0",
-  //   response: "",
-  //   errorMsg: "",
-  //   isSuccess: "F",
-  // };
+  eventLogObj = {
+    Id: "",
+    createdAt: "",
+    houseBill: "",
+    statusCode: "",
+    latitude: "",
+    longitude: "",
+    eventTime: "",
+    signatory: "",
+    payload: "",
+    sentPayload: "",
+    xmlPayload: "",
+    xmlResponse: "",
+    FK_OrderNo: "",
+    FK_ServiceId: "",
+    consineeIsCustomer: "0",
+    consineeIsCustomerObj: "",
+    isEventStatusIgnored: "0",
+    response: "",
+    errorMsg: "",
+    isSuccess: "F",
+  };
   
-  // eventLogObj.Id = uuidv4();
-  // eventLogObj.createdAt = momentTZ
-  //   .tz("America/Chicago")
-  //   .format("YYYY-MM-DD HH:mm:ss")
-  //   .toString();
+  eventLogObj.Id = uuidv4();
+  eventLogObj.createdAt = momentTZ
+    .tz("America/Chicago")
+    .format("YYYY-MM-DD HH:mm:ss")
+    .toString();
 
 
   const { body } = event;
@@ -145,18 +145,18 @@ module.exports.handler = async (event, context, callback) => {
   }
 
   let validationData = "";
-  // eventLogObj = {
-  //   ...eventLogObj,
-  //   houseBill: body.addMilestoneRequest?.housebill?.toString() ?? "",
-  //   statusCode: body.addMilestoneRequest?.statusCode?.toString() ?? "",
-  //   eventTime: body.addMilestoneRequest?.eventTime?.toString() ?? "",
-  //   latitude: body.addMilestoneRequest?.latitude?.toString() ?? "",
-  //   longitude: body.addMilestoneRequest?.longitude?.toString() ?? "",
-  //   signatory: body.addMilestoneRequest?.signatory?.toString() ?? "",
-  // };
+  eventLogObj = {
+    ...eventLogObj,
+    houseBill: body.addMilestoneRequest?.housebill?.toString() ?? "",
+    statusCode: body.addMilestoneRequest?.statusCode?.toString() ?? "",
+    eventTime: body.addMilestoneRequest?.eventTime?.toString() ?? "",
+    latitude: body.addMilestoneRequest?.latitude?.toString() ?? "",
+    longitude: body.addMilestoneRequest?.longitude?.toString() ?? "",
+    signatory: body.addMilestoneRequest?.signatory?.toString() ?? "",
+  };
 
   if (!body.hasOwnProperty("addMilestoneRequest")) {
-    // console.log("eventLogObj", eventLogObj);
+    console.log("eventLogObj", eventLogObj);
     return callback(response("[400]", "addMilestoneRequest is required"));
   }
 
@@ -189,7 +189,7 @@ module.exports.handler = async (event, context, callback) => {
     return {
       addMilestoneResponse: {
         message: 'Success',
-        id: uuidv4()
+        id: eventLogObj.Id
       },
     };
 
