@@ -21,7 +21,7 @@ function:
     include:
       - ${self:custom.alias}/src/add_milestone.js
       - node_modules/**
-  events:
+  # events:
     # - http:
     #     path: /shipment/addmilestone
     #     method: POST
