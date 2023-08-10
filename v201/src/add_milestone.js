@@ -186,12 +186,21 @@ module.exports.handler = async (event, context, callback) => {
   try{
     const apiRespone = await sendPayloadtoApi(payload);
     console.log("Covenant API Response", apiRespone);
-    return {
+    // return {
+    //   addMilestoneResponse: {
+    //     message: 'Success',
+    //     id: eventLogObj.Id
+    //   },
+    // };
+
+    const resp = {
       addMilestoneResponse: {
         message: 'Success',
         id: eventLogObj.Id
       },
     };
+
+    return callback(response("[200]", JSON.stringify(resp)));
 
   } catch (error){
     return callback(response("[400]", error));

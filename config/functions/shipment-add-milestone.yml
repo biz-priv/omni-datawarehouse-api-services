@@ -21,30 +21,30 @@ function:
     include:
       - ${self:custom.alias}/src/add_milestone.js
       - node_modules/**
-  # events:
-    # - http:
-    #     path: /shipment/addmilestone
-    #     method: POST
-    #     integration: lambda
-    #     private: true
-    #     cors: true
-    #     response:
-    #       headers: ${self:custom.standardResponseHeaders}
-    #       statusCodes:
-    #         200:
-    #           pattern: ""
-    #         400:
-    #           pattern: '[\s\S]*\[400\][\s\S]*'
-    #           headers:
-    #             Content-Type: "'application/json'"
-    #           template: ${file(responseTemplate.vtl)}
-    #         500:
-    #           pattern: '[\s\S]*\[500\][\s\S]*'
-    #           headers:
-    #             Content-Type: "'application/json'"
-    #           template: ${file(responseTemplate.vtl)}
-    #     authorizer:
-    #       name: custom-authorizer
-    #       resultTtlInSeconds: 0
-    #       identitySource: method.request.header.x-api-key
-    #       type: request
+  events:
+    - http:
+        path: /shipment/addmilestone
+        method: POST
+        integration: lambda
+        private: true
+        cors: true
+        response:
+          headers: ${self:custom.standardResponseHeaders}
+          statusCodes:
+            200:
+              pattern: ""
+            400:
+              pattern: '[\s\S]*\[400\][\s\S]*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+            500:
+              pattern: '[\s\S]*\[500\][\s\S]*'
+              headers:
+                Content-Type: "'application/json'"
+              template: ${file(responseTemplate.vtl)}
+        authorizer:
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
