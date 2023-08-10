@@ -260,9 +260,9 @@ async function validateApi(apiKey) {
         ":apikey": apiKey
       }
     }
-    console.log("validating API key")
+    console.log("validating API key. Params:", params)
     let result = await dynamodb.query(params).promise();
-    console.log("finiished validating API key")
+    console.log("finiished validating API key. Result:", result)
 
     if (result.Items.length == 0) {
       return false;
