@@ -70,11 +70,17 @@ def handler(event, context):
 
     LOGGER.info("Before quering for API")
     # Get customer ID based on the api_key
-    response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"],
+    try:
+        response = dynamo_query(os.environ["TOKEN_VALIDATION_TABLE"],
                             os.environ["TOKEN_VALIDATION_TABLE_INDEX"], 'ApiKey = :apikey', {":apikey": {"S": api_key}})
+    except Exception as dynamo_db_error:
+        LOGGER.info("Dynamo DB Error Exception")
+        logging.exception("DynamoDBError: %s", dynamo_db_error)
+        
+
     LOGGER.info("token validation table response : %s", json.dumps(response))
     LOGGER.info("After quering for API")
-    
+
     # Validate if the given fil_nbr or house_bill_nbr has an entry in the DB and get its customer_id
     customer_id = validate_dynamo_query_response(
         response, event, None, "Invalid API Key")
