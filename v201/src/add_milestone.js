@@ -262,7 +262,7 @@ async function validateApi(apiKey) {
     }
     console.log("validating API key. Params:", params)
     try{
-      let result = await dynamodb.query(params).promise();
+      var result = await dynamodb.query(params).promise();
       console.log("finiished validating API key. Result:", result)
     } catch (e){
       console.log("Validate API key Error", e)
