@@ -186,21 +186,12 @@ module.exports.handler = async (event, context, callback) => {
   try{
     const apiRespone = await sendPayloadtoApi(payload);
     console.log("Covenant API Response", apiRespone);
-    // return {
-    //   addMilestoneResponse: {
-    //     message: 'Success',
-    //     id: eventLogObj.Id
-    //   },
-    // };
-
-    const resp = {
+    return {
       addMilestoneResponse: {
         message: 'Success',
         id: eventLogObj.Id
       },
     };
-
-    return callback(response("[200]", JSON.stringify(resp)));
 
   } catch (error){
     return callback(response("[400]", error));
@@ -269,7 +260,9 @@ async function validateApi(apiKey) {
         ":apikey": apiKey
       }
     }
+    console.log("validating API key")
     let result = await dynamodb.query(params).promise();
+    console.log("finiished validating API key")
 
     if (result.Items.length == 0) {
       return false;
