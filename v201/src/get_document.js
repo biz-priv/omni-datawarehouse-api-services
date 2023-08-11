@@ -127,7 +127,7 @@ const fileNumberSchema = Joi.object({
   ),
 });
 
-module.exports.handler = async (event, context, callback) => {
+module.exports.handler = async (event, context, callback) => { 
   console.log("Event", event);
   try {
     let host = event.headers.host;
