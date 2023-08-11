@@ -184,6 +184,7 @@ module.exports.handler = async (event, context, callback) => {
   const payload = JSON.stringify(event.body);
   console.log("Payload", payload);
   try{
+    console.log("Sending to API");
     const apiRespone = await sendPayloadtoApi(payload);
     console.log("Covenant API Response", apiRespone);
     return {
