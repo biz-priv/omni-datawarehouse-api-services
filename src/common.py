@@ -19,7 +19,12 @@ InternalErrorMessage = "Internal Error."
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
         client = session.create_client(
-            'dynamodb', region_name=os.environ['REGION'])
+       'dynamodb', region_name=os.environ['REGION'],
+        config=botocore.client.Config(
+        retries={'max_attempts': 3},
+        connect_timeout=5,
+        read_timeout=5
+        ))
         response = client.query(
             TableName=table_name,
             IndexName=index_name,
@@ -162,10 +167,12 @@ def modify_object_keys(array):
         new_array.append(new_obj)
     return new_array
 
+
 def send_notification_to_sns(error):
     # Send a notification to the SNS topic
     message = f"An error occurred in function {os.environ['FUNCTION_NAME']}. Error details: {error}."
-    sns.publish(Message=message, TopicArn=os.environ['ERROR_SNS_ARN']) 
+    sns.publish(Message=message, TopicArn=os.environ['ERROR_SNS_ARN'])
+
 
 def skip_execution_if(func):
     def warmup_wrapper(event, context):
@@ -174,6 +181,7 @@ def skip_execution_if(func):
             return {}
         return func(event, context)
     return warmup_wrapper
+
 
 class DynamoQueryError(Exception):
     pass
