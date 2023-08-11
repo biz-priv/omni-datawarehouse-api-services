@@ -130,7 +130,15 @@ const fileNumberSchema = Joi.object({
 module.exports.handler = async (event, context, callback) => {
   console.log("Event", event);
   try {
-    let eventParams = event.queryStringParameters;
+    let host = event.headers.host;
+    let eventParams = "";
+
+    if (host === "www.alb-dev-api.omnilogistics.com") {
+      eventParams = event.queryStringParameters;
+    } else {
+      eventParams = event.query;
+    }
+    console.log("eventParams",eventParams);
     let doctypeValue = eventParams.docType;
     doctypeValue = doctypeValue.split(",");
     let parameterString = doctypeValue
