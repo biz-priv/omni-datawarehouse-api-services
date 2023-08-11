@@ -5,17 +5,17 @@ import logging
 import dicttoxml
 import datetime
 import boto3
-from botocore.config import Config
+# from botocore.config import Config
 
 # session = botocore.session.get_session()
-dynamodb_config = Config(
-    retries=dict(
-        max_attempts=2  # Maximum number of retries
-    ),
-    read_timeout=5,  # Timeout in secondss
-    connect_timeout=5  # Timeout for establishing connections in seconds
-)
-dynamodb = boto3.client('dynamodb', region_name='us-east-1', config=dynamodb_config)
+# dynamodb_config = Config(
+#     retries=dict(
+#         max_attempts=2  # Maximum number of retries
+#     ),
+#     read_timeout=5,  # Timeout in secondss
+#     connect_timeout=5  # Timeout for establishing connections in seconds
+# )
+dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 
 sns = boto3.client('sns', region_name='us-east-1')
 
