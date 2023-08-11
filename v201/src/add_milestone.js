@@ -207,14 +207,17 @@ module.exports.handler = async (event, context, callback) => {
  */
 async function sendPayloadtoApi(postData) {
   try {
-    console.log(postData);
-    console.log(process.env.CONVENANT_TRACKING_URL);
-    console.log(process.env.CONVENANT_TRACKING_API_KEY);
+    console.log("postData", postData);
+    console.log("CONVENANT_TRACKING_URL",process.env.CONVENANT_TRACKING_URL);
+    console.log("CONVENANT_TRACKING_API_KEY", process.env.CONVENANT_TRACKING_API_KEY);
+    
     const res = await axios.post(process.env.CONVENANT_TRACKING_URL, postData, {
       headers: {
         'x-api-key': process.env.CONVENANT_TRACKING_API_KEY
       },
     });
+
+    console.log("API got executed. Status: ", res);
     return res.status;
     
   } catch (e) {
