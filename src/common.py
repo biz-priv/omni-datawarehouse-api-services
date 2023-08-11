@@ -19,20 +19,21 @@ InternalErrorMessage = "Internal Error."
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
         client = session.create_client(
-       'dynamodb', region_name=os.environ['REGION'],
-        config=botocore.client.Config(
-        retries={'max_attempts': 3},
-        connect_timeout=5,
-        read_timeout=5
-        ))
+                    'dynamodb', region_name=os.environ['REGION']
+                        # config=botocore.client.Config(
+                        # retries={'max_attempts': 3},
+                        # connect_timeout=5,
+                        # read_timeout=5
+                        )
         response = client.query(
-            TableName=table_name,
-            IndexName=index_name,
-            KeyConditionExpression=expression,
-            ExpressionAttributeValues=attributes
-        )
+                    TableName=table_name,
+                    IndexName=index_name,
+                    KeyConditionExpression=expression,
+                    ExpressionAttributeValues=attributes
+                    )
         LOGGER.info("Dynamo query response: {}".format(json.dumps(response)))
         return response
+    
     except Exception as dynamo_query_error:
         logging.exception("DynamoQueryError: %s", dynamo_query_error)
         raise DynamoQueryError(json.dumps(
