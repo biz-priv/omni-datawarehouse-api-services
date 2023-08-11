@@ -5,9 +5,18 @@ import logging
 import dicttoxml
 import datetime
 import boto3
+from botocore.config import Config
 
 # session = botocore.session.get_session()
-dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+dynamodb_config = Config(
+    retries=dict(
+        max_attempts=2  # Maximum number of retries
+    ),
+    read_timeout=1,  # Timeout in seconds
+    connect_timeout=1  # Timeout for establishing connections in seconds
+)
+dynamodb = boto3.client('dynamodb', region_name='us-east-1', config=dynamodb_config)
+
 sns = boto3.client('sns', region_name='us-east-1')
 
 LOGGER = logging.getLogger()
@@ -26,6 +35,7 @@ def dynamo_query(table_name, index_name, expression, attributes):
     #     connect_timeout=5,
     #     read_timeout=5
     #     ))
+
         response = dynamodb.query(
             TableName=table_name,
             IndexName=index_name,
