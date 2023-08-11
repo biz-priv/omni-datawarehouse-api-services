@@ -130,7 +130,7 @@ const fileNumberSchema = Joi.object({
 module.exports.handler = async (event, context, callback) => {
   console.log("Event", event);
   try {
-    let eventParams = event.query;
+    let eventParams = event.queryStringParameters;
     let doctypeValue = eventParams.docType;
     doctypeValue = doctypeValue.split(",");
     let parameterString = doctypeValue
@@ -150,12 +150,12 @@ module.exports.handler = async (event, context, callback) => {
         ? await housebillSchema.validateAsync(eventParams)
         : await fileNumberSchema.validateAsync(eventParams);
     } catch (error) {
-      console.log("error", error);
+      console.log("searchType:error", error);
       // return callback(response("[400]", error?.message ?? ""));
       return {
         "statusCode": 400,
         "statusDescription": "400 Bad Request",
-        "isBase64Encoded": False,
+        "isBase64Encoded": false,
         "headers": {
           "Content-Type": "text/html"
         },
@@ -183,19 +183,19 @@ module.exports.handler = async (event, context, callback) => {
     return {
       "statusCode": 200,
       "statusDescription": "200 OK",
-      "isBase64Encoded": False,
+      "isBase64Encoded": false,
       "headers": {
         "Content-Type": "text/html"
       },
       "body": newResponse
     }
   } catch (error) {
-    console.log("error", error);
+    console.log("handler:error", error);
     // return callback(response("[400]", error?.message ?? ""));
     return {
       "statusCode": 400,
       "statusDescription": "400 Bad Request",
-      "isBase64Encoded": False,
+      "isBase64Encoded": false,
       "headers": {
         "Content-Type": "text/html"
       },
