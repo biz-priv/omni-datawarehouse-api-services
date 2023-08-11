@@ -18,13 +18,7 @@ InternalErrorMessage = "Internal Error."
 
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
-        client = session.create_client(
-                    'dynamodb', region_name=os.environ['REGION']
-                        # config=botocore.client.Config(
-                        # retries={'max_attempts': 3},
-                        # connect_timeout=5,
-                        # read_timeout=5
-                        )
+        client = session.create_client('dynamodb', region_name=os.environ['REGION'])
         response = client.query(
                     TableName=table_name,
                     IndexName=index_name,
