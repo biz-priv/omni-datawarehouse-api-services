@@ -1,12 +1,13 @@
 import os
 import json
 import logging
-import botocore.session
+# import botocore.session
 import dicttoxml
 import datetime
 import boto3
 
-session = botocore.session.get_session()
+# session = botocore.session.get_session()
+dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 sns = boto3.client('sns', region_name='us-east-1')
 
 LOGGER = logging.getLogger()
@@ -18,16 +19,21 @@ InternalErrorMessage = "Internal Error."
 
 def dynamo_query(table_name, index_name, expression, attributes):
     try:
-        client = session.create_client('dynamodb', region_name=os.environ['REGION'])
-        response = client.query(
-                    TableName=table_name,
-                    IndexName=index_name,
-                    KeyConditionExpression=expression,
-                    ExpressionAttributeValues=attributes
-                    )
+    #     client = session.create_client(
+    #   'dynamodb', region_name=os.environ['REGION'],
+    #     config=botocore.client.Config(
+    #     retries={'max_attempts': 3},
+    #     connect_timeout=5,
+    #     read_timeout=5
+    #     ))
+        response = dynamodb.query(
+            TableName=table_name,
+            IndexName=index_name,
+            KeyConditionExpression=expression,
+            ExpressionAttributeValues=attributes
+        )
         LOGGER.info("Dynamo query response: {}".format(json.dumps(response)))
         return response
-    
     except Exception as dynamo_query_error:
         logging.exception("DynamoQueryError: %s", dynamo_query_error)
         raise DynamoQueryError(json.dumps(
@@ -36,9 +42,9 @@ def dynamo_query(table_name, index_name, expression, attributes):
 
 def dynamo_get(table_name, key):
     try:
-        client = session.create_client(
-            'dynamodb', region_name=os.environ['REGION'])
-        response = client.get_item(
+        # client = session.create_client(
+        #     'dynamodb', region_name=os.environ['REGION'])
+        response = dynamodb.get_item(
             TableName=table_name,
             Key=key
         )
