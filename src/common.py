@@ -15,6 +15,7 @@ import boto3
 #     read_timeout=5,  # Timeout in secondss
 #     connect_timeout=5  # Timeout for establishing connections in seconds
 # )
+
 dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 
 sns = boto3.client('sns', region_name='us-east-1')
