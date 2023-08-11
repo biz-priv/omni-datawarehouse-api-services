@@ -133,16 +133,16 @@ module.exports.handler = async (event, context, callback) => {
   
   console.log("body:",body);
 
-  let validationResult = await validateApi(event.identity.apiKey)
-  console.log("validationResult", validationResult)
-  if (!validationResult) {
-    return callback(
-      response(
-        "[400]",
-        "Invalid API Key"
-      )
-    );
-  }
+  // let validationResult = await validateApi(event.identity.apiKey)
+  // console.log("validationResult", validationResult)
+  // if (!validationResult) {
+  //   return callback(
+  //     response(
+  //       "[400]",
+  //       "Invalid API Key"
+  //     )
+  //   );
+  // }
 
   let validationData = "";
   eventLogObj = {
@@ -250,31 +250,31 @@ function response(code, message) {
 // }
 
 
-async function validateApi(apiKey) {
-  try {
-    let params = {
-      TableName: process.env.TOKEN_VALIDATION_TABLE,
-      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
-      KeyConditionExpression: "ApiKey = :apikey",
-      ExpressionAttributeValues: {
-        ":apikey": apiKey
-      }
-    }
-    console.log("validating API key. Params:", params)
-    try{
-      var result = await dynamodb.query(params).promise();
-      console.log("finiished validating API key. Result:", result)
-    } catch (e){
-      console.log("Validate API key Error", e)
-    }
+// async function validateApi(apiKey) {
+//   try {
+//     let params = {
+//       TableName: process.env.TOKEN_VALIDATION_TABLE,
+//       IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
+//       KeyConditionExpression: "ApiKey = :apikey",
+//       ExpressionAttributeValues: {
+//         ":apikey": apiKey
+//       }
+//     }
+//     console.log("validating API key. Params:", params)
+//     try{
+//       var result = await dynamodb.query(params).promise();
+//       console.log("finiished validating API key. Result:", result)
+//     } catch (e){
+//       console.log("Validate API key Error", e)
+//     }
 
 
-    if (result.Items.length == 0) {
-      return false;
-    }
-    return true;
+//     if (result.Items.length == 0) {
+//       return false;
+//     }
+//     return true;
 
-  } catch (e) {
-    console.log("Error in validateApiForHouseBill", e)
-  }
-}
+//   } catch (e) {
+//     console.log("Error in validateApiForHouseBill", e)
+//   }
+// }
