@@ -227,7 +227,7 @@ async function sendPayloadtoApi(postData) {
     //   },
     // });
 
-    console.log("API got executed. Status: ", response);
+    console.log("API got executed. Status:", response);
     return response.status;
     
   } catch (e) {
