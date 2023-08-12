@@ -1,13 +1,13 @@
 import os
 import json
 import logging
-import botocore.session
+# import botocore.session
 import dicttoxml
 import datetime
 import boto3
 from botocore.config import Config
 
-session = botocore.session.get_session()
+# session = botocore.session.get_session()
 dynamodb_config = Config(
     retries=dict(
         max_attempts=2  # Maximum number of retries
