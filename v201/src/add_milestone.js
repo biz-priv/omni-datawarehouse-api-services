@@ -211,14 +211,24 @@ async function sendPayloadtoApi(postData) {
     console.log("CONVENANT_TRACKING_URL",process.env.CONVENANT_TRACKING_URL);
     console.log("CONVENANT_TRACKING_API_KEY", process.env.CONVENANT_TRACKING_API_KEY);
     
-    const res = await axios.post(process.env.CONVENANT_TRACKING_URL, postData, {
+    const requestBody = {
+      method: 'post',
+      url: process.env.CONVENANT_TRACKING_URL,
       headers: {
-        'x-api-key': process.env.CONVENANT_TRACKING_API_KEY
+      'x-api-key': process.env.CONVENANT_TRACKING_API_KEY
       },
-    });
+      data: postData
+    }
 
-    console.log("API got executed. Status: ", res);
-    return res.status;
+    const response = await axios(requestBody);
+    // const res = await axios.post(process.env.CONVENANT_TRACKING_URL, postData, {
+    //   headers: {
+    //     'x-api-key': process.env.CONVENANT_TRACKING_API_KEY
+    //   },
+    // });
+
+    console.log("API got executed. Status: ", response);
+    return response.status;
     
   } catch (e) {
     console.log("e:addMilestoneApi", e);
