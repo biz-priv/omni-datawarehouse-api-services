@@ -1,6 +1,12 @@
 ---
 function:
   handler: ${self:custom.alias}/src/get_document.handler
+  vpc:
+    securityGroupIds:
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
+    subnetIds:
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetB}
   name: ${self:service}-get-document-${self:provider.stage}
   description: get document api service-${self:provider.stage}
   runtime: nodejs14.x
@@ -42,6 +48,7 @@ function:
     include:
       - ${self:custom.alias}/src/get_document.js
       - node_modules/**
+  
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
