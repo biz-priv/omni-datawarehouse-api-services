@@ -128,19 +128,19 @@ const fileNumberSchema = Joi.object({
 });
 
 module.exports.handler = async (event, context, callback) => {
-  console.log("Event", event);
+  console.info("Event", event);
   try {
-    let eventParams = event.query;
-    console.log("eventParams", eventParams);
+    let eventParams = event.queryStringParameters;  
+    console.info("eventParams", eventParams);
     let doctypeValue = eventParams.docType;
     doctypeValue = doctypeValue.split(",");
     let parameterString = doctypeValue
       .map((value) => `doctype=${value}`)
       .join("|");
 
-    console.log(parameterString);
-    console.log("eventParams", doctypeValue);
-    console.log("websli-api-url", process.env.GET_DOCUMENT_API);
+    console.info(parameterString);
+    console.info("eventParams", doctypeValue);
+    console.info("websli-api-url", process.env.GET_DOCUMENT_API);
 
     const searchType = eventParams.hasOwnProperty("housebill")
       ? "housebill"
@@ -151,15 +151,24 @@ module.exports.handler = async (event, context, callback) => {
         ? await housebillSchema.validateAsync(eventParams)
         : await fileNumberSchema.validateAsync(eventParams);
     } catch (error) {
-      console.log("searchType:error", error);
-      return callback(response("[400]", error?.message ?? ""));
+      console.error("searchType:error", error);
+         
+      return {
+        "statusCode": 400,
+        "statusDescription": "400 Bad Request",
+        "isBase64Encoded": false,
+        "headers": {
+          "Content-Type": "text/html"
+        },
+        "body": error?.message ?? ""
+      }
     }
 
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
     const resp = await getData(eventParams, parameterString, searchType);
 
     const newResponse = await newResponseStructureForV2(resp);
-    console.log("newResponse", newResponse);
+    console.info("newResponse", newResponse);
 
     for (let index = 0; index < newResponse.getDocumentResponse.documents.length; index++) {
       const item = newResponse.getDocumentResponse.documents[index];
@@ -167,13 +176,30 @@ module.exports.handler = async (event, context, callback) => {
       let url = await generatePreSignedURL(item.filename);
       item.url = url;
       delete item.b64str;
-      console.log("document url", url);
+      console.info("document url", url);
     }
-    console.log("updatedResponse", newResponse);
-    return newResponse;
+    console.info("updatedResponse", newResponse);
+       
+    return {
+      "statusCode": 200,
+      "statusDescription": "200 OK",
+      "isBase64Encoded": false,
+      "headers": {
+        "Content-Type": "text/html"
+      },
+      "body": newResponse
+    }
   } catch (error) {
-    console.log("handler:error", error);
-    return callback(response("[400]", error?.message ?? ""));
+    console.error("handler:error", error);  
+    return {
+      "statusCode": 400,
+      "statusDescription": "400 Bad Request",
+      "isBase64Encoded": false,
+      "headers": {
+        "Content-Type": "text/html"
+      },
+      "body": error?.message ?? ""
+    }
   }
 };
 
@@ -183,7 +209,7 @@ module.exports.handler = async (event, context, callback) => {
  * @returns
  */
 async function newResponseStructureForV2(response) {
-  console.log("response====>", response);
+  console.info("response====>", response);
   return new Promise((resolve, reject) => {
     const newResponse = {
       id: uuidv4(),
@@ -193,7 +219,6 @@ async function newResponseStructureForV2(response) {
         : "",
       documents: response?.wtDocs?.wtDoc ? response.wtDocs.wtDoc : [],
     };
-
     resolve({ getDocumentResponse: newResponse });
   });
 }
@@ -208,7 +233,7 @@ async function getData(eventParams, parameterString, searchType) {
   try {
 
     let url = `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`;
-    console.log("websli url :", url);
+    console.info("websli url :", url);
 
     let getDocumentData = {
       wtDocs: {
@@ -220,10 +245,10 @@ async function getData(eventParams, parameterString, searchType) {
 
     const queryType = await axios.get(url);
     getDocumentData = queryType.data;
-    console.log("data", getDocumentData);
+    console.info("data", getDocumentData);
     return getDocumentData;
   } catch (error) {
-    console.log("error", error);
+    console.error("error", error);
     throw error;
   }
 }
@@ -238,7 +263,7 @@ async function getDataWithoutGateway(eventParams, parameterString, searchType) {
   try {
 
     let url = `https://jsi-websli.omni.local/wtProd/getwtdoc/v1/json/fa75bbb8-9a10-4c64-80e8-e48d48f34088/${searchType}=${eventParams[searchType]}/${parameterString}`;
-    console.log("websli url :", url);
+    console.info("websli url :", url);
 
     let getDocumentData = {
       wtDocs: {
@@ -250,19 +275,12 @@ async function getDataWithoutGateway(eventParams, parameterString, searchType) {
 
     const queryType = await axios.get(url);
     getDocumentData = queryType.data;
-    console.log("data", getDocumentData);
+    console.info("data", getDocumentData);
     //   return getDocumentData;
   } catch (error) {
-    console.log("error", error);
+    console.error("error", error);
     //   throw error;
   }
-}
-
-function response(code, message) {
-  return JSON.stringify({
-    httpStatus: code,
-    message,
-  });
 }
 
 
