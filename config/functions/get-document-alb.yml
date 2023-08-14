@@ -5,28 +5,6 @@ function:
   description: get document alb api service-${self:provider.stage}
   runtime: nodejs14.x
   timeout: 60
-  events:
-    - alb:
-        listenerArn: !Ref ALBLoadBalancer
-        priority: 1
-        targetGroupName: !GetAtt ALBTargetGroup.TargetGroupName
-        conditions:
-          path: /shipment/getdocument
-        response:
-          headers: ${self:custom.standardResponseHeaders}
-          statusCodes:
-            200:
-              pattern: ""
-            400:
-              pattern: '[\s\S]*\[400\][\s\S]*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
-            500:
-              pattern: '[\s\S]*\[500\][\s\S]*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
   package:
     include:
       - ${self:custom.alias}/src/get_document_alb.js
