@@ -185,9 +185,9 @@ module.exports.handler = async (event, context, callback) => {
       "statusDescription": "200 OK",
       "isBase64Encoded": false,
       "headers": {
-        "Content-Type": "text/html"
+        "Content-Type": "application/json"
       },
-      "body": newResponse
+      "body": JSON.stringify(newResponse)
     }
   } catch (error) {
     console.error("handler:error", error);  
