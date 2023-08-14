@@ -18,7 +18,9 @@ module.exports.handler = async (event, context, callback) => {
 
   const { body } = event;
 
+  
   await statusCodeSchema.validateAsync(body);
+  console.log("Status Code Validation Schema done");
 
   let validationResult = await validateApiForHouseBill(event.identity.apiKey, body.addMilestoneRequest.housebill)
   console.log("validationResult", validationResult)
@@ -83,7 +85,11 @@ async function validateApiForHouseBill(apiKey, housebill) {
         ":apikey": apiKey
       }
     }
+
+    console.log("Before Querying DB");
     let result = await dynamodb.query(params).promise();
+    console.log("After Querying DB");
+
 
     if (result.Items.length == 0) {
       return false;
