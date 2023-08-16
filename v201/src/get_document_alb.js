@@ -185,7 +185,7 @@ module.exports.handler = async (event, context, callback) => {
       "statusDescription": "200 OK",
       "isBase64Encoded": false,
       "headers": {
-        "Content-Type": "application/json"
+        "Content-Type": "text/html"
       },
       "body": JSON.stringify(newResponse)
     }
@@ -198,7 +198,7 @@ module.exports.handler = async (event, context, callback) => {
       "headers": {
         "Content-Type": "text/html"
       },
-      "body": error?.message ?? ""
+      "body": JSON.stringify(error?.message) ?? ""
     }
   }
 };
@@ -290,7 +290,7 @@ async function createS3File(filename, body) {
     Key: filename,
     Body: body,
     Bucket: process.env.DOCUMENTS_BUCKET,
-    ContentType: 'application/pdf'
+    ContentType: 'application/json'
   };
   return await S3.upload(params).promise();
 }
