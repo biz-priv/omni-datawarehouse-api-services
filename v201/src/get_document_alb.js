@@ -187,7 +187,8 @@ module.exports.handler = async (event, context, callback) => {
       "headers": {
         "Content-Type": "text/html"
       },
-      "body": JSON.stringify(newResponse)
+    //   "body": JSON.stringify(newResponse)
+      "body": "Process successfully"
     }
   } catch (error) {
     console.error("handler:error", error);  
