@@ -4,7 +4,7 @@ function:
   name: ${self:service}-get-document-alb-${self:provider.stage}
   description: get document alb api service-${self:provider.stage}
   runtime: nodejs14.x
-  timeout: 60
+  timeout: 180
   package:
     include:
       - ${self:custom.alias}/src/get_document_alb.js
