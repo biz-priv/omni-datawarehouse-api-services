@@ -178,17 +178,21 @@ module.exports.handler = async (event, context, callback) => {
       delete item.b64str;
       console.info("document url", url);
     }
-    console.info("updatedResponse", newResponse);
+    console.info("updatedResponse", JSON.stringify(newResponse));
        
     return {
+        "code" : 200,
       "statusCode": 200,
       "statusDescription": "200 OK",
       "isBase64Encoded": false,
       "headers": {
-        "Content-Type": "text/html"
+        "Content-Type": "application/json"
       },
     //   "body": JSON.stringify(newResponse)
-      "body": "Process successfully"
+    //   "body": "Process successfully"
+      "body": JSON.stringify({
+        message: "Process successfully"
+    })
     }
   } catch (error) {
     console.error("handler:error", error);  
