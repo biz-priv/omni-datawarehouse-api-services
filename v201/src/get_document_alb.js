@@ -191,7 +191,7 @@ module.exports.handler = async (event, context, callback) => {
     //   "body": JSON.stringify(newResponse)
     //   "body": "Process successfully"
       "body": JSON.stringify({
-        message: "Process successfully"
+        newResponse: newResponse
     })
     }
   } catch (error) {
