@@ -202,7 +202,7 @@ module.exports.handler = async (event, context, callback) => {
 		};
 	} catch (error) {
 		console.error("handler:error", error);
-		return response(error?.message ?? "");
+		return response(get(error, "message", ""));
 	}
 };
 
