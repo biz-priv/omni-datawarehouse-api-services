@@ -2,7 +2,8 @@ const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
-const dynamo = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
+const dynamo = new AWS.DynamoDB.DocumentClient();
+const { get } = require("lodash");
 
 //1. do a joi valiation
 const housebillSchema = Joi.object({
@@ -206,69 +207,48 @@ module.exports.handler = async (event, context, callback) => {
 };
 
 async function authorize(event) {
-	try {
-		console.info("Event: ", JSON.stringify(event));
-		api_key = event["headers"]["x-api-key"];
-		if(!api_key) return false
-	} catch (api_error) {
-		console.log("ApiKeyError", api_error);
-		return false;
-	}
+	const apiKey = get(event, "headers.x-api-key", null);
+	if (!apiKey) return false;
 
-	const response = await dynamo_query(
+	const response = await dynamoQuery(
 		process.env.TOKEN_VALIDATION_TABLE,
 		process.env.TOKEN_VALIDATION_TABLE_INDEX,
-		"ApiKey = :apikey",
-		{ ":apikey": { S: api_key } }
+		"ApiKey = :apiKey",
+		{ ":apiKey": apiKey }
 	);
-	const customer_id = validate_dynamo_query_response(response, event);
-	if (typeof customer_id === "string") {
-		return true;
-	} else return false;
+	const customerId = validate_dynamo_query_response(response);
+	return typeof customerId === "string";
 }
 
-const dynamo_query = (table_name, index_name, expression, attributes) => {
-	return new Promise(async (resolve, reject) => {
-		try {
-			var params = {
-				TableName: table_name,
-				IndexName: index_name,
-				KeyConditionExpression: expression,
-				ExpressionAttributeValues: attributes,
-			};
-			console.log("🚀 ~ file: get_document_alb.js:245 ~ returnnewPromise ~ params:", params)
+const dynamoQuery = (tableName, indexName, expression, attributes) => {
+	try {
+		const params = {
+			TableName: tableName,
+			IndexName: indexName,
+			KeyConditionExpression: expression,
+			ExpressionAttributeValues: attributes,
+		};
+		console.log("🚀 ~ file: get_document_alb.js:245 ~ params:", params);
 
-			dynamo.query(params, function (err, data) {
-				if (err) {
-					console.log("Error", err);
-					reject("Internal server error.");
-				} else {
-					console.log("Success", data);
-					resolve(data);
-				}
-			});
-		} catch (error) {
-			console.log("error:getDynamoData", error);
-			reject("Internal server error.");
-		}
-	});
+		return dynamo.query(params).promise();
+	} catch (error) {
+		console.log("error:getDynamoData", error);
+		throw error;
+	}
 };
 
-const validate_dynamo_query_response = (response, event) => {
+const validate_dynamo_query_response = (response) => {
 	console.info("validate_dynamo_query_response", response);
 	try {
-		if (
-			!response ||
-			!response.hasOwnProperty("Items") ||
-			response.Items.length == 0
-		) {
+		if (get(response, "Items", []).length === 0) {
 			return null;
-		} else if (response["Items"][0]["CustomerID"]["S"].length > 1) {
-			return response["Items"][0]["CustomerID"]["S"];
+		} else if (get(response, "Items.[0].CustomerID", null)) {
+			return get(response, "Items.[0].CustomerID", null);
 		}
+		return null;
 	} catch (cust_id_notfound_error) {
 		console.log("CustomerIdNotFound:", cust_id_notfound_error);
-		throw "Customer Id not found.";
+		throw new Error("Customer Id not found.");
 	}
 };
 
