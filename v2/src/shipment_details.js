@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const ddb = new AWS.DynamoDB.DocumentClient();
+const moment = require('moment');
 
 const { get } = require('lodash');
 // const { parseAndMappingData } = require("../shared/dataParser/shipmentDetailsDataParser");
@@ -52,8 +53,44 @@ module.exports.handler = async (event) => {
           mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
         }
       } else if (event.queryStringParameters.hasOwnProperty("activityFromDate") && event.queryStringParameters.hasOwnProperty("activityToDate")) {
+        const fromDate = moment(event.queryStringParameters.activityFromDate, 'YYYY-MM-DD HH:mm:ss.SSS');
+        const toDate = moment(event.queryStringParameters.activityToDate, 'YYYY-MM-DD HH:mm:ss.SSS');
+
+        const daysDifference = toDate.diff(fromDate, 'days');
+        if (daysDifference < 0) {
+          console.log("activityToDate cannot be earlier than activityFromDate")
+          throw "activityToDate cannot be earlier than activityFromDate"
+        } else if (daysDifference > 7) {
+          console.log(`date range cannot be more than 7days \n your date range ${daysDifference}`)
+          throw `date range cannot be more than 7days \n your date range ${daysDifference}`
+        } else if (daysDifference == 0) {
+          const hoursDiff = toDate.diff(fromDate, 'hours');
+          if (hoursDiff < 0) {
+            console.log("activityToDate cannot be earlier than activityFromDate")
+            throw "activityToDate cannot be earlier than activityFromDate"
+          }
+        }
+        console.log(daysDifference)
         mainResponse = await getDynamodbDataFromDateRange("activityDate", event.queryStringParameters.activityFromDate, event.queryStringParameters.activityToDate)
       } else if (event.queryStringParameters.hasOwnProperty("shipmentFromDate") && event.queryStringParameters.hasOwnProperty("shipmentToDate")) {
+        const fromDate = moment(event.queryStringParameters.shipmentFromDate, 'YYYY-MM-DD HH:mm:ss.SSS');
+        const toDate = moment(event.queryStringParameters.shipmentToDate, 'YYYY-MM-DD HH:mm:ss.SSS');
+
+        const daysDifference = toDate.diff(fromDate, 'days');
+        if (daysDifference < 0) {
+          console.log("shipmentToDate cannot be earlier than shipmentFromDate")
+          throw "shipmentToDate cannot be earlier than shipmentFromDate"
+        } else if (daysDifference > 7) {
+          console.log(`date range cannot be more than 7days \n your date range: ${daysDifference}`)
+          throw `date range cannot be more than 7days \n your date range: ${daysDifference}`
+        } else if (daysDifference == 0) {
+          const hoursDiff = toDate.diff(fromDate, 'hours');
+          if (hoursDiff < 0) {
+            console.log("shipmentToDate cannot be earlier than shipmentFromDate")
+            throw "shipmentToDate cannot be earlier than shipmentFromDate"
+          }
+        }
+        console.log(daysDifference)
         mainResponse = await getDynamodbDataFromDateRange("shipmentDate", event.queryStringParameters.shipmentFromDate, event.queryStringParameters.shipmentToDate)
       } else {
         console.log("Required any of the fields: fileNumber/housebill/shipmentFromDate and shipmentToDate/activityFromDate and activityToDate")

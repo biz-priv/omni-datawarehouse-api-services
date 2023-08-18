@@ -314,7 +314,7 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
       await Promise.all(completeValue.map(async (pKeyValue) => {
         let params = {
           TableName: process.env.SHIPMENT_MILESTONE_TABLE,
-          IndexName: "Complete-index-dev",
+          IndexName: "Complete-EventDateTime-index",
           KeyConditionExpression: "#Complete = :Complete and EventDateTime BETWEEN :start AND :end",
           ExpressionAttributeNames: {
             "#Complete": "Complete"
@@ -355,7 +355,8 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
         let params = {
           TableName: process.env.SHIPMENT_MILESTONE_TABLE,
           IndexName: "PODDateTimeZone-index-dev",
-          KeyConditionExpression: "#PODDateTimeZone = :PODDateTimeZone and OrderDate BETWEEN :start AND :end",
+          KeyConditionExpression: "#PODDateTimeZone = :PODDateTimeZone",
+          FilterExpression: "OrderDate BETWEEN :start AND :end",
           ExpressionAttributeNames: {
             "#PODDateTimeZone": "PODDateTimeZone"
           },
@@ -367,7 +368,7 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
         }
         console.log("params of shipment header table", params)
         const data = await ddb.query(params).promise();
-        console.log("data from shipment header", pKeyValue, data)
+        console.log("data from shipment milestone", data)
         await Promise.all(data.Items.map(async (item) => {
           fileNumberArray.push(item?.FK_OrderNo)
           const data1 = await getDynamodbData("fileNumber", item.FK_OrderNo)
@@ -379,7 +380,6 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
           // console.log("parsedData", parsedData)
           mainResponse["shipmentDetailResponse"].push(parsedData)
         }))
-        PK_OrderNo
       }))
     }
     // console.log(fileNumberArray)
