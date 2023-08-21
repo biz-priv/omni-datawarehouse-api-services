@@ -220,7 +220,7 @@ async function authorize(event) {
 	return typeof customerId === "string";
 }
 
-const dynamoQuery = (tableName, indexName, expression, attributes) => {
+async function dynamoQuery(tableName, indexName, expression, attributes){
 	try {
 		const params = {
 			TableName: tableName,
@@ -230,14 +230,14 @@ const dynamoQuery = (tableName, indexName, expression, attributes) => {
 		};
 		console.log("🚀 ~ file: get_document_alb.js:245 ~ params:", params);
 
-		return dynamo.query(params).promise();
+		return await dynamo.query(params).promise();
 	} catch (error) {
 		console.log("error:getDynamoData", error);
 		throw error;
 	}
 };
 
-const validate_dynamo_query_response = (response) => {
+function validate_dynamo_query_response(response){
 	console.info("validate_dynamo_query_response", response);
 	try {
 		if (get(response, "Items", []).length === 0) {
