@@ -2,6 +2,8 @@ const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
+const dynamo = new AWS.DynamoDB.DocumentClient();
+const { get } = require("lodash");
 
 //1. do a joi valiation
 const housebillSchema = Joi.object({
@@ -128,15 +130,28 @@ const fileNumberSchema = Joi.object({
 });
 
 module.exports.handler = async (event, context, callback) => {
-    console.info("Event", event);
-    try {
-        let eventParams = event.queryStringParameters;
-        console.info("eventParams", eventParams);
-        let doctypeValue = eventParams.docType;
-        doctypeValue = doctypeValue.split(",");
-        let parameterString = doctypeValue
-            .map((value) => `doctype=${value}`)
-            .join("|");
+	console.info("Event", event);
+	try {
+		const authorizeRes = await authorize(event);
+		if (!authorizeRes) {
+			return {
+				code: 401,
+				statusCode: 401,
+				statusDescription: "401 Unauthorized",
+				isBase64Encoded: false,
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ message: "Invalid api key." }),
+			};
+		}
+		let eventParams = event.queryStringParameters;
+		console.info("eventParams", eventParams);
+		let doctypeValue = eventParams.docType;
+		doctypeValue = doctypeValue.split(",");
+		let parameterString = doctypeValue
+			.map((value) => `doctype=${value}`)
+			.join("|");
 
         console.info(parameterString);
         console.info("eventParams", doctypeValue);
@@ -181,14 +196,60 @@ module.exports.handler = async (event, context, callback) => {
                 "Content-Type": "application/json"
             },
 
-            "body": JSON.stringify({
-                newResponse: newResponse
-            })
-        }
-    } catch (error) {
-        console.error("handler:error", error);
-        return response(error?.message ?? "")
-    }
+			body: JSON.stringify({
+				newResponse: newResponse,
+			}),
+		};
+	} catch (error) {
+		console.error("handler:error", error);
+		return response(get(error, "message", ""));
+	}
+};
+
+async function authorize(event) {
+	const apiKey = get(event, "headers.x-api-key", null);
+	if (!apiKey) return false;
+
+	const response = await dynamoQuery(
+		process.env.TOKEN_VALIDATION_TABLE,
+		process.env.TOKEN_VALIDATION_TABLE_INDEX,
+		"ApiKey = :apiKey",
+		{ ":apiKey": apiKey }
+	);
+	const customerId = validate_dynamo_query_response(response);
+	return typeof customerId === "string";
+}
+
+async function dynamoQuery(tableName, indexName, expression, attributes){
+	try {
+		const params = {
+			TableName: tableName,
+			IndexName: indexName,
+			KeyConditionExpression: expression,
+			ExpressionAttributeValues: attributes,
+		};
+		console.log("🚀 ~ file: get_document_alb.js:245 ~ params:", params);
+
+		return await dynamo.query(params).promise();
+	} catch (error) {
+		console.log("error:getDynamoData", error);
+		throw error;
+	}
+};
+
+function validate_dynamo_query_response(response){
+	console.info("validate_dynamo_query_response", response);
+	try {
+		if (get(response, "Items", []).length === 0) {
+			return null;
+		} else if (get(response, "Items.[0].CustomerID", null)) {
+			return get(response, "Items.[0].CustomerID", null);
+		}
+		return null;
+	} catch (cust_id_notfound_error) {
+		console.log("CustomerIdNotFound:", cust_id_notfound_error);
+		throw new Error("Customer Id not found.");
+	}
 };
 
 /**
