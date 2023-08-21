@@ -132,19 +132,23 @@ const fileNumberSchema = Joi.object({
 module.exports.handler = async (event, context, callback) => {
 	console.info("Event", event);
 	try {
-        setTimeout(() => {
-            callback({
-                "code": 200,
-                "statusCode": 200,
-                "statusDescription": "200 OK",
-                "isBase64Encoded": false,
-                "headers": {
-                    "Content-Type": "application/json"
-                },
+        const startTime = Date.now();
+        const timeoutMilliseconds = 60000; // 60 seconds timeout
     
-                body: "",
-            });
-        }, 60000);
+        while (true) {
+            // Your code here
+    
+            // Check if the elapsed time has exceeded the timeout
+            const elapsedTime = Date.now() - startTime;
+            if (elapsedTime >= timeoutMilliseconds) {
+                // Handle the timeout condition
+                return {
+                    statusCode: 408, // HTTP 408 Request Timeout
+                    body: 'Function execution timed out.'
+                };
+            }
+        }
+        
 		const authorizeRes = await authorize(event);
 		if (!authorizeRes) {
 			return {
