@@ -132,6 +132,19 @@ const fileNumberSchema = Joi.object({
 module.exports.handler = async (event, context, callback) => {
 	console.info("Event", event);
 	try {
+        setTimeout(() => {
+            callback({
+                "code": 200,
+                "statusCode": 200,
+                "statusDescription": "200 OK",
+                "isBase64Encoded": false,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+    
+                body: "",
+            });
+        }, 60000);
 		const authorizeRes = await authorize(event);
 		if (!authorizeRes) {
 			return {
