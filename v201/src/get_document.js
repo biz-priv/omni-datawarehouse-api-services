@@ -163,7 +163,7 @@ module.exports.handler = async (event, context, callback) => {
       IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
       KeyConditionExpression: 'ApiKey = :ApiKey', 
       ExpressionAttributeValues: {
-        ':ApiKey': { S: apiKey } 
+        ':ApiKey': apiKey 
       }
     };
     console.log(params)
