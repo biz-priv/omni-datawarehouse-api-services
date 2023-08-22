@@ -166,10 +166,12 @@ module.exports.handler = async (event, context, callback) => {
         ':ApiKey': { S: apiKey } 
       }
     };
+    console.log(params)
     const data = await ddb.query(params).promise();
     const websliKey = get(data, "Items[0].websli_key", "")
     console.log(data)
     console.log("api key for calling websli", data.Items[0].websli_key)
+  
 
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
     const resp = await getData(eventParams, parameterString, searchType, websliKey);
