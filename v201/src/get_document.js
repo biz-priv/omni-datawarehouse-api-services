@@ -166,11 +166,9 @@ module.exports.handler = async (event, context, callback) => {
         ':ApiKey': apiKey 
       }
     };
-    console.log(params)
     const data = await ddb.query(params).promise();
     const websliKey = get(data, "Items[0].websli_key", "")
-    console.log(data)
-    console.log("api key for calling websli", data.Items[0].websli_key)
+    console.log("websli api key record in token validator", data)
   
 
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
@@ -241,7 +239,7 @@ async function getData(eventParams, parameterString, searchType, apiKey) {
     console.log("data", getDocumentData);
     return getDocumentData;
   } catch (error) {
-    console.log("error", error);
+    console.log("error while calling websli endpoint: ", error);
     throw error;
   }
 }
