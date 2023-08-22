@@ -52,6 +52,6 @@ function:
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
-    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index}
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
     GET_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
     DOCUMENTS_BUCKET: !Ref DocumentBucket
