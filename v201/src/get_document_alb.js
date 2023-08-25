@@ -129,6 +129,8 @@ const fileNumberSchema = Joi.object({
     ),
 });
 
+let websli_key = null
+
 module.exports.handler = async (event, context, callback) => {
 	console.info("Event", event);
 	try {
@@ -172,7 +174,7 @@ module.exports.handler = async (event, context, callback) => {
         }
 
         // await getDataWithoutGateway(eventParams, parameterString, searchType);
-        const resp = await getData(eventParams, parameterString, searchType);
+        const resp = await getData(eventParams, parameterString, searchType, websli_key);
 
         const newResponse = await newResponseStructureForV2(resp);
         console.info("newResponse", newResponse);
@@ -243,6 +245,7 @@ function validate_dynamo_query_response(response){
 		if (get(response, "Items", []).length === 0) {
 			return null;
 		} else if (get(response, "Items.[0].CustomerID", null)) {
+            websli_key = get(response, "Items[0].websli_key")
 			return get(response, "Items.[0].CustomerID", null);
 		}
 		return null;
@@ -278,10 +281,10 @@ async function newResponseStructureForV2(response) {
 * @param searchType
 * @returns
 */
-async function getData(eventParams, parameterString, searchType) {
+async function getData(eventParams, parameterString, searchType, websli_key) {
     try {
 
-        let url = `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`;
+        let url = `${process.env.GET_DOCUMENT_API}/${websli_key}/${searchType}=${eventParams[searchType]}/${parameterString}`;
         console.info("websli url :", url);
 
         let getDocumentData = {
