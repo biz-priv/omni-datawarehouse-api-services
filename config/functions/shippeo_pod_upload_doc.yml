@@ -1,0 +1,18 @@
+---
+function:
+  handler: ${self:custom.alias}/src/shippeo_pod_upload_doc.handler
+  name: ${self:service}-shippeo-upload-doc-${self:provider.stage}
+  description: shippeo upload pod doc - ${self:provider.stage}
+  runtime: nodejs14.x
+  timeout: 500
+  events:
+    - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
+
+  package:
+    include:
+      - ${self:custom.alias}/src/shippeo_pod_upload_doc.js
+      - src/shared/**
+      - node_modules/**
+  environment:
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    REGION: ${self:provider.region}
