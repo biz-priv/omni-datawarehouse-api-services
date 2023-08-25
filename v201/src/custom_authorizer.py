@@ -90,6 +90,7 @@ def handler(event, context):
 
     allowed_customer_ids = json.dumps(os.environ["ALLOWED_CUSTOMER_IDS"])
 
+    manual_apiKeys = os.environ["MANUAL_APIKEYS"].split(',')
     if customer_id in allowed_customer_ids:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
@@ -101,6 +102,8 @@ def handler(event, context):
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addmilestone" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "shipment/getdocument" in event["methodArn"] and api_key in manual_apiKeys:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     else:
         query = "CustomerID = :id AND "
