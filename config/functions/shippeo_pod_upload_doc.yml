@@ -6,12 +6,13 @@ function:
   runtime: nodejs14.x
   timeout: 500
   events:
-    - sqs: 
-    # !GetAtt ShipmentFileTableStreamQueue.Arn
-      arn:
-        Fn::GetAtt:
-          - ShipmentFileTableStreamQueue
-          - Arn
+    - sqs:
+        arn: !GetAtt ShipmentFileTableStreamQueue.Arn
+        batchSize:
+          1
+          # Fn::GetAtt:
+          #   - ShipmentFileTableStreamQueue
+          #   - Arn
 
   package:
     include:

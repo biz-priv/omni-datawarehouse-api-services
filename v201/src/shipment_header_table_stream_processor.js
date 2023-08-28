@@ -5,7 +5,7 @@ const sqs = new AWS.SQS();
 const { SHIPMENT_HEADER_TABLE, SHIPMENT_HEADER_TABLE_STREAM_QUEUE } =
 	process.env;
 
-exports.handler = async (event) => {
+	module.exports.handler = async (event) => {
 	console.log(
 		"🚀 ~ file: shipment_header_table_stream_processor.js:8 ~ exports.handler= ~ event:",
 		JSON.stringify(event)
