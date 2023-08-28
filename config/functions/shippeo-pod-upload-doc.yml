@@ -22,13 +22,4 @@ function:
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     REGION: ${self:provider.region}
-  iamRoleStatementsName: ${self:custom.alias}-shippeo-pod-upload-doc-sqs-${self:provider.stage}-role
-  iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - "sqs:GetQueueUrl"
-        - "sqs:GetQueueAttributes"
-        - "sqs:ReceiveMessage"
-        - "sqs:DeleteMessage"
-        - "sqs:SendMessageBatch"
-      Resource: "*"
+  role: ShippeoPODRole
