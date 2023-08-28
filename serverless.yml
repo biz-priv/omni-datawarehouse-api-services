@@ -100,7 +100,7 @@ functions:
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
   shippeo-pod-upload-doc: ${file(config/functions/shippeo-pod-upload-doc.yml):function}
-  shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
+  # shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
 
 resources:
   Resources:
