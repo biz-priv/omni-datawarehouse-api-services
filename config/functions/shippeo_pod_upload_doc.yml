@@ -5,8 +5,13 @@ function:
   description: shippeo upload pod doc - ${self:provider.stage}
   runtime: nodejs14.x
   timeout: 500
-  # events:
-  #   - sqs: !GetAtt ShipmentFileTableStreamQueue.Arn
+  events:
+    - sqs: 
+    # !GetAtt ShipmentFileTableStreamQueue.Arn
+      arn:
+        Fn::GetAtt:
+          - ShipmentFileTableStreamQueue
+          - Arn
 
   package:
     include:
