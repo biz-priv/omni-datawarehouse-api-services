@@ -1,6 +1,5 @@
 const { schema } = require("../../src/shared/validation/index");
-const { SHIPMENT_HEADER_TABLE, SHIPMENT_HEADER_TABLE_BILL_NO_INDEX } =
-	process.env;
+const { SHIPMENT_HEADER_TABLE, SHIPMENT_FILE_TABLE } = process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");
 const { get } = require("lodash");
 const axios = require("axios");
@@ -95,13 +94,13 @@ const uploadDocs = async ({ docs, uploadToUrl, token }) => {
 	);
 };
 
-const getHouseBillNumber = async ({ BillNo }) => {
-	const getHouseBillNumber = {
-		TableName: process.env.SHIPMENT_HEADER_TABLE,
-		IndexName: process.env.SHIPMENT_HEADER_TABLE_BILL_NO_INDEX,
-		KeyConditionExpression: "BillNo  = :BillNo ",
+const getHouseBillNumber = async ({ FK_OrderNo }) => {
+	const getFileDataParams = {
+		TableName: process.env.SHIPMENT_FILE_TABLE,
+		KeyConditionExpression: "FK_OrderNo  = :FK_OrderNo ",
+		FilterExpression: "",
 		ExpressionAttributeValues: {
-			":BillNo ": BillNo,
+			":FK_OrderNo ": FK_OrderNo,
 		},
 	};
 };
