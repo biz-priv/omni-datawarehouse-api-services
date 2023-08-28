@@ -14,7 +14,7 @@ function:
     include:
       - ${self:custom.alias}/src/shipment_header_table_stream_processor.js
       # - src/shared/**
-      - node_modules/**
+      # - node_modules/**
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     REGION: ${self:provider.region}
