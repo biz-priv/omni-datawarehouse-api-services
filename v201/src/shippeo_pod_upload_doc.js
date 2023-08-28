@@ -23,6 +23,8 @@ module.exports.handler = async (event, context, callback) => {
 		const getDocumentRes = await getDocument({ url: getDocUrl, xApiKey });
 		const docs = get(getDocumentRes, "getDocumentResponse.documents", []);
 
+		const 
+
 		const uploadToUrl = `http://api-edi.shippeo.com/api/orders/EDIReference/${6978713}/files`;
 		await uploadDocs({ docs, uploadToUrl, token });
 		console.log(
@@ -89,3 +91,7 @@ const uploadDocs = async ({ docs, uploadToUrl, token }) => {
 		data
 	);
 };
+
+const getHouseBillNumber = async ({BillNo})=>{
+
+}

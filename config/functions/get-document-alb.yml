@@ -16,3 +16,4 @@ function:
     DOCUMENTS_BUCKET: !Ref DocumentBucket
     TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
+    
