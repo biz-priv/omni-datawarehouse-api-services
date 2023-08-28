@@ -17,7 +17,7 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/shippeo_pod_upload_doc.js
-      - src/shared/**
+      # - src/shared/**
       - node_modules/**
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}

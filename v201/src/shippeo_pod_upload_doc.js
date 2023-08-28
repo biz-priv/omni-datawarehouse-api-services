@@ -94,7 +94,7 @@ const uploadDocs = async ({ docs, uploadToUrl, token }) => {
 	);
 };
 
-const getIfHouseBillNumber = async ({ FK_OrderNo }) => {
+const getIfHouseBillNumberValid = async ({ FK_OrderNo }) => {
 	const getFileDataParams = {
 		TableName: process.env.SHIPMENT_FILE_TABLE,
 		KeyConditionExpression: "FK_OrderNo  = :FK_OrderNo ",
@@ -112,5 +112,9 @@ const getIfHouseBillNumber = async ({ FK_OrderNo }) => {
 		getFileDataParams
 	);
 	const result = await dynamoDB.query(getFileDataParams).promise();
-	
+	if (get(result, "Items", []).length > 0) {
+		return get(result, "Items", []);
+	} else {
+		return null;
+	}
 };
