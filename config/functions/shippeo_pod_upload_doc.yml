@@ -6,7 +6,7 @@ function:
   runtime: nodejs14.x
   timeout: 500
   events:
-    - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
+    - sqs: !GetAtt ShipmentFileTableStreamQueue.Arn
 
   package:
     include:

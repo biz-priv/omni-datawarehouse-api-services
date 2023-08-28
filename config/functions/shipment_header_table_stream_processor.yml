@@ -1,0 +1,20 @@
+---
+function:
+  handler: ${self:custom.alias}/src/shipment_header_table_stream_processor.handler
+  name: ${self:service}-shipment_header_table_stream_processor-${self:provider.stage}
+  description: process and filters shipment header table stream - ${self:provider.stage}
+  runtime: nodejs14.x
+  timeout: 500
+  events:
+    # - sqs: !GetAtt ShipmentFileTableStreamQueue
+    - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
+
+  package:
+    include:
+      - ${self:custom.alias}/src/shipment_header_table_stream_processor.js
+      - src/shared/**
+      - node_modules/**
+  environment:
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    REGION: ${self:provider.region}
+    SHIPMENT_HEADER_TABLE_STREAM_QUEUE: !Ref ShipmentFileTableStreamQueue
