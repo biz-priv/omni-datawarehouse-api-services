@@ -1,9 +1,12 @@
 const { schema } = require("../../src/shared/validation/index");
-const { SHIPMENT_HEADER_TABLE } = process.env;
+const { SHIPMENT_HEADER_TABLE, SHIPMENT_HEADER_TABLE_BILL_NO_INDEX } =
+	process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");
 const { get } = require("lodash");
 const axios = require("axios");
 const FormData = require("form-data");
+const AWS = require("aws-sdk");
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 module.exports.handler = async (event, context, callback) => {
 	console.info("Event: \n", JSON.stringify(event));
@@ -23,7 +26,7 @@ module.exports.handler = async (event, context, callback) => {
 		const getDocumentRes = await getDocument({ url: getDocUrl, xApiKey });
 		const docs = get(getDocumentRes, "getDocumentResponse.documents", []);
 
-		// const 
+		// const
 
 		const uploadToUrl = `http://api-edi.shippeo.com/api/orders/EDIReference/${6978713}/files`;
 		await uploadDocs({ docs, uploadToUrl, token });
@@ -92,6 +95,13 @@ const uploadDocs = async ({ docs, uploadToUrl, token }) => {
 	);
 };
 
-const getHouseBillNumber = async ({BillNo})=>{
-
-}
+const getHouseBillNumber = async ({ BillNo }) => {
+	const getHouseBillNumber = {
+		TableName: process.env.SHIPMENT_HEADER_TABLE,
+		IndexName: process.env.SHIPMENT_HEADER_TABLE_BILL_NO_INDEX,
+		KeyConditionExpression: "BillNo  = :BillNo ",
+		ExpressionAttributeValues: {
+			":BillNo ": BillNo,
+		},
+	};
+};

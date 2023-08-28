@@ -7,7 +7,7 @@ ShipmentFileTableStreamQueue:
   Type: AWS::SQS::Queue
   Properties:
     QueueName: omni-dw-api-shipment-file-table-stream-queue-${self:provider.stage}
-    VisibilityTimeout: 300
+    VisibilityTimeout: 500
     RedrivePolicy:
       deadLetterTargetArn: !GetAtt ShipmentFileTableStreamDLQ.Arn
       maxReceiveCount: 3
