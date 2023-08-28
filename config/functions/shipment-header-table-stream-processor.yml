@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/shipment_header_table_stream_processor.handler
+  handler: ${self:custom.alias}/src/shipment-header-table-stream-processor.handler
   name: ${self:service}-shipment-header-table-stream-processor-${self:provider.stage}
   description: process and filters shipment header table stream - ${self:provider.stage}
   runtime: nodejs14.x
@@ -10,7 +10,7 @@ function:
 
   package:
     include:
-      - ${self:custom.alias}/src/shipment_header_table_stream_processor.js
+      - ${self:custom.alias}/src/shipment-header-table-stream-processor.js
       - src/shared/**
       - node_modules/**
   environment:
