@@ -94,13 +94,23 @@ const uploadDocs = async ({ docs, uploadToUrl, token }) => {
 	);
 };
 
-const getHouseBillNumber = async ({ FK_OrderNo }) => {
+const getIfHouseBillNumber = async ({ FK_OrderNo }) => {
 	const getFileDataParams = {
 		TableName: process.env.SHIPMENT_FILE_TABLE,
 		KeyConditionExpression: "FK_OrderNo  = :FK_OrderNo ",
-		FilterExpression: "",
+		FilterExpression:
+			"(FK_DocType = :FK_DocType1 OR FK_DocType = :FK_DocType2) AND CustomerAccess = :CustomerAccess",
 		ExpressionAttributeValues: {
 			":FK_OrderNo ": FK_OrderNo,
+			":FK_DocType1": "HCPOD",
+			":FK_DocType2": "POD",
+			":CustomerAccess": "Y",
 		},
 	};
+	console.log(
+		"🚀 ~ file: shippeo_pod_upload_doc.js:109 ~ getHouseBillNumber ~ getFileDataParams:",
+		getFileDataParams
+	);
+	const result = await dynamoDB.query(getFileDataParams).promise();
+	
 };
