@@ -21,5 +21,6 @@ function:
       - node_modules/**
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    SHIPMENT_HEADER_TABLE_BILL_NO_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipment-header-index/ddb.BillNoIndex}
     REGION: ${self:provider.region}
   role: ShippeoPODRole
