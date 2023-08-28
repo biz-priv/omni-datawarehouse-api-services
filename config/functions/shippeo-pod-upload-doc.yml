@@ -5,6 +5,8 @@ function:
   description: shippeo upload pod doc - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 500
+  layers:
+    - { Ref: DWAPILayerLambdaLayer }
   events:
     - sqs:
         arn: !GetAtt ShipmentFileTableStreamQueue.Arn

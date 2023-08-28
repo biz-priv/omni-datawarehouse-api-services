@@ -79,6 +79,16 @@ package:
     - "**/*"
     - serverless.yaml
 
+layers:
+  DWAPILayer:
+    path: lambdaLayer/lib
+    name: ${self:service}-layer-${self:provider.stage}
+    description: DW api lambda layer for all node modules - ${self:provider.stage}
+    compatibleRuntimes:
+      - nodejs18.x
+      - nodejs14.x
+    retain: false
+
 functions:
   shipment-info: ${file(config/functions/shipment-info.yml):function}
   shipment-detail: ${file(config/functions/shipment-detail.yml):function}

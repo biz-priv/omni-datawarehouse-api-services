@@ -1,0 +1,42 @@
+{
+	"name": "omni-datawarehouse-api-services",
+	"version": "1.0.0",
+	"description": "omni-datawarehouse-api-services",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bizcloud-experts/omni-datawarehouse-api-services.git"
+	},
+	"author": "BizCloud Experts",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services/issues"
+	},
+	"homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
+	"dependencies": {
+		"axios": "^0.21.1",
+		"form-data": "^4.0.0",
+		"joi": "^17.4.2",
+		"js-base64": "^3.7.3",
+		"lodash": "^4.17.21",
+		"log4js": "^6.9.1",
+		"moment": "^2.29.4",
+		"moment-timezone": "^0.5.41",
+		"pg-promise": "^10.11.1",
+		"serverless": "^2.11.1",
+		"serverless-add-api-key": "4.2.0",
+		"serverless-aws-alias-fixed": "2.0.1",
+		"serverless-domain-manager": "5.0.0",
+		"serverless-layers": "2.3.3",
+		"serverless-offline": "^8.8.0",
+		"serverless-plugin-existing-s3": "2.4.0",
+		"serverless-plugin-log-subscription": "^2.2.0",
+		"serverless-plugin-multiple-responses": "1.0.0",
+		"serverless-plugin-warmup": "5.3.1",
+		"uuid": "^9.0.0",
+		"xmlbuilder2": "^3.0.2"
+	}
+}
