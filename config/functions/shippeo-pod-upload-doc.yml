@@ -1,7 +1,7 @@
 ---
 function:
   handler: ${self:custom.alias}/src/shippeo_pod_upload_doc.handler
-  name: ${self:service}-shippeo-upload-doc-${self:provider.stage}
+  name: ${self:service}-shippeo-pod-upload-doc-${self:provider.stage}
   description: shippeo upload pod doc - ${self:provider.stage}
   runtime: nodejs14.x
   timeout: 500
