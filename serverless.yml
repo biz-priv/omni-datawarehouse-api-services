@@ -11,6 +11,8 @@ provider:
   deploymentBucket: ${ssm:/omni-dw/${self:provider.stage}/sls/deployment/bucket}
   role: ${ssm:/omni-dw/${self:provider.stage}/lambda/role}
   apiName: ${self:service}-api-${self:provider.stage}
+  layers:
+    - { Ref: AsnLayerLambdaLayer }
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -21,6 +23,14 @@ provider:
         - "logs:PutSubscriptionFilter"
       Resource:
         - arn:aws:logs:us-east-1:332753493246:destination:bce-logs-cw-destination-us-east-1-${self:provider.stage}
+    - Effect: "Allow"
+      Action:
+        - "sqs:GetQueueUrl"
+        - "sqs:GetQueueAttributes"
+        - "sqs:ReceiveMessage"
+        - "sqs:DeleteMessage"
+        - "sqs:SendMessageBatch"
+      Resource: "*"
   vpc:
     securityGroupIds:
       - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
@@ -159,42 +169,43 @@ resources:
                     - ec2:DetachNetworkInterface
                     - ec2:DeleteNetworkInterface
                   Resource: "*"
-    ShippeoPODRole:
-      Type: AWS::IAM::Role
-      Properties:
-        RoleName: ShippeoPODRole
-        AssumeRolePolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          - PolicyName: omni-dw-api-services-dev-shippeo-pod-role
-            PolicyDocument:
-              Version: "2012-10-17"
-              Statement:
-                - Effect: "Allow"
-                  Action:
-                    - "sqs:GetQueueUrl"
-                    - "sqs:GetQueueAttributes"
-                    - "sqs:ReceiveMessage"
-                    - "sqs:DeleteMessage"
-                    - "sqs:SendMessageBatch"
-                  Resource: "*"
-                - Effect: Allow
-                  Action:
-                    - logs:CreateLogGroup
-                    - logs:CreateLogStream
-                  Resource:
-                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*
-                - Effect: Allow
-                  Action:
-                    - logs:PutLogEvents
-                  Resource:
-                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*:*
+    # ShippeoPODRole:
+    #   Type: AWS::IAM::Role
+    #   Properties:
+    #     RoleName: ShippeoPODRole
+    #     AssumeRolePolicyDocument:
+    #       Version: "2012-10-17"
+    #       Statement:
+    #         - Effect: Allow
+    #           Principal:
+    #             Service:
+    #               - lambda.amazonaws.com
+    #           Action: sts:AssumeRole
+    #     Policies:
+    #       - PolicyName: omni-dw-api-services-dev-shippeo-pod-role
+    #         PolicyDocument:
+    #           Version: "2012-10-17"
+    #           Statement:
+    #             - Effect: "Allow"
+    #               Action:
+    #                 - "sqs:GetQueueUrl"
+    #                 - "sqs:GetQueueAttributes"
+    #                 - "sqs:ReceiveMessage"
+    #                 - "sqs:DeleteMessage"
+    #                 - "sqs:SendMessageBatch"
+    #               Resource: "*"
+    #             - Effect: Allow
+    #               Action:
+    #                 - logs:CreateLogGroup
+    #                 - logs:CreateLogStream
+    #               Resource:
+    #                 - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*
+    #             - Effect: Allow
+    #               Action:
+    #                 - logs:PutLogEvents
+    #               Resource:
+    #                 - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*:*
+    
     BadRequestResponse:
       Type: "AWS::ApiGateway::GatewayResponse"
       Properties:
