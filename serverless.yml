@@ -11,8 +11,6 @@ provider:
   deploymentBucket: ${ssm:/omni-dw/${self:provider.stage}/sls/deployment/bucket}
   role: ${ssm:/omni-dw/${self:provider.stage}/lambda/role}
   apiName: ${self:service}-api-${self:provider.stage}
-  layers:
-    - { Ref: AsnLayerLambdaLayer }
   iamRoleStatements:
     - Effect: "Allow"
       Action:
