@@ -6,7 +6,7 @@ function:
   runtime: nodejs18.x
   timeout: 500
   layers:
-    - { Ref: DWAPILayerLambdaLayer }
+    - Ref: DWAPILayerLambdaLayer
   events:
     - sqs:
         arn: !GetAtt ShipmentFileTableStreamQueue.Arn
@@ -17,7 +17,7 @@ function:
           #   - Arn
 
   package:
-    include:
+    patterns:
       - v201/src/shippeo_pod_upload_doc.js
       # - src/shared/**
       # - node_modules/**s

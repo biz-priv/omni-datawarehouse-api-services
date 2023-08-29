@@ -6,12 +6,12 @@ function:
   runtime: nodejs18.x
   timeout: 500
   layers:
-    - { Ref: DWAPILayerLambdaLayer }
+    - Ref: DWAPILayerLambdaLayer
   events:
     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
 
   package:
-    include:
+    patterns:
       - v201/src/shipment_header_table_stream_processor.js
       # - src/shared/**
       # - node_modules/**
