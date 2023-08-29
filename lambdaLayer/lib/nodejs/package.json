@@ -17,6 +17,7 @@
 	},
 	"homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
 	"dependencies": {
+		"aws-sdk": "^2.1446.0",
 		"axios": "^0.21.1",
 		"form-data": "^4.0.0",
 		"joi": "^17.4.2",
