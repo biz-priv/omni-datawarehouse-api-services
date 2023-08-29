@@ -26,4 +26,5 @@ function:
     SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
     SHIPMENT_HEADER_TABLE_BILL_NO_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipment-header-index/ddb.BillNoIndex}
     REGION: ${self:provider.region}
+    LOG_TABLE: !Ref UploadedDocLogTable
   role: ShippeoPODRole
