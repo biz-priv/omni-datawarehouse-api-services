@@ -17,15 +17,20 @@ module.exports.handler = async (event) => {
 			JSON.stringify(record)
 		);
 		if (get(record, "eventName") === "INSERT") {
-			const billNumber = get(record, "dynamodb.NewImage.BillNo.S", null);
-
-			if (![9146].includes(billNumber)) return; //For Shippeo bill number is 9146
+			const billNumber = Number(
+				get(record, "dynamodb.NewImage.BillNo.S", null)
+			);
+			const allowedBillNumbers = [9146];
+			if (!allowedBillNumbers.includes(billNumber)) {
+				console.log(`${billNumber} is not in ${allowedBillNumbers}: SKIPPING`);
+				return;
+			} //For Shippeo bill number is 9146
 
 			const pKey = get(record, "dynamodb.Keys.PK_OrderNo.S");
 			const getItemParam = {
 				TableName: SHIPMENT_HEADER_TABLE,
 				Key: {
-					id: pKey,
+					PK_OrderNo: pKey,
 				},
 			};
 			console.log(

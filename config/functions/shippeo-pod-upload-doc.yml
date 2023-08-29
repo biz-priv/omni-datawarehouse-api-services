@@ -9,24 +9,22 @@ function:
     - !Ref DWAPILayerLambdaLayer
   events:
     - sqs:
-        arn: !GetAtt ShipmentFileTableStreamQueue.Arn
-        batchSize:
-          1
-          # Fn::GetAtt:
-          #   - ShipmentFileTableStreamQueue
-          #   - Arn
+        # arn: !GetAtt ShipmentFileTableStreamQueue.Arn
+        # batchSize:
+        #   1
+        arn: 
+          Fn::GetAtt:
+            - ShipmentFileTableStreamQueue
+            - Arn
 
   package:
     individually: true
     patterns:
       - v201/src/shippeo_pod_upload_doc.js
       - "!**/*"
-      # - src/shared/**
-      # - node_modules/**s
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
     SHIPMENT_HEADER_TABLE_BILL_NO_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipment-header-index/ddb.BillNoIndex}
     REGION: ${self:provider.region}
     LOG_TABLE: !Ref UploadedDocLogTable
-  # role: ShippeoPODRole
