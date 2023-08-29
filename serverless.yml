@@ -194,15 +194,31 @@ resources:
                   Resource: "*"
                 - Effect: Allow
                   Action:
-                    - logs:CreateLogGroup
-                    - logs:CreateLogStream
-                  Resource:
-                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*
+                    - logs:*
+                  Resource: '*'
                 - Effect: Allow
                   Action:
-                    - logs:PutLogEvents
-                  Resource:
-                    - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/omni-dw-api-services-dev-warmup-plugin-default:*:*
+                    - secretsmanager:*
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - sns:*
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - dynamodb:DescribeTable
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                    - dynamodb:DescribeStream
+                    - dynamodb:GetRecords
+                    - dynamodb:ListStreams
+                    - dynamodb:GetShardIterator
+                    - dynamodb:BatchWriteItem
+                  Resource: '*'
     
     BadRequestResponse:
       Type: "AWS::ApiGateway::GatewayResponse"
