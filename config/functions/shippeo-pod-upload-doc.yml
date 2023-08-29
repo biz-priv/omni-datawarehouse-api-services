@@ -16,7 +16,7 @@ function:
           Fn::GetAtt:
             - ShipmentFileTableStreamQueue
             - Arn
-
+  role: ShippeoPODRole
   package:
     individually: true
     patterns:
