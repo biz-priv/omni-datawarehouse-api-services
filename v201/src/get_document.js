@@ -161,7 +161,8 @@ module.exports.handler = async (event, context, callback) => {
     const apiKey = event.identity.apiKey
     const params = {
       TableName: process.env.TOKEN_VALIDATOR,
-      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
+      // IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
+      IndexName: "ApiKey-index",
       KeyConditionExpression: 'ApiKey = :ApiKey',
       ExpressionAttributeValues: {
         ':ApiKey': apiKey
@@ -184,12 +185,12 @@ module.exports.handler = async (event, context, callback) => {
         const pdfBuffer = await convertJPEGtoPDF(new Buffer(item.b64str, 'base64'));
         const pdfFilename = item.filename.replace(/\.(jpeg|jpg)$/i, ".pdf");
         await createS3File(pdfFilename, pdfBuffer);
-        let url = await generatePreSignedURL(pdfFilename);
+        var url = await generatePreSignedURL(pdfFilename);
         item.url = url;
       } else {
         // For other cases, directly create and store the document
         await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
-        let url = await generatePreSignedURL(item.filename);
+        var url = await generatePreSignedURL(item.filename);
         item.url = url;
       }
       delete item.b64str;
