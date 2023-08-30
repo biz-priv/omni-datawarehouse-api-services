@@ -184,12 +184,12 @@ module.exports.handler = async (event, context, callback) => {
         const pdfBuffer = await convertJPEGtoPDF(new Buffer(item.b64str, 'base64'));
         const pdfFilename = item.filename.replace(/\.(jpeg|jpg)$/i, ".pdf");
         await createS3File(pdfFilename, pdfBuffer);
-        let url = await generatePreSignedURL(pdfFilename);
+        url = await generatePreSignedURL(pdfFilename);
         item.url = url;
       } else {
         // For other cases, directly create and store the document
         await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
-        let url = await generatePreSignedURL(item.filename);
+        url = await generatePreSignedURL(item.filename);
         item.url = url;
       }
       delete item.b64str;
