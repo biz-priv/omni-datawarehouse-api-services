@@ -25,6 +25,7 @@
     "log4js": "^6.9.1",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
+    "pdfkit": "^0.13.0",
     "pg-promise": "^10.11.1",
     "serverless": "^2.11.1",
     "serverless-add-api-key": "4.2.0",
