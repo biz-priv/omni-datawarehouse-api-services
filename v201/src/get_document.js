@@ -161,8 +161,7 @@ module.exports.handler = async (event, context, callback) => {
     const apiKey = event.identity.apiKey
     const params = {
       TableName: process.env.TOKEN_VALIDATOR,
-      // IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
-      IndexName: "ApiKey-index",
+      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
       KeyConditionExpression: 'ApiKey = :ApiKey',
       ExpressionAttributeValues: {
         ':ApiKey': apiKey
