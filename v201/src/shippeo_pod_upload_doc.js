@@ -1,40 +1,91 @@
-const { schema } = require("../../src/shared/validation/index");
-const { SHIPMENT_HEADER_TABLE, SHIPMENT_FILE_TABLE } = process.env;
-const { queryMethod } = require("../../src/shared/dynamoDB/index");
+const {
+	SHIPMENT_HEADER_TABLE,
+	SHIPMENT_HEADER_TABLE_STREAM_QLQ,
+	SNS_TOPIC_ARN,
+	SHIPPEO_USERNAME,
+	SHIPPEO_PASSWORD,
+	SHIPPEO_GET_DOC_URL,
+	SHIPPEO_UPLOAD_DOC_URL,
+	LOG_TABLE,
+	SHIPPEO_GET_TOKEN_URL,
+} = process.env;
 const { get } = require("lodash");
 const axios = require("axios");
 const FormData = require("form-data");
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const sns = new AWS.SNS();
 
 module.exports.handler = async (event, context, callback) => {
-	console.info("Event: \n", JSON.stringify(event));
 	try {
-		console.log(SHIPMENT_HEADER_TABLE);
-		const username = "omnitrans-test.carrier-api";
-		const password = "MqrIjrtmboB5";
+		console.info("Event: \n", JSON.stringify(event));
+		const records = get(event, "Records", []);
+
+		// Get Token
+		const username = SHIPPEO_USERNAME;
+		const password = SHIPPEO_PASSWORD;
 		const basicAuth = getBasicAuth({ username, password });
 		console.log(basicAuth);
-
-		const url = "http://api-edi.shippeo.com/api/tokens";
+		const url = SHIPPEO_GET_TOKEN_URL;
 		const getTokenRes = await getToken({ url, token: basicAuth });
 		const token = get(getTokenRes, "data.token");
+		let body;
+		await Promise.all(
+			records.map(async (record) => {
+				console.log(SHIPMENT_HEADER_TABLE);
+				body = JSON.parse(get(record, "body", ""));
+				const FK_OrderNo = get(body, "Item.PK_OrderNo", "");
+				const houseBillNo = get(body, "Item.Housebill", "");
+				const validHouseBillNo = await getIfHouseBillNumberValid({
+					FK_OrderNo,
+				});
+				console.log(
+					"🚀 ~ file: shippeo_pod_upload_doc.js:30 ~ records.map ~ validHouseBillNop:",
+					validHouseBillNo
+				);
 
-		const getDocUrl = `https://dev-api.omnilogistics.com/v2.1/shipment/getdocument?docType=HOUSEBILL,LABEL&housebill=${6978713}`;
-		const xApiKey = "fIZpXhfGKQ42h6zIs7EUetiJd9yiAui7LlZxbkFh";
-		const getDocumentRes = await getDocument({ url: getDocUrl, xApiKey });
-		const docs = get(getDocumentRes, "getDocumentResponse.documents", []);
+				if (!validHouseBillNo) {
+					console.log(`${houseBillNo} is not valid.`);
+					return;
+				}
 
-		// const
+				const getDocUrl = `${SHIPPEO_GET_DOC_URL}?docType=HOUSEBILL,LABEL&housebill=${houseBillNo}`;
+				const xApiKey = "fIZpXhfGKQ42h6zIs7EUetiJd9yiAui7LlZxbkFh";
+				const getDocumentRes = await getDocument({ url: getDocUrl, xApiKey });
+				const docs = get(getDocumentRes, "getDocumentResponse.documents", []);
 
-		const uploadToUrl = `http://api-edi.shippeo.com/api/orders/EDIReference/${6978713}/files`;
-		await uploadDocs({ docs, uploadToUrl, token });
-		console.log(
-			"🚀 ~ file: shippeo_pod_upload_doc.js:24 ~ module.exports.handler= ~ docs:",
-			docs
+				const uploadToUrl = `${SHIPPEO_UPLOAD_DOC_URL}/${houseBillNo}/files`;
+				await uploadDocs({ docs, uploadToUrl, token });
+				console.log(
+					"🚀 ~ file: shippeo_pod_upload_doc.js:24 ~ module.exports.handler= ~ docs:",
+					docs
+				);
+			})
 		);
 	} catch (error) {
 		console.error("Error : \n", error);
+		try {
+			const params = {
+				Subject: "Error on shippeo-pod-upload-doc lambda",
+				Message: `EDI alert reports Error in omni,\n lambda :shippeo-pod-upload-doc \n ERROR: ${error}`, // The message you want to send
+				TopicArn: SNS_TOPIC_ARN, // The ARN (Amazon Resource Name) of your SNS topic
+			};
+			const data = await sns.publish(params).promise();
+			console.log("Error notification Message sent:", data.MessageId);
+
+			const queueUrl = SHIPMENT_HEADER_TABLE_STREAM_QLQ;
+			const queueMessage = {
+				QueueUrl: queueUrl,
+				MessageBody: JSON.stringify(body),
+			};
+			console.log(
+				"🚀 ~ file: shipment_header_table_stream_processor.js:31 ~ event.Records.forEach ~ queueMessage:",
+				queueMessage
+			);
+			await sqs.sendMessage(queueMessage).promise();
+		} catch (err) {
+			console.log("Error while sending error notification message:", err);
+		}
 		return callback(null, { statusCode: 500, body: JSON.stringify(error) });
 	}
 };
@@ -112,9 +163,9 @@ const getIfHouseBillNumberValid = async ({ FK_OrderNo }) => {
 		getFileDataParams
 	);
 	const result = await dynamoDB.query(getFileDataParams).promise();
-	if (get(result, "Items", []).length > 0) {
-		return get(result, "Items", []);
-	} else {
-		return null;
-	}
+	console.log(
+		"🚀 ~ file: shippeo_pod_upload_doc.js:125 ~ getIfHouseBillNumberValid ~ result:",
+		result
+	);
+	return get(result, "Items", []).length > 0;
 };

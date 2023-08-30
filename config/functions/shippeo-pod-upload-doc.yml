@@ -9,10 +9,7 @@ function:
     - !Ref DWAPILayerLambdaLayer
   events:
     - sqs:
-        # arn: !GetAtt ShipmentFileTableStreamQueue.Arn
-        # batchSize:
-        #   1
-        arn: 
+        arn:
           Fn::GetAtt:
             - ShipmentFileTableStreamQueue
             - Arn
@@ -27,4 +24,12 @@ function:
     SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
     SHIPMENT_HEADER_TABLE_BILL_NO_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipment-header-index/ddb.BillNoIndex}
     REGION: ${self:provider.region}
-    LOG_TABLE: !Ref UploadedDocLogTable
+    STAGE: ${self:provider.stage}
+    LOG_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-uploaded-docs-logs/ddb.tableName}
+    SHIPMENT_HEADER_TABLE_STREAM_QLQ: !Ref ShipmentFileTableStreamDLQ
+    SNS_TOPIC_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
+    SHIPPEO_USERNAME: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/username~true}
+    SHIPPEO_PASSWORD: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/password~true}
+    SHIPPEO_GET_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-url}
+    SHIPPEO_UPLOAD_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/upload-document-url}
+    SHIPPEO_GET_TOKEN_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-token-url}
