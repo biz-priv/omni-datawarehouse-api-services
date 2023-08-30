@@ -184,12 +184,12 @@ module.exports.handler = async (event, context, callback) => {
         const pdfBuffer = await convertJPEGtoPDF(new Buffer(item.b64str, 'base64'));
         const pdfFilename = item.filename.replace(/\.(jpeg|jpg)$/i, ".pdf");
         s3Result = await createS3File(pdfFilename, pdfBuffer);
-        url = await generatePreSignedURL(pdfFilename);
+        let url = await generatePreSignedURL(pdfFilename);
         item.url = url;
       } else {
         // For other cases, directly create and store the document
         s3Result = await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
-        url = await generatePreSignedURL(item.filename);
+        let url = await generatePreSignedURL(item.filename);
         item.url = url;
       }
       delete item.b64str;
@@ -320,6 +320,7 @@ function isJPEG(filename) {
   return extension === "jpeg" || extension === "jpg";
 }
 
+// Function to convert JPEG/JPG to PDF
 async function convertJPEGtoPDF(jpegBuffer) {
   return new Promise((resolve, reject) => {
     const pdfBuffer = [];
