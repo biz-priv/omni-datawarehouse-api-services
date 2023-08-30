@@ -8,6 +8,7 @@ const {
 	SHIPPEO_UPLOAD_DOC_URL,
 	LOG_TABLE,
 	SHIPPEO_GET_TOKEN_URL,
+	SHIPPEO_GET_DOC_API_KEY,
 } = process.env;
 const { get } = require("lodash");
 const axios = require("axios");
@@ -15,11 +16,18 @@ const FormData = require("form-data");
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const sns = new AWS.SNS();
+const sqs = new AWS.SQS();
+const fs = require("fs");
 
 module.exports.handler = async (event, context, callback) => {
+	let body;
 	try {
 		console.info("Event: \n", JSON.stringify(event));
 		const records = get(event, "Records", []);
+		console.log(
+			"🚀 ~ file: shippeo_pod_upload_doc.js:27 ~ module.exports.handler= ~ records:",
+			records
+		);
 
 		// Get Token
 		const username = SHIPPEO_USERNAME;
@@ -29,32 +37,40 @@ module.exports.handler = async (event, context, callback) => {
 		const url = SHIPPEO_GET_TOKEN_URL;
 		const getTokenRes = await getToken({ url, token: basicAuth });
 		const token = get(getTokenRes, "data.token");
-		let body;
 		await Promise.all(
 			records.map(async (record) => {
 				console.log(SHIPMENT_HEADER_TABLE);
 				body = JSON.parse(get(record, "body", ""));
 				const FK_OrderNo = get(body, "Item.PK_OrderNo", "");
 				const houseBillNo = get(body, "Item.Housebill", "");
-				const validHouseBillNo = await getIfHouseBillNumberValid({
-					FK_OrderNo,
-				});
+				// const validHouseBillNo = await getIfHouseBillNumberValid({
+				// 	FK_OrderNo,
+				// });
+				// console.log(
+				// 	"🚀 ~ file: shippeo_pod_upload_doc.js:30 ~ records.map ~ validHouseBillNop:",
+				// 	validHouseBillNo
+				// );
+
+				// if (!validHouseBillNo) {
+				// 	console.log(`${houseBillNo} is not valid.`);
+				// 	return;
+				// }
+
+				const getDocUrl = `${SHIPPEO_GET_DOC_URL}?docType=HOUSEBILL&housebill=${houseBillNo}`;
+				const xApiKey = SHIPPEO_GET_DOC_API_KEY;
 				console.log(
-					"🚀 ~ file: shippeo_pod_upload_doc.js:30 ~ records.map ~ validHouseBillNop:",
-					validHouseBillNo
+					"🚀 ~ file: shippeo_pod_upload_doc.js:57 ~ records.map ~ getDocUrl:",
+					getDocUrl
 				);
-
-				if (!validHouseBillNo) {
-					console.log(`${houseBillNo} is not valid.`);
-					return;
-				}
-
-				const getDocUrl = `${SHIPPEO_GET_DOC_URL}?docType=HOUSEBILL,LABEL&housebill=${houseBillNo}`;
-				const xApiKey = "fIZpXhfGKQ42h6zIs7EUetiJd9yiAui7LlZxbkFh";
+				console.log(
+					"🚀 ~ file: shippeo_pod_upload_doc.js:57 ~ records.map ~ xApiKey:",
+					xApiKey
+				);
+				// const xApiKey = "fIZpXhfGKQ42h6zIs7EUetiJd9yiAui7LlZxbkFh";
 				const getDocumentRes = await getDocument({ url: getDocUrl, xApiKey });
 				const docs = get(getDocumentRes, "getDocumentResponse.documents", []);
 
-				const uploadToUrl = `${SHIPPEO_UPLOAD_DOC_URL}/${houseBillNo}/files`;
+				const uploadToUrl = `${SHIPPEO_UPLOAD_DOC_URL}/${6986204}/files`;
 				await uploadDocs({ docs, uploadToUrl, token });
 				console.log(
 					"🚀 ~ file: shippeo_pod_upload_doc.js:24 ~ module.exports.handler= ~ docs:",
@@ -64,6 +80,7 @@ module.exports.handler = async (event, context, callback) => {
 		);
 	} catch (error) {
 		console.error("Error : \n", error);
+		return
 		try {
 			const params = {
 				Subject: "Error on shippeo-pod-upload-doc lambda",
@@ -86,7 +103,8 @@ module.exports.handler = async (event, context, callback) => {
 		} catch (err) {
 			console.log("Error while sending error notification message:", err);
 		}
-		return callback(null, { statusCode: 500, body: JSON.stringify(error) });
+		return callback(null, { statusCode: 500 });
+		// return callback(null, { statusCode: 500, body: JSON.stringify(error) });
 	}
 };
 
@@ -127,23 +145,37 @@ const uploadDocs = async ({ docs, uploadToUrl, token }) => {
 		const { data: fileContent } = await axios.get(get(doc, "url"), {
 			responseType: "arraybuffer",
 		});
-		formData.append("attachments", fileContent, {
-			filename: get(doc, "filename"),
-		});
+		const bufferData = Buffer.from(fileContent);
+		fs.writeFileSync(get(doc, "filename"), bufferData);
+		formData.append(
+			"attachments[]",
+			fs.createReadStream(get(doc, "filename")),
+			{
+				filename: get(doc, "filename"),
+			}
+		);
 	});
 
-	const { data } = await axios.post(uploadToUrl, formData, {
+	const data = await axios.post(uploadToUrl, formData, {
 		headers: {
 			...formData.getHeaders(),
 			maxBodyLength: Infinity,
 			Authorization: `Bearer ${token}`,
 		},
 	});
+	// if(data.status === 200){
+	// 	await insertLog();
+	// }
 	console.log(
 		"🚀 ~ file: shippeo_pod_upload_doc.js:89 ~ uploadDocs ~ data:",
 		data
 	);
+	docs.forEach(async (doc) => {
+		fs.unlinkSync(get(doc, "filename"));
+	});
 };
+
+// const
 
 const getIfHouseBillNumberValid = async ({ FK_OrderNo }) => {
 	const getFileDataParams = {

@@ -1,4 +1,3 @@
----
 function:
   handler: ${self:custom.alias}/src/shipment_header_table_stream_processor.handler
   name: ${self:service}-shipment-header-table-stream-processor-${self:provider.stage}

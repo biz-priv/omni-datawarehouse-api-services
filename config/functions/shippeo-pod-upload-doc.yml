@@ -33,3 +33,5 @@ function:
     SHIPPEO_GET_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-url}
     SHIPPEO_UPLOAD_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/upload-document-url}
     SHIPPEO_GET_TOKEN_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-token-url}
+    SHIPPEO_GET_DOC_API_KEY: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-api-key}
+
