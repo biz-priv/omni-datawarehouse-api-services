@@ -183,12 +183,12 @@ module.exports.handler = async (event, context, callback) => {
         // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
         const pdfBuffer = await convertJPEGtoPDF(new Buffer(item.b64str, 'base64'));
         const pdfFilename = item.filename.replace(/\.(jpeg|jpg)$/i, ".pdf");
-        s3Result = await createS3File(pdfFilename, pdfBuffer);
+        let s3Result = await createS3File(pdfFilename, pdfBuffer);
         let url = await generatePreSignedURL(pdfFilename);
         item.url = url;
       } else {
         // For other cases, directly create and store the document
-        s3Result = await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
+        let s3Result = await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
         let url = await generatePreSignedURL(item.filename);
         item.url = url;
       }
