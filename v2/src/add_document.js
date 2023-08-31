@@ -3,6 +3,7 @@ const Joi = require("joi");
 const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
+const pdfkit = require('pdfkit');
 
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
@@ -137,6 +138,27 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", "Unable to validate user"));
   } else {
     customerId = event.enhancedAuthContext.customerId;
+    docType = eventBody.documentUploadRequest.docType;
+    if (customerId === "customer-portal-admin") {
+      if (docType === 'HCPOD') {
+        try {
+          // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
+          const pdfBuffer = await convertJPEGtoPDF(new Buffer(validated.b64str, 'base64'));
+          console.log("converted to pdf");
+          // Update validated object
+          validated.b64str = pdfBuffer.toString('base64');
+        } catch (conversionError) {
+          eventLogObj = {
+            ...eventLogObj,
+            errorMsg: "Error converting JPEG to PDF",
+            api_status_code: "400",
+          };
+          console.log("eventLogObj", eventLogObj);
+          await putItem(eventLogObj);
+          return callback(response("[400]", "Error converting JPEG to PDF"));
+        }
+      }
+    }
     console.log("customerId====================>", customerId);
   }
 
@@ -728,17 +750,32 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
   if (["HS", "TL"].includes(FK_ServiceId)) {
     check =
       addressMapRes.cc_con_zip === "1" &&
-      (addressMapRes.cc_con_address === "1" ||
-        addressMapRes.cc_con_google_match === "1")
+        (addressMapRes.cc_con_address === "1" ||
+          addressMapRes.cc_con_google_match === "1")
         ? true
         : false;
   } else if (FK_ServiceId === "MT") {
     check =
       addressMapRes.csh_con_zip === "1" &&
-      (addressMapRes.csh_con_address === "1" ||
-        addressMapRes.csh_con_google_match === "1")
+        (addressMapRes.csh_con_address === "1" ||
+          addressMapRes.csh_con_google_match === "1")
         ? true
         : false;
   }
   return check;
+}
+
+// Function to convert JPEG/JPG to PDF
+async function convertJPEGtoPDF(jpegBuffer) {
+  return new Promise((resolve, reject) => {
+    const pdfBuffer = [];
+
+    const doc = new pdfkit();
+    doc.on('data', chunk => pdfBuffer.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
+
+    // Add the JPEG image to the PDF
+    doc.image(jpegBuffer, 0, 0);
+    doc.end();
+  });
 }
