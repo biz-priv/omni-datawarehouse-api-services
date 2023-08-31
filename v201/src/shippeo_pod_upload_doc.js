@@ -177,7 +177,8 @@ const uploadDocs = async ({ uploadToUrl, token, houseBillNo }) => {
 	const fileStat = fs.statSync(filePath);
 	const contentLength = String(get(fileStat, "size", 0));
 
-	await callExternalApiToUploadDoc({ filePath, fileSize: contentLength });
+	const resp = await callExternalApiToUploadDoc({ filePath, fileSize: contentLength });
+	console.log("🚀 ~ file: shippeo_pod_upload_doc.js:181 ~ uploadDocs ~ resp:", resp)
 
 	// const file = fs.createReadStream(filePath, {
 	// 	encoding: "base64",
@@ -330,16 +331,19 @@ const callExternalApiToUploadDoc = async ({ filePath, fileSize }) => {
 	// 	req.end();
 	// 	resolve();
 	// });
+	return new Promise((resolve, reject) => {
+		const curlCommand = `curl --location http://api-edi.shippeo.com/api/orders/EDIReference/6986204/files --header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE2OTMzODMwNzYsImV4cCI6MTY5NDU5MjY3NiwiaGFzaGlkIjoiOTJFOTNNRTIifQ.aHjgHl8ZlNR1Qg7diFWu27ECoZSJ3hzN5WvwvvOQx2eu7vdVk_W5n4R11m0XR9NeUMVAIF-8yvHnPLFhnZ1eN25h7HwNcPNN_IJLAU874S-X4eGBt44_uJS19jMnG0NBZAwIVw1BlgPVGSUtYxb0U90P3usqoPzQU89gjiivXSpeny3oa40WLMBq_iSl9aCKAZHtwfF-O0eAWKxNJUyxD26r-NM0OBPOqdHm0JHUTFeeOlCYfqSufzSGTJ72NiWTW6PVj0sekTKv445AjC7NipJnq_JiIBUbwltq9DwRg4sXT8II8bEi9sSeYKXR9y_ERQSkSSUK_ITJ3uHXNzoPJQ3BOui8TRRE8f30Mo9IfzgFuB7CSMAf6xHxFaaidvznqWDg6ECUqZfhLDuKTJZ0DG773OgMCBoBehawwURRO9qrl6ObwTIHHnbUzP3q9yjOK6GxNfvW7rEb8dHG3sOtCtCcLUBVoml9UQ6tc5TffYXQYUVx4xmwfTJcFV9yk7CTDDtgfCFn32dP5fwc6bvoxKKdWPeV6XwKRfeXs-GgXe_1RldQ0i-wvKIpAptlWheqYUUyVD7IItnDzJ_9D5OKwKxPrACebkFWYhbzLXS4IhcxWp8-BOMvzZrk3rikOCiI9V57SICQqN5pAYQr8jA-fLrTsLR9ldu4_PUNuzN3Jng' --form 'attachments[]=@"${filePath}"'`;
 
-	const curlCommand = `curl --location http://api-edi.shippeo.com/api/orders/EDIReference/6986204/files --header 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE2OTMzODMwNzYsImV4cCI6MTY5NDU5MjY3NiwiaGFzaGlkIjoiOTJFOTNNRTIifQ.aHjgHl8ZlNR1Qg7diFWu27ECoZSJ3hzN5WvwvvOQx2eu7vdVk_W5n4R11m0XR9NeUMVAIF-8yvHnPLFhnZ1eN25h7HwNcPNN_IJLAU874S-X4eGBt44_uJS19jMnG0NBZAwIVw1BlgPVGSUtYxb0U90P3usqoPzQU89gjiivXSpeny3oa40WLMBq_iSl9aCKAZHtwfF-O0eAWKxNJUyxD26r-NM0OBPOqdHm0JHUTFeeOlCYfqSufzSGTJ72NiWTW6PVj0sekTKv445AjC7NipJnq_JiIBUbwltq9DwRg4sXT8II8bEi9sSeYKXR9y_ERQSkSSUK_ITJ3uHXNzoPJQ3BOui8TRRE8f30Mo9IfzgFuB7CSMAf6xHxFaaidvznqWDg6ECUqZfhLDuKTJZ0DG773OgMCBoBehawwURRO9qrl6ObwTIHHnbUzP3q9yjOK6GxNfvW7rEb8dHG3sOtCtCcLUBVoml9UQ6tc5TffYXQYUVx4xmwfTJcFV9yk7CTDDtgfCFn32dP5fwc6bvoxKKdWPeV6XwKRfeXs-GgXe_1RldQ0i-wvKIpAptlWheqYUUyVD7IItnDzJ_9D5OKwKxPrACebkFWYhbzLXS4IhcxWp8-BOMvzZrk3rikOCiI9V57SICQqN5pAYQr8jA-fLrTsLR9ldu4_PUNuzN3Jng' --form 'attachments[]=@"${filePath}"'`;
-
-	exec(curlCommand, (error, stdout, stderr) => {
-		if (error) {
-			console.error(`Error executing cURL command: ${error}`);
-			return;
-		}
-		// Handle the output
-		console.log("cURL command output:", stdout);
+		exec(curlCommand, (error, stdout, stderr) => {
+			if (error) {
+				console.error(`Error executing cURL command: ${error}`);
+				reject(error);
+				return;
+			}
+			// Handle the output
+			console.log("cURL command output:", stdout);
+			resolve(stdout);
+		});
 	});
 };
 
