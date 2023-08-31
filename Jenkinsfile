@@ -46,9 +46,6 @@ pipeline {
                     sh """
                     npm i serverless@2.11.1
                     npm i
-                    cd lambdaLayer/lib/nodejs
-                    npm i
-                    cd ../../..
                     serverless --version
                     echo ${env.ALIAS_VERSION}
                     sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
