@@ -147,7 +147,6 @@ module.exports.handler = async (event, context, callback) => {
           console.log("converted to pdf");
           // Update validated object
           validated.b64str = pdfBuffer.toString('base64');
-          fileExtension = '.pdf';
         } catch (conversionError) {
           eventLogObj = {
             ...eventLogObj,
