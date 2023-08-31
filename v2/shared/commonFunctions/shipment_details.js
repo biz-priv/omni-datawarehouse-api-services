@@ -331,8 +331,6 @@ async function getDynamodbData(eventType, value) {
 }
 
 
-
-
 async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
 
   try {
@@ -353,14 +351,13 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
     ) WHERE rn = 1 and op != 'D';`
       const orderData = await getDataFromAthena(query, "activityDate")
 
-
+      mainResponse["shipmentDetailResponse"] = []
       if (orderData.length > 0) {
         await Promise.all(orderData.map(async (item) => {
           const data = await getDynamodbData("fileNumber", item)
           dynamodbData = data.dynamodbData
           timeZoneTable = data.timeZoneTable
           // console.log(dynamodbData)
-          mainResponse["shipmentDetailResponse"] = []
           // let parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
           // console.log("parsedData", parsedData)
           mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
@@ -385,13 +382,14 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
     WHERE rn = 1 and op != 'D';`
       const orderData = await getDataFromAthena(query, "shipmentDate")
 
+      
+      mainResponse["shipmentDetailResponse"] = [];
       if(orderData.length > 0){
       await Promise.all(orderData.map(async (item) => {
         const data = await getDynamodbData("fileNumber", item)
         dynamodbData = data.dynamodbData
         timeZoneTable = data.timeZoneTable
         // console.log(dynamodbData)
-        mainResponse["shipmentDetailResponse"] = [];
         // const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
         // console.log("parsedData", parsedData)
         mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
