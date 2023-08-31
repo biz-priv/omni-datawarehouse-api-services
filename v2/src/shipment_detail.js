@@ -34,15 +34,14 @@ module.exports.handler = async (event) => {
 
 
   try {
-
     // const pKeyValue = "1787176";
     if (event.queryStringParameters) {
       if (event.queryStringParameters.hasOwnProperty("fileNumber")) {
-        ({ dynamodbData, timeZoneTable } = await getDynamodbData("fileNumber", event.queryStringParameters.fileNumber))
+        ({ dynamodbData, timeZoneTable } = await getDynamodbData("fileNumber", (event.queryStringParameters.fileNumber).toString()))
         mainResponse["shipmentDetailResponse"] = []
         mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
       } else if (event.queryStringParameters.hasOwnProperty("housebill")) {
-        ({ dynamodbData, timeZoneTable } = await getDynamodbData("housebill", event.queryStringParameters.housebill))
+        ({ dynamodbData, timeZoneTable } = await getDynamodbData("housebill", (event.queryStringParameters.housebill).toString()))
         console.log("final dynamodb data ", dynamodbData)
         console.log("timeZoneTable", timeZoneTable)
         if (event.queryStringParameters.hasOwnProperty("milestone_history")) {
