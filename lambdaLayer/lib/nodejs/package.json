@@ -20,12 +20,8 @@
     "axios": "^0.21.1",
     "joi": "^17.4.2",
     "js-base64": "^3.7.3",
-    "lodash": "^4.17.21",
-    "log4js": "^6.9.1",
-    "moment": "^2.29.4",
     "moment-timezone": "^0.5.41",
     "pdfkit": "^0.13.0",
-    "pg-promise": "^10.11.1",
     "uuid": "^9.0.0",
     "xmlbuilder2": "^3.0.2"
   }
