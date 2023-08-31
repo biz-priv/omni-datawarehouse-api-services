@@ -61,4 +61,7 @@ function:
     MILESTONE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/milestone/ddb.tableName}
     SHIPMENT_MILESTONE_DETAIL_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone-detail/ddb.tableName}
     TRACKING_NOTES_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/tracking-notes/ddb.tableName~true}
+    P44_LOCATION_UPDATE_TABLE: ${ssm:/omni-p44/location-updates/${self:provider.stage}/source/ddb.table_name}
+    ATHENA_RESULT_S3_BUCKET: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/athena/result/bucket.name}
+    
 

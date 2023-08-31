@@ -126,7 +126,7 @@ async function locationFunc(pKeyValue, houseBill) {
       mainArray.push(trackingNotesLocation)
     }
     let locationParams = {
-      TableName: "omni-p44-shipment-location-updates-dev",
+      TableName: process.env.P44_LOCATION_UPDATE_TABLE,
       KeyConditionExpression: "HouseBillNo = :HouseBillNo",
       ExpressionAttributeValues: {
         ":HouseBillNo": houseBill
@@ -339,7 +339,6 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
     let dynamodbData = {};
     let timeZoneTable = {};
     let mainResponse = {};
-    let fileNumberArray = [];
     if (eventType == "activityDate") {
 
       const query = `select FK_OrderNo, dms_ts,op from (
@@ -355,21 +354,21 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
       const orderData = await getDataFromAthena(query, "activityDate")
 
 
-      if (orderData.length != 0) {
+      if (orderData.length > 0) {
         await Promise.all(orderData.map(async (item) => {
-          fileNumberArray.push(item)
-          const data1 = await getDynamodbData("fileNumber", item)
-          dynamodbData = data1.dynamodbData
-          timeZoneTable = data1.timeZoneTable
+          const data = await getDynamodbData("fileNumber", item)
+          dynamodbData = data.dynamodbData
+          timeZoneTable = data.timeZoneTable
           // console.log(dynamodbData)
           mainResponse["shipmentDetailResponse"] = []
-          const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
+          // let parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
           // console.log("parsedData", parsedData)
-          mainResponse["shipmentDetailResponse"].push(parsedData)
+          mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
         }))
+      }else{
+        console.log("There are no orders in this date range")
       }
 
-      // console.log(fileNumberArray)
     } else {
 
       const query = `WITH RankedRecords AS (
@@ -386,18 +385,20 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
     WHERE rn = 1 and op != 'D';`
       const orderData = await getDataFromAthena(query, "shipmentDate")
 
-
+      if(orderData.length > 0){
       await Promise.all(orderData.map(async (item) => {
-        fileNumberArray.push(item)
-        const data1 = await getDynamodbData("fileNumber", item)
-        dynamodbData = data1.dynamodbData
-        timeZoneTable = data1.timeZoneTable
+        const data = await getDynamodbData("fileNumber", item)
+        dynamodbData = data.dynamodbData
+        timeZoneTable = data.timeZoneTable
         // console.log(dynamodbData)
-        mainResponse["shipmentDetailResponse"] = []
-        const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
+        mainResponse["shipmentDetailResponse"] = [];
+        // const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
         // console.log("parsedData", parsedData)
-        mainResponse["shipmentDetailResponse"].push(parsedData)
+        mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
       }))
+    }else{
+      console.log("There are no orders in this date range")
+    }
     }
     return mainResponse
   } catch (error) {
@@ -474,7 +475,7 @@ async function getDataFromAthena(query, sortType) {
   const params = {
     QueryString: query,
     ResultConfiguration: {
-      OutputLocation: 's3://omni-athena-query-output/'
+      OutputLocation: `s3://${process.env.ATHENA_RESULT_S3_BUCKET}/`
     }
   };
 
@@ -486,7 +487,7 @@ async function getDataFromAthena(query, sortType) {
     await setTimeoutPromise(30000);
     console.log("delay completed")
 
-    const bucketName = 'omni-athena-query-output';
+    const bucketName = process.env.ATHENA_RESULT_S3_BUCKET;
     const s3params = {
       Bucket: bucketName,
       Key: queryExecutionId + '.csv'
