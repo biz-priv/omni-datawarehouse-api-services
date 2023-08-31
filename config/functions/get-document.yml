@@ -11,8 +11,7 @@ function:
   description: get document api service-${self:provider.stage}
   runtime: nodejs14.x
   timeout: 60
-  layers:
-    - !Ref DWAPILayerLambdaLayer
+
   events:
     # - alb:
     #     listenerArn: !Ref ALBLoadBalancer
