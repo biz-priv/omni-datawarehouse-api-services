@@ -3,6 +3,14 @@ const moment = require('moment');
 const { get } = require('lodash');
 const ddb = new AWS.DynamoDB.DocumentClient();
 
+const s3 = new AWS.S3();
+const athena = new AWS.Athena();
+
+const util = require('util');
+const setTimeoutPromise = util.promisify(setTimeout);
+
+const csvtojson = require('csvtojson');
+
 const tracking_notes_table = process.env.TRACKING_NOTES_TABLE
 
 const { tableValues, weightDimensionValue, INDEX_VALUES, customerTypeValue } = require("../constants/shipment_details");
@@ -163,7 +171,7 @@ async function getShipmentDate(dateTime) {
 }
 
 async function getDynamodbData(eventType, value) {
-  // console.log(eventType, value)
+  console.log(eventType, value)
   let timeZoneTable = {};
   const dynamodbData = {};
   let fileNumber;
@@ -194,11 +202,15 @@ async function getDynamodbData(eventType, value) {
           ":pKey": fileNumber,
         },
       };
-      // console.log(params)
+      console.log(params)
       const data = await ddb.query(params).promise();
       dynamodbData[process.env.SHIPMENT_HEADER_TABLE] = data.Items
     }
 
+    console.log("after shipment Header table")
+    /*
+    *Dynamodb data from time zone master table
+    */
     const timeZoneTableParams = {
       TableName: process.env.TIMEZONE_MASTER_TABLE,
     };
@@ -207,6 +219,7 @@ async function getDynamodbData(eventType, value) {
       timeZoneTable[item.PK_TimeZoneCode] = item
     }))
 
+    console.log("after time zone master table")
     await Promise.all(
       tableValues.map(async (tableValue) => {
         // console.log(tableValue)
@@ -229,8 +242,14 @@ async function getDynamodbData(eventType, value) {
       })
     );
     // console.log("dynamodb", dynamodbData)
+    console.log("after tables from constant values")
+
     const PK_ServiceLevelId = get(dynamodbData, `${process.env.SHIPMENT_HEADER_TABLE}[0].FK_ServiceLevelId`, null)
     if (PK_ServiceLevelId != null || PK_ServiceLevelId != "") {
+
+      /*
+      *Dynamodb data from service level table
+      */
       const servicelevelsTableParams = {
         TableName: process.env.SERVICE_LEVEL_TABLE,
         KeyConditionExpression: `#pKey = :pKey`,
@@ -245,6 +264,7 @@ async function getDynamodbData(eventType, value) {
       dynamodbData[process.env.SERVICE_LEVEL_TABLE] = servicelevelsTableResult.Items
     }
 
+    console.log("after service level table")
 
     const FK_ServiceLevelId = get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_ServiceLevelId`, null)
     const FK_OrderStatusId = get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_OrderStatusId`, null)
@@ -252,7 +272,11 @@ async function getDynamodbData(eventType, value) {
       console.log("no servicelevelId for ", get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_OrderNo
       
       `, null))
-    }else{
+    } else {
+
+      /*
+      *Dynamodb data from milestone table
+      */
       const milestoneTableParams = {
         TableName: process.env.MILESTONE_TABLE,
         KeyConditionExpression: `#pKey = :pKey and #sKey = :sKey`,
@@ -273,7 +297,9 @@ async function getDynamodbData(eventType, value) {
       dynamodbData[process.env.MILESTONE_TABLE] = milestoneTableResult.Items
     }
 
-
+    /*
+    *Dynamodb data from shipment milestone detail table
+    */
     const shipmentMilestonedetailTableParams = {
       TableName: process.env.SHIPMENT_MILESTONE_DETAIL_TABLE,
       KeyConditionExpression: `#pKey = :pKey and #sKey = :sKey`,
@@ -282,7 +308,7 @@ async function getDynamodbData(eventType, value) {
         "#sKey": "FK_OrderStatusId"
       },
       ExpressionAttributeValues: {
-        ":pKey": get(dynamodbData, `${process.env.SHIPMENT_MILESTONE_TABLE}[0].FK_OrderNo`, null),
+        ":pKey": fileNumber,
         ":sKey": "PUP"
       },
     }
@@ -294,6 +320,7 @@ async function getDynamodbData(eventType, value) {
     );
     // console.log("results", shipmentMilestonedetailTableResult)
     dynamodbData[process.env.SHIPMENT_MILESTONE_DETAIL_TABLE] = shipmentMilestonedetailTableResult.Items
+
     // console.log("final dynamodb data", dynamodbData)
     // console.log("end of the getDynamodb func", value)
     return { "dynamodbData": dynamodbData, "timeZoneTable": timeZoneTable }
@@ -303,75 +330,35 @@ async function getDynamodbData(eventType, value) {
   }
 }
 
+
+
+
 async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
+
   try {
     let dynamodbData = {};
     let timeZoneTable = {};
     let mainResponse = {};
     let fileNumberArray = [];
     if (eventType == "activityDate") {
-      let completeValue = ["Y", "N"]
-      await Promise.all(completeValue.map(async (pKeyValue) => {
-        let params = {
-          TableName: process.env.SHIPMENT_MILESTONE_TABLE,
-          IndexName: "Complete-EventDateTime-index",
-          KeyConditionExpression: "#Complete = :Complete and EventDateTime BETWEEN :start AND :end",
-          ExpressionAttributeNames: {
-            "#Complete": "Complete"
-          },
-          ExpressionAttributeValues: {
-            ":Complete": pKeyValue,
-            ":start": fromDate,
-            ":end": toDate
-          }
-        };
-        console.log("params of shipment milestone table", params)
-        const data = await ddb.query(params).promise();
-        console.log("data from shipment milestone", pKeyValue, data)
-        if (data.Items.length != 0) {
-          await Promise.all(data.Items.map(async (item) => {
-            // console.log("file number", item.FK_OrderNo)
-            // console.log("fileNumberArray", fileNumberArray)
-            fileNumberArray.push(item?.FK_OrderNo)
-            const data1 = await getDynamodbData("fileNumber", item.FK_OrderNo)
-            dynamodbData = data1.dynamodbData
-            timeZoneTable = data1.timeZoneTable
-            // console.log(dynamodbData)
-            mainResponse["shipmentDetailResponse"] = []
-            const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
-            // console.log("parsedData", parsedData)
-            mainResponse["shipmentDetailResponse"].push(parsedData)
-          }))
-        }
-        // console.log(fileNumberArray)
-      }))
-    } else {
-      const timeZoneTableParams = {
-        TableName: process.env.TIMEZONE_MASTER_TABLE,
-      };
-      const timeZoneTableResult = await ddb.scan(timeZoneTableParams).promise();
-      console.log(timeZoneTableResult.Items)
-      await Promise.all(timeZoneTableResult.Items.map(async (item) => {
-        let params = {
-          TableName: process.env.SHIPMENT_MILESTONE_TABLE,
-          IndexName: "PODDateTimeZone-index-dev",
-          KeyConditionExpression: "#PODDateTimeZone = :PODDateTimeZone",
-          FilterExpression: "OrderDate BETWEEN :start AND :end",
-          ExpressionAttributeNames: {
-            "#PODDateTimeZone": "PODDateTimeZone"
-          },
-          ExpressionAttributeValues: {
-            ":PODDateTimeZone": item.PK_TimeZoneCode,
-            ":start": fromDate,
-            ":end": toDate
-          }
-        }
-        console.log("params of shipment header table", params)
-        const data = await ddb.query(params).promise();
-        console.log("data from shipment milestone", data)
-        await Promise.all(data.Items.map(async (item) => {
-          fileNumberArray.push(item?.FK_OrderNo)
-          const data1 = await getDynamodbData("fileNumber", item.FK_OrderNo)
+
+      const query = `select FK_OrderNo, dms_ts,op from (
+        SELECT
+            FK_OrderNo,
+            dms_ts,
+            op,
+            EventDateTime,
+            ROW_NUMBER() OVER (PARTITION BY FK_OrderNo ORDER BY dms_ts DESC) AS rn
+        FROM omni_wt_rt_updates_dev.tbl_shipmentmilestone
+        WHERE EventDateTime BETWEEN '${moment(fromDate).format("YYYY-MM-DD HH:mm:ss")}' AND '${moment(toDate).format("YYYY-MM-DD HH:mm:ss")}'
+    ) WHERE rn = 1 and op != 'D';`
+      const orderData = await getDataFromAthena(query, "activityDate")
+
+
+      if (orderData.length != 0) {
+        await Promise.all(orderData.map(async (item) => {
+          fileNumberArray.push(item)
+          const data1 = await getDynamodbData("fileNumber", item)
           dynamodbData = data1.dynamodbData
           timeZoneTable = data1.timeZoneTable
           // console.log(dynamodbData)
@@ -380,10 +367,38 @@ async function getDynamodbDataFromDateRange(eventType, fromDate, toDate) {
           // console.log("parsedData", parsedData)
           mainResponse["shipmentDetailResponse"].push(parsedData)
         }))
+      }
+
+      // console.log(fileNumberArray)
+    } else {
+
+      const query = `WITH RankedRecords AS (
+        SELECT
+            pk_orderno,
+            dms_ts,
+            op,
+            ROW_NUMBER() OVER (PARTITION BY pk_orderno ORDER BY dms_ts DESC) AS rn
+        FROM omni_wt_rt_updates_dev.tbl_shipmentheader
+        WHERE orderdate BETWEEN '${moment(fromDate).format("YYYY-MM-DD HH:mm:ss")}' AND '${moment(toDate).format("YYYY-MM-DD HH:mm:ss")}'
+    )
+    SELECT pk_orderno, dms_ts,op
+    FROM RankedRecords
+    WHERE rn = 1 and op != 'D';`
+      const orderData = await getDataFromAthena(query, "shipmentDate")
+
+
+      await Promise.all(orderData.map(async (item) => {
+        fileNumberArray.push(item)
+        const data1 = await getDynamodbData("fileNumber", item)
+        dynamodbData = data1.dynamodbData
+        timeZoneTable = data1.timeZoneTable
+        // console.log(dynamodbData)
+        mainResponse["shipmentDetailResponse"] = []
+        const parsedData = await parseAndMappingData(dynamodbData, timeZoneTable, true)
+        // console.log("parsedData", parsedData)
+        mainResponse["shipmentDetailResponse"].push(parsedData)
       }))
     }
-    // console.log(fileNumberArray)
-    // console.log("final main Response ===>",mainResponse)
     return mainResponse
   } catch (error) {
     console.log("date range function: ", error)
@@ -452,6 +467,54 @@ async function parseAndMappingData(data, timeZoneTable, milestone_history) {
   // console.log("payload==>",payload)
   return payload
 }
+
+
+async function getDataFromAthena(query, sortType) {
+
+  const params = {
+    QueryString: query,
+    ResultConfiguration: {
+      OutputLocation: 's3://omni-athena-query-output/'
+    }
+  };
+
+  try {
+    const queryExecutionResult = await athena.startQueryExecution(params).promise();
+    const queryExecutionId = queryExecutionResult.QueryExecutionId;
+    console.log('Query execution ID:', queryExecutionId);
+    console.log("delay started")
+    await setTimeoutPromise(30000);
+    console.log("delay completed")
+
+    const bucketName = 'omni-athena-query-output';
+    const s3params = {
+      Bucket: bucketName,
+      Key: queryExecutionId + '.csv'
+    };
+    const data = await s3.getObject(s3params).promise();
+    const csvContent = data.Body.toString('utf-8');
+    const jsonArray = await csvtojson().fromString(csvContent);
+    console.log('File content:', csvContent);
+    console.log(jsonArray)
+    let orderArray = []
+    if (sortType == "shipmentDate") {
+      await Promise.all(jsonArray.map((item) => {
+        orderArray.push(item.pk_orderno)
+      }))
+    } else {
+      await Promise.all(jsonArray.map((item) => {
+        orderArray.push(item.FK_OrderNo)
+      }))
+    }
+    console.log(orderArray.length)
+    return orderArray
+  } catch (error) {
+    console.error('Error:', error);
+    console.error('Error:', error.AthenaErrorCode);
+    console.error('Error:', error.Message);
+  }
+}
+
 
 
 module.exports = { refParty, pieces, actualWeight, ChargableWeight, weightUOM, getTime, locationFunc, getShipmentDate, getPickupTime, getDynamodbData, getDynamodbDataFromDateRange, parseAndMappingData }

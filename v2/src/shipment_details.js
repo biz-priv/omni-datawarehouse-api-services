@@ -102,7 +102,7 @@ module.exports.handler = async (event) => {
     }
 
 
-    console.log(mainResponse)
+    console.log(mainResponse.shipmentDetailResponse.length)
     return {
       statusCode: 200,
       body:
