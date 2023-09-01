@@ -38,7 +38,7 @@ function:
     - v104/src/shipment_detail.py
     - v201/src/shipment_detail.py
     - v2/src/shipment_detail.js
-    - node_modules/*
+    - node_modules/**
     - src/common.py
     - psycopg2/*
     - v2/src/shared/*
