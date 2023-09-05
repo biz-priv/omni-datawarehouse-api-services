@@ -4,6 +4,8 @@ function:
   name: ${self:service}-shipment-detail-${self:provider.stage}
   description: shipment detail api service - ${self:provider.stage}
   runtime: nodejs18.x
+  layers:
+    - !Ref DWAPILayerLambdaLayer
   warmup:
     default:
       enabled: true
@@ -38,7 +40,7 @@ function:
     - v104/src/shipment_detail.py
     - v201/src/shipment_detail.py
     - v2/src/shipment_detail.js
-    - node_modules/**
+    # - node_modules/**
     - src/common.py
     - psycopg2/*
     - v2/src/shared/*
