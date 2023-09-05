@@ -3,10 +3,10 @@ function:
   handler: ${self:custom.alias}/src/shippeo_pod_upload_doc.handler
   name: ${self:service}-shippeo-pod-upload-doc-${self:provider.stage}
   description: shippeo upload pod doc - ${self:provider.stage}
-  runtime: nodejs18.x
+  # runtime: nodejs18.x
   timeout: 500
-  layers:
-    - !Ref DWAPILayerLambdaLayer
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
   events:
     - sqs:
         arn:
@@ -17,7 +17,7 @@ function:
   package:
     individually: true
     patterns:
-      - v201/src/shippeo_pod_upload_doc.js
+      - v201/src/shippeo_pod_upload_doc.py
       - "!**/*"
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
@@ -34,5 +34,7 @@ function:
     SHIPPEO_UPLOAD_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/upload-document-url}
     SHIPPEO_GET_TOKEN_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-token-url}
     SHIPPEO_GET_DOC_API_KEY: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-api-key}
-    WT_WEBSLI_API_URL: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url} 
-
+    WT_WEBSLI_API_URL: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
+    TOKEN_EXPIRATION_DAYS: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/token-expiration-days}
+    TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
