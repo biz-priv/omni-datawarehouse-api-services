@@ -61,10 +61,11 @@ def handler(event, context):
 
             doc_type = get_if_house_bill_number_valid(order_no)
             LOGGER.info("doc_type: %s", doc_type)
-            
+
             if doc_type == None:
-                raise HouseBillNotValidError(
+                LOGGER.info(
                     f"House bill : {housebill_no} with order no: {order_no} is not valid")
+                return
 
             upload_to_url = f"{SHIPPEO_UPLOAD_DOC_URL}/{housebill_no}/files"
 # 6986204
