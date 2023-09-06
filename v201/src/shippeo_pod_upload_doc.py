@@ -65,10 +65,11 @@ def handler(event, context):
             if doc_type == None:
                 LOGGER.info(
                     f"House bill : {housebill_no} with order no: {order_no} is not valid")
-                return
+                return {
+                    'statusCode': 200
+                }
 
             upload_to_url = f"{SHIPPEO_UPLOAD_DOC_URL}/{housebill_no}/files"
-# 6986204
             # Upload docs
             result = upload_docs(upload_to_url, final_token,
                                  housebill_no, websli_token, doc_type)
@@ -111,7 +112,7 @@ def get_existing_token():
         # Query the DynamoDB table
         response = dynamodb.query(**params)
         # Check if there are items in the result
-        if response['Items']:
+        if len(response['Items']) > 0:
             return response['Items'][0]['data']['S']
         else:
             return None
@@ -237,7 +238,8 @@ def insert_log(housebill_number, data):
         'TableName': LOG_TABLE,
         'Item': {
             'pKey': {'S': housebill_number},
-            'data': {'S': json.dumps(data)}
+            'data': {'S': json.dumps(data)},
+            'lastUpdateTime': {'S': datetime.now()},
         }
     }
 

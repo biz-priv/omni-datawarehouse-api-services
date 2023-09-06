@@ -191,6 +191,7 @@ resources:
                     - "sqs:ReceiveMessage"
                     - "sqs:DeleteMessage"
                     - "sqs:SendMessageBatch"
+                    - "sqs:SendMessage"
                   Resource: "*"
                 - Effect: Allow
                   Action:
