@@ -121,6 +121,57 @@ module.exports.handler = async (event, context, callback) => {
   let currentDateTime = new Date();
   validated.b64str = eventBody.documentUploadRequest.b64str;
 
+
+  // List of valid docType values to check against
+  const validDocTypes = [
+    "CERTIFICAT",
+    "CONSULAR",
+    "CUST RATE",
+    "CUSTOMS",
+    "DANGEROUS",
+    "DCCL",
+    "DECON",
+    "HCPOD",
+    "IBU",
+    "IMPORT LIC",
+    "INSURANCE",
+    "INVOICE",
+    "MSDS",
+    "OCCL",
+    "OMNI RA",
+    "ORIG BOL",
+    "PACKING",
+    "PO",
+    "POD",
+    "PRO FORMA",
+    "RA",
+    "SED",
+    "SLI",
+    "WAYBILL"
+  ];
+
+  docType = eventBody.documentUploadRequest.docType;
+  if (validDocTypes.includes(docType)) {
+    try {
+      // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
+      const pdfBuffer = await convertJPEGtoPDF(new Buffer(validated.b64str, 'base64'));
+      console.log("converted to pdf");
+      // Update validated object
+      validated.b64str = pdfBuffer.toString('base64');
+      fileExtension = ".pdf"
+    } catch (conversionError) {
+      console.log(conversionError)
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "Error converting JPEG to PDF",
+        api_status_code: "400",
+      };
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+      return callback(response("[400]", "Error converting JPEG to PDF"));
+    }
+  }
+
   //checking for customerId from event if not present throw error else set the customerId
 
   if (
@@ -138,27 +189,6 @@ module.exports.handler = async (event, context, callback) => {
     return callback(response("[400]", "Unable to validate user"));
   } else {
     customerId = event.enhancedAuthContext.customerId;
-    docType = eventBody.documentUploadRequest.docType;
-    if (customerId === "customer-portal-admin") {
-      if (docType === 'HCPOD') {
-        try {
-          // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
-          const pdfBuffer = await convertJPEGtoPDF(new Buffer(validated.b64str, 'base64'));
-          console.log("converted to pdf");
-          // Update validated object
-          validated.b64str = pdfBuffer.toString('base64');
-        } catch (conversionError) {
-          eventLogObj = {
-            ...eventLogObj,
-            errorMsg: "Error converting JPEG to PDF",
-            api_status_code: "400",
-          };
-          console.log("eventLogObj", eventLogObj);
-          await putItem(eventLogObj);
-          return callback(response("[400]", "Error converting JPEG to PDF"));
-        }
-      }
-    }
     console.log("customerId====================>", customerId);
   }
 
@@ -429,7 +459,10 @@ module.exports.handler = async (event, context, callback) => {
    * if no extensiton then throwing error
    */
 
-  if (
+  if (fileExtension) {
+    console.log(fileExtension);
+  }
+  else if (
     "contentType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
     eventBody.documentUploadRequest.contentType.split("/")[1] != ""
@@ -486,10 +519,9 @@ module.exports.handler = async (event, context, callback) => {
     fileName = docType + "_" + formatDate + fileExtension;
   }
   validated.filename = fileName;
-
+  console.log("fileName:", fileName);
   try {
     const postData = makeJsonToXml(validated);
-    // eventLogObj.request_xml = postData;
     console.info("postData", postData);
     const res = await getXmlResponse(postData);
     console.info("resp: ", res);
