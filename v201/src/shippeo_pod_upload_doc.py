@@ -31,7 +31,7 @@ TOKEN_VALIDATOR = os.environ["TOKEN_VALIDATOR"]
 TOKEN_VALIDATION_TABLE_INDEX = os.environ["TOKEN_VALIDATION_TABLE_INDEX"]
 
 
-def handler(event, context):
+def handler(event):
     LOGGER.info("Event: %s", event)
     records = event['Records']
     body = ""
@@ -140,7 +140,7 @@ def insert_token(data):
         LOGGER.info(f"Unable to insert item. Error: {e}")
 
 
-def get_websli_token(apiKey):
+def get_websli_token(api_key):
     try:
         # Define the query parameters
         params = {
@@ -148,7 +148,7 @@ def get_websli_token(apiKey):
             'IndexName': TOKEN_VALIDATION_TABLE_INDEX,
             'KeyConditionExpression': "ApiKey = :ApiKey",
             'ExpressionAttributeValues': {
-                ":ApiKey": {'S': apiKey}
+                ":ApiKey": {'S': api_key}
             },
         }
         # Query the DynamoDB table
