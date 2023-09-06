@@ -28,6 +28,8 @@
 		"moment-timezone": "^0.5.41",
 		"pg-promise": "^10.11.1",
 		"uuid": "^9.0.0",
-		"xmlbuilder2": "^3.0.2"
+		"xmlbuilder2": "^3.0.2",
+		"csvtojson": "^2.0.10",
+		"util": "^0.12.5"
 	}
 }
