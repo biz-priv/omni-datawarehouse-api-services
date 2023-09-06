@@ -167,7 +167,7 @@ resources:
                     - ec2:DetachNetworkInterface
                     - ec2:DeleteNetworkInterface
                   Resource: "*"
-    ShippeoPODRole:
+    ShippeoPODRole-${self:custom.alias}:
       Type: AWS::IAM::Role
       Properties:
         RoleName: ShippeoPODRole
@@ -191,7 +191,7 @@ resources:
                     - "sqs:ReceiveMessage"
                     - "sqs:DeleteMessage"
                     - "sqs:SendMessageBatch"
-                    - "sqs:SendMessage"
+                    # - "sqs:SendMessage"
                   Resource: "*"
                 - Effect: Allow
                   Action:
