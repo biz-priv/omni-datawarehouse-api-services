@@ -82,21 +82,21 @@ def handler(event):
     except Exception as e:
         logging.error(f"Error: {e}")
         try:
-            sns.publish(
-                TopicArn=SNS_TOPIC_ARN,
-                Subject="Error on shippeo-pod-upload-doc lambda",
-                Message=f"Error in shippeo-pod-upload-doc lambda: {e}"
-            )
 
             sqs.send_message(
                 QueueUrl=SHIPMENT_HEADER_TABLE_STREAM_QLQ,
                 MessageBody=json.dumps(body)
             )
+            return {
+                'statusCode': 500
+            }
+            sns.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Subject="Error on shippeo-pod-upload-doc lambda",
+                Message=f"Error in shippeo-pod-upload-doc lambda: {e}"
+            )
         except Exception as e:
             logging.error(f"Error sending error notifications: {e}")
-        return {
-            'statusCode': 500
-        }
 
 
 def get_existing_token():
