@@ -180,7 +180,7 @@ resources:
                   - lambda.amazonaws.com
               Action: sts:AssumeRole
         Policies:
-          - PolicyName: omni-dw-api-services-${self:provider.stage}-shippeo-pod-role-${self:custom.alias}
+          - PolicyName: omni-dw-api-services-dev-shippeo-pod-role
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
