@@ -119,8 +119,8 @@ functions:
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
-  # shippeo-pod-upload-doc: ${file(config/functions/shippeo-pod-upload-doc.yml):function}
-  # shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
+  shippeo-pod-upload-doc: ${file(config/functions/shippeo-pod-upload-doc.yml):function}
+  shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
 
 resources:
   Resources:
@@ -167,59 +167,59 @@ resources:
                     - ec2:DetachNetworkInterface
                     - ec2:DeleteNetworkInterface
                   Resource: "*"
-    # ShippeoPODRole:
-    #   Type: AWS::IAM::Role
-    #   Properties:
-    #     RoleName: ShippeoPODRole
-    #     AssumeRolePolicyDocument:
-    #       Version: "2012-10-17"
-    #       Statement:
-    #         - Effect: Allow
-    #           Principal:
-    #             Service:
-    #               - lambda.amazonaws.com
-    #           Action: sts:AssumeRole
-    #     Policies:
-    #       - PolicyName: omni-dw-api-services-dev-shippeo-pod-role
-    #         PolicyDocument:
-    #           Version: "2012-10-17"
-    #           Statement:
-    #             - Effect: "Allow"
-    #               Action:
-    #                 - "sqs:GetQueueUrl"
-    #                 - "sqs:GetQueueAttributes"
-    #                 - "sqs:ReceiveMessage"
-    #                 - "sqs:DeleteMessage"
-    #                 - "sqs:SendMessageBatch"
-    #                 # - "sqs:SendMessage"
-    #               Resource: "*"
-    #             - Effect: Allow
-    #               Action:
-    #                 - logs:*
-    #               Resource: '*'
-    #             - Effect: Allow
-    #               Action:
-    #                 - secretsmanager:*
-    #               Resource: '*'
-    #             - Effect: Allow
-    #               Action:
-    #                 - sns:*
-    #               Resource: '*'
-    #             - Effect: Allow
-    #               Action:
-    #                 - dynamodb:DescribeTable
-    #                 - dynamodb:Query
-    #                 - dynamodb:Scan
-    #                 - dynamodb:GetItem
-    #                 - dynamodb:PutItem
-    #                 - dynamodb:UpdateItem
-    #                 - dynamodb:DeleteItem
-    #                 - dynamodb:DescribeStream
-    #                 - dynamodb:GetRecords
-    #                 - dynamodb:ListStreams
-    #                 - dynamodb:GetShardIterator
-    #                 - dynamodb:BatchWriteItem
-    #               Resource: '*'
+    ShippeoPODRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ShippeoPODRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: omni-dw-api-services-dev-shippeo-pod-role
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "sqs:GetQueueUrl"
+                    - "sqs:GetQueueAttributes"
+                    - "sqs:ReceiveMessage"
+                    - "sqs:DeleteMessage"
+                    - "sqs:SendMessageBatch"
+                    - "sqs:SendMessage"
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - logs:*
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:*
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - sns:*
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - dynamodb:DescribeTable
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                    - dynamodb:DescribeStream
+                    - dynamodb:GetRecords
+                    - dynamodb:ListStreams
+                    - dynamodb:GetShardIterator
+                    - dynamodb:BatchWriteItem
+                  Resource: '*'
     
     BadRequestResponse:
       Type: "AWS::ApiGateway::GatewayResponse"
@@ -248,8 +248,8 @@ resources:
         StatusCode: "401"
     
     # Shipment File table stream queue
-    # ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
-    # ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
+    ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
+    ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
     # # Log Table
     # UploadedDocLogTable: ${file(config/dynamoDB/uploadedDocLogTable.yaml):UploadedDocLogTable}
 

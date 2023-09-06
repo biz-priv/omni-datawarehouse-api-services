@@ -11,7 +11,7 @@ module.exports.handler = async (event) => {
 		JSON.stringify(event)
 	);
 
-	event.Records.forEach(async (record) => {
+	for (const record of get(event, "Records", [])) {
 		console.log(
 			"🚀 ~ file: shipment_header_table_stream_processor.js:11 ~ event.Records.forEach ~ record:",
 			JSON.stringify(record)
@@ -43,6 +43,10 @@ module.exports.handler = async (event) => {
 				item
 			);
 
+			if (get(item, "Item", []).length === 0) {
+				return `Item not found.`;
+			}
+
 			const queueUrl = SHIPMENT_HEADER_TABLE_STREAM_QUEUE;
 			const queueMessage = {
 				QueueUrl: queueUrl,
@@ -54,7 +58,7 @@ module.exports.handler = async (event) => {
 			);
 			await sqs.sendMessage(queueMessage).promise();
 		}
-	});
+	}
 
 	return `Successfully processed ${event.Records.length} records.`;
 };
