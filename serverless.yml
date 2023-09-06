@@ -167,7 +167,7 @@ resources:
                     - ec2:DetachNetworkInterface
                     - ec2:DeleteNetworkInterface
                   Resource: "*"
-    ShippeoPODRole-${self:custom.alias}:
+    ShippeoPODRole:
       Type: AWS::IAM::Role
       Properties:
         RoleName: ShippeoPODRole
