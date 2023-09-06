@@ -234,12 +234,13 @@ def call_wt_rest_api(housebill, websli_token, doc_type):
 
 
 def insert_log(housebill_number, data):
+    now = datetime.utcnow().isoformat()
     params = {
         'TableName': LOG_TABLE,
         'Item': {
             'pKey': {'S': housebill_number},
             'data': {'S': json.dumps(data)},
-            'lastUpdateTime': {'S': datetime.now()},
+            'lastUpdateTime': {'S': now},
         }
     }
 
