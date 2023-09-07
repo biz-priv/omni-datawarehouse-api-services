@@ -1,0 +1,22 @@
+function:
+  handler: src/shipment_header_table_stream_processor.handler
+  name: ${self:service}-shipment-header-table-stream-processor-${self:provider.stage}
+  description: process and filters shipment header table stream - ${self:provider.stage}
+  runtime: nodejs18.x
+  timeout: 500
+  layers:
+    - !Ref DWAPILayerLambdaLayer
+  events:
+    - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
+  role: ShippeoPODRole
+  package:
+    individually: true
+    patterns:
+      - src/shipment_header_table_stream_processor.js
+      - "!**/*"
+      # - src/shared/**
+      # - node_modules/**
+  environment:
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    REGION: ${self:provider.region}
+    SHIPMENT_HEADER_TABLE_STREAM_QUEUE: !Ref ShipmentFileTableStreamQueue
