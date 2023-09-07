@@ -464,7 +464,7 @@ module.exports.handler = async (event, context, callback) => {
   // }
   // else 
   if (
-    "contentType" in eventBody.documentUploadRequest &&
+    !fileExtension && "contentType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
     eventBody.documentUploadRequest.contentType.split("/")[1] != ""
   ) {
