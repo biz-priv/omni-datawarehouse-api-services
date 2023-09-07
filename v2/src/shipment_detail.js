@@ -22,8 +22,6 @@ const shipment_milestone_detail_table = process.env.SHIPMENT_MILESTONE_DETAIL_TA
 const tracking_notes_table = process.env.TRACKING_NOTES_TABLE
 
 
-
-
 module.exports.handler = async (event) => {
   console.log("event: ", event)
   // const eventBody = JSON.parse(event)
