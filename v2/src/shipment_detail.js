@@ -32,7 +32,6 @@ module.exports.handler = async (event) => {
   let dynamodbData = {};
   let mainResponse = {};
 
-
   try {
     // const pKeyValue = "1787176";
     if (event.queryStringParameters) {
