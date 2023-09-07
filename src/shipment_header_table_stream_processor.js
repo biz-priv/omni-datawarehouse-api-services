@@ -6,13 +6,13 @@ const { SHIPMENT_HEADER_TABLE, SHIPMENT_HEADER_TABLE_STREAM_QUEUE } =
 	process.env;
 
 module.exports.handler = async (event) => {
-	console.log(
+	console.info(
 		"🚀 ~ file: shipment_header_table_stream_processor.js:8 ~ exports.handler= ~ event:",
 		JSON.stringify(event)
 	);
 
 	for (const record of get(event, "Records", [])) {
-		console.log(
+		console.info(
 			"🚀 ~ file: shipment_header_table_stream_processor.js:11 ~ event.Records.forEach ~ record:",
 			JSON.stringify(record)
 		);
@@ -22,7 +22,7 @@ module.exports.handler = async (event) => {
 			);
 			const allowedBillNumbers = [9146];
 			if (!allowedBillNumbers.includes(billNumber)) {
-				console.log(`${billNumber} is not in ${allowedBillNumbers}: SKIPPING`);
+				console.info(`${billNumber} is not in ${allowedBillNumbers}: SKIPPING`);
 				return;
 			} //For Shippeo bill number is 9146
 
@@ -33,12 +33,12 @@ module.exports.handler = async (event) => {
 					PK_OrderNo: pKey,
 				},
 			};
-			console.log(
+			console.info(
 				"🚀 ~ file: shipment_header_table_stream_processor.js:23 ~ event.Records.forEach ~ getItemParam:",
 				getItemParam
 			);
 			const item = await dynamoDB.get(getItemParam).promise();
-			console.log(
+			console.info(
 				"🚀 ~ file: shipment_header_table_stream_processor.js:25 ~ event.Records.forEach ~ item:",
 				item
 			);
@@ -52,7 +52,7 @@ module.exports.handler = async (event) => {
 				QueueUrl: queueUrl,
 				MessageBody: JSON.stringify(item),
 			};
-			console.log(
+			console.info(
 				"🚀 ~ file: shipment_header_table_stream_processor.js:31 ~ event.Records.forEach ~ queueMessage:",
 				queueMessage
 			);

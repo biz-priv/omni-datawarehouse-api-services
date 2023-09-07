@@ -31,7 +31,8 @@ TOKEN_VALIDATOR = os.environ["TOKEN_VALIDATOR"]
 TOKEN_VALIDATION_TABLE_INDEX = os.environ["TOKEN_VALIDATION_TABLE_INDEX"]
 
 
-def handler(event):
+def handler(event, context):
+    LOGGER.info("context: %s", context)
     LOGGER.info("Event: %s", event)
     records = event['Records']
     body = ""

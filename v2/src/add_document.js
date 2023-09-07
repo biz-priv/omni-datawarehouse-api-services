@@ -459,10 +459,11 @@ module.exports.handler = async (event, context, callback) => {
    * if no extensiton then throwing error
    */
 
-  if (fileExtension) {
-    console.log(fileExtension);
-  }
-  else if (
+  // if (fileExtension) {
+  //   console.log(fileExtension);
+  // }
+  // else 
+  if (
     "contentType" in eventBody.documentUploadRequest &&
     eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
     eventBody.documentUploadRequest.contentType.split("/")[1] != ""

@@ -1,6 +1,6 @@
 ---
 function:
-  handler: ${self:custom.alias}/src/shippeo_pod_upload_doc.handler
+  handler: src/shippeo_pod_upload_doc.handler
   name: ${self:service}-shippeo-pod-upload-doc-${self:provider.stage}
   description: shippeo upload pod doc - ${self:provider.stage}
   # runtime: nodejs18.x
@@ -17,7 +17,7 @@ function:
   package:
     individually: true
     patterns:
-      - v201/src/shippeo_pod_upload_doc.py
+      - src/shippeo_pod_upload_doc.py
       - "!**/*"
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
