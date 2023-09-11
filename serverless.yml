@@ -250,8 +250,10 @@ resources:
     # Shipment File table stream queue
     ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
     ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
-    # # Log Table
-    # UploadedDocLogTable: ${file(config/dynamoDB/uploadedDocLogTable.yaml):UploadedDocLogTable}
+
+    # Shipment File table stream queue for amazon pod
+    amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
+    amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
 
     DocumentBucket:
       Type: AWS::S3::Bucket

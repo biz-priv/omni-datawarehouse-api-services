@@ -1,0 +1,29 @@
+---
+function:
+  handler: src/amazon_pod_upload_doc.handler
+  name: ${self:service}-amazon-pod-upload-doc-${self:provider.stage}
+  description: amazon upload pod doc - ${self:provider.stage}
+  timeout: 500
+  events:
+    - sqs:
+        arn:
+          Fn::GetAtt:
+            - amazonPODQueue
+            - Arn
+  role: ShippeoPODRole
+  package:
+    individually: true
+    patterns:
+      - src/amazon_pod_upload_doc.py
+      - "!**/*"
+  environment:
+    SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
+    REGION: ${self:provider.region}
+    STAGE: ${self:provider.stage}
+    LOG_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-uploaded-docs-logs/ddb.tableName}
+    AMAZON_POD_STREAM_DLQ: !Ref amazonPODDLQ
+    SNS_TOPIC_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
+    SHIPPEO_GET_DOC_API_KEY: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-api-key}
+    WT_WEBSLI_API_URL: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
+    TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}

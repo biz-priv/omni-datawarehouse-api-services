@@ -1,0 +1,13 @@
+amazonPODDLQ:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: omni-dw-api-amazon-pod-upload-doc-DLQ-${self:provider.stage}
+
+amazonPODQueue:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: omni-dw-api-amazon-pod-upload-doc-queue-${self:provider.stage}
+    VisibilityTimeout: 500
+    RedrivePolicy:
+      deadLetterTargetArn: !GetAtt amazonPODQueueDLQ.Arn
+      maxReceiveCount: 3
