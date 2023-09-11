@@ -9,5 +9,5 @@ amazonPODQueue:
     QueueName: omni-dw-api-amazon-pod-upload-doc-queue-${self:provider.stage}
     VisibilityTimeout: 500
     RedrivePolicy:
-      deadLetterTargetArn: !GetAtt amazonPODQueueDLQ.Arn
+      deadLetterTargetArn: !GetAtt amazonPODDLQ.Arn
       maxReceiveCount: 3

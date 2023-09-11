@@ -2,8 +2,11 @@ const AWS = require("aws-sdk");
 const { get } = require("lodash");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const sqs = new AWS.SQS();
-const { SHIPMENT_HEADER_TABLE, SHIPMENT_HEADER_TABLE_STREAM_QUEUE } =
-	process.env;
+const {
+	SHIPMENT_HEADER_TABLE,
+	SHIPMENT_HEADER_TABLE_STREAM_QUEUE,
+	AMAZON_POD_QUEUE,
+} = process.env;
 
 module.exports.handler = async (event) => {
 	console.info(
@@ -20,7 +23,7 @@ module.exports.handler = async (event) => {
 			const billNumber = Number(
 				get(record, "dynamodb.NewImage.BillNo.S", null)
 			);
-			const allowedBillNumbers = [9146];
+			const allowedBillNumbers = [9146, 53478];
 			if (!allowedBillNumbers.includes(billNumber)) {
 				console.info(`${billNumber} is not in ${allowedBillNumbers}: SKIPPING`);
 				return;
@@ -47,7 +50,16 @@ module.exports.handler = async (event) => {
 				return `Item not found.`;
 			}
 
-			const queueUrl = SHIPMENT_HEADER_TABLE_STREAM_QUEUE;
+			let queueUrl;
+
+			if (billNumber === 9146) {
+				queueUrl = SHIPMENT_HEADER_TABLE_STREAM_QUEUE;
+			}
+
+			if (billNumber === 53478) {
+				queueUrl = AMAZON_POD_QUEUE;
+			}
+			
 			const queueMessage = {
 				QueueUrl: queueUrl,
 				MessageBody: JSON.stringify(item),
