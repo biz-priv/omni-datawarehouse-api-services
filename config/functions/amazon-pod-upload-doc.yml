@@ -20,8 +20,8 @@ function:
         - ec2:DescribeInstances
         - ec2:AttachNetworkInterface
       Resource: "*"
-  layers:
-    - !Ref DWAPILayerLambdaLayer
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
   package:
     individually: true
     patterns:
