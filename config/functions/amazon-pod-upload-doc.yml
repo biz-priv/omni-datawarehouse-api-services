@@ -11,6 +11,8 @@ function:
             - amazonPODQueue
             - Arn
   role: ShippeoPODRole
+  layers:
+    - !Ref DWAPILayerLambdaLayer
   package:
     individually: true
     patterns:
