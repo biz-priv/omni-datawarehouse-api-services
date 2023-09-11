@@ -197,15 +197,15 @@ resources:
                 - Effect: Allow
                   Action:
                     - logs:*
-                  Resource: '*'
+                  Resource: "*"
                 - Effect: Allow
                   Action:
                     - secretsmanager:*
-                  Resource: '*'
+                  Resource: "*"
                 - Effect: Allow
                   Action:
                     - sns:*
-                  Resource: '*'
+                  Resource: "*"
                 - Effect: Allow
                   Action:
                     - dynamodb:DescribeTable
@@ -220,8 +220,16 @@ resources:
                     - dynamodb:ListStreams
                     - dynamodb:GetShardIterator
                     - dynamodb:BatchWriteItem
-                  Resource: '*'
-    
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:CreateNetworkInterface
+                    - ec2:DeleteNetworkInterface
+                    - ec2:DescribeInstances
+                    - ec2:AttachNetworkInterface
+                  Resource: "*"
+
     BadRequestResponse:
       Type: "AWS::ApiGateway::GatewayResponse"
       Properties:
@@ -247,7 +255,7 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
-    
+
     # Shipment File table stream queue
     ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
     ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
