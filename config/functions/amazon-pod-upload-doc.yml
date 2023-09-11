@@ -10,7 +10,7 @@ function:
           Fn::GetAtt:
             - amazonPODQueue
             - Arn
-  role: ShippeoPODRole
+  # role: ShippeoPODRole
   layers:
     - !Ref DWAPILayerLambdaLayer
   package:
