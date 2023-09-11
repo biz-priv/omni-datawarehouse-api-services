@@ -8,7 +8,7 @@ function:
     - !Ref DWAPILayerLambdaLayer
   events:
     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
-  # role: ShippeoPODRole
+  role: ShippeoPODRole
   package:
     individually: true
     patterns:
