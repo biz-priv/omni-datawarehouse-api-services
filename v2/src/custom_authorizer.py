@@ -63,7 +63,7 @@ def handler(event, context):
     LOGGER.info("Event params: %s", str(params))
 
     # Validating params only for the GET APIs
-    if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"]:
+    if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"] and "shipment/detail" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
@@ -93,6 +93,8 @@ def handler(event, context):
     elif "shipment/addDocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addmilestone" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "shipment/detail" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     else:
         query = "CustomerID = :id AND "
