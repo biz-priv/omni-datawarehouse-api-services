@@ -115,7 +115,7 @@ functions:
   add-document: ${file(config/functions/shipment-add-document.yml):function}
   shipment-rate: ${file(config/functions/shipment-rate.yml):function}
   freightlabel: ${file(config/functions/freightlabel.yml):function}
-  # get-document: ${file(config/functions/get-document.yml):function}
+  get-document: ${file(config/functions/get-document.yml):function}
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
