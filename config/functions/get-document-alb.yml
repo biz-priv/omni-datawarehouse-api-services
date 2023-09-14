@@ -5,10 +5,17 @@ function:
   description: get document alb api service-${self:provider.stage}
   runtime: nodejs14.x
   timeout: 180
+  # package:
+  #   include:
+  #     - ${self:custom.alias}/src/get_document_alb.js
+  #     - node_modules/**
+  layers:
+    - !Ref DWAPILayerLambdaLayer
   package:
-    include:
+    individually: true
+    patterns:
       - ${self:custom.alias}/src/get_document_alb.js
-      - node_modules/**
+      - "!**/*"
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
@@ -16,4 +23,3 @@ function:
     DOCUMENTS_BUCKET: !Ref DocumentBucket
     TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
-    
