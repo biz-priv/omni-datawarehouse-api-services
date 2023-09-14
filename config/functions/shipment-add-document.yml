@@ -33,10 +33,17 @@ function:
           resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
+  # package:
+  #   include:
+  #     - ${self:custom.alias}/src/add_document.js
+  #     - node_modules/**
+  layers:
+    - !Ref DWAPILayerLambdaLayer
   package:
-    include:
+    individually: true
+    patterns:
       - ${self:custom.alias}/src/add_document.js
-      - node_modules/**
+      - "!**/*"
   environment:
     REGION: ${self:provider.region}
     UPLOAD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/addDocument}
