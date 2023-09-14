@@ -43,7 +43,7 @@ def handler(event, context):
                 }
 
             reference_no = get_data_from_reference_table(order_no)
-            LOGGER.info("doc_type: %s", reference_no)
+            LOGGER.info("reference_no: %s", reference_no)
 
             tracking_no = reference_no if reference_no != None else housebill_no
             if reference_no != None and reference_no == housebill_no:
@@ -53,7 +53,7 @@ def handler(event, context):
             shipment_request_id = ''
             filename = shipment_file_data['FileName']['S']
             file_type = 'POD'
-            description = ''
+            description = 'HCPOD'
             file_extension = filename.split('.')[-1].lower()
             mime_type = 'application/pdf' if file_extension == 'pdf' else 'image/jpeg'
             carrier_name = 'OMNG'
@@ -242,6 +242,25 @@ def get_data_from_shipment_file_table(order_no):
     except Exception as e:
         LOGGER.info(f"Unable to insert item. Error: {e}")
 
+
+def invoke_another_lambda():
+    lambda_client = boto3.client('lambda')
+
+    # Define the Invocation Request
+    invocation_payload = {
+        "key1": "value1",
+        "key2": "value2"
+    }
+
+    response = lambda_client.invoke(
+        FunctionName="YourCalleeLambdaFunctionName",
+        InvocationType="RequestResponse",  # Use "Event" for asynchronous invocation
+        Payload=json.dumps(invocation_payload),
+    )
+
+    # Parse and process the response
+    response_payload = json.loads(response['Payload'].read().decode())
+    print("Response from Lambda:", response_payload)
 
 class GetDocumentError(Exception):
     pass

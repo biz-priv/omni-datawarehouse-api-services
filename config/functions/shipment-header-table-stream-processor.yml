@@ -21,3 +21,5 @@ function:
     REGION: ${self:provider.region}
     SHIPMENT_HEADER_TABLE_STREAM_QUEUE: !Ref ShipmentFileTableStreamQueue
     AMAZON_POD_QUEUE: !Ref amazonPODQueue
+    SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
+    TRANSACTION_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-transactions/ddb.tableName}
