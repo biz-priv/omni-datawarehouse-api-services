@@ -50,7 +50,7 @@ function:
   #     - ${self:custom.alias}/src/get_document.js
   #     - node_modules/**
   layers:
-  - !Ref DWAPILayerLambdaLayer
+    - !Ref DWAPILayerLambdaLayer
   package:
     individually: true
     patterns:
