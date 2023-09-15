@@ -21,7 +21,7 @@ function:
         - ec2:AttachNetworkInterface
       Resource: "*"
   package:
-    individually: true
+    # #individually: true
     patterns:
       - src/amazon_pod_upload_doc.py
       - "!**/*"

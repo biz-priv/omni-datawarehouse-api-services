@@ -26,7 +26,7 @@ function:
   layers:
     - !Ref DWAPILayerLambdaLayer
   package:
-    individually: true
+    #individually: true
     patterns:
       - ${self:custom.alias}/src/shipment_list.js
       - src/shared/**

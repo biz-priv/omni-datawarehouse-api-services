@@ -82,7 +82,7 @@ plugins:
   - serverless-plugin-log-subscription
 
 package:
-  individually: true
+  #individually: true
   # exclude:
   #   - "**/*"
   #   - serverless.yaml

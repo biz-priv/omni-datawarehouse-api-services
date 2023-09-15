@@ -40,7 +40,7 @@ function:
   layers:
     - !Ref DWAPILayerLambdaLayer
   package:
-    individually: true
+    #individually: true
     patterns:
       - ${self:custom.alias}/src/add_document.js
       - "!**/*"

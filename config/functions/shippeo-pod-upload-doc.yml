@@ -15,7 +15,7 @@ function:
             - Arn
   role: ShippeoPODRole
   package:
-    individually: true
+    #individually: true
     patterns:
       - src/shippeo_pod_upload_doc.py
       - "!**/*"

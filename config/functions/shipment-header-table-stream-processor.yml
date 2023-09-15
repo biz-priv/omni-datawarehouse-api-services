@@ -10,7 +10,7 @@ function:
     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
   role: ShippeoPODRole
   package:
-    individually: true
+    #individually: true
     patterns:
       - src/shipment_header_table_stream_processor.js
       - "!**/*"
