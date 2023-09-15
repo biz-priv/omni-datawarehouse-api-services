@@ -20,6 +20,10 @@ function:
         - ec2:DescribeInstances
         - ec2:AttachNetworkInterface
       Resource: "*"
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource: "*"
   package:
     # #individually: true
     patterns:
