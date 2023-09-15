@@ -17,17 +17,17 @@ function:
     MILESTONE_ORDER_STATUS: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/add-milestone/status-code}
     CONVENANT_TRACKING_URL: ${ssm:/omni-dw-api-sevices/${self:provider.stage}/covenant-tracking/api.url}
     CONVENANT_TRACKING_API_KEY: ${ssm:/omni-dw-api-sevices/${self:provider.stage}/covenant-tracking/x-api-key}
-  # package:
-  #   include:
-  #     - ${self:custom.alias}/src/add_milestone.js
-  #     - node_modules/**
-  layers:
-    - !Ref DWAPILayerLambdaLayer
   package:
-    #individually: true
-    patterns:
+    include:
       - ${self:custom.alias}/src/add_milestone.js
-      - "!**/*"
+      - node_modules/**
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
+  # package:
+  #   #individually: true
+  #   patterns:
+  #     - ${self:custom.alias}/src/add_milestone.js
+  #     - "!**/*"
   events:
     - http:
         path: /shipment/addmilestone

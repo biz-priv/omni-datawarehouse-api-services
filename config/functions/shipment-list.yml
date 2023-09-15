@@ -18,19 +18,19 @@ function:
           identitySource: method.request.header.x-api-key
           type: request
         
-  # package:
-  #   include:
-  #   - ${self:custom.alias}/src/shipment_list.js
-  #   - src/shared/**
-  #   - node_modules/**
-  layers:
-    - !Ref DWAPILayerLambdaLayer
   package:
-    #individually: true
-    patterns:
-      - ${self:custom.alias}/src/shipment_list.js
-      - src/shared/**
-      - "!**/*"
+    include:
+    - ${self:custom.alias}/src/shipment_list.js
+    - src/shared/**
+    - node_modules/**
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
+  # package:
+  #   #individually: true
+  #   patterns:
+  #     - ${self:custom.alias}/src/shipment_list.js
+  #     - src/shared/**
+  #     - "!**/*"
   environment:
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table}
     TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}

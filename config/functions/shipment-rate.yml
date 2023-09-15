@@ -37,19 +37,19 @@ function:
           resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
-  layers:
-    - !Ref DWAPILayerLambdaLayer
-  package:
-    #individually: true
-    patterns:
-      - ${self:custom.alias}/src/get_rate.js
-      - src/shared/logger.js
-      - "!**/*"
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
   # package:
-  #   include:
+  #   #individually: true
+  #   patterns:
   #     - ${self:custom.alias}/src/get_rate.js
   #     - src/shared/logger.js
-  #     - node_modules/**
+  #     - "!**/*"
+  package:
+    include:
+      - ${self:custom.alias}/src/get_rate.js
+      - src/shared/logger.js
+      - node_modules/**
   environment:
     REGION: ${self:provider.region}
     RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rate}

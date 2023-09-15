@@ -37,17 +37,17 @@ function:
         #   resultTtlInSeconds: 0
         #   identitySource: method.request.header.x-api-key
         #   type: request
-  # package:
-  #   include:
-  #     - v1/src/uploadpoddocument.js
-  #     - node_modules/**
-  layers:
-    - !Ref DWAPILayerLambdaLayer
   package:
-    #individually: true
-    patterns:
+    include:
       - v1/src/uploadpoddocument.js
-      - "!**/*"
+      - node_modules/**
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
+  # package:
+  #   #individually: true
+  #   patterns:
+  #     - v1/src/uploadpoddocument.js
+  #     - "!**/*"
   environment:
     REGION: ${self:provider.region}
     ULOAD_POD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uploadpoddocument}
