@@ -14,14 +14,6 @@ provider:
   runtime: java11
   stage: ${opt:stage, 'dev'}
   region: us-east-1
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - secretsmanager:*
-    - Effect: Allow
-      Action:
-        - logs:*
-      Resource: "*"
   vpc:
     securityGroupIds:
       - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
@@ -31,10 +23,43 @@ provider:
 package:
   artifact: target/hello-dev.jar
 
+resources:
+  Resources:
+    AmazonPODRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: AmazonPODRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: java-lambda-for-amazon-pod-role
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:*
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:*
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - lambda:InvokeFunction
+                  Resource: "*"
+
 functions:
   upload-doc:
     name: ${self:service}-upload-doc-${self:provider.stage}
     handler: com.serverless.Handler
+    role: AmazonPODRole
     layers:
       - !Ref JAVALambdaLayer
     package:
