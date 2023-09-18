@@ -4,6 +4,7 @@ const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
 const pdfkit = require('pdfkit');
+const sizeOf = require('buffer-image-size');
 
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
@@ -93,11 +94,11 @@ module.exports.handler = async (event, context, callback) => {
 
   // validating the validator object with joi validation
 
-  const { error, value } = eventValidation.validate(validator);
+  const { error } = eventValidation.validate(validator);
   if (error) {
     let msg = error.details[0].message
       .split('" ')[1]
-      .replace(new RegExp('"', "g"), "");
+      .replace(/"/g, "");
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
 
@@ -154,7 +155,7 @@ module.exports.handler = async (event, context, callback) => {
   if (validDocTypes.includes(docType)) {
     try {
       // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
-      const pdfBuffer = await convertJPEGtoPDF(new Buffer(validated.b64str, 'base64'));
+      const pdfBuffer = await convertJPEGtoPDF(Buffer.from(validated.b64str, 'base64'));
       console.log("converted to pdf");
       // Update validated object
       validated.b64str = pdfBuffer.toString('base64');
@@ -171,7 +172,6 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", "Error converting JPEG to PDF"));
     }
   }
-
   //checking for customerId from event if not present throw error else set the customerId
 
   if (
@@ -499,7 +499,6 @@ module.exports.handler = async (event, context, callback) => {
       )
     );
   }
-
   let formatDate =
     currentDateTime.getFullYear().toString() +
     pad2(currentDateTime.getMonth() + 1) +
@@ -553,7 +552,6 @@ module.exports.handler = async (event, context, callback) => {
             .AttachFileToShipmentResult.ErrorStatus
         )
       );
-      // throw "Failed";
     }
   } catch (error) {
     eventLogObj.api_status_code = "500";
@@ -797,13 +795,16 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
 async function convertJPEGtoPDF(jpegBuffer) {
   return new Promise((resolve, reject) => {
     const pdfBuffer = [];
-
-    const doc = new pdfkit();
+    const dimensions = sizeOf(jpegBuffer);
+    const doc = new pdfkit({ size: [dimensions.width, dimensions.height] });
     doc.on('data', chunk => pdfBuffer.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
 
     // Add the JPEG image to the PDF
-    doc.image(jpegBuffer, 0, 0);
+    doc.image(jpegBuffer, 0, 0, {
+      width: dimensions.width,
+      height: dimensions.height
+    });
     doc.end();
   });
 }
