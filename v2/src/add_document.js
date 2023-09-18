@@ -3,7 +3,7 @@ const Joi = require("joi");
 const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
-const PDFDocument = require('pdfkit');
+const pdfkit = require('pdfkit');
 
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
@@ -158,7 +158,7 @@ module.exports.handler = async (event, context, callback) => {
       console.log("converted to pdf");
       // Update validated object
       validated.b64str = pdfBuffer.toString('base64');
-      fileExtension = ".pdf";
+      fileExtension = ".pdf"
     } catch (conversionError) {
       console.log(conversionError)
       eventLogObj = {
@@ -483,7 +483,6 @@ module.exports.handler = async (event, context, callback) => {
       fileExtension = "";
     }
   }
-
   if (fileExtension == "") {
     eventLogObj = {
       ...eventLogObj,
@@ -795,38 +794,16 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
 }
 
 // Function to convert JPEG/JPG to PDF
-// async function convertJPEGtoPDF(jpegBuffer) {
-//   return new Promise((resolve, reject) => {
-//     const pdfBuffer = [];
-
-//     const doc = new pdfkit();
-//     doc.on('data', chunk => pdfBuffer.push(chunk));
-//     doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
-
-//     // Add the JPEG image to the PDF
-//     doc.image(jpegBuffer, 0, 0);
-//     doc.end();
-//   });
-// }
-
-// Function to convert JPEG/JPG to PDF
 async function convertJPEGtoPDF(jpegBuffer) {
   return new Promise((resolve, reject) => {
     const pdfBuffer = [];
 
-    const doc = new PDFDocument(); // Create a new PDFDocument
-
-    // Register a callback when the document is finished
+    const doc = new pdfkit();
     doc.on('data', chunk => pdfBuffer.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
 
-    // Add a new page to the PDF
-    doc.addPage();
-
-    // Embed the JPEG image in the PDF without specifying width
+    // Add the JPEG image to the PDF
     doc.image(jpegBuffer, 0, 0);
-
-    // End the PDF document
     doc.end();
   });
 }
