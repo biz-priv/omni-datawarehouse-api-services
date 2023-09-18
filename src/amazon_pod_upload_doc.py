@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 sns = boto3.client('sns')
 sqs = boto3.client('sqs')
 dynamodb = boto3.client('dynamodb')
+lambda_client = boto3.client('lambda')
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
@@ -20,6 +21,9 @@ WT_WEBSLI_API_URL = os.environ["WT_WEBSLI_API_URL"]
 SHIPMENT_FILE_TABLE = os.environ["SHIPMENT_FILE_TABLE"]
 TOKEN_VALIDATOR = os.environ["TOKEN_VALIDATOR"]
 TOKEN_VALIDATION_TABLE_INDEX = os.environ["TOKEN_VALIDATION_TABLE_INDEX"]
+UPLOAD_DOC_LAMBDA_FUNCTION = os.environ["UPLOAD_DOC_LAMBDA_FUNCTION"]
+USER_NAME = os.environ["USER_NAME"]
+PASSWORD = os.environ["PASSWORD"]
 
 
 def handler(event, context):
@@ -27,6 +31,16 @@ def handler(event, context):
     LOGGER.info("Event: %s", event)
     records = event['Records']
     body = ""
+    response = lambda_client.invoke(
+        FunctionName="YourCalleeLambdaFunctionName",
+        InvocationType="RequestResponse",  # Use "Event" for asynchronous invocation
+        Payload=json.dumps({
+            "key1": "value1",
+            "key2": "value2"
+        }),
+    )
+    LOGGER.info("response: %s", response)
+    return
     try:
 
         for record in records:
@@ -63,10 +77,9 @@ def handler(event, context):
             destination_port = body['Item']['DestinationPort']
 
             if reference_no == None:
-                LOGGER.info(
-                    f"No reference number.")
+                LOGGER.info("No reference number.")
                 return {
-                    'statusCode': 200
+                    'statusCode': 404
                 }
 
             return {
@@ -261,6 +274,7 @@ def invoke_another_lambda():
     # Parse and process the response
     response_payload = json.loads(response['Payload'].read().decode())
     print("Response from Lambda:", response_payload)
+
 
 class GetDocumentError(Exception):
     pass

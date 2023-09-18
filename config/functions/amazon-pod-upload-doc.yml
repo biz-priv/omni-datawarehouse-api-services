@@ -40,3 +40,7 @@ function:
     WT_WEBSLI_API_URL: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
+    TRANSACTION_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-transactions/ddb.tableName}
+    UPLOAD_DOC_LAMBDA_FUNCTION: ${ssm:/omni-dw-api-services/${self:provider.stage}/amazon-pod/doc-upload-lambda-name}
+    USER_NAME: ${ssm:/omni-dw-api-services/${self:provider.stage}/amazon-pod/user-name}
+    PASSWORD: ${ssm:/omni-dw-api-services/${self:provider.stage}/amazon-pod/password}
