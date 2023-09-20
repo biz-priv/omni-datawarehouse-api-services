@@ -13,7 +13,7 @@ lambda_client = boto3.client('lambda')
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
-SHIPMENT_HEADER_TABLE_STREAM_QLQ = os.environ["SHIPMENT_HEADER_TABLE_STREAM_QLQ"]
+AMAZON_POD_STREAM_DLQ = os.environ["AMAZON_POD_STREAM_DLQ"]
 SNS_TOPIC_ARN = os.environ["SNS_TOPIC_ARN"]
 LOG_TABLE = os.environ["LOG_TABLE"]
 SHIPPEO_GET_DOC_API_KEY = os.environ["SHIPPEO_GET_DOC_API_KEY"]
@@ -31,18 +31,13 @@ def handler(event, context):
     LOGGER.info("Event: %s", event)
     records = event['Records']
     body = ""
-    response = lambda_client.invoke(
-        FunctionName="YourCalleeLambdaFunctionName",
-        InvocationType="RequestResponse",  # Use "Event" for asynchronous invocation
-        Payload=json.dumps({
-            "key1": "value1",
-            "key2": "value2"
-        }),
-    )
-    LOGGER.info("response: %s", response)
-    return
-    try:
+    payload = {
+        "filename": "example.txt",
+        "base64": "base64"
+    }
 
+    invoke_another_lambda(payload)
+    try:
         for record in records:
             body = json.loads(record['body'])
             order_no = body['Item']['PK_OrderNo']
@@ -91,7 +86,7 @@ def handler(event, context):
         try:
 
             sqs.send_message(
-                QueueUrl=SHIPMENT_HEADER_TABLE_STREAM_QLQ,
+                QueueUrl=AMAZON_POD_STREAM_DLQ,
                 MessageBody=json.dumps(body)
             )
             return {
@@ -256,24 +251,17 @@ def get_data_from_shipment_file_table(order_no):
         LOGGER.info(f"Unable to insert item. Error: {e}")
 
 
-def invoke_another_lambda():
+def invoke_another_lambda(payload):
     lambda_client = boto3.client('lambda')
-
-    # Define the Invocation Request
-    invocation_payload = {
-        "key1": "value1",
-        "key2": "value2"
-    }
-
     response = lambda_client.invoke(
-        FunctionName="YourCalleeLambdaFunctionName",
+        FunctionName=UPLOAD_DOC_LAMBDA_FUNCTION,
         InvocationType="RequestResponse",  # Use "Event" for asynchronous invocation
-        Payload=json.dumps(invocation_payload),
+        Payload=json.dumps(payload),
     )
 
     # Parse and process the response
     response_payload = json.loads(response['Payload'].read().decode())
-    print("Response from Lambda:", response_payload)
+    LOGGER.info(f"Response from Lambda: {response_payload}")
 
 
 class GetDocumentError(Exception):

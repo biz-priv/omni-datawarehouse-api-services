@@ -5,14 +5,12 @@ import org.apache.logging.log4j.Logger;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.fasterxml.jackson.databind.JsonNode;
-// import com.fasterxml.jackson.databind.JsonNode;
-// import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,25 +33,18 @@ import java.io.IOException;
 // }
 
 public class Handler
-		implements RequestHandler<String, String> {
+		implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 	private static final Logger LOG = LogManager.getLogger(Handler.class);
 
-	public String handleRequest(String input, Context context) {
+	public Map<String, Object> handleRequest(Map<String, Object> input, Context context) {
 		try {
 			LOG.info("received: {}", input);
 			// String command = "java -jar /opt/java/lib/CallHdssViaCognito.jar";
-
-			ObjectMapper objectMapper = new ObjectMapper();
-
-			JsonNode jsonNode = objectMapper.readTree(input);
-
-			// Access values by field name
-			String filename = jsonNode.get("filename").asText();
-			String base64 = jsonNode.get("base64").asText();
-
+			String filename = (String) input.get("filename");
+			String base64 = (String) input.get("base64");
 			// Use the values
-			System.out.println("filename: " + filename);
-			System.out.println("base64: " + base64);
+			LOG.info("filename: {}", filename);
+			LOG.info("base64: {}", base64);
 
 			String filePath = "/tmp/" + filename;
 
@@ -66,7 +57,6 @@ public class Handler
 				fos.write(decodedBytes);
 			}
 
-			// return "";
 			// Create a ProcessBuilder
 			ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
 			processBuilder.redirectErrorStream(true);
@@ -84,17 +74,26 @@ public class Handler
 
 			// Wait for the process to complete
 			int exitCode = process.waitFor();
-			LOG.info(output.toString());
-			
+
 			if (exitCode == 0) {
-				return "External JAR executed successfully. Output:\n" + output.toString();
+				Map<String, Object> response = new HashMap<>();
+				response.put("status", "SUCCESS");
+				response.put("data", output.toString());
+				return response;
 			} else {
-				return "External JAR execution failed. Output:\n" + output.toString();
+				Map<String, Object> response = new HashMap<>();
+				response.put("status", "FAILED");
+				response.put("data", output.toString());
+				return response;
 			}
 
 		} catch (Exception e) {
 			LOG.error("Error parsing JSON: {}", e.getMessage());
-			return "Error";
+			Map<String, Object> response = new HashMap<>();
+			response.put("error", e.getMessage());
+			response.put("status", "FAILED");
+
+			return response;
 		}
 	}
 }
