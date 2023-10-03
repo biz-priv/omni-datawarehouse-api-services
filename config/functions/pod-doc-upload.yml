@@ -1,0 +1,51 @@
+---
+function:
+  handler: src/pod_doc_upload.handler
+  name: ${self:service}-upload-pod-doc-${self:provider.stage}
+  description: upload pod doc - ${self:provider.stage}
+  timeout: 500
+  layers:
+    - !Ref DWAPILayerLambdaLayer
+  events:
+    - sqs:
+        arn:
+          Fn::GetAtt:
+            - ShipmentFileTableStreamQueue
+            - Arn
+  role: ShippeoPODRole
+  package:
+    patterns:
+      - src/pod_doc_upload.py
+      - "!**/*"
+  environment:
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
+    SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
+    SHIPMENT_HEADER_TABLE_BILL_NO_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipment-header-index/ddb.BillNoIndex}
+    REGION: ${self:provider.region}
+    STAGE: ${self:provider.stage}
+    LOG_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-uploaded-docs-logs/ddb.tableName}
+    SHIPMENT_HEADER_TABLE_STREAM_QLQ: !Ref ShipmentFileTableStreamDLQ
+    SNS_TOPIC_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
+    SHIPPEO_USERNAME: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/username~true}
+    SHIPPEO_PASSWORD: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/password~true}
+    SHIPPEO_GET_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-url}
+    SHIPPEO_UPLOAD_DOC_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/upload-document-url}
+    SHIPPEO_GET_TOKEN_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-token-url}
+    SHIPPEO_GET_DOC_API_KEY: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/get-document-api-key}
+    WT_WEBSLI_API_URL: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
+    TOKEN_EXPIRATION_DAYS: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod/token-expiration-days}
+    TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
+    TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
+
+    # Amazon pod related env variables
+    AMAZON_USER_NAME: ${ssm:/omni-dw-api-services/${self:provider.stage}/amazon-pod/user-name}
+    AMAZON_PASSWORD: ${ssm:/omni-dw-api-services/${self:provider.stage}/amazon-pod/password}
+    TRANSACTION_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-transactions/ddb.tableName}
+    COGNITO_CLIENT_ID: 1jstu0n2jtdntirb063edsg7im
+    COGNITO_IDENTITY_POOL_ID: us-west-2:c856c304-1eb2-4c47-962b-22373584e9c3
+    COGNITO_REGION: us-west-2
+    COGNITO_USER_POOL_ID: us-west-2_v7PzIlziI
+    HRPSL_HOST: bh3omxx7sl.execute-api.us-west-2.amazonaws.com
+    HRPSL_REGION: us-west-2
+    HRPSL_SERVICE: execute-api
+    HRPSL_STAGE: Beta

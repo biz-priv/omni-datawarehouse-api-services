@@ -1,0 +1,20 @@
+{
+	"Records": [
+		{
+			"messageId": "9f736f99-49fa-4782-8e7d-f92101cac918",
+			"receiptHandle": "AQEBXXEGkX3Z9yUaPUSF7mNpqTIyCstYVq0+b3Manzw+4VY+cD1zcYApCrqv2yE2eWdKAmjaK8EahRZwLRn89G059paBoaVNe8dd5VxJ1jtqtL4wIBwUYEPMrLY0iQzNS4OqNp8boXhlGI+6nUFeQJPD1kvkcnteU3BU2PGBMdWZVV6OUIVU3pHQ0Yk5my8UcH52LrpfvZ6DmmEMQ1UUSlhPw/0lcECXgpW5tVf6Q9LozF/l6/PheFv5mMjgbqzLKF/MyUPjhuij0vzuhDQ5BQtzX6yNc13oj5JgwvER0CBwFn/SPhoCjmTFF+Xz+ho2EPV0CLNL6MJVmMaepCKdpDk0qfW1RUiT2f9U/XyPm6jjNc1/My5jZOkmS3q/NN8IvtafyQHQJzbXkCVZZgADv68yKQCKDjLng/XYASXGEOc1v2peg8wXZrIzhISzn1vpikLi",
+			"body": "{\"Item\":{\"PODDateTimeZone\":\"CST\",\"FK_ContainerCode\":\"\",\"ETADateTime\":\"2023-07-05 17:00:00.000\",\"BillNo\":\"53478\",\"PODDateTime\":\"2023-07-05 21:00:00.000\",\"FK_ExemptionCode\":\"NO EEI 30.37(a)\",\"HandlingStation\":\"DFW\",\"FK_FirmsCode\":\"\",\"FK_ModeId\":\"DOMAIR\",\"ReadyDateTime\":\"2023-06-30 08:00:00.000\",\"FK_CategoryCode\":\"ACCOUNTING, ALL,QUICK VIEW,TEI BOARD\",\"ScheduledDateTime\":\"2023-07-05 14:00:00.000\",\"PODDateTimeEntered\":\"1900-01-01 00:00:00.000\",\"OrgAirport\":\"DFW\",\"FK_InsuranceType\":\"LL\",\"ControllingStation\":\"DFW\",\"ShipmentType\":\"D\",\"CloseTime\":\"1900-01-01 15:00:00.000\",\"ReceivedDateTime\":\"1900-01-01 00:00:00.000\",\"AssignedInvNo\":\"0\",\"FK_IncoTermCode\":\"\",\"FK_PLStatus\":\"\",\"DestArrivalDateTime\":\"1900-01-01 00:00:00.000\",\"PODName\":\"Brian\",\"ETADateTimeZone\":\"CST\",\"FK_ReasonCode\":\"\",\"ReadyDateTimeRange\":\"2023-06-30 15:00:00.000\",\"ShipQuote\":\"S\",\"FK_ControlCustomerNo\":\"53475\",\"ShipmentDateTimeZone\":\"CST\",\"PK_OrderNo\":\"5319710\",\"ScheduledDateTimeRange\":\"2023-07-05 14:00:00.000\",\"FK_RegionCode\":\"TX,CENTRAL\",\"ScheduledBy\":\"O\",\"DateTimePosted\":\"1900-01-01 00:00:00.000\",\"DestAirport\":\"DFW\",\"InsertedTimeStamp\":\"2023:09:28 08:11:47\",\"OrderDate\":\"2023-06-30 08:46:36.430\",\"FK_Salesperson\":\"LGB19\",\"ReadyDateTimeZone\":\"CST\",\"Tariff\":\"AMAZON\",\"Insurance\":\"0.0000\",\"UserId\":\"astrong\",\"TotalMiles\":\"54.90\",\"HazmatCode\":\"\",\"FK_ServiceLevelId\":\"RE\",\"LoadBoardID\":\"0\",\"ScheduledDateTimeZone\":\"CST\",\"MasterAirWaybill\":\"\",\"RcvdDateTime\":\"1900-01-01 00:00:00.000\",\"FK_TractorCode\":\"NULL\",\"FK_ProjectCode\":\"\",\"FK_EquipmentCode\":\"\",\"FK_OrderStatusId\":\"COS\",\"FK_ProductCode\":\"\",\"ShipmentDateTime\":\"2023-06-30 00:00:00.000\",\"Housebill\":\"6986204\",\"TariffCode\":\"\",\"DestinationPort\":\"\"},\"Client\":\"amazon\",\"FileHeaderTableData\":{\"DMS_TS\":\"2023-09-23 17:03:37.173046\",\"PK_FileNo\":\"2221127\",\"InsertedTimeStamp\":\"2023:09:23 12:22:37\",\"FileData\":\"NULL\",\"FileName\":\"723512HC.pdf\",\"FK_OrderNo\":\"5319710\",\"UploadDateTime\":\"2023-07-06 12:02:27.000\",\"FileType\":\"S\",\"IncludeImageAutoStatusEmail\":\"NULL\",\"PrintDocInv\":\"N\",\"FK_DocType\":\"HCPOD\",\"CustomerAccess\":\"Y\"}}",
+			"attributes": {
+				"ApproximateReceiveCount": "1",
+				"SentTimestamp": "1693323791434",
+				"SenderId": "AROAU2XMJTS2T67LQAZTF:aws-sdk-js-1693323749697",
+				"ApproximateFirstReceiveTimestamp": "1693323791443"
+			},
+			"messageAttributes": {},
+			"md5OfBody": "c5bd21ad280975b64563d31f56137189",
+			"eventSource": "aws:sqs",
+			"eventSourceARN": "arn:aws:sqs:us-east-1:332281781429:omni-dw-api-shipment-file-table-stream-queue-dev",
+			"awsRegion": "us-east-1"
+		}
+	]
+}

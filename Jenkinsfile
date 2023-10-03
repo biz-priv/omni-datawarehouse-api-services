@@ -51,8 +51,6 @@ pipeline {
                     serverless --version
                     echo ${env.ALIAS_VERSION}
                     sls deploy --alias ${env.ALIAS_VERSION} -s ${env.ENVIRONMENT}
-                    cd java-lambda-for-amazon-pod
-                    sls deploy -s ${env.ENVIRONMENT}
                     """
                 }
             }

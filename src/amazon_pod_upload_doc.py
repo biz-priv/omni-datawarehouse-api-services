@@ -13,7 +13,7 @@ lambda_client = boto3.client('lambda')
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
-AMAZON_POD_STREAM_DLQ = os.environ["AMAZON_POD_STREAM_DLQ"]
+# AMAZON_POD_STREAM_DLQ = os.environ["AMAZON_POD_STREAM_DLQ"]
 SNS_TOPIC_ARN = os.environ["SNS_TOPIC_ARN"]
 LOG_TABLE = os.environ["LOG_TABLE"]
 SHIPPEO_GET_DOC_API_KEY = os.environ["SHIPPEO_GET_DOC_API_KEY"]
@@ -31,52 +31,64 @@ def handler(event, context):
     LOGGER.info("Event: %s", event)
     records = event['Records']
     body = ""
-    payload = {
-        "filename": "example.txt",
-        "base64": "base64"
-    }
 
-    invoke_another_lambda(payload)
     try:
         for record in records:
             body = json.loads(record['body'])
             order_no = body['Item']['PK_OrderNo']
             housebill_no = body['Item']['Housebill']
 
+            b64_data = ""
+            file_name = ""
+            b64str_response = call_wt_rest_api(housebill_no,  'HCPOD')
+            if b64str_response == 'error':
+                LOGGER.info('Error calling WT REST API')
+                # handle error case
+            else:
+                b64_data = b64str_response['b64str']
+                file_name = b64str_response['file_name']
+
             shipment_file_data = get_data_from_shipment_file_table(order_no)
             if shipment_file_data == None:
                 LOGGER.info(
                     f"House bill : {housebill_no} with order no: {order_no} is not valid")
                 return {
-                    'statusCode': 200
+                    'statusCode': 404
                 }
 
             reference_no = get_data_from_reference_table(order_no)
             LOGGER.info("reference_no: %s", reference_no)
 
-            tracking_no = reference_no if reference_no != None else housebill_no
-            if reference_no != None and reference_no == housebill_no:
-                return_id = ''
-            if reference_no == None or reference_no == housebill_no:
-                return_id = housebill_no
-            shipment_request_id = ''
+            pro_number = reference_no if reference_no != None else housebill_no
             filename = shipment_file_data['FileName']['S']
             file_type = 'POD'
             description = 'HCPOD'
             file_extension = filename.split('.')[-1].lower()
             mime_type = 'application/pdf' if file_extension == 'pdf' else 'image/jpeg'
-            carrier_name = 'OMNG'
-            carrier_reference_number = order_no
-            tenant_id = 'ARPOD'
+            request_source = 'OMNG'
             user_id = body['Item']['UserId']
-            destination_port = body['Item']['DestinationPort']
+            location_id = 'US'
 
+            payload = {
+                "pro_number": pro_number,
+                "filename": filename,
+                "file_type": file_type,
+                "description": description,
+                "mime_type": mime_type,
+                "request_source": request_source,
+                "user_id": user_id,
+                "location_id": location_id,
+                "b64_data": b64_data,
+                "user_name": USER_NAME,
+                "password": PASSWORD
+            }
+            # LOGGER.info(f"payload: {payload}")
             if reference_no == None:
                 LOGGER.info("No reference number.")
                 return {
                     'statusCode': 404
                 }
-
+            invoke_java_lambda(payload)
             return {
                 'statusCode': 200
             }
@@ -85,10 +97,10 @@ def handler(event, context):
         logging.error(f"Error: {e}")
         try:
 
-            sqs.send_message(
-                QueueUrl=AMAZON_POD_STREAM_DLQ,
-                MessageBody=json.dumps(body)
-            )
+            # sqs.send_message(
+            #     QueueUrl=AMAZON_POD_STREAM_DLQ,
+            #     MessageBody=json.dumps(body)
+            # )
             return {
                 'statusCode': 500
             }
@@ -124,9 +136,10 @@ def get_websli_token(api_key):
         LOGGER.info(f"Unable to insert item. Error: {e}")
 
 
-def call_wt_rest_api(housebill, websli_token, doc_type):
+def call_wt_rest_api(housebill, doc_type):
     try:
-        url = f"{WT_WEBSLI_API_URL}/{websli_token}/housebill={housebill}/doctype={doc_type}"
+        temp_url = "https://websli.omnilogistics.com/wtTest/getwtdoc/v1/json/9980f7b9eaffb71ce2f86734dae062"
+        url = f"{temp_url}/housebill={housebill}/doctype={doc_type}"
         LOGGER.info(f"url: {url}")
         response = requests.get(url)
 
@@ -251,10 +264,11 @@ def get_data_from_shipment_file_table(order_no):
         LOGGER.info(f"Unable to insert item. Error: {e}")
 
 
-def invoke_another_lambda(payload):
+def invoke_java_lambda(payload):
     lambda_client = boto3.client('lambda')
     response = lambda_client.invoke(
-        FunctionName=UPLOAD_DOC_LAMBDA_FUNCTION,
+        FunctionName="java-lambda-for-amazon-pod-upload-doc-dev",
+        # FunctionName=UPLOAD_DOC_LAMBDA_FUNCTION,
         InvocationType="RequestResponse",  # Use "Event" for asynchronous invocation
         Payload=json.dumps(payload),
     )

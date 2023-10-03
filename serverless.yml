@@ -119,8 +119,7 @@ functions:
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
-  shippeo-pod-upload-doc: ${file(config/functions/shippeo-pod-upload-doc.yml):function}
-  amazon-pod-upload-doc: ${file(config/functions/amazon-pod-upload-doc.yml):function}
+  pod-doc-upload: ${file(config/functions/pod-doc-upload.yml):function}
   shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
 
 resources:
