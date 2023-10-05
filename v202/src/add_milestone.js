@@ -112,7 +112,7 @@ module.exports.handler = async (event, context, callback) => {
         if (error) {
             let msg = error.details[0].message
                 .split('" ')[1]
-                .replace(new RegExp('"', "g"), "");
+                .replace(/"/g, "");
             let key = error.details[0].context.key;
 
             itemObj.errorMsg = key + " " + msg
@@ -127,7 +127,7 @@ module.exports.handler = async (event, context, callback) => {
     } catch (error) {
         console.error("Main lambda error: ", error)
         let errorMsgVal = ""
-        if (error != null && error.hasOwnProperty("message")) {
+        if (error?.hasOwnProperty("message")) {
             errorMsgVal = error.message;
         } else {
             errorMsgVal = error;
@@ -198,7 +198,7 @@ async function sendEvent(body, callback) {
     } catch (error) {
         console.error('Error while posting event:', error);
         let errorMsgVal = ""
-        if (error != null && error.hasOwnProperty("message")) {
+        if (error?.hasOwnProperty("message")) {
             errorMsgVal = error.message;
         } else {
             errorMsgVal = error;
@@ -235,7 +235,7 @@ function makeJsonToXml(data) {
                 "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
                 "soap:Body": {
                     SubmitPOD: {
-                        "@xmlns": "http://tempuri.org/",
+                        "@xmlns": "http://tempuri.org/",//NO SONAR
                         HAWB: data.houseBill,
                         UserName: "BIZCLOUD",
                         UserInitials: "BCE",
@@ -253,14 +253,14 @@ function makeJsonToXml(data) {
                 "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
                 "soap:Header": {
                     "AuthHeader": {
-                        "@xmlns": "http://tempuri.org/",
+                        "@xmlns": "http://tempuri.org/",//NO SONAR
                         "UserName": "eeprod",
                         "Password": "eE081020!"
                     }
                 },
                 "soap:Body": {
                     "WriteTrackingNote": {
-                        "@xmlns": "http://tempuri.org/",
+                        "@xmlns": "http://tempuri.org/",//NO SONAR
                         "HandlingStation": "",
                         "HouseBill": data.houseBill,
                         "TrackingNotes": {
@@ -280,7 +280,7 @@ function makeJsonToXml(data) {
                 "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
                 "soap:Body": {
                     UpdateStatus: {
-                        "@xmlns": "http://tempuri.org/",
+                        "@xmlns": "http://tempuri.org/",//NO SONAR
                         HandlingStation: "",
                         HAWB: data.houseBill,
                         UserName: "BIZCLOUD",
@@ -318,7 +318,7 @@ function makeXmlToJson(data) {
     try {
         let obj = convert(data, { format: "object" });
         console.info("obj:makeXmlToJson", JSON.stringify(obj));
-        let message = "failed";
+        let message;
         if (itemObj.statusCode === "DEL") {
             message =
                 obj["soap:Envelope"]["soap:Body"].SubmitPODResponse.SubmitPODResult;
@@ -350,7 +350,7 @@ async function putItem(tableName, item) {
         return await dynamodb.put(params).promise();
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
-        throw "PutItemError";
+        throw new Error("PutItemError");
     }
 }
 
@@ -360,7 +360,7 @@ async function updateItem(params) {
         return await dynamodb.update(params).promise();
     } catch (e) {
         console.error("Update Item Error: ", e, "\nUpdate params: ", params);
-        throw "UpdateItemError";
+        throw new Error("UpdateItemError");
     }
 }
 
