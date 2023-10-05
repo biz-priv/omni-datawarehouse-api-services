@@ -42,7 +42,7 @@ def generate_policy(principal_id, effect, method_arn, customer_id=None, message=
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from generate_policy_error
 
 
-def handler(event, context):
+def handler(event):#NOSONAR
     LOGGER.info("Event: %s", event)
     try:
         api_key = event['headers']['x-api-key']
@@ -85,12 +85,12 @@ def handler(event, context):
     customer_id = validate_dynamo_query_response(
         response, event, None, "Invalid API Key")
     LOGGER.info("customer_id: %s", str(customer_id))
-    if type(customer_id) != str:
+    if not isinstance(customer_id, str):
         return customer_id
 
     allowed_customer_ids = json.dumps(os.environ["ALLOWED_CUSTOMER_IDS"])
 
-    manual_apiKeys = os.environ["MANUAL_APIKEYS"].split(',')
+    manual_api_keys = os.environ["MANUAL_APIKEYS"].split(',')
     if customer_id in allowed_customer_ids:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
@@ -103,7 +103,7 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addmilestone" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "shipment/getdocument" in event["methodArn"] and api_key in manual_apiKeys:
+    elif "shipment/getdocument" in event["methodArn"] and api_key in manual_api_keys:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     else:
         query = "CustomerID = :id AND "

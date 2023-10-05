@@ -235,7 +235,7 @@ function makeJsonToXml(data) {
                 "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
                 "soap:Body": {
                     SubmitPOD: {
-                        "@xmlns": "http://tempuri.org/",//NO SONAR
+                        "@xmlns": "http://tempuri.org/",//NOSONAR
                         HAWB: data.houseBill,
                         UserName: "BIZCLOUD",
                         UserInitials: "BCE",
@@ -253,14 +253,14 @@ function makeJsonToXml(data) {
                 "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
                 "soap:Header": {
                     "AuthHeader": {
-                        "@xmlns": "http://tempuri.org/",//NO SONAR
+                        "@xmlns": "http://tempuri.org/",//NOSONAR
                         "UserName": "eeprod",
                         "Password": "eE081020!"
                     }
                 },
                 "soap:Body": {
                     "WriteTrackingNote": {
-                        "@xmlns": "http://tempuri.org/",//NO SONAR
+                        "@xmlns": "http://tempuri.org/",//NOSONAR
                         "HandlingStation": "",
                         "HouseBill": data.houseBill,
                         "TrackingNotes": {
@@ -280,7 +280,7 @@ function makeJsonToXml(data) {
                 "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
                 "soap:Body": {
                     UpdateStatus: {
-                        "@xmlns": "http://tempuri.org/",//NO SONAR
+                        "@xmlns": "http://tempuri.org/",//NOSONAR
                         HandlingStation: "",
                         HAWB: data.houseBill,
                         UserName: "BIZCLOUD",
@@ -306,7 +306,7 @@ async function addMilestoneApi(postData) {
         if (res.status == 200) {
             return res.data;
         } else {
-            throw `API Request Failed: ${res}`;
+            throw new Error(`API Request Failed: ${res}`);
         }
     } catch (error) {
         console.error("e:addMilestoneApi", error);
