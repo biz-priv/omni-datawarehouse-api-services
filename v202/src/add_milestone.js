@@ -7,7 +7,14 @@ const axios = require("axios");
 const AWS = require("aws-sdk");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-const statusCodes = ("SOS,SDE,LOC,VER,TTC,TLD,SRS,REF,PUP,DIS,DCD,COB,BOR,BOO,APU,APL,POD,OFD,DEL,DAR,APD,AAO,AAD").split(",")
+
+const {
+    MILESTONE_ORDER_STATUS,
+    ADD_MILESTONE_LOGS_TABLE,
+    P44_LOCATION_UPDATES_TABLE,
+} = process.env;
+
+const statusCodes = MILESTONE_ORDER_STATUS.split(",");
 const statusCodeValidation = Joi.string()
     .alphanum()
     .required()
@@ -60,8 +67,8 @@ let itemObj = {
     longitude: "",
     eventTime: "",
     signatory: "",
-    createdAt: "",
-    createdDate: "",
+    createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
+    createdDate: momentTZ.tz("America/Chicago").format("YYYY-MM-DD").toString(),
     payload: "",
     xmlRequestPayload: "",
     xmlResponsePayload: "",
@@ -87,7 +94,7 @@ module.exports.handler = async (event, context, callback) => {
 
         if (!body.hasOwnProperty("addMilestoneRequest")) {
             itemObj.errorMsg = "addMilestoneRequest is required";
-            await putItem("add-milestone-table", itemObj);
+            await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
             await sendAlarm("addMilestoneRequest is required");
             return callback(response("[400]", "addMilestoneRequest is required"));
         }
@@ -110,7 +117,7 @@ module.exports.handler = async (event, context, callback) => {
 
             itemObj.errorMsg = key + " " + msg
             console.log("eventLogObj", itemObj);
-            await putItem("omni-dw-add-milestone-logs-dev", itemObj);
+            await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
             await sendAlarm(key + " " + msg)
             return callback(response("[400]", key + " " + msg));
         }
@@ -126,7 +133,7 @@ module.exports.handler = async (event, context, callback) => {
             errorMsgVal = error;
         }
         itemObj.errorMsg = errorMsgVal;
-        await putItem("omni-dw-add-milestone-logs-dev", itemObj);
+        await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
         await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
         return callback(response("[400]", errorMsgVal));
     }
@@ -143,7 +150,7 @@ async function sendEvent(body, callback) {
         const postData = makeJsonToXml(eventBody);
         console.info("postData", postData);
         itemObj.xmlRequestPayload = postData;
-        await putItem("omni-dw-add-milestone-logs-dev", itemObj);
+        await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
 
         const dataResponse = await addMilestoneApi(postData);
         console.info("dataResponse", dataResponse);
@@ -153,7 +160,7 @@ async function sendEvent(body, callback) {
         console.info("responseObj", responseObj);
 
         const updateParams = {
-            TableName: "omni-dw-add-milestone-logs-dev",
+            TableName: ADD_MILESTONE_LOGS_TABLE,
             Key: {
                 id: itemObj.id,
                 housebill: itemObj.housebill,
@@ -172,6 +179,18 @@ async function sendEvent(body, callback) {
         };
         await updateItem(updateParams);
         if (responseObj.addMilestoneResponse.message === "success") {
+            if (itemObj.statusCode == "LOC") {
+                const locItems = {
+                    HouseBillNo: itemObj.housebill,
+                    UTCTimeStamp: itemObj.eventTime,
+                    CorrelationId: itemObj.id,
+                    InsertedTimeStamp: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
+                    latitude: itemObj.latitude,
+                    longitude: itemObj.longitude,
+                    ShipmentStatus: "In-Complete"
+                }
+                await putItem(P44_LOCATION_UPDATES_TABLE, locItems);
+            }
             return responseObj;
         } else {
             return callback(response("[400]", "failed"));
@@ -185,7 +204,7 @@ async function sendEvent(body, callback) {
             errorMsgVal = error;
         }
         const updateParams = {
-            TableName: "omni-dw-add-milestone-logs-dev",
+            TableName: ADD_MILESTONE_LOGS_TABLE,
             Key: {
                 id: itemObj.id,
                 housebill: itemObj.housebill,
@@ -327,7 +346,7 @@ async function putItem(tableName, item) {
             TableName: tableName,
             Item: item,
         };
-        console.info("Insert Params: ",params)
+        console.info("Insert Params: ", params)
         return await dynamodb.put(params).promise();
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
@@ -337,7 +356,7 @@ async function putItem(tableName, item) {
 
 async function updateItem(params) {
     try {
-        console.info("Update Params: ",params)
+        console.info("Update Params: ", params)
         return await dynamodb.update(params).promise();
     } catch (e) {
         console.error("Update Item Error: ", e, "\nUpdate params: ", params);
