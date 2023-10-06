@@ -190,7 +190,7 @@ async function sendEvent(body, callback) {
             }
             return responseObj;
         } else {
-            return callback(response("[400]", "failed"));
+            return response("[400]", "failed");
         }
     } catch (error) {
         console.error('Error while posting event:', error);
