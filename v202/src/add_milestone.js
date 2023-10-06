@@ -90,10 +90,10 @@ module.exports.handler = async (event, context, callback) => {
         itemObj.payload = body;
 
         if (get(body, "addMilestoneRequest", null) === null) {
-            itemObj.errorMsg = "addMilestoneRequest is required";
+            itemObj.errorMsg = "Given input body requires addMilestoneRequest data";
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
-            await sendAlarm("addMilestoneRequest is required");
-            return callback(response("[400]", "addMilestoneRequest is required"));
+            await sendAlarm("Given input body requires addMilestoneRequest data");
+            return callback(response("[400]", "Given input body requires addMilestoneRequest data"));
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
         let validationData = ""
