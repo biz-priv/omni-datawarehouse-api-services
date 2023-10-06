@@ -187,7 +187,7 @@ def process_amazon(order_no, housebill_no, user_id, shipment_file_data, websli_t
     }
     LOGGER.info("payload: %s", payload)
 
-    save_file_to_local(f"tmp/{filename}", b64_data)
+    save_file_to_local(f"{filename}", b64_data)
 
     LOGGER.info("USERNAME: %s", USERNAME)
     LOGGER.info("PASSWORD: %s", PASSWORD)
@@ -198,7 +198,7 @@ def process_amazon(order_no, housebill_no, user_id, shipment_file_data, websli_t
     LOGGER.info("COGNITO_REGION: %s", COGNITO_REGION)
     LOGGER.info("SERVICE: %s", SERVICE)
     LOGGER.info("REGION: %s", REGION)
-    
+
     # return
     cognito_auth = CognitoAuth(username=USERNAME, password=PASSWORD, pool_id=COGNITO_USER_POOL_ID, identity_pool_id=COGNITO_IDENTITY_POOL_ID,
                                client_id=COGNITO_CLIENT_ID, provider=COGNITO_PROVIDER, pool_region=COGNITO_REGION,
@@ -219,7 +219,8 @@ def process_amazon(order_no, housebill_no, user_id, shipment_file_data, websli_t
     if response.ok:
         urlJson = json.loads(response.text)
         LOGGER.info(f"PreSigned URL: {urlJson['url']}")
-        upload_file_to_s3(urlJson['url'], f"tmp/{filename}")
+        # upload_file_to_s3(urlJson['url'], b64_data)
+        upload_file_to_s3(urlJson['url'], filename)
         return {"statusCode": 200, "presignedUrl": urlJson['url']}
     else:
         raise requests.exceptions.HTTPError(
@@ -235,19 +236,27 @@ def save_file_to_local(file_name, base64Data):
 
 def upload_file_to_s3(presigned_url, file_path):
     try:
-        with open(file_path, 'rb') as file:
-            response = requests.put(presigned_url, data=file)
-            if response.status_code == 200:
-                urlJson = json.loads(response.text)
-                LOGGER.info("File uploaded successfully.")
-                LOGGER.info("urlJson: %s", urlJson)
-            else:
-                LOGGER.info(
-                    f"Failed to upload file. Status code: {response.status_code}")
-                LOGGER.info(
-                    f"Failed to upload file. Status code: {response.text}")
+        headers = {"x-amz-server-side-encryption": "AES256",
+                   "Content-Type": "application/pdf"}
+        # LOGGER.info("file_path: %s", file_path)
+        # with open(file_path, 'rb') as file:
+        data = open(file_path, "rb")
+        LOGGER.info("data: %s", data)
+        files = {'file': (file_path, data)}
+        # pdf_binary_data = base64.b64decode(file_path)
+        file_data = io.BytesIO(base64.b64decode(file_path))
+        response = requests.post(presigned_url, headers=headers, files=files)
+        if response.status_code == 200:
+            urlJson = json.loads(response.text)
+            LOGGER.info("File uploaded successfully.")
+            LOGGER.info("urlJson: %s", urlJson)
+        else:
+            LOGGER.info(
+                f"Failed to upload file. Status code: {response.status_code}")
+            LOGGER.info(
+                f"Failed to upload file. Status code: {response.text}")
     except Exception as e:
-        logging.error(f"Upload document error: {e}")
+        LOGGER.error(f"Upload document error: {e}")
         return {'status': 400}
 
 
