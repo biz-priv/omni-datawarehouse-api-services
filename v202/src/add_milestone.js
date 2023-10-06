@@ -217,7 +217,7 @@ async function sendEvent(body, callback) {
         };
         await updateItem(updateParams);
         await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
-        return callback(response("[400]", errorMsgVal));
+        return response("[400]", errorMsgVal);
     }
 }
 
