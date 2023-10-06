@@ -93,7 +93,7 @@ module.exports.handler = async (event, context, callback) => {
             itemObj.errorMsg = "Given input body requires addMilestoneRequest data";
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
             await sendAlarm("Given input body requires addMilestoneRequest data");
-            return callback(response("[400]", "Given input body requires addMilestoneRequest data"));
+            return { statusCode: 400, message: "Given input body requires addMilestoneRequest data"};
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
         let validationData = ""
@@ -118,7 +118,7 @@ module.exports.handler = async (event, context, callback) => {
             console.log("eventLogObj", itemObj);
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
             await sendAlarm(key + " " + msg)
-            return callback(response("[400]", key + " " + msg));
+            return { statusCode: 400, message: key + " " + msg};
         }
 
         return await sendEvent(body, callback);
@@ -134,7 +134,7 @@ module.exports.handler = async (event, context, callback) => {
         itemObj.errorMsg = errorMsgVal;
         await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
         await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
-        return callback(response("[400]", errorMsgVal));
+        return { statusCode: 400, message: errorMsgVal};
     }
 }
 
@@ -217,7 +217,7 @@ async function sendEvent(body, callback) {
         };
         await updateItem(updateParams);
         await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
-        return response("[400]", errorMsgVal);
+        return { statusCode: 400, message: errorMsgVal};
     }
 }
 
@@ -375,12 +375,4 @@ async function sendAlarm(reason) {
     } catch (error) {
         console.error('Error while sending cloudwatch alarm:', error);
     }
-}
-
-
-function response(code, message) {
-    return JSON.stringify({
-        httpStatus: code,
-        message,
-    });
 }
