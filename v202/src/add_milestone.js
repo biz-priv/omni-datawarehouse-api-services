@@ -182,12 +182,11 @@ async function sendEvent(body, callback) {
             if (itemObj.statusCode == "LOC") {
                 const locItems = {
                     HouseBillNo: itemObj.housebill,
-                    UTCTimeStamp: itemObj.eventTime,
+                    UTCTimeStamp: momentTZ(itemObj.eventTime.slice(0,19)).add(5, 'hours').format('YYYY-MM-DDTHH:mm:ss'),
                     CorrelationId: itemObj.id,
                     InsertedTimeStamp: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
                     latitude: itemObj.latitude,
                     longitude: itemObj.longitude,
-                    ShipmentStatus: "In-Complete"
                 }
                 await putItem(P44_LOCATION_UPDATES_TABLE, locItems);
             }
