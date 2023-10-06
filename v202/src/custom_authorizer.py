@@ -42,7 +42,7 @@ def generate_policy(principal_id, effect, method_arn, customer_id=None, message=
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from generate_policy_error
 
 
-def handler(event):#NOSONAR
+def handler(event, context):#NOSONAR
     LOGGER.info("Event: %s", event)
     try:
         api_key = event['headers']['x-api-key']
