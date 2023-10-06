@@ -6,6 +6,7 @@ const { convert } = require("xmlbuilder2");
 const axios = require("axios");
 const AWS = require("aws-sdk");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
+const cloudwatch = new AWS.CloudWatch();
 
 const {
     MILESTONE_ORDER_STATUS,
@@ -96,10 +97,12 @@ module.exports.handler = async (event, context, callback) => {
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
         let validationData = ""
-        if (statusCode == "DEL") {
-            validationData = eventDelValidation.validate(body);
-        } else if (statusCode == "LOC") {
-            validationData = eventLocValidation.validate(body);
+        if (statusCode == "DEL" || statusCode == "LOC") {
+            if (statusCode == "DEL") {
+                validationData = eventDelValidation.validate(body);
+            }else{
+                validationData = eventLocValidation.validate(body);
+            }
         } else {
             validationData = eventValidation.validate(body);
         }
@@ -159,7 +162,6 @@ async function sendEvent(body, callback) {
             TableName: ADD_MILESTONE_LOGS_TABLE,
             Key: {
                 id: get(itemObj, "id", ""),
-                housebill: get(itemObj, "housebill", ""),
             },
             UpdateExpression:
                 "set #status = :status, #xmlResponsePayload = :xmlResponsePayload",
@@ -202,7 +204,6 @@ async function sendEvent(body, callback) {
             TableName: ADD_MILESTONE_LOGS_TABLE,
             Key: {
                 id: get(itemObj, "id", ""),
-                housebill: get(itemObj, "housebill", ""),
             },
             UpdateExpression:
                 "set #status = :status",
