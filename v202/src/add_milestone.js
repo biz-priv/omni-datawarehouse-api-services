@@ -100,7 +100,7 @@ module.exports.handler = async (event, context, callback) => {
         if (statusCode == "DEL" || statusCode == "LOC") {
             if (statusCode == "DEL") {
                 validationData = eventDelValidation.validate(body);
-            }else{
+            } else {
                 validationData = eventLocValidation.validate(body);
             }
         } else {
@@ -190,7 +190,7 @@ async function sendEvent(body, callback) {
             }
             return responseObj;
         } else {
-            return response("[400]", "failed");
+            return { id: itemObj.id, message: "failed" };
         }
     } catch (error) {
         console.error('Error while posting event:', error);
