@@ -60,7 +60,7 @@ const eventLocValidation = Joi.object()
     .required();
 
 let itemObj = {
-    id: uuidv4(),
+    id: uuidv4().toString(),
     housebill: "",
     statusCode: "",
     latitude: "",
@@ -90,10 +90,10 @@ module.exports.handler = async (event, context, callback) => {
         itemObj.payload = body;
 
         if (get(body, "addMilestoneRequest", null) === null) {
-            itemObj.errorMsg = "addMilestoneRequest is required";
+            itemObj.errorMsg = "Given input body requires addMilestoneRequest data";
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
-            await sendAlarm("addMilestoneRequest is required");
-            return callback(response("[400]", "addMilestoneRequest is required"));
+            await sendAlarm("Given input body requires addMilestoneRequest data");
+            return callback(response("[400]", "Given input body requires addMilestoneRequest data"));
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
         let validationData = ""
@@ -206,12 +206,12 @@ async function sendEvent(body, callback) {
                 id: get(itemObj, "id", ""),
             },
             UpdateExpression:
-                "set #status = :status",
+                "set #errorMsg = :errorMsg",
             ExpressionAttributeNames: {
-                "#status": "status",
+                "#errorMsg": "errorMsg",
             },
             ExpressionAttributeValues: {
-                ":status": errorMsgVal,
+                ":errorMsg": errorMsgVal.toString(),
             },
             ReturnValues: "UPDATED_NEW",
         };
@@ -232,7 +232,7 @@ function makeJsonToXml(data) {
                 "soap:Body": {
                     SubmitPOD: {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
-                        HAWB: get(data, "houseBill", ""),
+                        HAWB: get(data, "housebill", ""),
                         UserName: "BIZCLOUD",
                         UserInitials: "BCE",
                         Signer: get(data, "signatory", ""),
@@ -258,7 +258,7 @@ function makeJsonToXml(data) {
                     "WriteTrackingNote": {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         "HandlingStation": "",
-                        "HouseBill": get(data, "houseBill", ""),
+                        "HouseBill": get(data, "housebill", ""),
                         "TrackingNotes": {
                             "TrackingNotes": {
                                 "TrackingNoteMessage": `Latitude=${get(data, "latitude", "")} Longitude=${get(data, "longitude", "")}`
@@ -278,7 +278,7 @@ function makeJsonToXml(data) {
                     UpdateStatus: {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         HandlingStation: "",
-                        HAWB: get(data, "houseBill", ""),
+                        HAWB: get(data, "housebill", ""),
                         UserName: "BIZCLOUD",
                         StatusCode: get(data, "statusCode", ""),
                         EventDateTime: get(data, "eventTime", ""),
@@ -302,6 +302,7 @@ async function addMilestoneApi(postData) {
         if (get(res, "status", "") == 200) {
             return get(res, "data", "");
         } else {
+            itemObj.xmlResponsePayload = get(res, "data", "");
             throw new Error(`API Request Failed: ${res}`);
         }
     } catch (error) {
