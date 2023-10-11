@@ -23,7 +23,6 @@ class CognitoAuth(object):
         awsidp = AWSIDP(identity_pool_id=self.identity_pool_id, provider=self.provider, id_token=tokens['IdToken'], pool_region=self.pool_region)
         resp = awsidp.get_credentials();
 
-        # resp = getCredentials(tokens['IdToken'])
         print(f"Credentials: {resp}")
 
         access_key_id=resp['access_key']

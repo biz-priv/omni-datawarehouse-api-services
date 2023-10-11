@@ -291,7 +291,6 @@ class AWSSRP(object):
 
     def reset_password(self, reset_code, new_password, client=None):
         boto_client = self.client or client
-        auth_params = self.get_auth_params()
 
         response = boto_client.confirm_forgot_password(
             ClientId=self.client_id,
