@@ -4,7 +4,6 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const { get } = require("lodash");
 const ddb = new AWS.DynamoDB.DocumentClient();
-const pdfkit = require('pdfkit');
 
 //1. do a joi valiation
 const housebillSchema = Joi.object({
@@ -171,6 +170,7 @@ module.exports.handler = async (event, context, callback) => {
     const websliKey = get(data, "Items[0].websli_key", "")
     console.log("websli api key record in token validator", data)
 
+
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
     const resp = await getData(eventParams, parameterString, searchType, websliKey);
 
@@ -179,19 +179,9 @@ module.exports.handler = async (event, context, callback) => {
 
     for (let index = 0; index < newResponse.getDocumentResponse.documents.length; index++) {
       const item = newResponse.getDocumentResponse.documents[index];
-      if (item.docType === "hcpod" && isJPEG(item.filename)) {
-        // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
-        const pdfBuffer = await convertJPEGtoPDF(new Buffer(item.b64str, 'base64'));
-        const pdfFilename = item.filename.replace(/\.(jpeg|jpg)$/i, ".pdf");
-        await createS3File(pdfFilename, pdfBuffer);
-        url = await generatePreSignedURL(pdfFilename);
-        item.url = url;
-      } else {
-        // For other cases, directly create and store the document
-        await createS3File(item.filename, new Buffer(item.b64str, 'base64'));
-        url = await generatePreSignedURL(item.filename);
-        item.url = url;
-      }
+      await createS3File(item.filename, Buffer.from(item.b64str, 'base64'));
+      let url = await generatePreSignedURL(item.filename);
+      item.url = url;
       delete item.b64str;
       console.log("document url", url);
     }
@@ -312,25 +302,4 @@ async function generatePreSignedURL(filename) {
   };
   let url = await S3.getSignedUrlPromise('getObject', params)
   return url;
-}
-
-// Function to determine if the filename indicates a JPEG image
-function isJPEG(filename) {
-  const extension = filename.split('.').pop();
-  return extension === "jpeg" || extension === "jpg";
-}
-
-// Function to convert JPEG/JPG to PDF
-async function convertJPEGtoPDF(jpegBuffer) {
-  return new Promise((resolve, reject) => {
-    const pdfBuffer = [];
-
-    const doc = new pdfkit();
-    doc.on('data', chunk => pdfBuffer.push(chunk));
-    doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
-
-    // Add the JPEG image to the PDF
-    doc.image(jpegBuffer, 0, 0);
-    doc.end();
-  });
 }

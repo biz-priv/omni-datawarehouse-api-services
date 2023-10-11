@@ -18,8 +18,9 @@
   "homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
   "dependencies": {
     "axios": "^0.21.1",
-    "form-data": "^4.0.0",
+    "buffer-image-size": "^0.6.4",
     "csvtojson": "^2.0.10",
+    "form-data": "^4.0.0",
     "joi": "^17.4.2",
     "js-base64": "^3.7.3",
     "lodash": "^4.17.21",
