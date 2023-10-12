@@ -278,7 +278,7 @@ def get_service_level(service_level_code):
     try:
         if "serviceLevel" in service_level_code:
             service_level_id = service_level_code['serviceLevel']
-            con = psycopg2.connect(dbname=os.environ['db_name'], host="omni-dw-prod.cnimhrgrtodg.us-east-1.redshift.amazonaws.com",
+            con = psycopg2.connect(dbname=os.environ['db_name'], host=os.environ['db_host'],
                                    port=os.environ['db_port'], user=os.environ['db_username'], password=os.environ['db_password'])
             con.set_isolation_level(
                 psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
