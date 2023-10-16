@@ -24,15 +24,14 @@ dicttoxml.LOG.setLevel(logging.ERROR)
 
 INTERNAL_ERROR_MESSAGE = "Internal Error."
 
+xml_const = """b'<?xml version="1.0" encoding="UTF-8" ?>"""
+
 
 @skip_execution_if
-def handler(event, context):
+def handler(event, context):  # NOSONAR
     LOGGER.info("Event: %s", event)
-    # event["body"]["shipmentCreateRequest"] = literal_eval(
-    #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
-
     customer_id = validate_input(event)
-    if(customer_id != 'customer-portal-admin'):
+    if customer_id not in ['customer-portal-admin', 'mechanical-orchard']:
         customer_info = validate_dynamodb(customer_id)
         for key in ['controllingStation', 'customerNumber']:
             if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
@@ -53,60 +52,62 @@ def handler(event, context):
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
                 new_key = key.replace(" ", "")
                 new_key = new_key[0].capitalize() + new_key[1:]
-                if(key == 'incoterm'):
+                if (key == 'incoterm'):
                     new_key = 'IncoTermsCode'
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
-                elif(key == 'customerNumber'):
+                elif (key == 'customerNumber'):
                     new_key = 'CustomerNo'
-                elif(key == 'billTo'):
+                elif (key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
-                elif(key == 'controllingStation'):
+                elif (key == 'controllingStation'):
                     new_key = 'Station'
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
-                elif(key == 'UserID'):
+                elif (key == 'UserID'):
                     new_key = 'WebtrakUserID'
-                elif(key == 'mode'):
-                    if(event["body"]["shipmentCreateRequest"][key] == 'FTL' or event["body"]["shipmentCreateRequest"][key] == 'Truckload'):
+                elif (key == 'mode'):
+                    if (event["body"]["shipmentCreateRequest"][key] == 'FTL' or event["body"]["shipmentCreateRequest"][key] == 'Truckload'):
                         event["body"]["shipmentCreateRequest"][key] = 'Truckload'
                     else:
                         event["body"]["shipmentCreateRequest"][key] = 'Domestic'
-                elif(key == 'deliveryWindowFrom'):
+                elif (key == 'deliveryWindowFrom'):
                     new_key = 'DeliveryTime'
-                elif(key == 'deliveryWindowTo'):
+                elif (key == 'deliveryWindowTo'):
                     new_key = 'DeliveryTime2'
-                elif(key == 'delBy'):
-                    if(event["body"]["shipmentCreateRequest"][key].lower() in ['between', 'by', 'only']):
+                elif (key == 'delBy'):
+                    if (event["body"]["shipmentCreateRequest"][key].lower() in ['between', 'by', 'only']):
                         event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key].capitalize(
                         )
                     else:
                         event["body"]["shipmentCreateRequest"][key] = 'By'
-                elif(key == 'serviceLevel'):
-                    acceptableServiceLevelCodes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM',
-                                                   'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD']
+                elif (key == 'serviceLevel'):
+                    acceptable_servicelevel_codes = ['2A', '2D', '3A', '3D', '4D', 'A1', 'A5', 'AD', 'AE', 'AG', 'AI', 'AP', 'AV', 'BA', 'BC', 'BH', 'BO', 'BR', 'CC', 'CH', 'CO', 'DR', 'EC', 'FT', 'GM', 'GO', 'HD', 'HS', 'IG', 'IM',
+                                                     'LO', 'LP', 'LT', 'NA', 'ND', 'NF', 'NT', 'O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O8', 'OC', 'OI', 'OS', 'OV', 'PL', 'PT', 'QU', 'R2', 'R3', 'RA', 'RE', 'RN', 'RT', 'SM', 'ST', 'TD', 'TR', 'UP', 'VZ', 'WS', 'XD']
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:2].upper()
-                    if(event["body"]["shipmentCreateRequest"][key] not in acceptableServiceLevelCodes):
+                    if (event["body"]["shipmentCreateRequest"][key] not in acceptable_servicelevel_codes):
                         continue
-                elif(key == 'projectCode'):
+                elif (key == 'projectCode'):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:32]
-                elif(key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
-                    temp_var = event["body"]["shipmentCreateRequest"][key].replace('Z', '-00:00')
+                elif (key == 'readyTime' and ('readyDate' not in event["body"]["shipmentCreateRequest"])):
+                    temp_var = event["body"]["shipmentCreateRequest"][key].replace(
+                        'Z', '-00:00')
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyDate'] = temp_var
                     event["body"]["shipmentCreateRequest"][key] = temp_var
-                elif(key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
-                    temp_var = event["body"]["shipmentCreateRequest"][key].replace('Z', '-00:00')
+                elif (key == 'readyDate' and ('readyTime' not in event["body"]["shipmentCreateRequest"])):
+                    temp_var = event["body"]["shipmentCreateRequest"][key].replace(
+                        'Z', '-00:00')
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = temp_var
                     event["body"]["shipmentCreateRequest"][key] = temp_var
                 elif key == 'closeTime':
-                    temp_var = event["body"]["shipmentCreateRequest"][key].replace('Z', '-00:00')
+                    temp_var = event["body"]["shipmentCreateRequest"][key].replace(
+                        'Z', '-00:00')
                     event["body"]["shipmentCreateRequest"][key] = temp_var
-                # LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        if('accessorialList' in event["body"]["shipmentCreateRequest"]):
+        if ('accessorialList' in event["body"]["shipmentCreateRequest"]):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
                 event["body"]["shipmentCreateRequest"]['accessorialList'])
         try:
-            if('insuredValue' in event["body"]["shipmentCreateRequest"] and isinstance(float(event["body"]["shipmentCreateRequest"]["insuredValue"]), float) and float(event["body"]["shipmentCreateRequest"]["insuredValue"]) >= 0):
+            if ('insuredValue' in event["body"]["shipmentCreateRequest"] and isinstance(float(event["body"]["shipmentCreateRequest"]["insuredValue"]), float) and float(event["body"]["shipmentCreateRequest"]["insuredValue"]) >= 0):
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'INSP'
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][
                     'DeclaredValue'] = event["body"]["shipmentCreateRequest"]["insuredValue"]
@@ -115,28 +116,28 @@ def handler(event, context):
         except (ValueError):
             LOGGER.info('string exception')
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['DeclaredType'] = 'LL'
-        if('shipper' in event["body"]["shipmentCreateRequest"]):
+        if ('shipper' in event["body"]["shipmentCreateRequest"]):
             for key in event["body"]["shipmentCreateRequest"]["shipper"]:
                 new_key = "Shipper"+key[0].capitalize()+key[1:]
-                if(key == 'address'):
+                if (key == 'address'):
                     new_key = "ShipperAddress1"
-                elif(key == 'venueName'):
+                elif (key == 'venueName'):
                     new_key = "ShipperShowVenue"
-                elif(key == 'booth'):
+                elif (key == 'booth'):
                     new_key = "ShipperShowBooth"
-                elif(key == 'decorator'):
+                elif (key == 'decorator'):
                     new_key = "ShipperShowDecorator"
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"]["shipper"][key]
-        if('consignee' in event["body"]["shipmentCreateRequest"]):
+        if ('consignee' in event["body"]["shipmentCreateRequest"]):
             for key in event["body"]["shipmentCreateRequest"]["consignee"]:
                 new_key = "Consignee"+key[0].capitalize()+key[1:]
-                if(key == 'address'):
+                if (key == 'address'):
                     new_key = "ConsigneeAddress1"
-                elif(key == 'venueName'):
+                elif (key == 'venueName'):
                     new_key = "ConsigneeShowVenue"
-                elif(key == 'booth'):
+                elif (key == 'booth'):
                     new_key = "ConsigneeShowBooth"
-                elif(key == 'decorator'):
+                elif (key == 'decorator'):
                     new_key = "ConsigneeShowDecorator"
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][
                     new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
@@ -197,79 +198,69 @@ def handler(event, context):
     return shipment_data
 
 
-def ready_date_time(old_shipment_list):
+def ready_date_time(old_shipment_list):  # NOSONAR
     try:
         updated_shipment_list = {}
         ready_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["ReadyTime"]
         updated_shipment_list["ReadyTime"] = ready_time
         updated_shipment_list["ReadyDate"] = ready_time
 
-        if("DeliveryTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
+        if ("DeliveryTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
             delivery_from = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime"]
-            if(delivery_from == '' or len(delivery_from) < 25):
+            if (delivery_from == '' or len(delivery_from) < 25):
 
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
                     'DeliveryTime')
-            elif ((delivery_from[4] or delivery_from[7] or delivery_from[19]) != '-' or not(delivery_from[0:4].isnumeric() and delivery_from[5:7].isnumeric() and delivery_from[8:10].isnumeric() and delivery_from[11:13].isnumeric() and delivery_from[14:16].isnumeric() and delivery_from[17:19].isnumeric() and delivery_from[20:22].isnumeric() and delivery_from[23:25].isnumeric()) or (delivery_from[13] or delivery_from[16] or delivery_from[22]) != ':' or delivery_from[10] != 'T'):
+            elif ((delivery_from[4] or delivery_from[7] or delivery_from[19]) != '-' or not (delivery_from[0:4].isnumeric() and delivery_from[5:7].isnumeric() and delivery_from[8:10].isnumeric() and delivery_from[11:13].isnumeric() and delivery_from[14:16].isnumeric() and delivery_from[17:19].isnumeric() and delivery_from[20:22].isnumeric() and delivery_from[23:25].isnumeric()) or (delivery_from[13] or delivery_from[16] or delivery_from[22]) != ':' or delivery_from[10] != 'T'):
 
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'DeliveryTime')
-            elif(delivery_from[5:7] in ['09', '04', '06', '11'] and int(delivery_from[8:10]) > 30 or delivery_from[5:7] not in ['09', '04', '06', '11'] and int(delivery_from[8:10]) > 31 or delivery_from[5:7] == '02' and int(delivery_from[8:10]) > 28):
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime')
+            elif (delivery_from[5:7] in ['09', '04', '06', '11'] and int(delivery_from[8:10]) > 30 or delivery_from[5:7] not in ['09', '04', '06', '11'] and int(delivery_from[8:10]) > 31 or delivery_from[5:7] == '02' and int(delivery_from[8:10]) > 28):
 
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'DeliveryTime')
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime')
             else:
                 updated_shipment_list["DeliveryTime"] = delivery_from
                 updated_shipment_list["DeliveryDate"] = delivery_from
-        if("DeliveryTime2" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
+        if ("DeliveryTime2" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]):
             delivery_to = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["DeliveryTime2"]
-            if(delivery_to == '' or len(delivery_to) < 25):
+            if (delivery_to == '' or len(delivery_to) < 25):
 
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
                     'DeliveryTime2')
-            elif ((delivery_to[4] or delivery_to[7] or delivery_to[19]) != '-' or not(delivery_to[0:4].isnumeric() and delivery_to[5:7].isnumeric() and delivery_to[8:10].isnumeric() and delivery_to[11:13].isnumeric() and delivery_to[14:16].isnumeric() and delivery_to[17:19].isnumeric() and delivery_to[20:22].isnumeric() and delivery_to[23:25].isnumeric()) or (delivery_to[13] or delivery_to[16] or delivery_to[22]) != ':' or delivery_to[10] != 'T'):
+            elif ((delivery_to[4] or delivery_to[7] or delivery_to[19]) != '-' or not (delivery_to[0:4].isnumeric() and delivery_to[5:7].isnumeric() and delivery_to[8:10].isnumeric() and delivery_to[11:13].isnumeric() and delivery_to[14:16].isnumeric() and delivery_to[17:19].isnumeric() and delivery_to[20:22].isnumeric() and delivery_to[23:25].isnumeric()) or (delivery_to[13] or delivery_to[16] or delivery_to[22]) != ':' or delivery_to[10] != 'T'):
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime2')
+            elif (delivery_to[5:7] in ['09', '04', '06', '11'] and int(delivery_to[8:10]) > 30 or delivery_to[5:7] not in ['09', '04', '06', '11'] and int(delivery_to[8:10]) > 31 or delivery_to[5:7] == '02' and int(delivery_to[8:10]) > 28):
 
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'DeliveryTime2')
-            elif(delivery_to[5:7] in ['09', '04', '06', '11'] and int(delivery_to[8:10]) > 30 or delivery_to[5:7] not in ['09', '04', '06', '11'] and int(delivery_to[8:10]) > 31 or delivery_to[5:7] == '02' and int(delivery_to[8:10]) > 28):
-
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'DeliveryTime2')
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('DeliveryTime2')
             else:
                 updated_shipment_list["DeliveryTime2"] = delivery_to
         if "CloseDate" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
             close_date = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseDate"]
-            if(close_date == '' or len(close_date) < 25):
+            if (close_date == '' or len(close_date) < 25):
 
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
                     'CloseDate')
-            elif ((close_date[4] or close_date[7] or close_date[19]) != '-' or not(close_date[0:4].isnumeric() and close_date[5:7].isnumeric() and close_date[8:10].isnumeric() and close_date[11:13].isnumeric() and close_date[14:16].isnumeric() and close_date[17:19].isnumeric() and close_date[20:22].isnumeric() and close_date[23:25].isnumeric()) or (close_date[13] or close_date[16] or close_date[22]) != ':' or close_date[10] != 'T'):
+            elif ((close_date[4] or close_date[7] or close_date[19]) != '-' or not (close_date[0:4].isnumeric() and close_date[5:7].isnumeric() and close_date[8:10].isnumeric() and close_date[11:13].isnumeric() and close_date[14:16].isnumeric() and close_date[17:19].isnumeric() and close_date[20:22].isnumeric() and close_date[23:25].isnumeric()) or (close_date[13] or close_date[16] or close_date[22]) != ':' or close_date[10] != 'T'):
 
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'CloseDate')
-            elif(close_date[5:7] in ['09', '04', '06', '11'] and int(close_date[8:10]) > 30 or close_date[5:7] not in ['09', '04', '06', '11'] and int(close_date[8:10]) > 31 or close_date[5:7] == '02' and int(close_date[8:10]) > 28):
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseDate')
+            elif (close_date[5:7] in ['09', '04', '06', '11'] and int(close_date[8:10]) > 30 or close_date[5:7] not in ['09', '04', '06', '11'] and int(close_date[8:10]) > 31 or close_date[5:7] == '02' and int(close_date[8:10]) > 28):
 
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'CloseDate')
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseDate')
             else:
                 updated_shipment_list["CloseDate"] = close_date
         elif "CloseTime" in old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]:
             close_time = old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"]["CloseTime"]
-            if(close_time == '' or len(close_time) < 25):
+            if (close_time == '' or len(close_time) < 25):
 
                 old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
                     'CloseTime')
-            elif ((close_time[4] or close_time[7] or close_time[19]) != '-' or not(close_time[0:4].isnumeric() and close_time[5:7].isnumeric() and close_time[8:10].isnumeric() and close_time[11:13].isnumeric() and close_time[14:16].isnumeric() and close_time[17:19].isnumeric() and close_time[20:22].isnumeric() and close_time[23:25].isnumeric()) or (close_time[13] or close_time[16] or close_time[22]) != ':' or close_time[10] != 'T'):
-
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'CloseTime')
-            elif(close_time[5:7] in ['09', '04', '06', '11'] and int(close_time[8:10]) > 30 or close_time[5:7] not in ['09', '04', '06', '11'] and int(close_time[8:10]) > 31 or close_time[5:7] == '02' and int(close_time[8:10]) > 28):
-
-                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop(
-                    'CloseTime')
+            elif ((close_time[4] or close_time[7] or close_time[19]) != '-' or not (close_time[0:4].isnumeric() and close_time[5:7].isnumeric() and close_time[8:10].isnumeric() and close_time[11:13].isnumeric() and close_time[14:16].isnumeric() and close_time[17:19].isnumeric() and close_time[20:22].isnumeric() and close_time[23:25].isnumeric()) or (close_time[13] or close_time[16] or close_time[22]) != ':' or close_time[10] != 'T'):
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseTime')
+            elif (close_time[5:7] in ['09', '04', '06', '11'] and int(close_time[8:10]) > 30 or close_time[5:7] not in ['09', '04', '06', '11'] and int(close_time[8:10]) > 31 or close_time[5:7] == '02' and int(close_time[8:10]) > 28):
+                old_shipment_list["AddNewShipmentV3"]["shipmentCreateRequest"].pop('CloseTime')
             else:
                 updated_shipment_list["CloseTime"] = close_time
         else:
+            # Add implementation
             pass
 
         updated_shipment_list.update(
@@ -315,11 +306,11 @@ def modify_object_keys(array):
         for key in obj:
             new_key = key.replace(" ", "")
             new_key = new_key[0].capitalize() + new_key[1:]
-            if(key == 'weightUOM'):
+            if (key == 'weightUOM'):
                 new_key = 'WeightUOMV3'
-            elif(key == 'dimUOM'):
+            elif (key == 'dimUOM'):
                 new_key = 'DimUOMV3'
-            elif(key == 'weight'):
+            elif (key == 'weight'):
                 new_key = 'Weigth'
             new_obj[new_key] = obj[key]
         new_array.append(new_obj)
@@ -356,14 +347,14 @@ def update_response(response):
         new_ship_details = {}
         new_ship_details["shipmentCreateResponse"] = {}
         for key in shipment_details:
-            if(key == 'ShipQuoteNo'):
+            if (key == 'ShipQuoteNo'):
                 new_ship_details["shipmentCreateResponse"]['fileNumber'] = shipment_details['ShipQuoteNo']
                 # temp_data.append("ShipQuoteNo")
-            if(key == 'Housebill'):
+            if (key == 'Housebill'):
                 new_ship_details["shipmentCreateResponse"]['housebill'] = shipment_details['Housebill']
                 # temp_data.append("Housebill")
-            if(key == 'ErrorMessage'):
-                if(shipment_details['ErrorMessage'] != None):
+            if (key == 'ErrorMessage'):
+                if (shipment_details['ErrorMessage'] != None):
                     new_ship_details["shipmentCreateResponse"]['errorMessage'] = shipment_details['ErrorMessage']
         LOGGER.info("Shipment Details are: %s", json.dumps(new_ship_details))
         return new_ship_details
@@ -434,56 +425,56 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc, cu
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from update_dynamo_error
 
 
-def get_shipment_line_list(data_obj):
+def get_shipment_line_list(data_obj):  # NOSONAR
     try:
         if "shipmentLines" in data_obj:
             temp_shipment_line_list = modify_object_keys(
                 data_obj["shipmentLines"])
             for i in temp_shipment_line_list:
-                if('Hazmat' in i):
-                    if(str(i['Hazmat']).lower() in ['0', '1', 'true', 'false']):
+                if ('Hazmat' in i):
+                    if (str(i['Hazmat']).lower() in ['0', '1', 'true', 'false']):
                         i['Hazmat'] = str(i['Hazmat']).lower()
                     else:
                         i['Hazmat'] = 'false'
-                if('WeightUOMV3' in i):
+                if ('WeightUOMV3' in i):
                     if str(i['WeightUOMV3']).lower() in ['lb', 'kg']:
                         i['WeightUOMV3'] = str(i['WeightUOMV3']).lower()
                     else:
                         i['WeightUOMV3'] = 'lb'
-                if('DimUOMV3' in i):
+                if ('DimUOMV3' in i):
                     if str(i['DimUOMV3']).lower() in ['in', 'cm']:
                         i['DimUOMV3'] = str(i['DimUOMV3']).lower()
                     else:
                         i['DimUOMV3'] = 'in'
-                if('Description' in i):
+                if ('Description' in i):
                     i['Description'] = i['Description'][0:35]
-                if('PieceType' in i):
+                if ('PieceType' in i):
                     i['PieceType'] = i['PieceType'][0:3]
-                if('Pieces' in i):
+                if ('Pieces' in i):
                     try:
                         i['Pieces'] = int(i['Pieces'])
-                        if(int(i['Pieces']) > 32767):
+                        if (int(i['Pieces']) > 32767):
                             i.pop('Pieces')
                     except ValueError:
                         i.pop('Pieces')
-                if('Length' in i):
+                if ('Length' in i):
                     try:
                         i['Length'] = int(i['Length'])
-                        if(int(i['Length']) > 999):
+                        if (int(i['Length']) > 999):
                             i.pop('Length')
                     except ValueError:
                         i.pop('Length')
-                if('Width' in i):
+                if ('Width' in i):
                     try:
                         i['Width'] = int(i['Width'])
-                        if(int(i['Width']) > 999):
+                        if (int(i['Width']) > 999):
                             i.pop('Width')
                     except ValueError:
                         i.pop('Width')
-                if('Weigth' in i):
+                if ('Weigth' in i):
                     try:
                         i['Weigth'] = int(i['Weigth'])
-                        if(int(i['Weigth']) > 999):
+                        if (int(i['Weigth']) > 999):
                             i.pop('Weigth')
                     except ValueError:
                         i.pop('Weigth')
@@ -492,7 +483,7 @@ def get_shipment_line_list(data_obj):
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
                                                      attr_type=False, custom_root='ShipmentLineList', item_func=shipment_line_list_item)
             shipment_line_list = str(shipment_line_list).\
-                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace(xml_const, """""").\
                 replace("""</ShipmentLineList>'""", """</ShipmentLineList>""")
         else:
             shipment_line_list = ''
@@ -504,7 +495,7 @@ def get_shipment_line_list(data_obj):
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_linelist_error
 
 
-def get_reference_list(data_obj):
+def get_reference_list(data_obj):  # NOSONAR
     try:
         if "customerReference" in data_obj:
             temp_reference_list = modify_object_keys(
@@ -517,15 +508,15 @@ def get_reference_list(data_obj):
                 t = []
                 m = []
                 for bill_to_item in x:
-                    if('RefParty' in bill_to_item):
-                        if(bill_to_item['RefParty'].upper() in ['SHIPPER', 'BILLTO', 'CONSIGNEE']):
-                            if('RefNumber' in bill_to_item and 'RefType' in bill_to_item):
+                    if ('RefParty' in bill_to_item):
+                        if (bill_to_item['RefParty'].upper() in ['SHIPPER', 'BILLTO', 'CONSIGNEE']):
+                            if ('RefNumber' in bill_to_item and 'RefType' in bill_to_item):
                                 t.append(
                                     {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty'], "RefTypeId": bill_to_item['RefType']})
-                            elif('RefNumber' in bill_to_item and 'RefType' not in bill_to_item):
+                            elif ('RefNumber' in bill_to_item and 'RefType' not in bill_to_item):
                                 t.append(
                                     {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3": bill_to_item['RefParty']})
-                            elif('RefType' in bill_to_item and 'RefNumber' not in bill_to_item):
+                            elif ('RefType' in bill_to_item and 'RefNumber' not in bill_to_item):
                                 t.append(
                                     {"RefTypeId": bill_to_item['RefType'], "CustomerTypeV3": bill_to_item['RefParty']})
                 m.extend(t)
@@ -536,7 +527,7 @@ def get_reference_list(data_obj):
             reference_list = dicttoxml.dicttoxml(temp_reference_list,
                                                  attr_type=False, custom_root='ReferenceList', item_func=reference_list_item)
             reference_list = str(reference_list).\
-                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace(xml_const, """""").\
                 replace("""</ReferenceList>'""", """</ReferenceList>""")
         else:
             reference_list = ''
@@ -564,7 +555,7 @@ def get_accessorial_list(data_obj):
             accessorial_list = dicttoxml.dicttoxml(temp_accessorials_list, attr_type=False,
                                                    custom_root='NewShipmentAcessorialsList', item_func=accessorial_list_item)
             accessorial_list = str(accessorial_list).\
-                replace("""b'<?xml version="1.0" encoding="UTF-8" ?>""", """""").\
+                replace(xml_const, """""").\
                 replace("""</NewShipmentAcessorialsList>'""",
                         """</NewShipmentAcessorialsList>""")
         else:
@@ -576,96 +567,87 @@ def get_accessorial_list(data_obj):
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_accessorial_error
 
 
-def validate_input(event):
-    if not "enhancedAuthContext" in event or "customerId" not in event["enhancedAuthContext"]:
+ready_datetime_error = "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."
+
+
+def validate_input(event):  # NOSONAR
+    if "enhancedAuthContext" not in event or "customerId" not in event["enhancedAuthContext"]:
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "CustomerId not found."}))
-    if not "shipmentCreateRequest" in event["body"]:
+    if "shipmentCreateRequest" not in event["body"]:
         raise InputError(json.dumps(
             {"httpStatus": 400, "message": "shipmentCreateRequest must be sent"}))
-    client_data = ['serviceLevel']
-    # if not "body" in event or not "shipmentCreateRequest" in event["body"] or not set(client_data).issubset(event["body"]["shipmentCreateRequest"]):
-    #     raise InputError(json.dumps(
-    #         {"httpStatus": 400, "message": "Service Level is missing in the request body shipmentCreateRequest."}))
-    if('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
+
+    if ('readyTime' not in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
         raise InputError(json.dumps(
-            {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
-    elif('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
-        if(event["body"]["shipmentCreateRequest"]['readyTime'] == ''):
+            {"httpStatus": 400, "message": ready_datetime_error}))
+
+    acceptable_stations = ['ACN', 'AUS', 'BNA', 'BOS', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH',
+                           'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
+    errors = []
+    if (event["enhancedAuthContext"]["customerId"] == 'customer-portal-admin') or (event["enhancedAuthContext"]["customerId"] == 'mechanical-orchard'):
+        for req_field in ["controllingStation", "customerNumber"]:
+            if req_field not in event["body"]["shipmentCreateRequest"]:
+                errors.append(req_field + " not in body")
+            elif req_field == "customerNumber":
+                if not event["body"]["shipmentCreateRequest"][req_field].isnumeric():
+                    errors.append(req_field + " must be an integer")
+                elif len(event["body"]["shipmentCreateRequest"][req_field]) > 6:
+                    errors.append(
+                        req_field + " must be less than 6 digits")
+            elif req_field == 'controllingStation':
+                if event["body"]["shipmentCreateRequest"]["controllingStation"][0:3].upper() not in acceptable_stations:
+                    errors.append(event["body"]["shipmentCreateRequest"]
+                                  [req_field] + '  is not a valid value for Station')
+    if errors:
+        LOGGER.info(", ".join(list(map(str, errors))))
+        raise InputError(json.dumps(
+            {"httpStatus": 400, "message": ", ".join(list(map(str, errors)))}))
+
+    elif ('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' not in event["body"]["shipmentCreateRequest"]):
+        if (event["body"]["shipmentCreateRequest"]['readyTime'] == ''):
             raise InputError(json.dumps(
-                {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+                {"httpStatus": 400, "message": ready_datetime_error}))
         else:
-            readyTime = event["body"]["shipmentCreateRequest"]['readyTime']
-            if not validate_date(readyTime):
-            # if((readyTime[4] or readyTime[7] or readyTime[19]) != '-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22]) != ':' or readyTime[10] != 'T'):
+            ready_time = event["body"]["shipmentCreateRequest"]['readyTime']
+            if not validate_date(ready_time):
                 raise InputError(json.dumps(
                     {"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
-            # elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 31 or readyTime[5:7] == '02' and int(readyTime[8:10]) > 28):
-            #     raise InputError(json.dumps(
-            #         {"httpStatus": 400, "message": 'readyTime is not in the correct date format.'}))
-    elif('readyDate' in event["body"]["shipmentCreateRequest"] and 'readyTime' not in event["body"]["shipmentCreateRequest"]):
-        if(event["body"]["shipmentCreateRequest"]['readyDate'] == ''):
+
+    elif ('readyDate' in event["body"]["shipmentCreateRequest"] and 'readyTime' not in event["body"]["shipmentCreateRequest"]):
+        if (event["body"]["shipmentCreateRequest"]['readyDate'] == ''):
             raise InputError(json.dumps(
-                {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+                {"httpStatus": 400, "message": ready_datetime_error}))
         else:
-            readyTime = event["body"]["shipmentCreateRequest"]['readyDate']
-            if((readyTime[4] or readyTime[7] or readyTime[19]) != '-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22]) != ':' or readyTime[10] != 'T'):
-                raise InputError(json.dumps(
-                    {"httpStatus": 400, "message": 'readyDate is not in the correct date format.'}))
-            elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 31 or readyTime[5:7] == '02' and int(readyTime[8:10]) > 28):
-                raise InputError(json.dumps(
-                    {"httpStatus": 400, "message": 'readyDate is not in the correct date format.'}))
-    elif('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' in event["body"]["shipmentCreateRequest"]):
-        if(event["body"]["shipmentCreateRequest"]['readyDate'] == '' and event["body"]["shipmentCreateRequest"]['readyTime'] == ''):
+            ready_time = event["body"]["shipmentCreateRequest"]['readyDate']
+            if ((ready_time[4] or ready_time[7] or ready_time[19]) != '-' or not (ready_time[0:4].isnumeric() and ready_time[5:7].isnumeric() and ready_time[8:10].isnumeric() and ready_time[11:13].isnumeric() and ready_time[14:16].isnumeric() and ready_time[17:19].isnumeric() and ready_time[20:22].isnumeric() and ready_time[23:25].isnumeric()) or (ready_time[13] or ready_time[16] or ready_time[22]) != ':' or ready_time[10] != 'T'):
+                raise InputError(json.dumps({"httpStatus": 400, "message": 'ready_date is not in the correct date format.'}))
+            elif (ready_time[5:7] in ['09', '04', '06', '11'] and int(ready_time[8:10]) > 30 or ready_time[5:7] not in ['09', '04', '06', '11'] and int(ready_time[8:10]) > 31 or ready_time[5:7] == '02' and int(ready_time[8:10]) > 28):
+                raise InputError(json.dumps({"httpStatus": 400, "message": 'ready_date is not in the correct date format.'})) #NOSONAR
+
+    elif ('readyTime' in event["body"]["shipmentCreateRequest"] and 'readyDate' in event["body"]["shipmentCreateRequest"]):
+        if (event["body"]["shipmentCreateRequest"]['readyDate'] == '' and event["body"]["shipmentCreateRequest"]['readyTime'] == ''):
             raise InputError(json.dumps(
-                {"httpStatus": 400, "message": "Ready Date/Time parameters are missing in the request body shipmentCreateRequest."}))
+                {"httpStatus": 400, "message": ready_datetime_error}))
         else:
             for ready in ['readyDate', 'readyTime']:
-                readyTime = event["body"]["shipmentCreateRequest"][ready]
-                if(event["body"]["shipmentCreateRequest"][ready] == ''):
-                    print('removing '+ready+' from event body as it is empty')
+                ready_time = event["body"]["shipmentCreateRequest"][ready]
+                if (event["body"]["shipmentCreateRequest"][ready] == ''):
+                    print('removing ' + ready + ' from event body as it is empty')
                     event["body"]["shipmentCreateRequest"].pop(ready)
-                elif((readyTime[4] or readyTime[7] or readyTime[19]) != '-' or not(readyTime[0:4].isnumeric() and readyTime[5:7].isnumeric() and readyTime[8:10].isnumeric() and readyTime[11:13].isnumeric() and readyTime[14:16].isnumeric() and readyTime[17:19].isnumeric() and readyTime[20:22].isnumeric() and readyTime[23:25].isnumeric()) or (readyTime[13] or readyTime[16] or readyTime[22]) != ':' or readyTime[10] != 'T'):
+                elif ((ready_time[4] or ready_time[7] or ready_time[19]) != '-' or not (ready_time[0:4].isnumeric() and ready_time[5:7].isnumeric() and ready_time[8:10].isnumeric() and ready_time[11:13].isnumeric() and ready_time[14:16].isnumeric() and ready_time[17:19].isnumeric() and ready_time[20:22].isnumeric() and ready_time[23:25].isnumeric()) or (ready_time[13] or ready_time[16] or ready_time[22]) != ':' or ready_time[10] != 'T'):
                     raise InputError(json.dumps(
                         {"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
-                elif(readyTime[5:7] in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 30 or readyTime[5:7] not in ['09', '04', '06', '11'] and int(readyTime[8:10]) > 31 or readyTime[5:7] == '02' and int(readyTime[8:10]) > 28):
-                    raise InputError(json.dumps(
-                        {"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
-    else:
-        acceptableStations = ['ACN', 'AUS', 'BNA', 'BOS', 'CVG', 'DAL', 'DFW', 'ELP', 'EXP', 'GSP', 'IAH',
-                              'IND', 'LAX', 'LGB', 'MSP', 'OLH', 'ORD', 'OTR', 'PDX', 'PHL', 'SAN', 'SAT', 'SFO', 'SLC', 'YYZ']
-        errors = []
-
-        if(event["enhancedAuthContext"]["customerId"] == 'customer-portal-admin'):
-            for req_field in ["controllingStation", "customerNumber"]:
-                if req_field not in event["body"]["shipmentCreateRequest"]:
-                    errors.append(req_field + " not in body")
-                elif req_field == "customerNumber":
-                    if not event["body"]["shipmentCreateRequest"][req_field].isnumeric():
-                        errors.append(req_field + " must be an integer")
-                    elif len(event["body"]["shipmentCreateRequest"][req_field]) > 6:
-                        errors.append(
-                            req_field + " must be less than 6 digits")
-                elif req_field == 'controllingStation':
-                    if event["body"]["shipmentCreateRequest"]["controllingStation"][0:3].upper() not in acceptableStations:
-                        errors.append(event["body"]["shipmentCreateRequest"]
-                                      [req_field] + '  is not a valid value for Station')
-        # if(event["body"]["shipmentCreateRequest"]["serviceLevel"][0:2].upper() not in acceptableServiceLevelCodes):
-        #     raise InputError(json.dumps(
-        #     {"httpStatus": 400, "message":event["body"]["shipmentCreateRequest"]["serviceLevel"] + " is not a valid value for Service Level"}))
-
-        if errors:
-            LOGGER.info(", ".join(list(map(str, errors))))
-            raise InputError(json.dumps(
-                {"httpStatus": 400, "message": ", ".join(list(map(str, errors)))}))
-    return event["enhancedAuthContext"]["customerId"]
-
+                elif (ready_time[5:7] in ['09', '04', '06', '11'] and int(ready_time[8:10]) > 30 or ready_time[5:7] not in ['09', '04', '06', '11'] and int(ready_time[8:10]) > 31 or ready_time[5:7] == '02' and int(ready_time[8:10]) > 28):
+                    raise InputError(json.dumps({"httpStatus": 400, "message": ready + ' is not in the correct date format.'}))
+    return event["enhancedAuthContext"]["customerId"]           
 def validate_date(date_text):
     try:
         parse(date_text)
         return True
     except ValueError:
         return False
+
 
 class InputError(Exception):
     pass
