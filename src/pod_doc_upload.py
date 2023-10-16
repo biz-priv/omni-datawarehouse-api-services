@@ -181,7 +181,7 @@ def process_amazon(order_no, housebill_no, user_id, shipment_file_data, websli_t
         }
         LOGGER.info("payload: %s", payload)
         LOGGER.info("USERNAME: %s", USERNAME)
-        LOGGER.info("PASSWORD: %s", PASSWORD)
+        # LOGGER.info("PASSWORD: %s", PASSWORD)
         LOGGER.info("COGNITO_USER_POOL_ID: %s", COGNITO_USER_POOL_ID)
         LOGGER.info("COGNITO_IDENTITY_POOL_ID: %s", COGNITO_IDENTITY_POOL_ID)
         LOGGER.info("COGNITO_CLIENT_ID: %s", COGNITO_CLIENT_ID)
@@ -332,7 +332,7 @@ def get_websli_token(api_key):
             return None
 
     except Exception as e:
-        LOGGER.info(f"Unable to insert item. Error: {e}")
+        LOGGER.info(f"Unable to get websli token. Error: {e}")
         raise e
 
 
