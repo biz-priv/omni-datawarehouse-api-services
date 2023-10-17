@@ -8,6 +8,7 @@ const sizeOf = require('buffer-image-size');
 const PNG = require('pngjs').PNG;
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
+const { get } = require('lodash');
 
 let eventLogObj = {};
 
@@ -119,10 +120,9 @@ module.exports.handler = async (event, context, callback) => {
   let fileExtension = "";
   let validated = {};
   let currentDateTime = new Date();
-  validated.b64str = eventBody.documentUploadRequest.b64str;
-
-  docType = eventBody.documentUploadRequest.docType;
-  let contentType = eventBody.documentUploadRequest.contentType
+  validated.b64str = get(eventBody,"documentUploadRequest.b64str");
+  docType = get(eventBody,"documentUploadRequest.docType");
+  let contentType = get(eventBody,"documentUploadRequest.contentType")
   // If contentType is not provided, detect it from the base64 data.
   if (!contentType) {
     contentType = detectMimeType(validated.b64str);
@@ -778,24 +778,23 @@ async function convertImageToPDF(imageBuffer) {
   return new Promise((resolve, reject) => {
     const pdfBuffer = [];
     const dimensions = sizeOf(imageBuffer);
-    const doc = new pdfkit({ size: [dimensions.width, dimensions.height] });
+    const doc = new pdfkit({ size: [get(dimensions,"width"), get(dimensions,"height")] });
     doc.on('data', chunk => pdfBuffer.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
 
     // Determine the image type and add it to the PDF
-    const imageType = dimensions.type.toLowerCase();
-    console.log("imageType:", dimensions.type);
+    const imageType = get(dimensions,"type").toLowerCase();
     if (imageType === 'jpeg' || imageType === 'jpg') {
       doc.image(imageBuffer, 0, 0, {
-        width: dimensions.width,
-        height: dimensions.height
+        width: get(dimensions,"width"),
+        height: get(dimensions,"height")
       });
     } else if (imageType === 'png') {
       const png = PNG.sync.read(imageBuffer);
       const pngBuffer = PNG.sync.write(png);
       doc.image(pngBuffer, 0, 0, {
-        width: dimensions.width,
-        height: dimensions.height
+        width: get(dimensions,"width"),
+        height: get(dimensions,"height")
       });
     } else {
       reject(new Error('Unsupported image type'));
