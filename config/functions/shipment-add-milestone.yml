@@ -4,9 +4,12 @@ function:
   description: add milestone api service - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 60
+  layers:
+    - !Ref DWAPILayerLambdaLayer
   memorySize: 512
   environment:
     ADD_MILESTONE_URL: ${ssm:/omni-ivia/${self:provider.stage}/addMilestone/url}
+    ADD_MILESTONE_LOC_URL: ${ssm:/omni-ivia/${self:provider.stage}/addMilestone/loc.url}
     TOKEN_VALIDATION_TABLE: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     CUSTOMER_ENTITLEMENT_TABLE: ${ssm:/omni-dw/${self:provider.stage}/customerEntitlement/table} 
     CUSTOMER_ENTITLEMENT_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/houseBillNumber/index}
@@ -23,7 +26,6 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/add_milestone.js
-      - node_modules/**
   events:
     - http:
         path: /shipment/addmilestone
