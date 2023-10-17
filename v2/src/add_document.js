@@ -5,7 +5,7 @@ const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
 const pdfkit = require('pdfkit');
 const sizeOf = require('buffer-image-size');
-
+const PNG = require('pngjs').PNG;
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 
@@ -121,54 +121,38 @@ module.exports.handler = async (event, context, callback) => {
   let currentDateTime = new Date();
   validated.b64str = eventBody.documentUploadRequest.b64str;
 
-
-  // List of valid docType values to check against
-  const validDocTypes = [
-    "CERTIFICAT",
-    "CONSULAR",
-    "CUST RATE",
-    "CUSTOMS",
-    "DANGEROUS",
-    "DCCL",
-    "DECON",
-    "HCPOD",
-    "IBU",
-    "IMPORT LIC",
-    "INSURANCE",
-    "INVOICE",
-    "MSDS",
-    "OCCL",
-    "OMNI RA",
-    "ORIG BOL",
-    "PACKING",
-    "PO",
-    "POD",
-    "PRO FORMA",
-    "RA",
-    "SED",
-    "SLI",
-    "WAYBILL"
-  ];
-
   docType = eventBody.documentUploadRequest.docType;
-  if (validDocTypes.includes(docType)) {
-    try {
-      // Convert image to PDF if docType is "hcpod" and the filename indicates JPEG
-      const pdfBuffer = await convertJPEGtoPDF(Buffer.from(validated.b64str, 'base64'));
-      console.log("converted to pdf");
-      // Update validated object
-      validated.b64str = pdfBuffer.toString('base64');
-      fileExtension = ".pdf"
-    } catch (conversionError) {
-      console.log(conversionError)
-      eventLogObj = {
-        ...eventLogObj,
-        errorMsg: "Error converting JPEG to PDF",
-        api_status_code: "400",
-      };
-      console.log("eventLogObj", eventLogObj);
-      await putItem(eventLogObj);
-      return callback(response("[400]", "Error converting JPEG to PDF"));
+  let contentType = eventBody.documentUploadRequest.contentType
+  // If contentType is not provided, detect it from the base64 data.
+  if (!contentType) {
+    contentType = detectMimeType(validated.b64str);
+    console.log("contentType:", contentType);
+  }
+  let lowercaseContentType = contentType.toLowerCase();
+
+  if (lowercaseContentType.includes('jpeg') ||
+    lowercaseContentType.includes('jpg') ||
+    lowercaseContentType.includes('png')) {
+    if (process.env.VALID_DOCTYPES.includes(docType)) {
+      try {
+        const pdfBuffer = await convertImageToPDF(Buffer.from(validated.b64str, 'base64'));
+        console.log("converted to pdf");
+        // Update validated object
+        validated.b64str = pdfBuffer.toString('base64');
+        fileExtension = ".pdf";
+      } catch (conversionError) {
+        console.log(conversionError);
+        eventLogObj = {
+          ...eventLogObj,
+          errorMsg: "Error converting JPEG to PDF",
+          api_status_code: "400",
+        };
+        console.log("eventLogObj", eventLogObj);
+        await putItem(eventLogObj);
+        return callback(response("[400]", "Error converting JPEG to PDF"));
+      }
+    } else {
+      console.log("docType is not one of jpeg,jpg,png. Skipping conversion.");
     }
   }
   //checking for customerId from event if not present throw error else set the customerId
@@ -790,20 +774,45 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
   return check;
 }
 
-// Function to convert JPEG/JPG to PDF
-async function convertJPEGtoPDF(jpegBuffer) {
+async function convertImageToPDF(imageBuffer) {
   return new Promise((resolve, reject) => {
     const pdfBuffer = [];
-    const dimensions = sizeOf(jpegBuffer);
+    const dimensions = sizeOf(imageBuffer);
     const doc = new pdfkit({ size: [dimensions.width, dimensions.height] });
     doc.on('data', chunk => pdfBuffer.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
 
-    // Add the JPEG image to the PDF
-    doc.image(jpegBuffer, 0, 0, {
-      width: dimensions.width,
-      height: dimensions.height
-    });
+    // Determine the image type and add it to the PDF
+    const imageType = dimensions.type.toLowerCase();
+    console.log("imageType:", dimensions.type);
+    if (imageType === 'jpeg' || imageType === 'jpg') {
+      doc.image(imageBuffer, 0, 0, {
+        width: dimensions.width,
+        height: dimensions.height
+      });
+    } else if (imageType === 'png') {
+      const png = PNG.sync.read(imageBuffer);
+      const pngBuffer = PNG.sync.write(png);
+      doc.image(pngBuffer, 0, 0, {
+        width: dimensions.width,
+        height: dimensions.height
+      });
+    } else {
+      reject(new Error('Unsupported image type'));
+    }
+
     doc.end();
   });
+}
+
+function detectMimeType(b64) {
+  const signatures = {
+    'iVBORw0KGgo': 'image/png',
+    '/9j/': 'image/jpg',
+  };
+  for (const s in signatures) {
+    if (b64.indexOf(s) === 0) {
+      return signatures[s];
+    }
+  }
 }

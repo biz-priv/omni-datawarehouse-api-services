@@ -29,6 +29,7 @@
     "moment-timezone": "^0.5.41",
     "pdfkit": "^0.13.0",
     "pg-promise": "^10.11.1",
+    "pngjs": "^7.0.0",
     "serverless": "^2.11.1",
     "serverless-add-api-key": "4.2.0",
     "serverless-aws-alias-fixed": "2.0.1",
