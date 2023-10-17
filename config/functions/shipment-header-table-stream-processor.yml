@@ -10,12 +10,9 @@ function:
     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
   role: ShippeoPODRole
   package:
-    #individually: true
-    patterns:
+    individually: true
+    include:
       - src/shipment_header_table_stream_processor.js
-      - "!**/*"
-      # - src/shared/**
-      # - node_modules/**
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     REGION: ${self:provider.region}

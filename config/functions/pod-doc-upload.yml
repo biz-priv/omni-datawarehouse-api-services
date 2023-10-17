@@ -13,10 +13,11 @@ function:
             - ShipmentFileTableStreamQueue
             - Arn
   role: ShippeoPODRole
-  package:
-    patterns:
+  package:  
+    individually: true
+    include:
       - src/pod_doc_upload.py
-      - "!**/*"
+      - src/shared/**
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
