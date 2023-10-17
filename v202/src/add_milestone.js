@@ -93,7 +93,7 @@ module.exports.handler = async (event, context, callback) => {
             itemObj.errorMsg = "Given input body requires addMilestoneRequest data";
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
             await sendAlarm("Given input body requires addMilestoneRequest data");
-            return { statusCode: 400, message: "Given input body requires addMilestoneRequest data"};
+            return { statusCode: 400, message: "Given input body requires addMilestoneRequest data" };
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
         let validationData = ""
@@ -118,7 +118,7 @@ module.exports.handler = async (event, context, callback) => {
             console.log("eventLogObj", itemObj);
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
             await sendAlarm(key + " " + msg)
-            return { statusCode: 400, message: key + " " + msg};
+            return { statusCode: 400, message: key + " " + msg };
         }
 
         return await sendEvent(body, callback);
@@ -134,7 +134,7 @@ module.exports.handler = async (event, context, callback) => {
         itemObj.errorMsg = errorMsgVal;
         await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
         await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
-        return { statusCode: 400, message: errorMsgVal};
+        return { statusCode: 400, message: errorMsgVal };
     }
 }
 
@@ -217,7 +217,7 @@ async function sendEvent(body, callback) {
         };
         await updateItem(updateParams);
         await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
-        return { statusCode: 400, message: errorMsgVal};
+        return { statusCode: 400, message: errorMsgVal };
     }
 }
 
@@ -257,11 +257,11 @@ function makeJsonToXml(data) {
                 "soap:Body": {
                     "WriteTrackingNote": {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
-                        "HandlingStation": "",
-                        "HouseBill": get(data, "housebill", ""),
-                        "TrackingNotes": {
-                            "TrackingNotes": {
-                                "TrackingNoteMessage": `Latitude=${get(data, "latitude", "")} Longitude=${get(data, "longitude", "")}`
+                        HandlingStation: "",
+                        HouseBill: get(data, "housebill", ""),
+                        TrackingNotes: {
+                            TrackingNotes: {
+                                TrackingNoteMessage: `Latitude=${get(data, "latitude", "")} Longitude=${get(data, "longitude", "")}`,
                             }
                         }
                     }
@@ -293,12 +293,32 @@ function makeJsonToXml(data) {
 
 async function addMilestoneApi(postData) {
     try {
-        const res = await axios.post(process.env.ADD_MILESTONE_URL, postData, {
+
+        const config = {
+            method: 'post',
             headers: {
-                Accept: "text/xml",
-                "Content-Type": "text/xml",
+                'Accept': 'text/xml',
+                'Content-Type': 'text/xml'
             },
-        });
+            data: postData
+        };
+
+        if (get(itemObj, "statusCode", "") === "DEL") {
+            config.url = `${process.env.ADD_MILESTONE_URL}?op=SubmitPOD`;
+        } else if (get(itemObj, "statusCode", "") === "LOC") {
+            config.url = `${process.env.ADD_MILESTONE_LOC_URL}?op=WriteTrackingNote`;
+        } else {
+            config.url = `${process.env.ADD_MILESTONE_URL}?op=UpdateStatus`;
+        }
+
+        console.log("config: ", config)
+        const res = await axios.request(config);
+        // const res = await axios.post(process.env.ADD_MILESTONE_URL, postData, {
+        //     headers: {
+        //         "Accept": "text/xml",
+        //         "Content-Type": "text/xml",
+        //     },
+        // });
         if (get(res, "status", "") == 200) {
             return get(res, "data", "");
         } else {
@@ -325,7 +345,7 @@ function makeXmlToJson(data) {
         }
         return {
             addMilestoneResponse: {
-                message: message === "true" ? "success" : "failed",
+                message: message === "true" || "Success" ? "success" : "failed",
                 id: get(itemObj, "id", "")
             },
         };
