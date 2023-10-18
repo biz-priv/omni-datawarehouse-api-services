@@ -53,7 +53,7 @@ function:
     FILENUMBER_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/entitlement/fileNumber/index}
     IVIA_CUSTOMER_ID: ${ssm:/omni-dw/${self:provider.stage}/api/iviaId}
     IVIA_VENDOR_ID: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/ivia/shipmentApar/filterVendorId~true} #"T19262"
-
+    VALID_DOCTYPES: ${ssm:/omni-dw/${self:provider.stage}/validDocuments/list}
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     ADDRESS_MAPPING_TABLE: ${ssm:/omni-ivia/${self:provider.stage}/address-mapping/ddb.tableName}
     SHIPMENT_APAR_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-apar/ddb.tableName~true}
