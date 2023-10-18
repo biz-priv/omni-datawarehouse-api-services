@@ -11,7 +11,8 @@ function:
   description: get document api service-${self:provider.stage}
   runtime: nodejs14.x
   timeout: 60
-
+  layers:
+    - !Ref DWAPILayerLambdaLayer
   events:
     # - alb:
     #     listenerArn: !Ref ALBLoadBalancer
@@ -48,7 +49,6 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/get_document.js
-      - node_modules/**
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
