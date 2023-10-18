@@ -10,6 +10,8 @@ function:
   runtime: nodejs16.x
   logSubscription: true
   timeout: 90
+  layers:
+    - !Ref DWAPILayerLambdaLayer  
   events:
     - http:
         path: /shipment/rate
@@ -41,7 +43,6 @@ function:
     include:
       - ${self:custom.alias}/src/get_rate.js
       - src/shared/logger.js
-      - node_modules/**
   environment:
     REGION: ${self:provider.region}
     RATING_API: ${ssm:/omni-dw/${self:provider.stage}/api/rate}

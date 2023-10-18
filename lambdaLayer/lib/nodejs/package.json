@@ -29,6 +29,9 @@
 		"pg-promise": "^10.11.1",
 		"uuid": "^9.0.0",
 		"xmlbuilder2": "^3.0.2",
+		"pdfkit": "^0.13.0",
+		"buffer-image-size": "^0.6.4",
+		"pngjs": "^7.0.0",
 		"csvtojson": "^2.0.10",
 		"util": "^0.12.5"
 	}

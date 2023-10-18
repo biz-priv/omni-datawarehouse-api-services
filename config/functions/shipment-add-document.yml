@@ -6,6 +6,8 @@ function:
   runtime: nodejs14.x
   timeout: 500
   memorySize: 2048
+  layers:
+    - !Ref DWAPILayerLambdaLayer  
   events:
     - http:
         path: /shipment/addDocument
@@ -36,7 +38,6 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/add_document.js
-      - node_modules/**
   environment:
     REGION: ${self:provider.region}
     UPLOAD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/addDocument}
