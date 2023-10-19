@@ -39,6 +39,14 @@ function:
           resultTtlInSeconds: 0
           identitySource: method.request.header.x-api-key
           type: request
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
+  # package:
+  #   #individually: true
+  #   patterns:
+  #     - ${self:custom.alias}/src/get_rate.js
+  #     - src/shared/logger.js
+  #     - "!**/*"
   package:
     include:
       - ${self:custom.alias}/src/get_rate.js

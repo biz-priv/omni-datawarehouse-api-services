@@ -11,12 +11,13 @@ function:
   role: ShippeoPODRole
   package:
     individually: true
-    patterns:
+    include:
       - src/shipment_header_table_stream_processor.js
-      - "!**/*"
-      # - src/shared/**
-      # - node_modules/**
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     REGION: ${self:provider.region}
     SHIPMENT_HEADER_TABLE_STREAM_QUEUE: !Ref ShipmentFileTableStreamQueue
+    SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}
+    TRANSACTION_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-transactions/ddb.tableName}
+    SNS_TOPIC_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
+    STAGE: ${self:provider.stage}
