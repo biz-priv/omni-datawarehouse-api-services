@@ -4,6 +4,8 @@ function:
   name: ${self:service}-get-rating-${self:provider.stage}
   description: Rating detail api service - ${self:provider.stage}
   runtime: nodejs16.x
+  layers:
+    - !Ref DWAPILayerLambdaLayer  
   events:
     - http:
         path: /rating
@@ -34,14 +36,6 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/get_rating.js
-      - node_modules/**
-  # layers:
-  #   - !Ref DWAPILayerLambdaLayer
-  # package:
-  #   #individually: true
-  #   patterns:
-  #     - ${self:custom.alias}/src/get_rating.js
-  #     - "!**/*"
   environment:
     REGION: ${self:provider.region}
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}

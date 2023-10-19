@@ -10,6 +10,8 @@ function:
   runtime: nodejs14.x
   timeout: 500
   memorySize: 2048
+  layers:
+    - !Ref DWAPILayerLambdaLayer  
   events:
     - http:
         path: /uploadpoddocument
@@ -40,14 +42,6 @@ function:
   package:
     include:
       - v1/src/uploadpoddocument.js
-      - node_modules/**
-  # layers:
-  #   - !Ref DWAPILayerLambdaLayer
-  # package:
-  #   #individually: true
-  #   patterns:
-  #     - v1/src/uploadpoddocument.js
-  #     - "!**/*"
   environment:
     REGION: ${self:provider.region}
     ULOAD_POD_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/api/uploadpoddocument}
