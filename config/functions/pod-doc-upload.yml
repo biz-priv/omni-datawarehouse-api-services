@@ -4,8 +4,8 @@ function:
   name: ${self:service}-upload-pod-doc-${self:provider.stage}
   description: upload pod doc - ${self:provider.stage}
   timeout: 500
-  layers:
-    - !Ref DWAPILayerLambdaLayer
+  # layers:
+  #   - !Ref DWAPILayerLambdaLayer
   events:
     - sqs:
         arn:
