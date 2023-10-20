@@ -3,6 +3,7 @@ function:
   handler: src/pod_doc_upload.handler
   name: ${self:service}-upload-pod-doc-${self:provider.stage}
   description: upload pod doc - ${self:provider.stage}
+  runtime: python3.11
   timeout: 500
   # layers:
   #   - !Ref DWAPILayerLambdaLayer
