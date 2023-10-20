@@ -48,6 +48,8 @@ custom:
       role: WarmupRole
   alias: ${opt:alias, 'v1'}
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
+  pythonRequirements:
+    dockerizePip: non-linux
   serverless-layers:
     functions:
       - shipment-info
@@ -81,12 +83,13 @@ plugins:
   - serverless-plugin-existing-s3
   - serverless-offline
   - serverless-plugin-log-subscription
+  - serverless-python-requirements
 
 package:
   individually: true
   # exclude:
   #   - "*/**"
-    # - serverless.yaml
+  #   - serverless.yaml
   # patterns:
   #   - "!**/*"
 
@@ -168,7 +171,7 @@ resources:
                     - ec2:DetachNetworkInterface
                     - ec2:DeleteNetworkInterface
                   Resource: "*"
-                  
+
     ShippeoPODRole:
       Type: AWS::IAM::Role
       Properties:

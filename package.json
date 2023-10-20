@@ -43,5 +43,8 @@
     "util": "^0.12.5",
     "uuid": "^9.0.0",
     "xmlbuilder2": "^3.0.2"
+  },
+  "devDependencies": {
+    "serverless-python-requirements": "^6.0.0"
   }
 }
