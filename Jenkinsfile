@@ -44,7 +44,7 @@ pipeline {
                 withAWS(credentials: 'omni-aws-creds'){
                     sh """
                     npm i serverless@2.11.1
-                    npm i
+                    npm i --legacy-peer-deps
                     cd lambdaLayer/lib/nodejs
                     npm i
                     cd ../../..
