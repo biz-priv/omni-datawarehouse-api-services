@@ -77,7 +77,7 @@ module.exports.handler = async (event, context) => {
 				);
 			}
 		}
-		return `Successfully processed ${event.Records.length} records.`;
+		return `Successfully processed ${get(event, "Records", []).length} records.`;
 	} catch (e) {
 		console.info(
 			"🚀 ~ file: shipment_header_table_stream_processor.js:117 ~ module.exports.handler= ~ e:",
