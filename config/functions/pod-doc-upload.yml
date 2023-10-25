@@ -20,7 +20,8 @@ function:
       - src/pod_doc_upload.py
       - src/shared/**
   environment:
-    POD_DOC_UPLOAD_WEBSLI_TOKEN: ${ssm:/omni-dw-api-services/${self:provider.stage}/pod-doc-upload/websli-token}
+    SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN: ${ssm:/omni-dw-api-services/${self:provider.stage}/shippeo-pod-doc-upload/websli-token}
+    AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN: ${ssm:/omni-dw-api-services/${self:provider.stage}/amazon-pod-doc-upload/websli-token}
 
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     SHIPMENT_FILE_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-file/ddb.tableName~true}

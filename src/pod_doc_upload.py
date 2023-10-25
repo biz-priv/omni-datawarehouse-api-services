@@ -36,7 +36,8 @@ USERNAME = os.environ["AMAZON_USER_NAME"]
 PASSWORD = os.environ["AMAZON_PASSWORD"]
 TRANSACTION_TABLE = os.environ["TRANSACTION_TABLE"]
 ENVIRONMENT = os.environ["STAGE"]
-POD_DOC_UPLOAD_WEBSLI_TOKEN = os.environ["POD_DOC_UPLOAD_WEBSLI_TOKEN"]
+SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN = os.environ["SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN"]
+AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN = os.environ["AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN"]
 
 HOST = os.environ["HRPSL_HOST"]
 STAGE = os.environ["HRPSL_STAGE"]
@@ -148,7 +149,7 @@ def process_amazon(order_no, housebill_no, user_id, shipment_file_data, websli_t
         b64_data = ""
         doc_type = shipment_file_data['FK_DocType']
         b64str_response = call_wt_rest_api(
-            housebill_no, POD_DOC_UPLOAD_WEBSLI_TOKEN, doc_type)
+            housebill_no, AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN, doc_type)
         # b64str_response = call_wt_rest_api(
         #     housebill_no, websli_token, doc_type)
         if b64str_response == 'error':
@@ -353,7 +354,7 @@ def upload_docs(upload_to_url, token, house_bill_no, websli_token, doc_type):
         b64_data = ""
         file_name = ""
         b64str_response = call_wt_rest_api(
-            house_bill_no, POD_DOC_UPLOAD_WEBSLI_TOKEN, doc_type)
+            house_bill_no, SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN, doc_type)
         # b64str_response = call_wt_rest_api(
         #     house_bill_no, websli_token, doc_type)
         if b64str_response == 'error':
