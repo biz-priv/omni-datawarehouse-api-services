@@ -13,6 +13,10 @@ function:
     individually: true
     include:
       - src/shipment_header_table_stream_processor.js
+  alias:
+    v202:
+      description: Only deploy for v202
+      provisionedConcurrency: 1
   environment:
     SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     SHIPMENT_HEADER_TABLE_STREAM_QUEUE: !Ref ShipmentFileTableStreamQueue
