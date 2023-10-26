@@ -3,12 +3,12 @@ const Joi = require("joi");
 const axios = require("axios");
 const Base64 = require("js-base64");
 const { convert, create } = require("xmlbuilder2");
-const pdfkit = require('pdfkit');
-const sizeOf = require('buffer-image-size');
-const PNG = require('pngjs').PNG;
+const pdfkit = require("pdfkit");
+const sizeOf = require("buffer-image-size");
+const PNG = require("pngjs").PNG;
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
-const { get } = require('lodash');
+const { get } = require("lodash");
 
 let eventLogObj = {};
 
@@ -96,9 +96,7 @@ module.exports.handler = async (event, context, callback) => {
 
   const { error } = eventValidation.validate(validator);
   if (error) {
-    let msg = error.details[0].message
-      .split('" ')[1]
-      .replace(/"/g, "");
+    let msg = error.details[0].message.split('" ')[1].replace(/"/g, "");
     let key = error.details[0].context.key;
     console.info("[400]", key + " " + msg);
 
@@ -120,9 +118,9 @@ module.exports.handler = async (event, context, callback) => {
   let fileExtension = "";
   let validated = {};
   let currentDateTime = new Date();
-  validated.b64str = get(eventBody,"documentUploadRequest.b64str");
-  docType = get(eventBody,"documentUploadRequest.docType");
-  let contentType = get(eventBody,"documentUploadRequest.contentType")
+  validated.b64str = get(eventBody, "documentUploadRequest.b64str", "");
+  docType = get(eventBody, "documentUploadRequest.docType", "");
+  let contentType = get(eventBody, "documentUploadRequest.contentType", "");
   // If contentType is not provided, detect it from the base64 data.
   if (!contentType) {
     contentType = detectMimeType(validated.b64str);
@@ -130,15 +128,19 @@ module.exports.handler = async (event, context, callback) => {
   }
   let lowercaseContentType = contentType.toLowerCase();
 
-  if (lowercaseContentType.includes('jpeg') ||
-    lowercaseContentType.includes('jpg') ||
-    lowercaseContentType.includes('png')) {
+  if (
+    lowercaseContentType.includes("jpeg") ||
+    lowercaseContentType.includes("jpg") ||
+    lowercaseContentType.includes("png")
+  ) {
     if (process.env.VALID_DOCTYPES.includes(docType)) {
       try {
-        const pdfBuffer = await convertImageToPDF(Buffer.from(validated.b64str, 'base64'));
+        const pdfBuffer = await convertImageToPDF(
+          Buffer.from(validated.b64str, "base64")
+        );
         console.log("converted to pdf");
         // Update validated object
-        validated.b64str = pdfBuffer.toString('base64');
+        validated.b64str = pdfBuffer.toString("base64");
         fileExtension = ".pdf";
       } catch (conversionError) {
         console.log(conversionError);
@@ -219,11 +221,13 @@ module.exports.handler = async (event, context, callback) => {
    * if have housebill then checking fileNumber from HOUSEBILL_TABLE with the housebill number, if found fileNumber then adding it in the validator obj else throw error
    * else if have fileNumber then checking housebill from HOUSEBILL_TABLE with the fileNumber, if found housebill then adding it in the validator obj else through error
    */
+  const allowedCustomers = [
+    "customer-portal-admin",
+    process.env.IVIA_CUSTOMER_ID,
+    "hill-logistics",
+  ];
 
-  if (
-    customerId != "customer-portal-admin" &&
-    customerId != process.env.IVIA_CUSTOMER_ID
-  ) {
+  if (!allowedCustomers.includes(customerId)) {
     if (
       "housebill" in eventBody.documentUploadRequest &&
       Number.isInteger(Number(eventBody.documentUploadRequest.housebill))
@@ -272,147 +276,147 @@ module.exports.handler = async (event, context, callback) => {
         console.info("housebill: ", validated.housebill);
       }
     }
-  } else {
     //  if customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID matches
     //  query the shipment-header table with the housebill number to find the PK_OrderNo
+  } else if (
+    customerId == "customer-portal-admin" ||
+    customerId == "hill-logistics"
+  ) {
+    validated.housebill = eventBody.documentUploadRequest.housebill;
+  } else {
+    housebill = body.documentUploadRequest.housebill;
 
-    if (customerId == "customer-portal-admin") {
-      validated.housebill = eventBody.documentUploadRequest.housebill;
+    const paramsshipmentHeader = {
+      TableName: process.env.SHIPMENT_HEADER_TABLE,
+      IndexName: "Housebill-index",
+      KeyConditionExpression: "Housebill = :Housebill",
+      ExpressionAttributeValues: {
+        ":Housebill": housebill,
+      },
+    };
+
+    let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
+    console.log("shipmentHeaderResponse", shipmentHeaderResponse);
+    shipmentHeaderResponse =
+      shipmentHeaderResponse.Items.length > 0
+        ? shipmentHeaderResponse.Items[0]
+        : {};
+
+    const PK_OrderNo =
+      shipmentHeaderResponse?.PK_OrderNo?.length > 0
+        ? shipmentHeaderResponse.PK_OrderNo
+        : null;
+
+    console.log("PK_OrderNo", PK_OrderNo);
+
+    if (!PK_OrderNo) {
+      console.log("PK_OrderNo no not found", paramsshipmentHeader);
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "PK_OrderNo no not found",
+        api_status_code: "400",
+      };
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+      return callback(response("[400]", "file number not found"));
+    }
+    eventLogObj.PK_OrderNo = PK_OrderNo;
+
+    //  using PK_OrderNo and FK_VendorId (in shipment-header table), to query shipment-apar table and find the FK_ServiceId.
+
+    const paramsShipmentApar = {
+      TableName: process.env.SHIPMENT_APAR_TABLE,
+      KeyConditionExpression: "FK_OrderNo = :PK_OrderNo",
+      FilterExpression: "FK_VendorId = :VendorId",
+      ExpressionAttributeValues: {
+        ":PK_OrderNo": PK_OrderNo,
+        ":VendorId": process.env.IVIA_VENDOR_ID,
+      },
+    };
+    let shipmentAparRes = await queryDynamo(paramsShipmentApar);
+
+    shipmentAparRes =
+      shipmentAparRes.Items.length > 0 ? shipmentAparRes.Items[0] : {};
+    console.log("shipmentAparRes", shipmentAparRes);
+
+    const FK_ServiceId =
+      shipmentAparRes?.FK_ServiceId?.length > 0
+        ? shipmentAparRes.FK_ServiceId
+        : null;
+
+    console.log("FK_ServiceId", FK_ServiceId);
+
+    if (!FK_ServiceId) {
+      console.log("FK_ServiceId Is Empty");
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "FK_ServiceId Is Empty",
+        api_status_code: "400",
+      };
+
+      console.log("eventLogObj", eventLogObj);
+
+      await putItem(eventLogObj);
+
+      return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
+    }
+
+    eventLogObj.FK_ServiceId = FK_ServiceId;
+
+    //  using PK_OrderNo query address-mapping table and find the
+    //  cc_con_zip //HS or TL,
+    // cc_con_address //HS or TL,
+    // cc_conname //HS or TL,
+    // csh_con_zip //MT,
+    // csh_con_address //MT,
+    // cc_con_google_match //HS or TL,
+    // csh_con_google_match //MT
+
+    const paramsAddMap = {
+      TableName: process.env.ADDRESS_MAPPING_TABLE,
+      KeyConditionExpression: "FK_OrderNo = :fkNumber",
+      ExpressionAttributeValues: {
+        ":fkNumber": PK_OrderNo,
+      },
+    };
+
+    let addressMappingResponse = await queryDynamo(paramsAddMap);
+
+    console.log("addressMappingResponse", addressMappingResponse);
+    if (addressMappingResponse.Items.length > 0) {
+      addressMappingResponse = addressMappingResponse.Items[0];
     } else {
-      housebill = body.documentUploadRequest.housebill;
-
-      const paramsshipmentHeader = {
-        TableName: process.env.SHIPMENT_HEADER_TABLE,
-        IndexName: "Housebill-index",
-        KeyConditionExpression: "Housebill = :Housebill",
-        ExpressionAttributeValues: {
-          ":Housebill": housebill,
-        },
+      console.log("No data found on address mapping table", paramsAddMap);
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "No data found on address mapping table",
+        api_status_code: "400",
       };
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+      return callback(
+        response("[400]", "No data found on address mapping table")
+      );
+    }
+    eventLogObj.addressMapObj = addressMappingResponse;
 
-      let shipmentHeaderResponse = await queryDynamo(paramsshipmentHeader);
-      console.log("shipmentHeaderResponse", shipmentHeaderResponse);
-      shipmentHeaderResponse =
-        shipmentHeaderResponse.Items.length > 0
-          ? shipmentHeaderResponse.Items[0]
-          : {};
+    const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
 
-      const PK_OrderNo =
-        shipmentHeaderResponse?.PK_OrderNo?.length > 0
-          ? shipmentHeaderResponse.PK_OrderNo
-          : null;
+    //if customer is consignee then setting the housebill in the validator obj else ignoring the event
 
-      console.log("PK_OrderNo", PK_OrderNo);
-
-      if (!PK_OrderNo) {
-        console.log("PK_OrderNo no not found", paramsshipmentHeader);
-        eventLogObj = {
-          ...eventLogObj,
-          errorMsg: "PK_OrderNo no not found",
-          api_status_code: "400",
-        };
-        console.log("eventLogObj", eventLogObj);
-        await putItem(eventLogObj);
-        return callback(response("[400]", "file number not found"));
-      }
-      eventLogObj.PK_OrderNo = PK_OrderNo;
-
-      //  using PK_OrderNo and FK_VendorId (in shipment-header table), to query shipment-apar table and find the FK_ServiceId.
-
-      const paramsShipmentApar = {
-        TableName: process.env.SHIPMENT_APAR_TABLE,
-        KeyConditionExpression: "FK_OrderNo = :PK_OrderNo",
-        FilterExpression: "FK_VendorId = :VendorId",
-        ExpressionAttributeValues: {
-          ":PK_OrderNo": PK_OrderNo,
-          ":VendorId": process.env.IVIA_VENDOR_ID,
-        },
+    if (conIsCu || shipmentAparRes.ConsolNo === "0") {
+      eventLogObj.consigneeIsCustomer = "1";
+      validated.housebill = housebill;
+    } else {
+      console.log("igored response");
+      eventLogObj = {
+        ...eventLogObj,
+        errorMsg: "igored response",
+        api_status_code: "400",
       };
-      let shipmentAparRes = await queryDynamo(paramsShipmentApar);
-
-      shipmentAparRes =
-        shipmentAparRes.Items.length > 0 ? shipmentAparRes.Items[0] : {};
-      console.log("shipmentAparRes", shipmentAparRes);
-
-      const FK_ServiceId =
-        shipmentAparRes?.FK_ServiceId?.length > 0
-          ? shipmentAparRes.FK_ServiceId
-          : null;
-
-      console.log("FK_ServiceId", FK_ServiceId);
-
-      if (!FK_ServiceId) {
-        console.log("FK_ServiceId Is Empty");
-        eventLogObj = {
-          ...eventLogObj,
-          errorMsg: "FK_ServiceId Is Empty",
-          api_status_code: "400",
-        };
-
-        console.log("eventLogObj", eventLogObj);
-
-        await putItem(eventLogObj);
-
-        return callback(response("[400]", "FK_ServiceId is empty")); // todo: check with will
-      }
-
-      eventLogObj.FK_ServiceId = FK_ServiceId;
-
-      //  using PK_OrderNo query address-mapping table and find the
-      //  cc_con_zip //HS or TL,
-      // cc_con_address //HS or TL,
-      // cc_conname //HS or TL,
-      // csh_con_zip //MT,
-      // csh_con_address //MT,
-      // cc_con_google_match //HS or TL,
-      // csh_con_google_match //MT
-
-      const paramsAddMap = {
-        TableName: process.env.ADDRESS_MAPPING_TABLE,
-        KeyConditionExpression: "FK_OrderNo = :fkNumber",
-        ExpressionAttributeValues: {
-          ":fkNumber": PK_OrderNo,
-        },
-      };
-
-      let addressMappingResponse = await queryDynamo(paramsAddMap);
-
-      console.log("addressMappingResponse", addressMappingResponse);
-      if (addressMappingResponse.Items.length > 0) {
-        addressMappingResponse = addressMappingResponse.Items[0];
-      } else {
-        console.log("No data found on address mapping table", paramsAddMap);
-        eventLogObj = {
-          ...eventLogObj,
-          errorMsg: "No data found on address mapping table",
-          api_status_code: "400",
-        };
-        console.log("eventLogObj", eventLogObj);
-        await putItem(eventLogObj);
-        return callback(
-          response("[400]", "No data found on address mapping table")
-        );
-      }
-      eventLogObj.addressMapObj = addressMappingResponse;
-
-      const conIsCu = consigneeIsCustomer(addressMappingResponse, FK_ServiceId);
-
-      //if customer is consignee then setting the housebill in the validator obj else ignoring the event
-
-      if (conIsCu || shipmentAparRes.ConsolNo === "0") {
-        eventLogObj.consigneeIsCustomer = "1";
-        validated.housebill = housebill;
-      } else {
-        console.log("igored response");
-        eventLogObj = {
-          ...eventLogObj,
-          errorMsg: "igored response",
-          api_status_code: "400",
-        };
-        console.log("eventLogObj", eventLogObj);
-        await putItem(eventLogObj);
-        return callback(response("[400]", "igored response")); //TODO: check with will
-      }
+      console.log("eventLogObj", eventLogObj);
+      await putItem(eventLogObj);
+      return callback(response("[400]", "igored response")); //TODO: check with will
     }
   }
 
@@ -421,16 +425,18 @@ module.exports.handler = async (event, context, callback) => {
    */
   if (
     "docType" in eventBody.documentUploadRequest &&
-    eventBody.documentUploadRequest.docType != ""
+    get(eventBody, "documentUploadRequest.docType", "") != ""
   ) {
     if (eventBody.documentUploadRequest.docType.toString().length <= 10) {
-      validated.docType = eventBody.documentUploadRequest.docType;
-      docType = eventBody.documentUploadRequest.docType;
+      validated.docType = get(eventBody, "documentUploadRequest.docType", "");
+      docType = get(eventBody, "documentUploadRequest.docType", "");
     } else {
-      validated.docType = eventBody.documentUploadRequest.docType
+      validated.docType = get(eventBody, "documentUploadRequest.docType", "")
         .toString()
         .slice(0, 10);
-      docType = eventBody.documentUploadRequest.docType.toString().slice(0, 10);
+      docType = get(eventBody, "documentUploadRequest.docType", "")
+        .toString()
+        .slice(0, 10);
     }
   }
 
@@ -442,25 +448,24 @@ module.exports.handler = async (event, context, callback) => {
    * if no extensiton then throwing error
    */
 
+  let b64str = get(eventBody, "documentUploadRequest.b64str", "");
+
   if (!fileExtension) {
     if (
-      "contentType" in eventBody.documentUploadRequest &&
-      eventBody.documentUploadRequest.contentType.split("/").length >= 2 &&
-      eventBody.documentUploadRequest.contentType.split("/")[1] != ""
+      contentType !== "" &&
+      contentType.split("/").length >= 2 &&
+      contentType.split("/")[1] != ""
     ) {
-      fileExtension = "." + eventBody.documentUploadRequest.contentType.split("/")[1];
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("/9j/4")) {
+      fileExtension = "." + contentType.split("/")[1];
+    } else if (b64str.startsWith("/9j/4")) {
       fileExtension = ".jpeg";
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("iVBOR")) {
+    } else if (b64str.startsWith("iVBOR")) {
       fileExtension = ".png";
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("R0lG")) {
+    } else if (b64str.startsWith("R0lG")) {
       fileExtension = ".gif";
-    } else if (eventBody.documentUploadRequest.b64str.startsWith("J")) {
+    } else if (b64str.startsWith("J")) {
       fileExtension = ".pdf";
-    } else if (
-      eventBody.documentUploadRequest.b64str.startsWith("TU0AK") ||
-      eventBody.documentUploadRequest.b64str.startsWith("SUkqA")
-    ) {
+    } else if (b64str.startsWith("TU0AK") || b64str.startsWith("SUkqA")) {
       fileExtension = ".tiff";
     } else {
       fileExtension = "";
@@ -754,50 +759,49 @@ async function putItem(item) {
  * @param {*} FK_ServiceId
  * @returns
  */
+
 function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
-  let check = 0;
+  let check = false;
   if (["HS", "TL"].includes(FK_ServiceId)) {
     check =
-      addressMapRes.cc_con_zip === "1" &&
-        (addressMapRes.cc_con_address === "1" ||
-          addressMapRes.cc_con_google_match === "1")
-        ? true
-        : false;
+      _.get(addressMapRes, "cc_con_zip", "") === "1" &&
+      (_.get(addressMapRes, "cc_con_address", "") === "1" ||
+        _.get(addressMapRes, "cc_con_google_match", "") === "1");
   } else if (FK_ServiceId === "MT") {
     check =
-      addressMapRes.csh_con_zip === "1" &&
-        (addressMapRes.csh_con_address === "1" ||
-          addressMapRes.csh_con_google_match === "1")
-        ? true
-        : false;
+      _.get(addressMapRes, "csh_con_zip", "") === "1" &&
+      (_.get(addressMapRes, "csh_con_address", "") === "1" ||
+        _.get(addressMapRes, "csh_con_google_match", "") === "1");
   }
   return check;
 }
-
+// Function to convert JPEG/JPG/PNG to PDF
 async function convertImageToPDF(imageBuffer) {
   return new Promise((resolve, reject) => {
     const pdfBuffer = [];
     const dimensions = sizeOf(imageBuffer);
-    const doc = new pdfkit({ size: [get(dimensions,"width"), get(dimensions,"height")] });
-    doc.on('data', chunk => pdfBuffer.push(chunk));
-    doc.on('end', () => resolve(Buffer.concat(pdfBuffer)));
+    const doc = new pdfkit({
+      size: [get(dimensions, "width"), get(dimensions, "height")],
+    });
+    doc.on("data", (chunk) => pdfBuffer.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(pdfBuffer)));
 
     // Determine the image type and add it to the PDF
-    const imageType = get(dimensions,"type").toLowerCase();
-    if (imageType === 'jpeg' || imageType === 'jpg') {
+    const imageType = get(dimensions, "type").toLowerCase();
+    if (imageType === "jpeg" || imageType === "jpg") {
       doc.image(imageBuffer, 0, 0, {
-        width: get(dimensions,"width"),
-        height: get(dimensions,"height")
+        width: get(dimensions, "width"),
+        height: get(dimensions, "height"),
       });
-    } else if (imageType === 'png') {
+    } else if (imageType === "png") {
       const png = PNG.sync.read(imageBuffer);
       const pngBuffer = PNG.sync.write(png);
       doc.image(pngBuffer, 0, 0, {
-        width: get(dimensions,"width"),
-        height: get(dimensions,"height")
+        width: get(dimensions, "width"),
+        height: get(dimensions, "height"),
       });
     } else {
-      reject(new Error('Unsupported image type'));
+      reject(new Error("Unsupported image type"));
     }
 
     doc.end();
@@ -806,8 +810,8 @@ async function convertImageToPDF(imageBuffer) {
 
 function detectMimeType(b64) {
   const signatures = {
-    'iVBORw0KGgo': 'image/png',
-    '/9j/': 'image/jpg',
+    iVBORw0KGgo: "image/png",
+    "/9j/": "image/jpg",
   };
   for (const s in signatures) {
     if (b64.indexOf(s) === 0) {

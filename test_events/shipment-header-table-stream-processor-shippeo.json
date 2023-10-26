@@ -10,7 +10,7 @@
 				"ApproximateCreationDateTime": 1693310507,
 				"Keys": {
 					"PK_OrderNo": {
-						"S": "5343210"
+						"S": "4919500"
 					}
 				},
 				"NewImage": {
@@ -24,7 +24,7 @@
 						"S": ""
 					},
 					"Housebill": {
-						"S": "64668134"
+						"S": "6986204"
 					},
 					"ShipmentType": {
 						"S": "D"
@@ -36,7 +36,7 @@
 						"S": ""
 					},
 					"PK_OrderNo": {
-						"S": "5343210"
+						"S": "4919500"
 					},
 					"ETADateTimeZone": {
 						"S": ""

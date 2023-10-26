@@ -61,6 +61,7 @@ custom:
       - customer-entitlement-sync
       - pod
       - freightlabel
+      - pod-doc-upload
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -84,10 +85,10 @@ plugins:
 package:
   individually: true
   # exclude:
-  #   - "**/*"
+  #   - "*/**"
   #   - serverless.yaml
-  patterns:
-    - "!**/*"
+  # patterns:
+  #   - "!**/*"
 
 layers:
   DWAPILayer:
@@ -119,7 +120,7 @@ functions:
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
-  shippeo-pod-upload-doc: ${file(config/functions/shippeo-pod-upload-doc.yml):function}
+  pod-doc-upload: ${file(config/functions/pod-doc-upload.yml):function}
   shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
   shipment-detail-collector: ${file(config/functions/shipment-details-collector.yml):function}
 
@@ -168,6 +169,7 @@ resources:
                     - ec2:DetachNetworkInterface
                     - ec2:DeleteNetworkInterface
                   Resource: "*"
+
     ShippeoPODRole:
       Type: AWS::IAM::Role
       Properties:
@@ -197,15 +199,15 @@ resources:
                 - Effect: Allow
                   Action:
                     - logs:*
-                  Resource: '*'
+                  Resource: "*"
                 - Effect: Allow
                   Action:
                     - secretsmanager:*
-                  Resource: '*'
+                  Resource: "*"
                 - Effect: Allow
                   Action:
                     - sns:*
-                  Resource: '*'
+                  Resource: "*"
                 - Effect: Allow
                   Action:
                     - dynamodb:DescribeTable
@@ -220,8 +222,15 @@ resources:
                     - dynamodb:ListStreams
                     - dynamodb:GetShardIterator
                     - dynamodb:BatchWriteItem
-                  Resource: '*'
-    
+                  Resource: "*"
+                - Effect: Allow
+                  Action:
+                    - ec2:CreateNetworkInterface
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DetachNetworkInterface
+                    - ec2:DeleteNetworkInterface
+                  Resource: "*"
+
     BadRequestResponse:
       Type: "AWS::ApiGateway::GatewayResponse"
       Properties:
@@ -247,12 +256,14 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
-    
+
     # Shipment File table stream queue
     ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
     ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
-    # # Log Table
-    # UploadedDocLogTable: ${file(config/dynamoDB/uploadedDocLogTable.yaml):UploadedDocLogTable}
+
+    # Shipment File table stream queue for amazon pod
+    # amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
+    # amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
 
     DocumentBucket:
       Type: AWS::S3::Bucket
