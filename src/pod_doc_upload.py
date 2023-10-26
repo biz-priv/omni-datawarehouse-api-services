@@ -8,7 +8,6 @@ import io
 from datetime import datetime, timedelta
 from src.shared.amazonPODHelperFiles.cognito import AWSSRP, AWSIDP
 from requests_aws4auth import AWS4Auth
-# from src.shared.amazonPODHelperFiles.cognito_auth import CognitoAuth
 
 sns = boto3.client('sns')
 sqs = boto3.client('sqs')
@@ -17,24 +16,20 @@ dynamodb = boto3.client('dynamodb')
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
-SHIPMENT_HEADER_TABLE = os.environ["SHIPMENT_HEADER_TABLE"]
 SHIPMENT_HEADER_TABLE_STREAM_QLQ = os.environ["SHIPMENT_HEADER_TABLE_STREAM_QLQ"]
 SNS_TOPIC_ARN = os.environ["SNS_TOPIC_ARN"]
 SHIPPEO_USERNAME = os.environ["SHIPPEO_USERNAME"]
 SHIPPEO_PASSWORD = os.environ["SHIPPEO_PASSWORD"]
-SHIPPEO_GET_DOC_URL = os.environ["SHIPPEO_GET_DOC_URL"]
 SHIPPEO_UPLOAD_DOC_URL = os.environ["SHIPPEO_UPLOAD_DOC_URL"]
 LOG_TABLE = os.environ["LOG_TABLE"]
 SHIPPEO_GET_TOKEN_URL = os.environ["SHIPPEO_GET_TOKEN_URL"]
-SHIPPEO_GET_DOC_API_KEY = os.environ["SHIPPEO_GET_DOC_API_KEY"]
 WT_WEBSLI_API_URL = os.environ["WT_WEBSLI_API_URL"]
-SHIPMENT_FILE_TABLE = os.environ["SHIPMENT_FILE_TABLE"]
 TOKEN_EXPIRATION_DAYS = os.environ["TOKEN_EXPIRATION_DAYS"]
-TOKEN_VALIDATOR = os.environ["TOKEN_VALIDATOR"]
-TOKEN_VALIDATION_TABLE_INDEX = os.environ["TOKEN_VALIDATION_TABLE_INDEX"]
 USERNAME = os.environ["AMAZON_USER_NAME"]
 PASSWORD = os.environ["AMAZON_PASSWORD"]
 TRANSACTION_TABLE = os.environ["TRANSACTION_TABLE"]
+REFERENCE_TABLE_ORDER_NO_INDEX = os.environ["REFERENCE_TABLE_ORDER_NO_INDEX"]
+REFERENCE_TABLE = os.environ["REFERENCE_TABLE"]
 ENVIRONMENT = os.environ["STAGE"]
 SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN = os.environ["SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN"]
 AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN = os.environ["AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN"]
@@ -68,17 +63,12 @@ def handler(event, context):
         LOGGER.info("client: %s", client)
         LOGGER.info("file_header_table_data: %s", file_header_table_data)
 
-        websli_token = get_websli_token(SHIPPEO_GET_DOC_API_KEY)
-        if websli_token == None:
-            raise WebsliTokenNotFoundError("Websli token not found.")
-
         if client == 'shippeo':
-            process_shippeo(order_no, housebill_no,
-                            websli_token, file_header_table_data)
+            process_shippeo(order_no, housebill_no, file_header_table_data)
 
         if client == 'amazon':
             process_amazon(order_no, housebill_no,
-                           user_id, file_header_table_data, websli_token)
+                           user_id, file_header_table_data)
 
         update_transaction_table(order_no, housebill_no, 'SUCCESS')
     except Exception as e:
@@ -100,7 +90,7 @@ def handler(event, context):
             LOGGER.error(f"Error sending error notifications: {e}")
 
 
-def process_shippeo(order_no, housebill_no, websli_token, file_header_table_data):
+def process_shippeo(order_no, housebill_no, file_header_table_data):
     try:
         existing_token = get_existing_token()
 
@@ -117,7 +107,6 @@ def process_shippeo(order_no, housebill_no, websli_token, file_header_table_data
             insert_token(token)
 
         final_token = existing_token
-        LOGGER.info("websli_token: %s", websli_token)
         # for record in records:
         doc_type = file_header_table_data['FK_DocType']
         LOGGER.info("doc_type: %s", doc_type)
@@ -132,7 +121,7 @@ def process_shippeo(order_no, housebill_no, websli_token, file_header_table_data
         upload_to_url = f"{SHIPPEO_UPLOAD_DOC_URL}/{housebill_no}/files"
         # Upload docs
         result = upload_docs(upload_to_url, final_token,
-                             housebill_no, websli_token, doc_type)
+                             housebill_no, doc_type)
         if result['status'] == 200:
             insert_log(housebill_no, result['data'])
             update_transaction_table(order_no, housebill_no, 'SUCCESS')
@@ -144,14 +133,12 @@ def process_shippeo(order_no, housebill_no, websli_token, file_header_table_data
         raise e
 
 
-def process_amazon(order_no, housebill_no, user_id, shipment_file_data, websli_token):
+def process_amazon(order_no, housebill_no, user_id, shipment_file_data):
     try:
         b64_data = ""
         doc_type = shipment_file_data['FK_DocType']
         b64str_response = call_wt_rest_api(
             housebill_no, AMAZON_POD_DOC_UPLOAD_WEBSLI_TOKEN, doc_type)
-        # b64str_response = call_wt_rest_api(
-        #     housebill_no, websli_token, doc_type)
         if b64str_response == 'error':
             LOGGER.info('Error calling WT REST API')
         else:
@@ -250,8 +237,8 @@ def get_data_from_reference_table(order_no):
     try:
         # Define the query parameters
         params = {
-            'TableName': 'omni-wt-rt-references-dev',
-            'IndexName': 'omni-wt-rt-ref-orderNo-index-dev',
+            'TableName': REFERENCE_TABLE,
+            'IndexName': REFERENCE_TABLE_ORDER_NO_INDEX,
             'KeyConditionExpression': "FK_OrderNo = :FK_OrderNo",
             'FilterExpression': "(FK_RefTypeId = :FK_RefTypeId)",
             'ExpressionAttributeValues': {
@@ -318,30 +305,6 @@ def insert_token(data):
         raise e
 
 
-def get_websli_token(api_key):
-    try:
-        # Define the query parameters
-        params = {
-            'TableName': TOKEN_VALIDATOR,
-            'IndexName': TOKEN_VALIDATION_TABLE_INDEX,
-            'KeyConditionExpression': "ApiKey = :ApiKey",
-            'ExpressionAttributeValues': {
-                ":ApiKey": {'S': api_key}
-            },
-        }
-        # Query the DynamoDB table
-        response = dynamodb.query(**params)
-        # Check if there are items in the result
-        if len(response['Items']) > 0:
-            return response['Items'][0]['websli_key']['S']
-        else:
-            return None
-
-    except Exception as e:
-        LOGGER.info(f"Unable to get websli token. Error: {e}")
-        raise e
-
-
 def get_basic_auth(username, password):
     credentials = f"{username}:{password}"
     base64_credentials = base64.b64encode(
@@ -349,14 +312,12 @@ def get_basic_auth(username, password):
     return f"Basic {base64_credentials}"
 
 
-def upload_docs(upload_to_url, token, house_bill_no, websli_token, doc_type):
+def upload_docs(upload_to_url, token, house_bill_no, doc_type):
     try:
         b64_data = ""
         file_name = ""
         b64str_response = call_wt_rest_api(
             house_bill_no, SHIPPEO_POD_DOC_UPLOAD_WEBSLI_TOKEN, doc_type)
-        # b64str_response = call_wt_rest_api(
-        #     house_bill_no, websli_token, doc_type)
         if b64str_response == 'error':
             LOGGER.info('Error calling WT REST API')
             # handle error case
