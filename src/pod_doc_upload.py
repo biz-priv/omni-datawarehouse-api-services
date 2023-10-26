@@ -174,7 +174,6 @@ def process_amazon(order_no, housebill_no, user_id, shipment_file_data):
         }
         LOGGER.info("payload: %s", payload)
         LOGGER.info("USERNAME: %s", USERNAME)
-        # LOGGER.info("PASSWORD: %s", PASSWORD)
         LOGGER.info("COGNITO_USER_POOL_ID: %s", COGNITO_USER_POOL_ID)
         LOGGER.info("COGNITO_IDENTITY_POOL_ID: %s", COGNITO_IDENTITY_POOL_ID)
         LOGGER.info("COGNITO_CLIENT_ID: %s", COGNITO_CLIENT_ID)
