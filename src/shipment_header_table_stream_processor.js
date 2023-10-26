@@ -39,7 +39,7 @@ module.exports.handler = async (event, context) => {
 						`${billNumber} is not in ${allowedBillNumbers}: SKIPPING`
 					);
 					return;
-				} //For Shippeo bill number is 9146
+				}
 
 				const getIfHouseBillNumberValidRes = await getIfHouseBillNumberValid(
 					orderNo
