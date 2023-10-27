@@ -122,6 +122,7 @@ functions:
   shipment-create: ${file(config/functions/shipment-create.yml):function}
   pod-doc-upload: ${file(config/functions/pod-doc-upload.yml):function}
   shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
+  vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
 
 resources:
   Resources:
