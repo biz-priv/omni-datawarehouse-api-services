@@ -17,3 +17,8 @@ function:
         integration: lambda
         private: true
         cors: true
+        authorizer: 
+          name: custom-authorizer
+          resultTtlInSeconds: 0
+          identitySource: method.request.header.x-api-key
+          type: request
