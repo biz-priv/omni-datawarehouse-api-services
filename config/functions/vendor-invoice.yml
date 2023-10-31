@@ -1,0 +1,19 @@
+function:
+  handler: ${self:custom.alias}/src/vendor_invoice.handler
+  name: ${self:service}-vendor-invoice-${self:provider.stage}
+  description: vendor invoice api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  timeout: 60
+  layers:
+    - !Ref DWAPILayerLambdaLayer
+  memorySize: 512
+  package:
+    include:
+      - ${self:custom.alias}/src/vendor_invoice.js
+  events:
+    - http:
+        path: /shipment/vendorinvoice
+        method: POST
+        integration: lambda
+        private: true
+        cors: true
