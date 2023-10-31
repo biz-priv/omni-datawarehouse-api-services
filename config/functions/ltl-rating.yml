@@ -1,0 +1,20 @@
+function:
+  handler: ${self:custom.alias}/src/ltl_rating.handler
+  name: ${self:service}-ltl-rating-${self:provider.stage}
+  description: ltl rating api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  timeout: 30
+  layers:
+    - !Ref DWAPILayerLambdaLayer
+  memorySize: 512
+  package:
+    include:
+      - ${self:custom.alias}/src/ltl_rating.js
+      - src/shared/**
+  events:
+    - http:
+        path: /shipment/ltlrate
+        method: POST
+        integration: lambda
+        private: true
+        cors: true
