@@ -24,6 +24,7 @@ let itemObj = {
 module.exports.handler = async (event, context, callback) => {
     console.info("event", JSON.stringify(event));
 
+    const body = event.body;
     if (get(body, "vendorInvoiceRequest", null) === null) {
         itemObj.errorMsg = "Given input body requires vendorInvoiceRequest data";
         // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);  //create dynamodb from terraform
