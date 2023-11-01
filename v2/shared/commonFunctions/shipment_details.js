@@ -170,20 +170,6 @@ async function getShipmentDate(dateTime) {
   }
 }
 
-async function getOrderDate(dateTime) {
-  try {
-    // console.log("shipment date time", dateTime)
-    if (dateTime == 0 || dateTime == null) {
-      return ""
-    } else {
-      // console.log(dateTime.substring(0, 10))
-      return dateTime.substring(0, 10)
-    }
-  } catch (error) {
-    throw error
-  }
-}
-
 async function getDynamodbData(eventType, value) {
   console.log(eventType, value)
   let timeZoneTable = {};
@@ -530,4 +516,4 @@ async function getDataFromAthena(query, sortType) {
 
 
 
-module.exports = { refParty, pieces, actualWeight, ChargableWeight, weightUOM, getTime, locationFunc, getShipmentDate, getPickupTime, getDynamodbData, getDynamodbDataFromDateRange, parseAndMappingData, getOrderDate }
+module.exports = { refParty, pieces, actualWeight, ChargableWeight, weightUOM, getTime, locationFunc, getShipmentDate, getPickupTime, getDynamodbData, getDynamodbDataFromDateRange, parseAndMappingData }

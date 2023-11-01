@@ -16,7 +16,6 @@
 //   getPickupTime,
 //   getDynamodbData,
 //   getDynamodbDataFromDateRange,
-//   getOrderDate,
 // } = require("../shared/commonFunctions/shipment_details");
 // const {
 //   tableValues,
@@ -237,7 +236,7 @@
 //       `${process.env.SHIPMENT_HEADER_TABLE}[0].DestAirport`,
 //       null
 //     ),
-//     OrderDate: await getOrderDate(
+//     OrderDate: await getShipmentDate(
 //       get(data, `${process.env.SHIPMENT_HEADER_TABLE}[0].OrderDate`, null)
 //     ),
 //     name: get(data, `${process.env.SHIPPER_TABLE}[0].ShipName`, null),
@@ -346,7 +345,7 @@
 
 const AWS = require("aws-sdk");
 const { Converter } = AWS.DynamoDB;
-var dynamodb = new AWS.DynamoDB.DocumentClient();
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 const ddb = new AWS.DynamoDB.DocumentClient();
 const { get } = require("lodash");
 
