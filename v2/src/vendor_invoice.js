@@ -45,12 +45,12 @@ module.exports.handler = async (event) => {
             return { statusCode: 400, message: itemObj.errorMsg };
         }
 
-        const request = connectToSQLServer()
-        const result = await request.query('SELECT * FROM YourTableName');
-        console.log('Query result:', result.recordset);
+        // const request = connectToSQLServer()
+        // const result = await request.query('SELECT * FROM YourTableName');
+        // console.log('Query result:', result.recordset);
 
-        sql.close();
-        console.log('Connection closed');
+        // sql.close();
+        // console.log('Connection closed');
         return { id: itemObj.id, message: "success" };
 
     } catch (error) {
@@ -89,6 +89,7 @@ async function connectToSQLServer() {
         user: 'your_username',
         password: 'your_password',
         server: 'your_server_address',
+        port: 12345,
         database: 'your_database_name',
     };
 
