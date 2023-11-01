@@ -1,9 +1,9 @@
-ShipmentFileTableStreamDLQ:
+ShipmentDetailDLQ:
   Type: AWS::SQS::Queue
   Properties:
     QueueName: omni-dw-api-shipment-detail-DLQ-${self:provider.stage}
 
-ShipmentFileTableStreamQueue:
+ShipmentDetailQueue:
   Type: AWS::SQS::Queue
   Properties:
     QueueName: omni-dw-api-shipment-detail-queue-${self:provider.stage}
