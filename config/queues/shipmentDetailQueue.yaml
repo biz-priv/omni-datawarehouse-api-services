@@ -1,0 +1,13 @@
+ShipmentFileTableStreamDLQ:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: omni-dw-api-shipment-detail-DLQ-${self:provider.stage}
+
+ShipmentFileTableStreamQueue:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: omni-dw-api-shipment-detail-queue-${self:provider.stage}
+    VisibilityTimeout: 500
+    RedrivePolicy:
+      deadLetterTargetArn: !GetAtt ShipmentDetailDLQ.Arn
+      maxReceiveCount: 3
