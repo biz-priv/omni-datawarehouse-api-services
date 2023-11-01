@@ -14,3 +14,4 @@ Test.json
 sample.json
 launch.json
 __pycache__
+.vscode/**
