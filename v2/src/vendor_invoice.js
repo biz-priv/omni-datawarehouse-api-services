@@ -3,17 +3,12 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 
-const schema = Joi.object({
-    housebill: Joi.string(),
-    fileNumber: Joi.string(),
-}).xor('housebill', 'fileNumber');
-
 let itemObj = {
     id: uuidv4().toString(),
     housebill: "",
     filleNumber: "",
     createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
-    payload: "",
+    eventBody: "",
     xmlRequestPayload: "",
     xmlResponsePayload: "",
     errorMsg: "",
@@ -24,31 +19,52 @@ let itemObj = {
 module.exports.handler = async (event, context, callback) => {
     console.info("event", JSON.stringify(event));
 
-    const body = event.body;
-    if (get(body, "vendorInvoiceRequest", null) === null) {
-        itemObj.errorMsg = "Given input body requires vendorInvoiceRequest data";
-        // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);  //create dynamodb from terraform
-        // return { statusCode: 400, message: "Given input body requires vendorInvoiceRequest data" };
-    } else if (get(body, "vendorInvoiceRequest.housebill", null === null || get(body, "vendorInvoiceRequest.fileNumber", null) === null)) {
-        itemObj.errorMsg = "housebill or fileNumber is required in vendorInvoiceRequest";
-        // return { statusCode: 400, message: "housebill or fileNumber is required in vendorInvoiceRequest" };
-    } else if (get(body, "vendorInvoiceRequest.vendorReference", null) === null) {
-        itemObj.errorMsg = "vendorReference is required in vendorInvoiceRequest";
-        // return { statusCode: 400, message: "vendorReference is required in vendorInvoiceRequest" };
-    } else {
+    try {
+
+        const body = get(event, "body", {});
+        itemObj.eventBody = body;
+
         if (get(body, "enhancedAuthContext.customerId", null) === "7L") {
-            if (get(body, "vendorInvoiceRequest.vendorId", null) === null) {
-                itemObj.errorMsg = "vendorId is required in vendorInvoiceRequest";
+            if (get(body, "vendorInvoiceRequest", null) === null) {
+                itemObj.errorMsg = "Given input body requires vendorInvoiceRequest data.";
+            } else {
+                if (get(body, "vendorInvoiceRequest.housebill", null === null || get(body, "vendorInvoiceRequest.fileNumber", null) === null)) {
+                    itemObj.errorMsg = "housebill or fileNumber is required in vendorInvoiceRequest.";
+                } else if (get(body, "vendorInvoiceRequest.vendorReference", null) === null) {
+                    itemObj.errorMsg = "vendorReference is required in vendorInvoiceRequest.";
+                } else if (get(body, "vendorInvoiceRequest.vendorId", null) === null) {
+                    itemObj.errorMsg = "vendorId is required in vendorInvoiceRequest.";
+                }
             }
+        }else{
+            itemObj.errorMsg = "Unauthorized request."
         }
+
+        if (get(itemObj, "errorMsg", null === null)) {
+            // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);  create dynamodb from terraform
+            return { statusCode: 400, message: itemObj.errorMsg };
+        }
+
+        const request = connectToSQLServer()
+        const result = await request.query('SELECT * FROM YourTableName');
+        console.log('Query result:', result.recordset);
+
+        sql.close();
+        console.log('Connection closed');
+        return { id: itemObj.id, message: "success" };
+
+    } catch (error) {
+        console.error("Main lambda error: ", error)
+        let errorMsgVal = ""
+        if (get(error, "message", null) === null) {
+            errorMsgVal = get(error, "message", "");
+        } else {
+            errorMsgVal = error;
+        }
+        itemObj.errorMsg = errorMsgVal;
+        // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
+        return { statusCode: 400, message: errorMsgVal };
     }
-
-    if(get(itemObj, "errorMsg", null === null)){
-        return { statusCode: 400, message: itemObj.errorMsg };
-    }
-
-
-    return { id: itemObj.id, message: "success" };
 
 }
 
@@ -65,5 +81,24 @@ async function putItem(tableName, item) {
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
         throw new Error("PutItemError");
+    }
+}
+
+async function connectToSQLServer() {
+    const config = {
+        user: 'your_username',
+        password: 'your_password',
+        server: 'your_server_address',
+        database: 'your_database_name',
+    };
+
+    try {
+        await sql.connect(config);
+        console.log('Connected to SQL Server');
+        const request = new sql.Request();
+        return request;
+
+    } catch (err) {
+        console.error('Error:', err);
     }
 }
