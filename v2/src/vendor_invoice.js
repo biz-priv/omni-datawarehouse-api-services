@@ -16,7 +16,7 @@ let itemObj = {
     version: "v2",
 }
 
-module.exports.handler = async (event, context, callback) => {
+module.exports.handler = async (event) => {
     console.info("event", JSON.stringify(event));
 
     try {
