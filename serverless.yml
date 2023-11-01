@@ -265,6 +265,10 @@ resources:
     # amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
     # amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
 
+    # Shipment Detail Queue 
+    ShipmentDetailQueue: ${file(config/queues/shipmentDetailQueue.yml):ShipmentDetailQueue}
+    ShipmentDetailDLQ: ${file(config/queues/shipmentDetailQueue.yml):ShipmentDetailDLQ}
+
     DocumentBucket:
       Type: AWS::S3::Bucket
       Properties:
