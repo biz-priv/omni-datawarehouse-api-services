@@ -17,6 +17,7 @@ function:
           Fn::GetAtt:
             - ShipmentDetailQueue
             - Arn
+  role: ShippeoPODRole
   environment:
     SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
     SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/houseBillKey/index}
