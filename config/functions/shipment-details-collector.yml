@@ -11,18 +11,12 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/shipment_details_collector.js
-  # events:
-  #   - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
-  #   - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone/ddb.streamArn~true}
-  #   - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/consignee/ddb.streamArn~true}
-  #   - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipper/ddb.streamArn~true}
-  #   - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/references/ddb.streamArn~true}
-  #   - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-desc/ddb.streamArn~true}
-  # events:
-  #   - sqs:
-  #       arn: 
-  #       batchSize: 10
-  #       functionResponseType: ReportBatchItemFailures
+  events:
+    - sqs:
+        arn:
+          Fn::GetAtt:
+            - ShipmentDetailQueue
+            - Arn
   environment:
     SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
     SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/houseBillKey/index}
