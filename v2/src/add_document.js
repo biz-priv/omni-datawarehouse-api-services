@@ -764,14 +764,14 @@ function consigneeIsCustomer(addressMapRes, FK_ServiceId) {
   let check = false;
   if (["HS", "TL"].includes(FK_ServiceId)) {
     check =
-      _.get(addressMapRes, "cc_con_zip", "") === "1" &&
-      (_.get(addressMapRes, "cc_con_address", "") === "1" ||
-        _.get(addressMapRes, "cc_con_google_match", "") === "1");
+      get(addressMapRes, "cc_con_zip", "") === "1" &&
+      (get(addressMapRes, "cc_con_address", "") === "1" ||
+        get(addressMapRes, "cc_con_google_match", "") === "1");
   } else if (FK_ServiceId === "MT") {
     check =
-      _.get(addressMapRes, "csh_con_zip", "") === "1" &&
-      (_.get(addressMapRes, "csh_con_address", "") === "1" ||
-        _.get(addressMapRes, "csh_con_google_match", "") === "1");
+      get(addressMapRes, "csh_con_zip", "") === "1" &&
+      (get(addressMapRes, "csh_con_address", "") === "1" ||
+        get(addressMapRes, "csh_con_google_match", "") === "1");
   }
   return check;
 }
