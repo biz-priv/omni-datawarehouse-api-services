@@ -444,7 +444,7 @@ const ddb = new AWS.DynamoDB.DocumentClient();
 const { get } = require("lodash");
 
 module.exports.handler = async (event) => {
-  console.log("event: ", event);
+  console.log("event: ", JSON.stringify(event));
   return {
     message: event,
   };
