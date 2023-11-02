@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const { get } = require("lodash");
 const { v4 } = require("uuid");
+const axios = require("axios");
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -59,10 +60,35 @@ module.exports.handler = async (event, context) => {
         console.info(`🙂 -> file: ltl_rating.js:57 -> value:`, value);
         if (error) throw error;
         const body = get(event, "body");
-        const payload = getXmlPayload(body);
+        const xmlPayload = getXmlPayload(body);
+        const apiResponse = await Promise.all(
+            ["FWDA"].map(async (carrier) => {
+                let url;
+                let headers = {};
+                let payload = "";
+                if (carrier === FWDA) {
+                    url =
+                        "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
+                    headers = {
+                        user: "omniliah",
+                        password: "TVud61y6caRfSnjT",
+                        customerId: "OMNILIAH",
+                        "Content-Type": "application/xml",
+                    };
+                    payload = xmlPayload["FWDA"];
+                    const res = await axiosRequest(url, payload, headers);
+                    return res;
+                }
+            })
+        );
+        console.log(
+            `🙂 -> file: ltl_rating.js:84 -> apiResponse:`,
+            apiResponse
+        );
         const response = {
             statusCode: 200,
-            body: payload,
+            xmlPayload,
+            apiResponse,
         };
         return response;
     } catch (err) {
@@ -296,9 +322,9 @@ function getXmlPayload(body) {
             FreightClass: get(shipmentLine, "freightClass"),
         };
 
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"]["Dimension"][
-            index
-        ] = {
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"][
+            "Dimension"
+        ][0] = {
             Pieces: get(shipmentLine, "pieces"),
             Length: get(shipmentLine, "length"),
             Width: get(shipmentLine, "width"),
@@ -318,8 +344,8 @@ function getXmlPayload(body) {
         `🙂 -> file: index.js:223 -> xmlPayloadFormat.FWDA:`,
         JSON.stringify(xmlPayloadFormat.FWDA)
     );
-    const xml = builder.buildObject(xmlPayloadFormat.FWDA);
-    return xml;
+    const FWDA = builder.buildObject(xmlPayloadFormat.FWDA);
+    return { FWDA };
 }
 
 const accessorialMappingFWDA = {
@@ -331,3 +357,33 @@ const accessorialMappingFWDA = {
     INDEL: "IDE",
     RESDE: "RDE",
 };
+
+async function axiosRequest(url, payload, header = {}) {
+    try {
+        let data = payload;
+
+        let config = {
+            method: "post",
+            maxBodyLength: Infinity,
+            url,
+            // headers: {
+            //     user: "omniliah",
+            //     password: "TVud61y6caRfSnjT",
+            //     customerId: "OMNILIAH",
+            //     "Content-Type": "application/xml",
+            // },
+            headers: { ...header },
+            data: data,
+        };
+
+        const res = await axios.request(config);
+        if (res.status === 200) {
+            return get(res, "data", {});
+        } else {
+            return false;
+        }
+    } catch (e) {
+        console.log(`🙂 -> file: ltl_rating.js:361 -> e:`, e);
+        return false;
+    }
+}
