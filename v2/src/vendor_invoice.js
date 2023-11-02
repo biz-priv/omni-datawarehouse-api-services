@@ -25,11 +25,11 @@ module.exports.handler = async (event) => {
         const body = get(event, "body", {});
         itemObj.eventBody = body;
 
-        if (get(body, "enhancedAuthContext.customerId", null) === "7L") {
+        if (get(event, "enhancedAuthContext.customerId", null) === "7L") {
             if (get(body, "vendorInvoiceRequest", null) === null) {
                 itemObj.errorMsg = "Given input body requires vendorInvoiceRequest data.";
             } else {
-                if (get(body, "vendorInvoiceRequest.housebill", null === null || get(body, "vendorInvoiceRequest.fileNumber", null) === null)) {
+                if (get(body, "vendorInvoiceRequest.housebill", null) === null && get(body, "vendorInvoiceRequest.fileNumber", null) === null) {
                     itemObj.errorMsg = "housebill or fileNumber is required in vendorInvoiceRequest.";
                 } else if (get(body, "vendorInvoiceRequest.vendorReference", null) === null) {
                     itemObj.errorMsg = "vendorReference is required in vendorInvoiceRequest.";
