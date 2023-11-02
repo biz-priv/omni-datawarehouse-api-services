@@ -12,7 +12,7 @@ function:
     include:
       - ${self:custom.alias}/src/shipment_details_collector.js
   events:
-    - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
+    # - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
     # - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone/ddb.streamArn~true}
     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/consignee/ddb.streamArn~true}
     # - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipper/ddb.streamArn~true}
