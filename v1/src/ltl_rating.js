@@ -10,11 +10,11 @@ const ltlRateRequestSchema = Joi.object({
         insuredValue: Joi.number().optional().label("insuredValue is invalid."),
         shipperZip: Joi.string()
             .required()
-            .length(10)
+            // .length(10)
             .label("shipperZip is invalid."),
         consigneeZip: Joi.string()
             .required()
-            .length(10)
+            // .length(10)
             .label("consigneeZip is invalid."),
         shipmentLines: Joi.array()
             .max(99)
@@ -67,7 +67,7 @@ module.exports.handler = async (event, context) => {
                 let url;
                 let headers = {};
                 let payload = "";
-                if (carrier === FWDA) {
+                if (carrier === "FWDA") {
                     url =
                         "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
                     headers = {
