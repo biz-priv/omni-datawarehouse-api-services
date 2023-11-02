@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const { get } = require("lodash");
 const { v4 } = require("uuid");
+const xml2js = require("xml2js");
 const axios = require("axios");
 
 const ltlRateRequestSchema = Joi.object({
@@ -93,7 +94,7 @@ module.exports.handler = async (event, context) => {
         return response;
     } catch (err) {
         const response = {
-            statusCode: 200,
+            statusCode: 400,
             body: { message: err.message },
         };
         return response;
