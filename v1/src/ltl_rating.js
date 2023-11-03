@@ -101,6 +101,13 @@ module.exports.handler = async (event, context) => {
 
 async function processResponses({ carrier, response }) {
     if (carrier === "FWDA") {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const ChargeLineItems = get(
+            parsed,
+            "ChargeLineItems[0].ChargeLineItem",
+            []
+        );
         const data = {
             carrier: "FWDA",
             serviceLevel: get(ChargeLineItems, "[0].ServiceLevel", "0"),
@@ -110,13 +117,6 @@ async function processResponses({ carrier, response }) {
             message: "",
             accessorialList: [],
         };
-        let parser = new xml2js.Parser({ trim: true });
-        const parsed = await parser.parseStringPromise(response);
-        const ChargeLineItems = get(
-            parsed,
-            "ChargeLineItems[0].ChargeLineItem",
-            []
-        );
         data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
             code: get(chargeLineItem, "Code"),
             description: get(chargeLineItem, "Description"),
