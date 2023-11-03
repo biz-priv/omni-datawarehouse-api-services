@@ -78,6 +78,7 @@ module.exports.handler = async (event, context) => {
                     };
                     payload = xmlPayload["FWDA"];
                     const response = await axiosRequest(url, payload, headers);
+                    if (!response) return false;
                     await processResponses({ carrier, response });
                     return { carrier: "FWDA", response };
                 }
