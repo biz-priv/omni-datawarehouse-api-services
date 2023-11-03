@@ -51,6 +51,7 @@ const ltlRateRequestSchema = Joi.object({
 
 module.exports.handler = async (event, context) => {
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
+    responseBodyFormat["ltlRateResponse"] = [];
     try {
         const validation = await ltlRateRequestSchema.validateAsync(
             get(event, "body")
