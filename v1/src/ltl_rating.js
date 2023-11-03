@@ -101,6 +101,15 @@ module.exports.handler = async (event, context) => {
 
 async function processResponses({ carrier, response }) {
     if (carrier === "FWDA") {
+        const data = {
+            carrier: "FWDA",
+            serviceLevel: get(ChargeLineItems, "[0].ServiceLevel", "0"),
+            serviceLevelDescription: "",
+            transitDays: get(parsed, "TransitDaysTotal"),
+            totalRate: get(parsed, "QuoteTotal"),
+            message: "",
+            accessorialList: [],
+        };
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
         const ChargeLineItems = get(
@@ -113,15 +122,6 @@ async function processResponses({ carrier, response }) {
             description: get(chargeLineItem, "Description"),
             charge: get(chargeLineItem, "Amount"),
         }));
-        const data = {
-            carrier: "FWDA",
-            serviceLevel: get(ChargeLineItems, "[0].ServiceLevel", "0"),
-            serviceLevelDescription: "",
-            transitDays: get(parsed, "TransitDaysTotal"),
-            totalRate: get(parsed, "QuoteTotal"),
-            message: "",
-            accessorialList: [],
-        };
         responseBodyFormat["ltlRateResponse"].push(data);
     }
 }
@@ -382,14 +382,12 @@ const unitMapping = {
 };
 async function axiosRequest(url, payload, header = {}) {
     try {
-        let data = payload;
-
         let config = {
             method: "post",
             maxBodyLength: Infinity,
             url,
             headers: { ...header },
-            data: data,
+            data: payload,
         };
 
         const res = await axios.request(config);
