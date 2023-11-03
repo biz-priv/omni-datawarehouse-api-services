@@ -112,17 +112,17 @@ async function processResponses({ carrier, response }) {
         );
         const data = {
             carrier: "FWDA",
-            serviceLevel: get(ChargeLineItems, "[0].ServiceLevel", "0"),
+            serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
             serviceLevelDescription: "",
-            transitDays: get(FAQuoteResponse, "TransitDaysTotal"),
-            totalRate: get(FAQuoteResponse, "QuoteTotal"),
+            transitDays: get(FAQuoteResponse, "TransitDaysTotal[0]"),
+            totalRate: get(FAQuoteResponse, "QuoteTotal[0]"),
             message: "",
             accessorialList: [],
         };
         data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
-            code: get(chargeLineItem, "Code"),
-            description: get(chargeLineItem, "Description"),
-            charge: get(chargeLineItem, "Amount"),
+            code: get(chargeLineItem, "Code[0]"),
+            description: get(chargeLineItem, "Description[0]"),
+            charge: get(chargeLineItem, "Amount[0]"),
         }));
         responseBodyFormat["ltlRateResponse"].push(data);
     }
