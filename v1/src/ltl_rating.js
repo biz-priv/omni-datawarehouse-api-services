@@ -100,6 +100,7 @@ module.exports.handler = async (event, context) => {
 };
 
 async function processResponses({ carrier, response }) {
+    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
     if (carrier === "FWDA") {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
@@ -124,6 +125,10 @@ async function processResponses({ carrier, response }) {
         }));
         responseBodyFormat["ltlRateResponse"].push(data);
     }
+    console.log(
+        `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
+        responseBodyFormat
+    );
 }
 
 const responseBodyFormat = {
