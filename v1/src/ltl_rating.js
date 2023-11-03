@@ -104,8 +104,9 @@ async function processResponses({ carrier, response }) {
     if (carrier === "FWDA") {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
+        const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
         const ChargeLineItems = get(
-            parsed,
+            FAQuoteResponse,
             "ChargeLineItems[0].ChargeLineItem",
             []
         );
@@ -113,8 +114,8 @@ async function processResponses({ carrier, response }) {
             carrier: "FWDA",
             serviceLevel: get(ChargeLineItems, "[0].ServiceLevel", "0"),
             serviceLevelDescription: "",
-            transitDays: get(parsed, "TransitDaysTotal"),
-            totalRate: get(parsed, "QuoteTotal"),
+            transitDays: get(FAQuoteResponse, "TransitDaysTotal"),
+            totalRate: get(FAQuoteResponse, "QuoteTotal"),
             message: "",
             accessorialList: [],
         };
