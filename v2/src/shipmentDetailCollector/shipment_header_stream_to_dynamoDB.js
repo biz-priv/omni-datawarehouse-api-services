@@ -443,9 +443,24 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 const ddb = new AWS.DynamoDB.DocumentClient();
 const { get } = require("lodash");
 
+
+const pkeys = {
+  "omni-wt-rt-shipment-header": "pk_orderNo"
+}
 module.exports.handler = async (event) => {
   console.log("event: ", JSON.stringify(event));
+    const unmarshalledData = Converter.unmarshall(
+    event.Records[0].dynamodb.NewImage
+  );
+  console.log("table name",(event.Records[0].eventSourceARN.split("/"))[1])
+  const table = (event.Records[0].eventSourceARN.split("/"))[1];
+  const tablearr = table.split("-")
+  tablearr.pop()
+  const tableName = tablearr.join("-")
+  console.log("table name:  ",tableName)
+  console.log("pkey: ", pkeys[tableName])
+  console.log(unmarshalledData);
   return {
-    message: event,
+    message: "ss",
   };
 };
