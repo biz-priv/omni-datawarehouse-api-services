@@ -120,20 +120,20 @@ async function processFWDARequest({
     let url;
     let headers = {};
     let payload = "";
-    if (carrier === "FWDA") {
-        url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
-        headers = {
-            user: "omniliah",
-            password: "TVud61y6caRfSnjT",
-            customerId: "OMNILIAH",
-            "Content-Type": "application/xml",
-        };
-        payload = xmlPayload;
-        const response = await axiosRequest(url, payload, headers);
-        if (!response) return false;
-        await processFWDAResponses({ carrier, response });
-        return { carrier: "FWDA", response };
-    }
+    // if (carrier === "FWDA") {
+    url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
+    headers = {
+        user: "omniliah",
+        password: "TVud61y6caRfSnjT",
+        customerId: "OMNILIAH",
+        "Content-Type": "application/xml",
+    };
+    payload = xmlPayload;
+    const response = await axiosRequest(url, payload, headers);
+    if (!response) return false;
+    await processFWDAResponses({ response });
+    return { response };
+    // }
 }
 
 async function processFWDAResponses({ response }) {
