@@ -6,7 +6,8 @@ const axios = require("axios");
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
-        pickupTime: Joi.string().required().label("pickupTime is invalid."),
+        pickupTime: Joi.string().required().label("pickupTime"),
+        reference: Joi.string().required().label("Reference").length(36),
         insuredValue: Joi.number().optional().label("insuredValue is invalid."),
         shipperZip: Joi.string()
             .required()
@@ -62,27 +63,25 @@ module.exports.handler = async (event, context) => {
         console.info(`🙂 -> file: ltl_rating.js:57 -> value:`, value);
         if (error) throw error;
         const body = get(event, "body");
-        const xmlPayload = getXmlPayload(body);
+        const ltlRateRequest = get(body, "ltlRateRequest");
+        const pickupTime = get(ltlRateRequest, "pickupTime");
+        const insuredValue = get(ltlRateRequest, "insuredValue");
+        const shipperZip = get(ltlRateRequest, "shipperZip");
+        const consigneeZip = get(ltlRateRequest, "consigneeZip");
+        const shipmentLines = get(ltlRateRequest, "shipmentLines", []);
+        const accessorialList = get(ltlRateRequest, "accessorialList", []);
+        const reference = get(ltlRateRequest, "reference", []);
         const apiResponse = await Promise.all(
             ["FWDA"].map(async (carrier) => {
-                let url;
-                let headers = {};
-                let payload = "";
-                if (carrier === "FWDA") {
-                    url =
-                        "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
-                    headers = {
-                        user: "omniliah",
-                        password: "TVud61y6caRfSnjT",
-                        customerId: "OMNILIAH",
-                        "Content-Type": "application/xml",
-                    };
-                    payload = xmlPayload["FWDA"];
-                    const response = await axiosRequest(url, payload, headers);
-                    if (!response) return false;
-                    await processResponses({ carrier, response });
-                    return { carrier: "FWDA", response };
-                }
+                if (carrier === "FWDA")
+                    return await processFWDARequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
             })
         );
         console.log(
@@ -101,33 +100,59 @@ module.exports.handler = async (event, context) => {
     }
 };
 
-async function processResponses({ carrier, response }) {
-    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
+async function processFWDARequest() {
+    const xmlPayload = getXmlPayloadFWDA({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    let url;
+    let headers = {};
+    let payload = "";
     if (carrier === "FWDA") {
-        let parser = new xml2js.Parser({ trim: true });
-        const parsed = await parser.parseStringPromise(response);
-        const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
-        const ChargeLineItems = get(
-            FAQuoteResponse,
-            "ChargeLineItems[0].ChargeLineItem",
-            []
-        );
-        const data = {
-            carrier: "FWDA",
-            serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
-            serviceLevelDescription: "",
-            transitDays: get(FAQuoteResponse, "TransitDaysTotal[0]"),
-            totalRate: get(FAQuoteResponse, "QuoteTotal[0]"),
-            message: "",
-            accessorialList: [],
+        url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
+        headers = {
+            user: "omniliah",
+            password: "TVud61y6caRfSnjT",
+            customerId: "OMNILIAH",
+            "Content-Type": "application/xml",
         };
-        data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
-            code: get(chargeLineItem, "Code[0]"),
-            description: get(chargeLineItem, "Description[0]"),
-            charge: get(chargeLineItem, "Amount[0]"),
-        }));
-        responseBodyFormat["ltlRateResponse"].push(data);
+        payload = xmlPayload;
+        const response = await axiosRequest(url, payload, headers);
+        if (!response) return false;
+        await processFWDAResponses({ carrier, response });
+        return { carrier: "FWDA", response };
     }
+}
+
+async function processFWDAResponses({ response }) {
+    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
+    const ChargeLineItems = get(
+        FAQuoteResponse,
+        "ChargeLineItems[0].ChargeLineItem",
+        []
+    );
+    const data = {
+        carrier: "FWDA",
+        serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
+        serviceLevelDescription: "",
+        transitDays: get(FAQuoteResponse, "TransitDaysTotal[0]"),
+        totalRate: get(FAQuoteResponse, "QuoteTotal[0]"),
+        message: "",
+        accessorialList: [],
+    };
+    data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
+        code: get(chargeLineItem, "Code[0]"),
+        description: get(chargeLineItem, "Description[0]"),
+        charge: get(chargeLineItem, "Amount[0]"),
+    }));
+    responseBodyFormat["ltlRateResponse"].push(data);
     console.log(
         `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
         responseBodyFormat
@@ -137,26 +162,6 @@ async function processResponses({ carrier, response }) {
 const responseBodyFormat = {
     transactionId: v4(),
     ltlRateResponse: [],
-};
-
-const payloadMappingFormat = {
-    shipperZip: "90210",
-    accessorialList: ["APPT", "APPTD"],
-    consigneeZip: "94132",
-    shipmentLines: [
-        {
-            weight: 225,
-            weightUOM: "lb",
-            pieces: 3,
-            freightClass: 70,
-            length: 20,
-            width: 20,
-            height: 30,
-            hazmat: false,
-            insuredValue: 1000,
-            pickupTime: "2023-11-02T17:00:00",
-        },
-    ],
 };
 
 const xmlPayloadFormat = {
@@ -227,21 +232,7 @@ const xmlPayloadFormat = {
                         "rat1:ready": "17:00:00",
                     },
                     "rat1:declaredValue": 1000,
-                    "rat1:fullCommodities": [
-                        {
-                            "rat1:commodity": {
-                                "rat1:class": 70,
-                                "rat1:weight": 225,
-                                "rat1:pieces": 3,
-                                "rat1:pieceType": "PC",
-                                "rat1:dimensions": {
-                                    "rat1:length": 20,
-                                    "rat1:width": 20,
-                                    "rat1:height": 30,
-                                },
-                            },
-                        },
-                    ],
+                    "rat1:fullCommodities": { "rat1:commodity": [] },
                     "rat1:accessorials": {
                         "rat1:accessorialCode": ["APT", "APT", "HAZ"],
                     },
@@ -284,15 +275,14 @@ const xmlPayloadFormat = {
     },
 };
 
-function getXmlPayload(body) {
-    const ltlRateRequest = get(body, "ltlRateRequest");
-    const pickupTime = get(ltlRateRequest, "pickupTime");
-    const insuredValue = get(ltlRateRequest, "insuredValue");
-    const shipperZip = get(ltlRateRequest, "shipperZip");
-    const consigneeZip = get(ltlRateRequest, "consigneeZip");
-    const shipmentLines = get(ltlRateRequest, "shipmentLines", []);
-    const accessorialList = get(ltlRateRequest, "accessorialList", []);
-
+function getXmlPayloadFWDA({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
     // For Forward Air
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"][
         "BillToCustomerNumber"
@@ -334,12 +324,7 @@ function getXmlPayload(body) {
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["DeclaredValue"] = insuredValue;
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["ShippingDate"] = pickupTime;
 
-    // For ESTES
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"][
-        "rat:user"
-    ] = "";
     for (let index = 0; index < shipmentLines.length; index++) {
-        //todo: modify this block to use the same for loop for other carriers also
         const shipmentLine = shipmentLines[index];
         xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["FreightDetails"][
             "FreightDetail"
@@ -352,9 +337,9 @@ function getXmlPayload(body) {
             FreightClass: get(shipmentLine, "freightClass"),
         };
 
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"][
-            "Dimension"
-        ][0] = {
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"]["Dimension"][
+            index
+        ] = {
             Pieces: get(shipmentLine, "pieces"),
             Length: get(shipmentLine, "length"),
             Width: get(shipmentLine, "width"),
@@ -369,8 +354,98 @@ function getXmlPayload(body) {
         `🙂 -> file: index.js:223 -> xmlPayloadFormat.FWDA:`,
         JSON.stringify(xmlPayloadFormat.FWDA)
     );
-    const FWDA = builder.buildObject(xmlPayloadFormat.FWDA);
-    return { FWDA };
+    return builder.buildObject(xmlPayloadFormat.FWDA);
+}
+
+function getXmlPayloadEXLA({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+    reference,
+}) {
+    // For ESTES
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"][
+        "rat:user"
+    ] = "omni2";
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"][
+        "rat:password"
+    ] = "OmniAllin1";
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:requestID"] = reference;
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:originPoint"]["rat1:countryCode"] = "US";
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:originPoint"]["rat1:postalCode"] = shipperZip;
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:destinationPoint"]["rat1:countryCode"] = "US";
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:destinationPoint"]["rat1:postalCode"] = consigneeZip;
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:payor"] = "T";
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:terms"] = "PPD";
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:pickup"]["rat1:date"] = pickupTime.split("T")[0];
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:pickup"]["rat1:ready"] = pickupTime.split("T")[1];
+
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+        "rat1:rateRequest"
+    ]["rat1:declaredValue"] = insuredValue;
+
+    for (const accessorial of accessorialList) {
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+            "rat1:rateRequest"
+        ]["rat1:accessorials"]["rat1:accessorialCode"] =
+            accessorialMappingEXLA[accessorial];
+    }
+
+    if (shipmentLines[0] === true) {
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+            "rat1:rateRequest"
+        ]["rat1:accessorials"]["rat1:accessorialCode"].push("HAZ");
+    }
+
+    for (let index = 0; index < shipmentLines.length; index++) {
+        const shipmentLine = shipmentLines[index];
+
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
+            "rat1:rateRequest"
+        ]["rat1:fullCommodities"]["rat1:commodity"][index] = {
+            "rat1:class": get(shipmentLine, "freightClass"),
+            "rat1:weight": get(shipmentLine, "weight"),
+            "rat1:pieces": get(shipmentLine, "pieces"),
+            "rat1:pieceType":
+                pieceTypeMappingEXLA[get(shipmentLine, "pieceType")],
+            "rat1:dimensions": {
+                "rat1:length": get(shipmentLine, "length"),
+                "rat1:width": get(shipmentLine, "width"),
+                "rat1:height": get(shipmentLine, "height"),
+            },
+        };
+    }
 }
 
 const accessorialMappingFWDA = {
@@ -383,10 +458,35 @@ const accessorialMappingFWDA = {
     RESDE: "RDE",
 };
 
+const accessorialMappingEXLA = {
+    APPT: "APT",
+    INSPU: "INP",
+    RESID: "HPU",
+    LIFT: "LGATEP",
+    APPTD: "APT",
+    INDEL: "INS",
+    RESDE: "HD",
+    LIFTD: "LGATE",
+};
+
 const unitMapping = {
     FWDA: {
         lb: "L",
     },
+};
+
+const pieceTypeMappingEXLA = {
+    BND: "BD",
+    BOX: "BX",
+    CNT: "CN",
+    CRT: "CR",
+    CAS: "CS",
+    CTN: "CT",
+    PCE: "PC",
+    PLT: "PT",
+    REL: "RE",
+    SKD: "SK",
+    UNT: "PC",
 };
 async function axiosRequest(url, payload, header = {}) {
     try {
