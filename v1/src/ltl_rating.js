@@ -92,6 +92,7 @@ module.exports.handler = async (event, context) => {
 
         return response;
     } catch (err) {
+        console.error(`🙂 -> file: ltl_rating.js:95 -> err:`, err);
         const response = {
             statusCode: 400,
             body: { message: err.message },
@@ -100,7 +101,14 @@ module.exports.handler = async (event, context) => {
     }
 };
 
-async function processFWDARequest() {
+async function processFWDARequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
     const xmlPayload = getXmlPayloadFWDA({
         pickupTime,
         insuredValue,
