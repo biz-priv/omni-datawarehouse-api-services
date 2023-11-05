@@ -422,6 +422,7 @@ async function processEXLAResponses({ response }) {
     console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
     let parser = new xml2js.Parser({ trim: true });
     const parsed = await parser.parseStringPromise(response);
+    console.log(`🙂 -> file: ltl_rating.js:425 -> parsed:`, parsed);
     const Envelope = get(parsed, "soapenv:Envelope", {});
     const Body = get(Envelope, "soapenv:Body[0]", {});
     const rateQuote = get(Body, "rat:rateQuote[0]", {});
@@ -461,6 +462,7 @@ async function processEXLAResponses({ response }) {
         }));
         return data;
     });
+    console.log(`🙂 -> file: ltl_rating.js:464 -> quoteList:`, quoteList);
     responseBodyFormat["ltlRateResponse"] = [
         responseBodyFormat["ltlRateResponse"],
         ...quoteList,
