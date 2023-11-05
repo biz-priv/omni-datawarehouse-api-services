@@ -459,6 +459,7 @@ async function processEXLAResponses({ response }) {
             description: get(accessorial, "rat:description[0]"),
             charge: get(accessorial, "rat:charge[0]"),
         }));
+        return data;
     });
     responseBodyFormat["ltlRateResponse"] = [
         responseBodyFormat["ltlRateResponse"],
