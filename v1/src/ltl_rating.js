@@ -3,6 +3,7 @@ const { get } = require("lodash");
 const { v4 } = require("uuid");
 const xml2js = require("xml2js");
 const axios = require("axios");
+const moment = require("moment");
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -72,7 +73,7 @@ module.exports.handler = async (event, context) => {
         const accessorialList = get(ltlRateRequest, "accessorialList", []);
         const reference = get(ltlRateRequest, "reference", []);
         const apiResponse = await Promise.all(
-            ["FWDA"].map(async (carrier) => {
+            ["FWDA", "EXLA"].map(async (carrier) => {
                 if (carrier === "FWDA")
                     return await processFWDARequest({
                         pickupTime,
@@ -81,6 +82,16 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                    });
+                if (carrier === "FWDA")
+                    return await processEXLARequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                        reference,
                     });
             })
         );
@@ -99,77 +110,6 @@ module.exports.handler = async (event, context) => {
         };
         return response;
     }
-};
-
-async function processFWDARequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
-    const xmlPayload = getXmlPayloadFWDA({
-        pickupTime,
-        insuredValue,
-        shipperZip,
-        consigneeZip,
-        shipmentLines,
-        accessorialList,
-    });
-    let url;
-    let headers = {};
-    let payload = "";
-    // if (carrier === "FWDA") {
-    url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
-    headers = {
-        user: "omniliah",
-        password: "TVud61y6caRfSnjT",
-        customerId: "OMNILIAH",
-        "Content-Type": "application/xml",
-    };
-    payload = xmlPayload;
-    const response = await axiosRequest(url, payload, headers);
-    if (!response) return false;
-    await processFWDAResponses({ response });
-    return { response };
-    // }
-}
-
-async function processFWDAResponses({ response }) {
-    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
-    const ChargeLineItems = get(
-        FAQuoteResponse,
-        "ChargeLineItems[0].ChargeLineItem",
-        []
-    );
-    const data = {
-        carrier: "FWDA",
-        serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
-        serviceLevelDescription: "",
-        transitDays: get(FAQuoteResponse, "TransitDaysTotal[0]"),
-        totalRate: get(FAQuoteResponse, "QuoteTotal[0]"),
-        message: "",
-        accessorialList: [],
-    };
-    data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
-        code: get(chargeLineItem, "Code[0]"),
-        description: get(chargeLineItem, "Description[0]"),
-        charge: get(chargeLineItem, "Amount[0]"),
-    }));
-    responseBodyFormat["ltlRateResponse"].push(data);
-    console.log(
-        `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
-        responseBodyFormat
-    );
-}
-
-const responseBodyFormat = {
-    transactionId: v4(),
-    ltlRateResponse: [],
 };
 
 const xmlPayloadFormat = {
@@ -283,6 +223,75 @@ const xmlPayloadFormat = {
     },
 };
 
+const responseBodyFormat = {
+    transactionId: v4(),
+    ltlRateResponse: [],
+};
+
+async function processFWDARequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const xmlPayload = getXmlPayloadFWDA({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    let url;
+    let headers = {};
+    let payload = "";
+    url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
+    headers = {
+        user: "omniliah",
+        password: "TVud61y6caRfSnjT",
+        customerId: "OMNILIAH",
+        "Content-Type": "application/xml",
+    };
+    payload = xmlPayload;
+    const response = await axiosRequest(url, payload, headers);
+    if (!response) return false;
+    await processFWDAResponses({ response });
+    return { response };
+}
+
+async function processFWDAResponses({ response }) {
+    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
+    const ChargeLineItems = get(
+        FAQuoteResponse,
+        "ChargeLineItems[0].ChargeLineItem",
+        []
+    );
+    const data = {
+        carrier: "FWDA",
+        serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
+        serviceLevelDescription: "",
+        transitDays: get(FAQuoteResponse, "TransitDaysTotal[0]"),
+        totalRate: get(FAQuoteResponse, "QuoteTotal[0]"),
+        message: "",
+        accessorialList: [],
+    };
+    data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
+        code: get(chargeLineItem, "Code[0]"),
+        description: get(chargeLineItem, "Description[0]"),
+        charge: get(chargeLineItem, "Amount[0]"),
+    }));
+    responseBodyFormat["ltlRateResponse"].push(data);
+    console.log(
+        `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
+        responseBodyFormat
+    );
+}
+
 function getXmlPayloadFWDA({
     pickupTime,
     insuredValue,
@@ -291,7 +300,6 @@ function getXmlPayloadFWDA({
     shipmentLines,
     accessorialList,
 }) {
-    // For Forward Air
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"][
         "BillToCustomerNumber"
     ] = 2353722; //TODO: Move this to ssm;
@@ -363,6 +371,86 @@ function getXmlPayloadFWDA({
         JSON.stringify(xmlPayloadFormat.FWDA)
     );
     return builder.buildObject(xmlPayloadFormat.FWDA);
+}
+
+async function processEXLARequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+    reference,
+}) {
+    const xmlPayload = getXmlPayloadEXLA({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+        reference,
+    });
+    let headers = {
+        soapAction: "http://ws.estesexpress.com/ratequote/getQuote",
+        "Content-Type": "text/xml",
+    };
+    let url =
+        "https://www.estes-express.com/tools/rating/ratequote/v4.0/services/RateQuoteService";
+    let payload = xmlPayload;
+    const response = await axiosRequest(url, payload, headers);
+    if (!response) return false;
+    await processEXLAResponses({ response });
+    return { response };
+}
+
+async function processEXLAResponses({ response }) {
+    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const Envelope = get(parsed, "soapenv:Envelope", {});
+    const Body = get(Envelope, "soapenv:Body[0]", {});
+    const rateQuote = get(Body, "rat:rateQuote[0]", {});
+    const requestID = get(rateQuote, "rat:requestID[0]", "");
+    // const quoteInfo = get(rateQuote, "rat:quoteInfo[0]", "");
+    const quote = get(rateQuote, "rat:quote", []);
+
+    const quoteList = quote.map((quoteInfo) => {
+        const serviceLevel = get(quoteInfo, "rat:serviceLevel[0]", "0");
+        const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
+        const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
+        const pickupDate = moment(new Date(pickup));
+        const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
+        const deliveryDate = moment(new Date(delivery));
+        const transitDays = pickupDate.diff(deliveryDate, "days");
+        const totalRate = get(quoteInfo, "rat:pricing[0].rat:totalPrice", "0");
+        const accessorialInfo = get(
+            quoteInfo,
+            "rat:accessorialInfo[0].rat:accessorial",
+            []
+        );
+
+        const data = {
+            carrier: "EXLA",
+            quoteNumber,
+            serviceLevel,
+            serviceLevelDescription: "",
+            transitDays: transitDays,
+            totalRate,
+            message: "",
+            accessorialList: [],
+        };
+        data["accessorialList"] = accessorialInfo.map((accessorial) => ({
+            code: get(accessorial, "rat:code[0]"),
+            description: get(accessorial, "rat:description[0]"),
+            charge: get(accessorial, "rat:charge[0]"),
+        }));
+    });
+    responseBodyFormat["ltlRateResponse"].concat(quoteList);
+    console.log(
+        `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
+        responseBodyFormat
+    );
 }
 
 function getXmlPayloadEXLA({
