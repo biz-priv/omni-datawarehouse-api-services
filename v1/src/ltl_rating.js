@@ -555,6 +555,14 @@ function getXmlPayloadEXLA({
             },
         };
     }
+    const builder = new xml2js.Builder({
+        xmldec: { version: "1.0", encoding: "UTF-8" },
+    });
+    console.log(
+        `🙂 -> file: index.js:223 -> xmlPayloadFormat.FWDA:`,
+        JSON.stringify(xmlPayloadFormat.EXLA)
+    );
+    return builder.buildObject(xmlPayloadFormat.EXLA);
 }
 
 const accessorialMappingFWDA = {
