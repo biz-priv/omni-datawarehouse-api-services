@@ -434,14 +434,14 @@ async function processEXLAResponses({ response }) {
     const quote = get(quoteInfo, "rat:quote", []);
 
     const quoteList = quote.map((quoteInfo) => {
-        const serviceLevel = get(quoteInfo, "rat:serviceLevel[0]", "0");
+        const serviceLevel = get(quoteInfo, "rat:serviceLevel[0].rat:id[0]", "0");
         const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
         const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
         const pickupDate = moment(new Date(pickup));
         const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
         const deliveryDate = moment(new Date(delivery));
-        const transitDays = pickupDate.diff(deliveryDate, "days");
-        const totalRate = get(quoteInfo, "rat:pricing[0].rat:totalPrice", "0");
+        const transitDays = deliveryDate.diff(pickupDate, "days");
+        const totalRate = get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0");
         const accessorialInfo = get(
             quoteInfo,
             "rat:accessorialInfo[0].rat:accessorial",
