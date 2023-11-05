@@ -113,6 +113,7 @@ module.exports.handler = async (event, context) => {
             apiResponse
         );
         const response = { ...responseBodyFormat };
+        console.log(`🙂 -> file: ltl_rating.js:116 -> response:`, response);
 
         return response;
     } catch (err) {
@@ -459,7 +460,10 @@ async function processEXLAResponses({ response }) {
             charge: get(accessorial, "rat:charge[0]"),
         }));
     });
-    responseBodyFormat["ltlRateResponse"].concat(quoteList);
+    responseBodyFormat["ltlRateResponse"] = [
+        responseBodyFormat["ltlRateResponse"],
+        ...quoteList,
+    ];
     console.log(
         `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
         responseBodyFormat
