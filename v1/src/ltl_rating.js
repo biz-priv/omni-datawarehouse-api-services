@@ -72,9 +72,16 @@ module.exports.handler = async (event, context) => {
         const shipmentLines = get(ltlRateRequest, "shipmentLines", []);
         const accessorialList = get(ltlRateRequest, "accessorialList", []);
         const reference = get(ltlRateRequest, "reference", []);
+
+        responseBodyFormat["transactionId"] = reference;
+
         const apiResponse = await Promise.all(
             ["FWDA", "EXLA"].map(async (carrier) => {
-                if (carrier === "FWDA")
+                if (carrier === "FWDA") {
+                    console.log(
+                        `🙂 -> file: ltl_rating.js:81 -> carrier:`,
+                        carrier
+                    );
                     return await processFWDARequest({
                         pickupTime,
                         insuredValue,
@@ -83,7 +90,12 @@ module.exports.handler = async (event, context) => {
                         shipmentLines,
                         accessorialList,
                     });
-                if (carrier === "EXLA")
+                }
+                if (carrier === "EXLA") {
+                    console.log(
+                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
+                        carrier
+                    );
                     return await processEXLARequest({
                         pickupTime,
                         insuredValue,
@@ -93,6 +105,7 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         reference,
                     });
+                }
             })
         );
         console.log(
