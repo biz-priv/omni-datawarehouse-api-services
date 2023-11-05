@@ -430,8 +430,8 @@ async function processEXLAResponses({ response }) {
     const Body = get(Envelope, "soapenv:Body[0]", {});
     const rateQuote = get(Body, "rat:rateQuote[0]", {});
     const requestID = get(rateQuote, "rat:requestID[0]", "");
-    // const quoteInfo = get(rateQuote, "rat:quoteInfo[0]", "");
-    const quote = get(rateQuote, "rat:quote", []);
+    const quoteInfo = get(rateQuote, "rat:quoteInfo[0]", "");
+    const quote = get(quoteInfo, "rat:quote", []);
 
     const quoteList = quote.map((quoteInfo) => {
         const serviceLevel = get(quoteInfo, "rat:serviceLevel[0]", "0");
