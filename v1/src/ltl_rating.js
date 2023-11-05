@@ -83,7 +83,7 @@ module.exports.handler = async (event, context) => {
                         shipmentLines,
                         accessorialList,
                     });
-                if (carrier === "FWDA")
+                if (carrier === "EXLA")
                     return await processEXLARequest({
                         pickupTime,
                         insuredValue,
