@@ -11,12 +11,12 @@ function:
   package:
     include:
       - ${self:custom.alias}/src/shipment_details_collector.js
-  events:
-    - sqs:
-        arn:
-          Fn::GetAtt:
-            - ShipmentDetailQueue
-            - Arn
+  # events:
+  #   - sqs:
+  #       arn:
+  #         Fn::GetAtt:
+  #           - ShipmentDetailQueue
+  #           - Arn
   environment:
     SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
     SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/houseBillKey/index}
