@@ -1,9 +1,11 @@
 const Joi = require("joi");
-const { get } = require("lodash");
+const { get, includes } = require("lodash");
 const { v4 } = require("uuid");
 const xml2js = require("xml2js");
 const axios = require("axios");
 const moment = require("moment");
+const qs = require("qs");
+const { zips } = require("../../src/shared/ltlRater/zipCode.js");
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -76,7 +78,7 @@ module.exports.handler = async (event, context) => {
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
-            ["FWDA", "EXLA"].map(async (carrier) => {
+            ["FWDA", "EXLA", "FEXF"].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
                         `🙂 -> file: ltl_rating.js:81 -> carrier:`,
@@ -97,6 +99,21 @@ module.exports.handler = async (event, context) => {
                         carrier
                     );
                     return await processEXLARequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                        reference,
+                    });
+                }
+                if (carrier === "FEXF") {
+                    console.log(
+                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
+                        carrier
+                    );
+                    return await processFEXFRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -232,6 +249,96 @@ const xmlPayloadFormat = {
                         tariff: "559",
                     },
                 },
+            },
+        },
+    },
+    FEXF: {
+        accountNumber: {
+            value: "",
+        },
+        rateRequestControlParameters: {
+            returnTransitTimes: "",
+            servicesNeededOnRateFailure: "",
+            rateSortOrder: "",
+        },
+        freightRequestedShipment: {
+            shipper: {
+                address: {
+                    city: "",
+                    stateOrProvinceCode: "",
+                    postalCode: "",
+                    countryCode: "",
+                    residential: "",
+                },
+            },
+            recipient: {
+                address: {
+                    city: "San Francisco",
+                    stateOrProvinceCode: "",
+                    postalCode: "",
+                    countryCode: "",
+                    residential: "",
+                },
+            },
+
+            shippingChargesPayment: {
+                payor: {
+                    responsibleParty: {
+                        address: {
+                            city: "HOUSTON",
+                            stateOrProvinceCode: "",
+                            postalCode: "",
+                            countryCode: "",
+                            residential: "",
+                        },
+                        accountNumber: {
+                            value: "",
+                        },
+                    },
+                },
+            },
+            rateRequestType: [],
+            shipDateStamp: "",
+            requestedPackageLineItems: [],
+            totalPackageCount: "",
+            totalWeight: "",
+            freightShipmentDetail: {
+                role: "",
+                accountNumber: {
+                    value: "",
+                },
+                shipmentDimensions: {
+                    length: "",
+                    width: "",
+                    height: "",
+                    units: "",
+                },
+                lineItem: [],
+                fedExFreightBillingContactAndAddress: {
+                    address: {
+                        city: "",
+                        stateOrProvinceCode: "",
+                        postalCode: "",
+                        countryCode: "",
+                    },
+                    accountNumber: {
+                        value: "",
+                    },
+                },
+                alternateBillingParty: {
+                    address: {
+                        city: "",
+                        stateOrProvinceCode: "",
+                        postalCode: "",
+                        countryCode: "",
+                    },
+                    accountNumber: {
+                        value: "",
+                    },
+                },
+            },
+            freightShipmentSpecialServices: {
+                specialServiceTypes: [],
             },
         },
     },
@@ -429,19 +536,26 @@ async function processEXLAResponses({ response }) {
     const Envelope = get(parsed, "soapenv:Envelope", {});
     const Body = get(Envelope, "soapenv:Body[0]", {});
     const rateQuote = get(Body, "rat:rateQuote[0]", {});
-    const requestID = get(rateQuote, "rat:requestID[0]", "");
     const quoteInfo = get(rateQuote, "rat:quoteInfo[0]", "");
     const quote = get(quoteInfo, "rat:quote", []);
 
     const quoteList = quote.map((quoteInfo) => {
-        const serviceLevel = get(quoteInfo, "rat:serviceLevel[0].rat:id[0]", "0");
+        const serviceLevel = get(
+            quoteInfo,
+            "rat:serviceLevel[0].rat:id[0]",
+            "0"
+        );
         const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
         const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
         const pickupDate = moment(new Date(pickup));
         const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
         const deliveryDate = moment(new Date(delivery));
         const transitDays = deliveryDate.diff(pickupDate, "days");
-        const totalRate = get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0");
+        const totalRate = get(
+            quoteInfo,
+            "rat:pricing[0].rat:totalPrice[0]",
+            "0"
+        );
         const accessorialInfo = get(
             quoteInfo,
             "rat:accessorialInfo[0].rat:accessorial",
@@ -467,7 +581,7 @@ async function processEXLAResponses({ response }) {
     });
     console.log(`🙂 -> file: ltl_rating.js:464 -> quoteList:`, quoteList);
     responseBodyFormat["ltlRateResponse"] = [
-        responseBodyFormat["ltlRateResponse"],
+        ...responseBodyFormat["ltlRateResponse"],
         ...quoteList,
     ];
     console.log(
@@ -541,7 +655,7 @@ function getXmlPayloadEXLA({
             accessorialMappingEXLA[accessorial];
     }
 
-    if (shipmentLines[0] === true) {
+    if (get(shipmentLines, "[0].hazmat") === true) {
         xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
             "rat1:rateRequest"
         ]["rat1:accessorials"]["rat1:accessorialCode"].push("HAZ");
@@ -575,6 +689,287 @@ function getXmlPayloadEXLA({
     return builder.buildObject(xmlPayloadFormat.EXLA);
 }
 
+async function processFEXFRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+    reference,
+}) {
+    const accessToken = await processFEXFAuthRequest();
+    const payload = getXmlPayloadFEXF({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+        reference,
+    });
+    console.log(`🙂 -> file: ltl_rating.js:753 -> payload:`, payload);
+    let headers = {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+    };
+    let url = "https://apis.fedex.com/rate/v1/freight/rates/quotes";
+    const response = await axiosRequest(url, payload, headers);
+    console.log(`🙂 -> file: ltl_rating.js:760 -> response:`, response);
+    if (!response) return false;
+    processFEXFResponses({ response });
+    return { response };
+}
+
+async function processFEXFAuthRequest() {
+    let data = qs.stringify({
+        grant_type: "client_credentials",
+        client_id: "l789c1e90d306b419bb8870284bdea1e7b",
+        client_secret: "810186e0a5c2488289753bae1e8507a8",
+    });
+    let config = {
+        method: "post",
+        maxBodyLength: Infinity,
+        url: "https://apis.fedex.com/oauth/token",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        data: data,
+    };
+    const authReqRes = await axios.request(config);
+    return get(authReqRes, "data.access_token");
+}
+
+function getXmlPayloadFEXF({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+    reference,
+}) {
+    const shipper = zips[shipperZip];
+    const consignee = zips[consigneeZip];
+
+    xmlPayloadFormat["FEXF"]["accountNumber"]["value"] = 226811362;
+    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"][
+        "returnTransitTimes"
+    ] = true;
+    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"][
+        "servicesNeededOnRateFailure"
+    ] = true;
+    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"]["rateSortOrder"] =
+        "SERVICENAMETRADITIONAL";
+
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shipper"]["address"] =
+        {
+            city: get(shipper, "city"),
+            stateOrProvinceCode: get(shipper, "state"),
+            postalCode: get(shipper, "zip_code"),
+            countryCode: "US",
+            residential: false,
+        };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["recipient"][
+        "address"
+    ] = {
+        city: get(consignee, "city"),
+        stateOrProvinceCode: get(consignee, "state"),
+        postalCode: get(consignee, "zip_code"),
+        countryCode: "US",
+        residential: false,
+    };
+
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "shippingChargesPayment"
+    ]["payor"]["responsibleParty"]["address"] = {
+        city: "HOUSTON",
+        stateOrProvinceCode: "TX",
+        postalCode: "77032",
+        countryCode: "US",
+        residential: false,
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "shippingChargesPayment"
+    ]["payor"]["responsibleParty"]["accountNumber"]["value"] = 554332390;
+
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["rateRequestType"] = [
+        "ACCOUNT",
+    ];
+
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shipDateStamp"] =
+        pickupTime.split("T")[0];
+    let totalPackageCount = 0;
+    let totalWeight = 0;
+    for (let index = 0; index < shipmentLines.length; index++) {
+        const shipmentLine = shipmentLines[index];
+        console.log(
+            `🙂 -> file: ltl_rating.js:848 -> shipmentLine:`,
+            shipmentLine
+        );
+        const pieceType =
+            pieceTypeMappingFEXF[
+                get(shipmentLine, "pieceType", "").toUpperCase()
+            ];
+        const pieces = get(shipmentLine, "pieces");
+        const weight = get(shipmentLine, "weight");
+        const weightUOM = unitMapping["FEXF"][get(shipmentLine, "weightUOM")];
+        const length = get(shipmentLine, "length");
+        const width = get(shipmentLine, "width");
+        const height = get(shipmentLine, "height");
+        const dimUOM = unitMapping["FEXF"][get(shipmentLine, "dimUOM")];
+        const hazmat = get(shipmentLine, "hazmat", false);
+        const freightClass = get(shipmentLine, "freightClass");
+        totalPackageCount += Number(pieces);
+        totalWeight += Number(weight);
+        const packageLineItem = {
+            subPackagingType: pieceType,
+            groupPackageCount: pieces,
+            declaredValue: {
+                amount: insuredValue,
+                currency: "USD",
+            },
+            weight: {
+                units: weightUOM,
+                value: weight,
+            },
+            dimensions: {
+                length,
+                width,
+                height,
+                units: unitMapping["FEXF"][dimUOM],
+            },
+            associatedFreightLineItems: [
+                {
+                    id: index + 1,
+                },
+            ],
+        };
+        xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+            "requestedPackageLineItems"
+        ].push(packageLineItem);
+
+        const lineItems = {
+            subPackagingType: pieceType,
+            weight: {
+                units: weightUOM,
+                value: weight,
+            },
+            pieces: pieces,
+            freightClass: freightClassFEXF[freightClass],
+            id: "1",
+            hazardousMaterials: hazmat ? "HAZARDOUS_MATERIALS" : hazmat,
+            dimensions: {
+                length,
+                width,
+                height,
+                units: dimUOM,
+            },
+        };
+        xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+            "freightShipmentDetail"
+        ]["lineItem"].push(lineItems);
+    }
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["totalPackageCount"] =
+        totalPackageCount;
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["totalWeight"] =
+        totalWeight;
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["role"] = "SHIPPER";
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["accountNumber"] = { value: "226811362" };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["shipmentDimensions"] = {
+        length: get(shipmentLines, "[0].length"),
+        width: get(shipmentLines, "[0].width"),
+        height: get(shipmentLines, "[0].height"),
+        units: unitMapping["FEXF"][get(shipmentLines, "[0].dimUOM")],
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["fedExFreightBillingContactAndAddress"]["address"] = {
+        city: "HOUSTON",
+        stateOrProvinceCode: "TX",
+        postalCode: "77032",
+        countryCode: "US",
+        residential: false,
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["fedExFreightBillingContactAndAddress"]["accountNumber"] = {
+        value: "554332390",
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["alternateBillingParty"]["address"] = {
+        city: "HOUSTON",
+        stateOrProvinceCode: "TX",
+        postalCode: "77032",
+        countryCode: "US",
+        residential: false,
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentDetail"
+    ]["alternateBillingParty"]["accountNumber"] = {
+        value: "554332390",
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
+        "freightShipmentSpecialServices"
+    ]["specialServiceTypes"] = accessorialList.map((acc) =>
+        Object.keys(accessorialMappingFEXF).includes(acc)
+            ? accessorialMappingFEXF[acc]
+            : ""
+    );
+    return xmlPayloadFormat["FEXF"];
+}
+
+function processFEXFResponses({ response }) {
+    const output = get(response, "output");
+    const rateReplyDetails = get(output, "rateReplyDetails", []);
+    rateReplyDetails.map((rateReplyDetail) => {
+        const serviceLevel = get(rateReplyDetail, "serviceType");
+        const transitDays = get(
+            rateReplyDetail,
+            "commit.transitDays.minimumTransitTime"
+        );
+        const ratedShipmentDetails = get(
+            rateReplyDetail,
+            "ratedShipmentDetails",
+            []
+        );
+        ratedShipmentDetails.map((ratedShipmentDetail) => {
+            const rateType = get(ratedShipmentDetail, "rateType", "");
+            const quoteNumber = get(ratedShipmentDetail, "quoteNumber");
+            const totalRate = get(ratedShipmentDetail, "totalNetCharge");
+            const shipmentRateDetail = get(
+                ratedShipmentDetail,
+                "shipmentRateDetail.surCharges",
+                []
+            );
+
+            const accessorialList = shipmentRateDetail.map((acc) => ({
+                code: get(acc, "type"),
+                description: get(acc, "description"),
+                charge: get(acc, "amount"),
+            }));
+            const data = {
+                serviceLevel,
+                serviceLevelDescription: "",
+                carrier: "FEXF",
+                transitDays: transitDaysMappingFEXP[transitDays],
+                quoteNumber,
+                totalRate,
+                accessorialList,
+            };
+            if (rateType.toUpperCase() === "ACCOUNT")
+                return responseBodyFormat["ltlRateResponse"].push(data);
+        });
+    });
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -600,6 +995,10 @@ const unitMapping = {
     FWDA: {
         lb: "L",
     },
+    FEXF: {
+        lb: "LB",
+        in: "IN",
+    },
 };
 
 const pieceTypeMappingEXLA = {
@@ -614,6 +1013,75 @@ const pieceTypeMappingEXLA = {
     REL: "RE",
     SKD: "SK",
     UNT: "PC",
+};
+const pieceTypeMappingFEXF = {
+    BND: "BUNDLE",
+    BOX: "BOX",
+    CNT: "CONTAINER",
+    CRT: "CRATE",
+    CAS: "CASE",
+    CTN: "CARTON",
+    PCE: "PIECE",
+    PLT: "PALLET",
+    REL: "REEL",
+    SKD: "SKID",
+    UNT: "UNIT",
+};
+
+const freightClassFEXF = {
+    50: "CLASS_050",
+    55: "CLASS_055",
+    60: "CLASS_060",
+    65: "CLASS_065",
+    70: "CLASS_070",
+    77.5: "CLASS_077_5",
+    85: "CLASS_085",
+    92.5: "CLASS_092_5",
+    100: "CLASS_100",
+    110: "CLASS_110",
+    125: "CLASS_125",
+    150: "CLASS_150",
+    175: "CLASS_175",
+    200: "CLASS_200",
+    250: "CLASS_250",
+    300: "CLASS_300",
+    400: "CLASS_400",
+    500: "CLASS_500",
+};
+
+const accessorialMappingFEXF = {
+    INSPU: "INSIDE_PICKUP",
+    RESID: "LIMITED_ACCESS_PICKUP",
+    LIFT: "LIFTGATE_PICKUP",
+    APPTD: "CUSTOM_DELIVERY_WINDOW",
+    INDEL: "INSIDE_DELIVERY",
+    RESDE: "LIMITED_ACCESS_DELIVERY",
+    LIFTD: "LIFTGATE_DELIVERY",
+};
+
+const transitDaysMappingFEXP = {
+    EIGHT_DAYS: "8",
+    EIGHTEEN_DAYS: "18",
+    ELEVEN_DAYS: "11",
+    FIFTEEN_DAYS: "15",
+    FIVE_DAYS: "5",
+    FOUR_DAYS: "4",
+    FOURTEEN_DAYS: "14",
+    NINE_DAYS: "9",
+    NINETEEN_DAYS: "19",
+    ONE_DAY: "1",
+    SEVEN_DAYS: "7",
+    SEVENTEEN_DAYS: "17",
+    SIX_DAYS: "6",
+    SIXTEEN_DAYS: "16",
+    TEN_DAYS: "10",
+    THIRTEEN_DAYS: "13",
+    THREE_DAYS: "3",
+    TWELVE_DAYS: "12",
+    TWENTY_DAYS: "20",
+    TWO_DAYS: "2",
+    SMARTPOST_TRANSIT_DAYS: "7",
+    UNKNOWN: "99",
 };
 async function axiosRequest(url, payload, header = {}) {
     try {

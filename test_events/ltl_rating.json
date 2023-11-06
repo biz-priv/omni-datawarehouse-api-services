@@ -5,12 +5,13 @@
             "insuredValue": 1000,
             "shipperZip": "90210",
             "consigneeZip": "94132",
+            "reference": "e7713a22-7b5c-48d5-baa9-1cfc0fd55e79",
             "shipmentLines": [
                 {
                     "pieces": 10,
-                    "pieceType": "PCE",
+                    "pieceType": "BOX",
                     "weight": 225,
-                    "weightUOM": "L",
+                    "weightUOM": "lb",
                     "length": 20,
                     "width": 20,
                     "height": 30,
