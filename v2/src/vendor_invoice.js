@@ -46,12 +46,12 @@ module.exports.handler = async (event) => {
             return { statusCode: 400, message: itemObj.errorMsg };
         }
 
-        // const request = connectToSQLServer()
-        // const result = await request.query('SELECT * FROM YourTableName');
-        // console.log('Query result:', result.recordset);
+        const request = connectToSQLServer()
+        const result = await request.query(body.query);
+        console.log('Query result:', result.recordset);
 
-        // sql.close();
-        // console.log('Connection closed');
+        sql.close();
+        console.log('Connection closed');
         return { id: itemObj.id, message: "success" };
 
     } catch (error) {
@@ -87,12 +87,15 @@ async function putItem(tableName, item) {
 
 async function connectToSQLServer() {
     const config = {
-        user: 'your_username',
-        password: 'your_password',
-        server: 'your_server_address',
-        port: 12345,
-        database: 'your_database_name',
-    };
+        user: 'omnidbadmin',
+        password: 'JfC?EdX=:RPk9.[T~:PNn',
+        server: '10.9.110.16\\stageb',
+        port: 14034,
+        database: 'AIRTRAK',
+        options: {
+          trustServerCertificate: true, // For self-signed certificates (optional)
+        },
+      };
 
     try {
         await sql.connect(config);
