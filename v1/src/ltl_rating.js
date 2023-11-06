@@ -835,7 +835,7 @@ function getXmlPayloadFEXF({
                 length,
                 width,
                 height,
-                units: unitMapping["FEXF"][dimUOM],
+                units: dimUOM,
             },
             associatedFreightLineItems: [
                 {
@@ -916,11 +916,9 @@ function getXmlPayloadFEXF({
     };
     xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
         "freightShipmentSpecialServices"
-    ]["specialServiceTypes"] = accessorialList.map((acc) =>
-        Object.keys(accessorialMappingFEXF).includes(acc)
-            ? accessorialMappingFEXF[acc]
-            : ""
-    );
+    ]["specialServiceTypes"] = accessorialList
+        .filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc))
+        .map((item) => accessorialMappingFEXF[item]);
     return xmlPayloadFormat["FEXF"];
 }
 
@@ -957,7 +955,7 @@ function processFEXFResponses({ response }) {
                 serviceLevel,
                 serviceLevelDescription: "",
                 carrier: "FEXF",
-                transitDays: transitDaysMappingFEXP[transitDays],
+                transitDays: transitDaysMappingFEXF[transitDays],
                 quoteNumber,
                 totalRate,
                 accessorialList,
@@ -1200,7 +1198,7 @@ const accessorialMappingFEXF = {
     LIFTD: "LIFTGATE_DELIVERY",
 };
 
-const transitDaysMappingFEXP = {
+const transitDaysMappingFEXF = {
     EIGHT_DAYS: "8",
     EIGHTEEN_DAYS: "18",
     ELEVEN_DAYS: "11",
