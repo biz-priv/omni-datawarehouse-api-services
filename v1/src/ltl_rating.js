@@ -78,7 +78,7 @@ module.exports.handler = async (event, context) => {
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
-            ["FWDA", "EXLA", "FEXF"].map(async (carrier) => {
+            ["FWDA", "EXLA", "FEXF", "ODFL"].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
                         `🙂 -> file: ltl_rating.js:81 -> carrier:`,
@@ -123,15 +123,24 @@ module.exports.handler = async (event, context) => {
                         reference,
                     });
                 }
+                if (carrier === "ODFL") {
+                    return await processODFLRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                        reference,
+                    });
+                }
             })
         );
         console.log(
-            `🙂 -> file: ltl_rating.js:84 -> apiResponse:`,
+            `🙂 -> file: ltl_rating.js:127 -> apiResponse:`,
             apiResponse
         );
         const response = { ...responseBodyFormat };
-        console.log(`🙂 -> file: ltl_rating.js:116 -> response:`, response);
-
         return response;
     } catch (err) {
         console.error(`🙂 -> file: ltl_rating.js:95 -> err:`, err);
@@ -383,7 +392,6 @@ async function processFWDARequest({
 }
 
 async function processFWDAResponses({ response }) {
-    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
     let parser = new xml2js.Parser({ trim: true });
     const parsed = await parser.parseStringPromise(response);
     const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
@@ -526,13 +534,8 @@ async function processEXLARequest({
 }
 
 async function processEXLAResponses({ response }) {
-    console.log(`🙂 -> file: ltl_rating.js:103 -> response:`, response);
     let parser = new xml2js.Parser({ trim: true });
     const parsed = await parser.parseStringPromise(response);
-    console.log(
-        `🙂 -> file: ltl_rating.js:425 -> parsed:`,
-        JSON.stringify(parsed)
-    );
     const Envelope = get(parsed, "soapenv:Envelope", {});
     const Body = get(Envelope, "soapenv:Body[0]", {});
     const rateQuote = get(Body, "rat:rateQuote[0]", {});
@@ -579,7 +582,6 @@ async function processEXLAResponses({ response }) {
         }));
         return data;
     });
-    console.log(`🙂 -> file: ltl_rating.js:464 -> quoteList:`, quoteList);
     responseBodyFormat["ltlRateResponse"] = [
         ...responseBodyFormat["ltlRateResponse"],
         ...quoteList,
@@ -803,10 +805,6 @@ function getXmlPayloadFEXF({
     let totalWeight = 0;
     for (let index = 0; index < shipmentLines.length; index++) {
         const shipmentLine = shipmentLines[index];
-        console.log(
-            `🙂 -> file: ltl_rating.js:848 -> shipmentLine:`,
-            shipmentLine
-        );
         const pieceType =
             pieceTypeMappingFEXF[
                 get(shipmentLine, "pieceType", "").toUpperCase()
@@ -857,7 +855,7 @@ function getXmlPayloadFEXF({
             },
             pieces: pieces,
             freightClass: freightClassFEXF[freightClass],
-            id: "1",
+            id: index + 1,
             hazardousMaterials: hazmat ? "HAZARDOUS_MATERIALS" : hazmat,
             dimensions: {
                 length,
@@ -970,6 +968,139 @@ function processFEXFResponses({ response }) {
     });
 }
 
+async function processODFLRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+    reference,
+}) {
+    const payload = getXmlPayloadODFL({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+        reference,
+    });
+    console.log(`🙂 -> file: ltl_rating.js:955 -> payload:`, payload);
+    let headers = {
+        "Content-Type": "application/xml",
+    };
+    let url = "https://www.odfl.com/wsRate_v6/RateService";
+    const response = await axiosRequest(url, payload, headers);
+    console.log(`🙂 -> file: ltl_rating.js:961 -> response:`, response);
+    if (!response) return false;
+    await processODFLResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadODFL({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+    reference,
+}) {
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["odfl4MeUser"] = "OmniDFW";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["odfl4MePassword"] = "Omnidfw1!";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["odflCustomerAccount"] = "13469717";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["shipType"] = "LTL";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["tariff"] = "559";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["requestReferenceNumber"] = 1;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["originPostalCode"] = shipperZip;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["destinationPostalCode"] = consigneeZip;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["pickupDateTime"] = pickupTime;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["insuranceAmount"] = insuredValue;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["accessorials"] = accessorialList
+        .filter((acc) => Object.keys(accessorialMappingODFL).includes(acc))
+        .map((item) => accessorialMappingODFL[item]);
+    const shipmentLine = shipmentLines[0];
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+        "myr:getLTLRateEstimate"
+    ]["arg0"]["freightItems"] = {
+        height: get(shipmentLine, "height"),
+        width: get(shipmentLine, "width"),
+        length: get(shipmentLine, "length"),
+        numberOfUnits: get(shipmentLine, "pieces"),
+        ratedClass: get(shipmentLine, "freightClass"),
+        weight: get(shipmentLine, "weight"),
+    };
+    if (
+        get(shipmentLine, "hazmat") === true ||
+        get(shipmentLine, "hazmat") === "true"
+    ) {
+        xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
+            "myr:getLTLRateEstimate"
+        ]["arg0"]["accessorials"].push("HAZ");
+    }
+
+    const builder = new xml2js.Builder({
+        headless: true,
+    });
+    return builder.buildObject(xmlPayloadFormat.ODFL);
+}
+
+async function processODFLResponses({ response }) {
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const Body = get(parsed, "soapenv:Envelope.soapenv:Body[0]");
+    const getLTLRateEstimateResponse = get(
+        Body,
+        "ns2:getLTLRateEstimateResponse[0]"
+    );
+    const returnObj = get(getLTLRateEstimateResponse, "return[0]");
+    const success = get(returnObj, "success[0]");
+    const transitDays = get(returnObj, "destinationCities[0].serviceDays[0]");
+    const quoteNumber = get(returnObj, "referenceNumber[0]");
+    const rateEstimate = get(returnObj, "rateEstimate[0]");
+    const totalRate = get(rateEstimate, "netFreightCharge[0]");
+    const accessorialList = get(rateEstimate, "accessorialCharges", []).map(
+        (acc) => ({
+            code: "",
+            description: get(acc, "description[0]"),
+            charge: get(acc, "amount[0]"),
+        })
+    );
+    const data = {
+        carrier: "ODFL",
+        transitDays: transitDays,
+        quoteNumber,
+        totalRate,
+        accessorialList,
+    };
+    if (success === true || success === "true") {
+        responseBodyFormat["ltlRateResponse"].push(data);
+    }
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -989,6 +1120,16 @@ const accessorialMappingEXLA = {
     INDEL: "INS",
     RESDE: "HD",
     LIFTD: "LGATE",
+};
+
+const accessorialMappingODFL = {
+    INSPU: "IPC",
+    RESID: "RPC",
+    LIFT: "HYO",
+    APPTD: "CA",
+    INDEL: "IDC",
+    RESDE: "RDC",
+    LIFTD: "HYD",
 };
 
 const unitMapping = {
@@ -1083,10 +1224,10 @@ const transitDaysMappingFEXP = {
     SMARTPOST_TRANSIT_DAYS: "7",
     UNKNOWN: "99",
 };
-async function axiosRequest(url, payload, header = {}) {
+async function axiosRequest(url, payload, header = {}, method = "POST") {
     try {
         let config = {
-            method: "post",
+            method: method,
             maxBodyLength: Infinity,
             url,
             headers: { ...header },
