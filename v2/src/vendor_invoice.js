@@ -3,6 +3,7 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 const { get } = require("lodash");
+const sql = require('mssql');
 
 let itemObj = {
     id: uuidv4().toString(),
