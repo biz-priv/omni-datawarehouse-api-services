@@ -78,73 +78,85 @@ module.exports.handler = async (event, context) => {
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
-            ["FWDA", "EXLA", "FEXF", "ODFL", "ABFS"].map(async (carrier) => {
-                if (carrier === "FWDA") {
-                    console.log(
-                        `🙂 -> file: ltl_rating.js:81 -> carrier:`,
-                        carrier
-                    );
-                    return await processFWDARequest({
-                        pickupTime,
-                        insuredValue,
-                        shipperZip,
-                        consigneeZip,
-                        shipmentLines,
-                        accessorialList,
-                    });
+            ["FWDA", "EXLA", "FEXF", "ODFL", "ABFS", "AVRT"].map(
+                async (carrier) => {
+                    if (carrier === "FWDA") {
+                        console.log(
+                            `🙂 -> file: ltl_rating.js:81 -> carrier:`,
+                            carrier
+                        );
+                        return await processFWDARequest({
+                            pickupTime,
+                            insuredValue,
+                            shipperZip,
+                            consigneeZip,
+                            shipmentLines,
+                            accessorialList,
+                        });
+                    }
+                    if (carrier === "EXLA") {
+                        console.log(
+                            `🙂 -> file: ltl_rating.js:92 -> carrier:`,
+                            carrier
+                        );
+                        return await processEXLARequest({
+                            pickupTime,
+                            insuredValue,
+                            shipperZip,
+                            consigneeZip,
+                            shipmentLines,
+                            accessorialList,
+                            reference,
+                        });
+                    }
+                    if (carrier === "FEXF") {
+                        console.log(
+                            `🙂 -> file: ltl_rating.js:92 -> carrier:`,
+                            carrier
+                        );
+                        return await processFEXFRequest({
+                            pickupTime,
+                            insuredValue,
+                            shipperZip,
+                            consigneeZip,
+                            shipmentLines,
+                            accessorialList,
+                            reference,
+                        });
+                    }
+                    if (carrier === "ODFL") {
+                        return await processODFLRequest({
+                            pickupTime,
+                            insuredValue,
+                            shipperZip,
+                            consigneeZip,
+                            shipmentLines,
+                            accessorialList,
+                            reference,
+                        });
+                    }
+                    if (carrier === "ABFS") {
+                        return await processABFSRequest({
+                            pickupTime,
+                            insuredValue,
+                            shipperZip,
+                            consigneeZip,
+                            shipmentLines,
+                            accessorialList,
+                        });
+                    }
+                    if (carrier === "AVRT") {
+                        return await processAVRTRequest({
+                            pickupTime,
+                            insuredValue,
+                            shipperZip,
+                            consigneeZip,
+                            shipmentLines,
+                            accessorialList,
+                        });
+                    }
                 }
-                if (carrier === "EXLA") {
-                    console.log(
-                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
-                        carrier
-                    );
-                    return await processEXLARequest({
-                        pickupTime,
-                        insuredValue,
-                        shipperZip,
-                        consigneeZip,
-                        shipmentLines,
-                        accessorialList,
-                        reference,
-                    });
-                }
-                if (carrier === "FEXF") {
-                    console.log(
-                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
-                        carrier
-                    );
-                    return await processFEXFRequest({
-                        pickupTime,
-                        insuredValue,
-                        shipperZip,
-                        consigneeZip,
-                        shipmentLines,
-                        accessorialList,
-                        reference,
-                    });
-                }
-                if (carrier === "ODFL") {
-                    return await processODFLRequest({
-                        pickupTime,
-                        insuredValue,
-                        shipperZip,
-                        consigneeZip,
-                        shipmentLines,
-                        accessorialList,
-                        reference,
-                    });
-                }
-                if (carrier === "ABFS") {
-                    return await processABFSRequest({
-                        pickupTime,
-                        insuredValue,
-                        shipperZip,
-                        consigneeZip,
-                        shipmentLines,
-                        accessorialList,
-                    });
-                }
-            })
+            )
         );
         console.log(
             `🙂 -> file: ltl_rating.js:127 -> apiResponse:`,
@@ -389,6 +401,25 @@ const xmlPayloadFormat = {
         Acc_IDEL: "Y",
         Acc_RDEL: "Y",
         Acc_GRD_DEL: "Y",
+    },
+    AVRT: {
+        accountNumber: "",
+        customerType: "",
+        paymentType: "",
+        originZip: "",
+        originCity: "",
+        originState: "",
+        destinationZip: "",
+        destinationCity: "",
+        destinationState: "",
+        additionalCargoLiability: "",
+        shipDate: "",
+        numPieces: "",
+        cubicFeet: "",
+        shipmentInfo: {
+            items: [],
+            accessorials: {},
+        },
     },
 };
 
@@ -1254,6 +1285,118 @@ async function processABFSResponses({ response }) {
     }
 }
 
+async function processAVRTRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadAVRT({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: ltl_rating.js:955 -> payload:`, payload);
+    let headers = {};
+    const url = `https://api.averittexpress.com/rate-quotes/ltl?api_key=f6723fe521a149c0871694379cf0c047`;
+    console.log(`🙂 -> file: ltl_rating.js:1163 -> url:`, url);
+    const response = await axiosRequest(url, payload, headers);
+    console.log(`🙂 -> file: ltl_rating.js:1164 -> response:`, response);
+    if (!response) return false;
+    processAVRTResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadAVRT({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const shipperDetails = zips[shipperZip];
+    const destinationDetails = zips[consigneeZip];
+    xmlPayloadFormat["AVRT"]["accountNumber"] = "0834627";
+    xmlPayloadFormat["AVRT"]["customerType"] = "Third Party";
+    xmlPayloadFormat["AVRT"]["paymentType"] = "Prepaid";
+    xmlPayloadFormat["AVRT"]["originZip"] =
+        get(shipperDetails, "zip_code") + "";
+    xmlPayloadFormat["AVRT"]["originCity"] = get(shipperDetails, "city");
+    xmlPayloadFormat["AVRT"]["originState"] = get(shipperDetails, "state");
+    xmlPayloadFormat["AVRT"]["destinationZip"] =
+        get(destinationDetails, "zip_code") + "";
+    xmlPayloadFormat["AVRT"]["destinationCity"] = get(
+        destinationDetails,
+        "city"
+    );
+    xmlPayloadFormat["AVRT"]["destinationState"] = get(
+        destinationDetails,
+        "state"
+    );
+    xmlPayloadFormat["AVRT"]["additionalCargoLiability"] = insuredValue;
+    xmlPayloadFormat["AVRT"]["shipDate"] = pickupTime.split("T")[0];
+    const shipmentLine = shipmentLines[0];
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const height = get(shipmentLine, "height");
+    const cubicFeet = (length * width * height) / Math.pow(12, 3);
+    xmlPayloadFormat["AVRT"]["numPieces"] = get(shipmentLine, "pieces");
+    xmlPayloadFormat["AVRT"]["cubicFeet"] = cubicFeet;
+    xmlPayloadFormat["AVRT"]["shipmentInfo"]["items"].push({
+        shipmentClass: get(shipmentLine, "freightClass"),
+        shipmentWeight: get(shipmentLine, "weight"),
+    });
+    if (get(shipmentLine, "hazmat"))
+        xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
+            "hazmat"
+        ] = true;
+    accessorialList.forEach((acc) => {
+        if (["LIFT", "LIFTD"].includes(acc))
+            xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
+                "liftgate"
+            ] = true;
+        if (acc === "INDEL")
+            xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
+                "insideDelivery"
+            ] = true;
+        if (acc === "RESDE")
+            xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
+                "residentialDelivery"
+            ] = true;
+    });
+
+    return xmlPayloadFormat["AVRT"];
+}
+
+function processAVRTResponses({ response }) {
+    const quoteDetails = get(response, "quoteDetails");
+    const quoteNumber = get(quoteDetails, "rateQuoteNumber");
+    const serviceLevelDescription = get(quoteDetails, "deliveryOption");
+    const totalRate = get(quoteDetails, "totalCharge");
+    const transitDays = get(quoteDetails, "estimatedServiceDays");
+    const accessorialList = get(response, "accessorialCharges", []).map(
+        (acc) => ({
+            description: get(acc, "description"),
+            charge: get(acc, "value"),
+        })
+    );
+    const data = {
+        serviceLevelDescription,
+        carrier: "AVRT",
+        transitDays,
+        quoteNumber,
+        totalRate,
+        accessorialList,
+    };
+    responseBodyFormat["ltlRateResponse"].push(data);
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -1405,7 +1548,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST") {
         };
 
         const res = await axios.request(config);
-        if (res.status === 200) {
+        if (res.status < 300) {
             return get(res, "data", {});
         } else {
             return false;
