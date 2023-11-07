@@ -49,6 +49,7 @@ module.exports.handler = async (event) => {
         const request = connectToSQLServer()
         const result = await request.query(body.query);
         console.log('Query result:', result.recordset);
+        console.log('Query result:', result);
 
         sql.close();
         console.log('Connection closed');
