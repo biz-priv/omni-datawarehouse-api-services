@@ -4,6 +4,12 @@ function:
   description: vendor invoice api service - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 30
+  vpc:
+    securityGroupIds:
+      - sg-05aca262 # Replace with your Security Group ID
+    subnetIds:
+      - subnet-0cb3579faeb2eb35a
+      - subnet-02f7e992815ec7d08
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512
