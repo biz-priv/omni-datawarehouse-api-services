@@ -72,6 +72,7 @@ module.exports.handler = async (event) => {
         }
         const fileNumber = get(result, "recordset[0].FK_OrderNo", "")
         let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body, "vendorInvoiceRequest.vendorReference", null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
+        console.log("updateQuery: ", updateQuery)
         await request.query(updateQuery);
 
         sql.close();
@@ -90,7 +91,6 @@ module.exports.handler = async (event) => {
         // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
         return { statusCode: 400, message: errorMsgVal };
     }
-
 }
 
 
