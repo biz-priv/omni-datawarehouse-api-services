@@ -8,9 +8,11 @@ const sql = require('mssql');
 let itemObj = {
     id: uuidv4().toString(),
     housebill: "",
-    filleNumber: "",
+    fileNumber: "",
+    vendorId: "",
+    vendorReference: "",
     createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
-    eventBody: "",
+    eventBody: {},
     xmlRequestPayload: "",
     xmlResponsePayload: "",
     errorMsg: "",
@@ -22,7 +24,6 @@ module.exports.handler = async (event) => {
     console.info("event", JSON.stringify(event));
 
     try {
-
         const body = get(event, "body", {});
         itemObj.eventBody = body;
 
@@ -38,7 +39,7 @@ module.exports.handler = async (event) => {
                     itemObj.errorMsg = "vendorId is required in vendorInvoiceRequest.";
                 }
             }
-        }else{
+        } else {
             itemObj.errorMsg = "Unauthorized request."
         }
 
@@ -47,28 +48,32 @@ module.exports.handler = async (event) => {
             return { statusCode: 400, message: itemObj.errorMsg };
         }
 
-        const request = await connectToSQLServer();
-        const result = await request.query(body.query);
-        console.log('Query result:', result.recordset);
-        console.log('Query result:', result);
+        let getQuery;
+        itemObj.vendorId = get(body, "vendorInvoiceRequest.vendorId", null)
+        itemObj.vendorReference = get(body, "vendorInvoiceRequest.vendorReference", null)
+        if (get(body, "vendorInvoiceRequest.fileNumber", null) !== null) {
+            itemObj.fileNumber = get(body, "vendorInvoiceRequest.fileNumber", null)
+            getQuery = `select * from tbl_shipmentapar where fk_orderno=${get(body, "vendorInvoiceRequest.fileNumber", null)} and fk_vendorid=${get(body, "vendorInvoiceRequest.vendorId", null)} and finalize<>'Y'`
+        } else {
+            itemObj.housebill = get(body, "vendorInvoiceRequest.housebill", null)
+            getQuery = `select * from tbl_ShipmentHeader a join tbl_shipmentapar b on a.PK_Orderno=b.FK_OrderNo where a.Housebill=${get(body, "vendorInvoiceRequest.housebill", null)} and b.FK_VendorId=${get(body, "vendorInvoiceRequest.vendorId", null)} and b.Finalize<>'Y'`
+        }
 
-        let updateQuery;
-        if(get(result, "recordset", []).lenght === 0 || get(result, "recordset", []).lenght > 2){
+        console.info("getQuery: ", getQuery);
+        const request = await connectToSQLServer();
+        const result = await request.query(getQuery);
+        console.log('Query result:', result);
+        console.log('Query records:', result.recordset);
+
+        if (get(result, "recordset", []).length === 0 || get(result, "recordset", []).length > 2) {
             throw {
                 message: "0 rows updated"
             }
-        }else{
-            const refNo = get(body, "vendorInvoiceRequest.vendorReference", null)
-            const vendorId = get(body, "vendorInvoiceRequest.vendorId", null)
-            if(get(body, "vendorInvoiceRequest.housebill", null) === null){
-                const fileNumber = get(body, "vendorInvoiceRequest.fileNumber", null);
-                updateQuery = `update dbo.tbl_shipmentapar set refno=${refNo} where fk_orderno=${fileNumber} and fk_vendorid=${vendorId} and finalize<>'Y'`
-            }else{
-                updateQuery = ``
-            }
-            await request.query(updateQuery);
         }
-        
+        const fileNumber = get(result, "recordset[0].FK_OrderNo", "")
+        let updateQuery = `update dbo.tbl_shipmentapar set refno=${get(body, "vendorInvoiceRequest.vendorReference", null)} where fk_orderno=${fileNumber} and fk_vendorid=${get(body, "vendorInvoiceRequest.vendorId", null)} and finalize<>'Y'`
+        await request.query(updateQuery);
+
         sql.close();
         console.log('Connection closed');
         return { id: itemObj.id, message: "success" };
@@ -112,9 +117,9 @@ async function connectToSQLServer() {
         port: 14034,
         database: 'AIRTRAK',
         options: {
-          trustServerCertificate: true, // For self-signed certificates (optional)
+            trustServerCertificate: true, // For self-signed certificates (optional)
         },
-      };
+    };
 
     try {
         await sql.connect(config);
