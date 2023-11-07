@@ -78,85 +78,112 @@ module.exports.handler = async (event, context) => {
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
-            ["FWDA", "EXLA", "FEXF", "ODFL", "ABFS", "AVRT"].map(
-                async (carrier) => {
-                    if (carrier === "FWDA") {
-                        console.log(
-                            `🙂 -> file: ltl_rating.js:81 -> carrier:`,
-                            carrier
-                        );
-                        return await processFWDARequest({
-                            pickupTime,
-                            insuredValue,
-                            shipperZip,
-                            consigneeZip,
-                            shipmentLines,
-                            accessorialList,
-                        });
-                    }
-                    if (carrier === "EXLA") {
-                        console.log(
-                            `🙂 -> file: ltl_rating.js:92 -> carrier:`,
-                            carrier
-                        );
-                        return await processEXLARequest({
-                            pickupTime,
-                            insuredValue,
-                            shipperZip,
-                            consigneeZip,
-                            shipmentLines,
-                            accessorialList,
-                            reference,
-                        });
-                    }
-                    if (carrier === "FEXF") {
-                        console.log(
-                            `🙂 -> file: ltl_rating.js:92 -> carrier:`,
-                            carrier
-                        );
-                        return await processFEXFRequest({
-                            pickupTime,
-                            insuredValue,
-                            shipperZip,
-                            consigneeZip,
-                            shipmentLines,
-                            accessorialList,
-                            reference,
-                        });
-                    }
-                    if (carrier === "ODFL") {
-                        return await processODFLRequest({
-                            pickupTime,
-                            insuredValue,
-                            shipperZip,
-                            consigneeZip,
-                            shipmentLines,
-                            accessorialList,
-                            reference,
-                        });
-                    }
-                    if (carrier === "ABFS") {
-                        return await processABFSRequest({
-                            pickupTime,
-                            insuredValue,
-                            shipperZip,
-                            consigneeZip,
-                            shipmentLines,
-                            accessorialList,
-                        });
-                    }
-                    if (carrier === "AVRT") {
-                        return await processAVRTRequest({
-                            pickupTime,
-                            insuredValue,
-                            shipperZip,
-                            consigneeZip,
-                            shipmentLines,
-                            accessorialList,
-                        });
-                    }
+            [
+                "FWDA",
+                "EXLA",
+                "FEXF",
+                "ODFL",
+                "ABFS",
+                "AVRT",
+                "DAFG",
+                "SEFN",
+            ].map(async (carrier) => {
+                if (carrier === "FWDA") {
+                    console.log(
+                        `🙂 -> file: ltl_rating.js:81 -> carrier:`,
+                        carrier
+                    );
+                    return await processFWDARequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
                 }
-            )
+                if (carrier === "EXLA") {
+                    console.log(
+                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
+                        carrier
+                    );
+                    return await processEXLARequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                        reference,
+                    });
+                }
+                if (carrier === "FEXF") {
+                    console.log(
+                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
+                        carrier
+                    );
+                    return await processFEXFRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                        reference,
+                    });
+                }
+                if (carrier === "ODFL") {
+                    return await processODFLRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                        reference,
+                    });
+                }
+                if (carrier === "ABFS") {
+                    return await processABFSRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "AVRT") {
+                    return await processAVRTRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "DAFG") {
+                    return await processDAFGRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "SEFN") {
+                    return await processSEFNRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+            })
         );
         console.log(
             `🙂 -> file: ltl_rating.js:127 -> apiResponse:`,
@@ -420,6 +447,47 @@ const xmlPayloadFormat = {
             items: [],
             accessorials: {},
         },
+    },
+    DAFG: {
+        accessorials: [],
+        account: "",
+        destination: "",
+        handlingUnits: [],
+        items: [],
+        origin: "",
+        shipmentDate: "",
+        terms: "",
+    },
+    SEFN: {
+        Username: "",
+        Password: "",
+        CustomerAccount: "",
+        returnX: "",
+        rateXML: "",
+        Option: "",
+        PickupDateMM: "",
+        PickupDateDD: "",
+        PickupDateYYYY: "",
+        Terms: "",
+        OriginZip: "",
+        OrigCountry: "",
+        DestinationZip: "",
+        DestCountry: "",
+        NumberOfUnits1: "",
+        Weight1: "",
+        DimsOption: "",
+        PieceLength1: "",
+        PieceWidth1: "",
+        PieceHeight1: "",
+        UnitOfMeasure1: "",
+        chkHM: "",
+        Class1: "",
+        chkIP: "",
+        chkPR: "",
+        chkLGP: "",
+        chkID: "",
+        chkPR: "",
+        chkLGD: "",
     },
 };
 
@@ -1220,7 +1288,7 @@ function getXmlPayloadABFS({
         "month"
     );
     xmlPayloadFormat["ABFS"]["ShipDay"] = moment(new Date(pickupTime)).get(
-        "day"
+        "date"
     );
     xmlPayloadFormat["ABFS"]["ShipYear"] = moment(new Date(pickupTime)).get(
         "year"
@@ -1398,6 +1466,218 @@ function processAVRTResponses({ response }) {
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+async function processDAFGRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadDAFG({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    let headers = {
+        Authorization: "Basic TUFDSDE6TWFjaDFMVEw=",
+        "Content-Type": "application/json",
+    };
+    const url = `https://api.daytonfreight.com/api/Rates`;
+    const response = await axiosRequest(url, JSON.stringify(payload), headers);
+    if (!response) return false;
+    processDAFGResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadDAFG({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    xmlPayloadFormat["DAFG"]["account"] = "AE11312";
+    xmlPayloadFormat["DAFG"]["destination"] = consigneeZip;
+    xmlPayloadFormat["DAFG"]["origin"] = shipperZip;
+    xmlPayloadFormat["DAFG"]["shipmentDate"] = pickupTime;
+    xmlPayloadFormat["DAFG"]["terms"] = "ThirdPartyPrepaid";
+    const shipmentLine = shipmentLines[0];
+    const height = get(shipmentLine, "height");
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const weight = get(shipmentLine, "weight");
+    const hazmat = get(shipmentLine, "hazmat", false);
+    const pieces = get(shipmentLine, "pieces");
+    const freightClass = get(shipmentLine, "freightClass");
+
+    xmlPayloadFormat["DAFG"]["handlingUnits"].push({
+        height,
+        length,
+        quantity: pieces,
+        width,
+        stackable: false,
+    });
+
+    xmlPayloadFormat["DAFG"]["items"].push({
+        class: freightClass,
+        weight,
+    });
+    xmlPayloadFormat["DAFG"]["accessorials"] = accessorialList
+        .filter((acc) => Object.keys(accessorialMappingDAFG).includes(acc))
+        .map((item) => accessorialMappingDAFG[item]);
+    if (hazmat) xmlPayloadFormat["DAFG"]["accessorials"].push("HMF");
+    return xmlPayloadFormat["DAFG"];
+}
+
+function processDAFGResponses({ response }) {
+    const quoteNumber = get(response, "id");
+    const totalRate = get(response, "total");
+    const transitDays = get(response, "serviceEligibility.serviceDays");
+    const accessorialList = get(response, "accessorials", []).map((acc) => ({
+        code: get(acc, "code"),
+        description: get(acc, "name"),
+        charge: get(acc, "amount"),
+    }));
+    const data = {
+        serviceLevel: "",
+        serviceLevelDescription: "",
+        carrier: "DAFG",
+        transitDays,
+        quoteNumber,
+        totalRate,
+        accessorialList,
+    };
+    console.log(`🙂 -> file: index.js:324 -> data:`, data);
+    responseBodyFormat["ltlRateResponse"].push(data);
+}
+
+async function processSEFNRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadSEFN({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: index.js:350 -> payload:`, payload);
+    let headers = {};
+    const baseUrl = `https://www.sefl.com/webconnect/ratequotes`;
+    const query = qs.stringify(payload);
+    const url = `${baseUrl}?${query}`;
+    const response = await axiosRequest(url, undefined, headers, "get");
+    console.log(`🙂 -> file: ltl_rating.js:1571 -> url:`, url);
+    if (!response) return false;
+    await processSEFNResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadSEFN({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    xmlPayloadFormat["SEFN"]["Username"] = "OMNILOG";
+    xmlPayloadFormat["SEFN"]["Password"] = "OMN474";
+    xmlPayloadFormat["SEFN"]["CustomerAccount"] = 999840398;
+    xmlPayloadFormat["SEFN"]["returnX"] = "Y";
+    xmlPayloadFormat["SEFN"]["rateXML"] = "Y";
+    xmlPayloadFormat["SEFN"]["Option"] = "T";
+    xmlPayloadFormat["SEFN"]["PickupDateMM"] =
+        moment(new Date(pickupTime)).get("month") + 1;
+    xmlPayloadFormat["SEFN"]["PickupDateDD"] = moment(new Date(pickupTime)).get(
+        "date"
+    );
+    xmlPayloadFormat["SEFN"]["PickupDateYYYY"] = moment(
+        new Date(pickupTime)
+    ).get("year");
+    xmlPayloadFormat["SEFN"]["Terms"] = "P";
+    xmlPayloadFormat["SEFN"]["OriginZip"] = shipperZip;
+    xmlPayloadFormat["SEFN"]["OrigCountry"] = "U";
+    xmlPayloadFormat["SEFN"]["DestinationZip"] = consigneeZip;
+    xmlPayloadFormat["SEFN"]["DestCountry"] = "U";
+    xmlPayloadFormat["SEFN"]["DestCountry"] = "U";
+    const shipmentLine = shipmentLines[0];
+    const height = get(shipmentLine, "height");
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const weight = get(shipmentLine, "weight");
+    const hazmat = get(shipmentLine, "hazmat", false);
+    const pieces = get(shipmentLine, "pieces");
+    const freightClass = get(shipmentLine, "freightClass");
+    const dimUOM = unitMapping["SEFN"][get(shipmentLine, "dimUOM")];
+    xmlPayloadFormat["SEFN"]["NumberOfUnits1"] = pieces;
+    xmlPayloadFormat["SEFN"]["Weight1"] = weight;
+    xmlPayloadFormat["SEFN"]["DimsOption"] = "I";
+    xmlPayloadFormat["SEFN"]["PieceLength1"] = length;
+    xmlPayloadFormat["SEFN"]["PieceWidth1"] = width;
+    xmlPayloadFormat["SEFN"]["PieceHeight1"] = height;
+    xmlPayloadFormat["SEFN"]["UnitOfMeasure1"] = dimUOM;
+    xmlPayloadFormat["SEFN"]["UnitOfMeasure1"] = dimUOM;
+    if (hazmat) xmlPayloadFormat["SEFN"]["chkHM"] = "on";
+    xmlPayloadFormat["SEFN"]["Class1"] = freightClass;
+
+    accessorialList
+        .filter((acc) => Object.keys(accessorialMappingSEFN).includes(acc))
+        .map((item) => {
+            if (item === "INSPU") xmlPayloadFormat["SEFN"]["chkIP"] = "on";
+            if (item === "RESID") xmlPayloadFormat["SEFN"]["chkPR"] = "on";
+            if (item === "LIFT") xmlPayloadFormat["SEFN"]["chkLGP"] = "on";
+            if (item === "INDEL") xmlPayloadFormat["SEFN"]["chkID"] = "on";
+            if (item === "RESDE") xmlPayloadFormat["SEFN"]["chkPR"] = "on";
+            if (item === "LIFTD") xmlPayloadFormat["SEFN"]["chkLGD"] = "on";
+        });
+
+    return xmlPayloadFormat["SEFN"];
+}
+
+async function processSEFNResponses({ response }) {
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const dataRoot = get(parsed, "root");
+    const error = get(dataRoot, "error[0]") !== "";
+    const quoteNumber = get(dataRoot, "quoteId[0]");
+    const totalRate = get(dataRoot, "rateQuote[0]");
+    const transitDays = get(dataRoot, "transitTime[0]");
+    const details = get(dataRoot, "details[0]");
+    const typeCharge = get(details, "typeCharge", []);
+    const descArray = get(details, "description", []);
+    const chargeArray = get(details, "charges", []);
+    const accessorialList = [];
+    for (let index = 0; index < typeCharge.length; index++) {
+        const code = typeCharge[index] ?? "";
+        const description = descArray[index] ?? "";
+        const charge = chargeArray[index] ?? "";
+        accessorialList.push({ code, description, charge });
+    }
+    const data = {
+        carrier: "SEFN",
+        serviceLevel: "",
+        serviceLevelDescription: "",
+        quoteNumber,
+        transitDays,
+        totalRate,
+        accessorialList,
+    };
+    if (error) return false;
+    responseBodyFormat["ltlRateResponse"].push(data);
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -1440,6 +1720,9 @@ const unitMapping = {
     ABFS: {
         lb: "LB",
         in: "IN",
+    },
+    SEFN: {
+        in: "I",
     },
 };
 
@@ -1537,6 +1820,27 @@ const pieceTypeMappingABFS = {
     REL: "REL",
     SKD: "SKD",
 };
+
+const accessorialMappingDAFG = {
+    INSPU: "IPC",
+    RESID: "RESIP",
+    LIFT: "LIFTPU",
+    APPTD: "NOT",
+    INDEL: "IDC",
+    RESDE: "RESID",
+    LIFTD: "LIFTPU",
+};
+
+const accessorialMappingSEFN = {
+    INSPU: "IPC",
+    RESID: "RESIP",
+    LIFT: "LIFTPU",
+    APPTD: "NOT",
+    INDEL: "IDC",
+    RESDE: "RESID",
+    LIFTD: "LIFTPU",
+};
+
 async function axiosRequest(url, payload, header = {}, method = "POST") {
     try {
         let config = {
