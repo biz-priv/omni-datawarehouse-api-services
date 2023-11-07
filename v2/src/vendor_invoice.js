@@ -53,10 +53,10 @@ module.exports.handler = async (event) => {
         itemObj.vendorReference = get(body, "vendorInvoiceRequest.vendorReference", null)
         if (get(body, "vendorInvoiceRequest.fileNumber", null) !== null) {
             itemObj.fileNumber = get(body, "vendorInvoiceRequest.fileNumber", null)
-            getQuery = `select * from tbl_shipmentapar where fk_orderno=${get(body, "vendorInvoiceRequest.fileNumber", null)} and fk_vendorid=${get(body, "vendorInvoiceRequest.vendorId", null)} and finalize<>'Y'`
+            getQuery = `select * from tbl_shipmentapar where fk_orderno='${get(body, "vendorInvoiceRequest.fileNumber", null)}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
         } else {
             itemObj.housebill = get(body, "vendorInvoiceRequest.housebill", null)
-            getQuery = `select * from tbl_ShipmentHeader a join tbl_shipmentapar b on a.PK_Orderno=b.FK_OrderNo where a.Housebill=${get(body, "vendorInvoiceRequest.housebill", null)} and b.FK_VendorId=${get(body, "vendorInvoiceRequest.vendorId", null)} and b.Finalize<>'Y'`
+            getQuery = `select * from tbl_ShipmentHeader a join tbl_shipmentapar b on a.PK_Orderno=b.FK_OrderNo where a.Housebill='${get(body, "vendorInvoiceRequest.housebill", null)}' and b.FK_VendorId='${get(body, "vendorInvoiceRequest.vendorId", null)}' and b.Finalize<>'Y'`
         }
 
         console.info("getQuery: ", getQuery);
@@ -71,7 +71,7 @@ module.exports.handler = async (event) => {
             }
         }
         const fileNumber = get(result, "recordset[0].FK_OrderNo", "")
-        let updateQuery = `update dbo.tbl_shipmentapar set refno=${get(body, "vendorInvoiceRequest.vendorReference", null)} where fk_orderno=${fileNumber} and fk_vendorid=${get(body, "vendorInvoiceRequest.vendorId", null)} and finalize<>'Y'`
+        let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body, "vendorInvoiceRequest.vendorReference", null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
         await request.query(updateQuery);
 
         sql.close();
