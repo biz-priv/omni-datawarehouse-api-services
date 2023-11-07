@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { get, includes } = require("lodash");
+const { get } = require("lodash");
 const { v4 } = require("uuid");
 const xml2js = require("xml2js");
 const axios = require("axios");
@@ -723,8 +723,9 @@ function getXmlPayloadEXLA({
     for (const accessorial of accessorialList) {
         xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
             "rat1:rateRequest"
-        ]["rat1:accessorials"]["rat1:accessorialCode"] =
-            accessorialMappingEXLA[accessorial];
+        ]["rat1:accessorials"]["rat1:accessorialCode"].push(
+            accessorialMappingEXLA[accessorial]
+        );
     }
 
     if (get(shipmentLines, "[0].hazmat") === true) {
