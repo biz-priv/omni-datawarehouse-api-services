@@ -78,7 +78,7 @@ module.exports.handler = async (event, context) => {
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
-            ["FWDA", "EXLA", "FEXF", "ODFL"].map(async (carrier) => {
+            ["FWDA", "EXLA", "FEXF", "ODFL", "ABFS"].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
                         `🙂 -> file: ltl_rating.js:81 -> carrier:`,
@@ -132,6 +132,16 @@ module.exports.handler = async (event, context) => {
                         shipmentLines,
                         accessorialList,
                         reference,
+                    });
+                }
+                if (carrier === "ABFS") {
+                    return await processABFSRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
                     });
                 }
             })
@@ -350,6 +360,35 @@ const xmlPayloadFormat = {
                 specialServiceTypes: [],
             },
         },
+    },
+    ABFS: {
+        ID: "99YGF074",
+        TPBAFF: "Y",
+        TPBPay: "Y",
+        TPBZip: "75019",
+        ShipZip: "90210",
+        ConsZip: "94132",
+        DeclaredValue: "1000",
+        Acc_ELC: "Y",
+        DeclaredType: "N",
+        ShipMonth: "10",
+        ShipDay: "01",
+        ShipYear: "2023",
+        FrtHght1: "30",
+        FrtLng1: "20",
+        FrtWdth1: "20",
+        FrtLWHType: "IN",
+        UnitNo1: "3",
+        UnitType1: "PC",
+        Class1: "70",
+        Wgt1: "225",
+        Acc_HAZ: "Y",
+        Acc_IPU: "Y",
+        Acc_RPU: "Y",
+        Acc_GRD_PU: "Y",
+        Acc_IDEL: "Y",
+        Acc_RDEL: "Y",
+        Acc_GRD_DEL: "Y",
     },
 };
 
@@ -1099,6 +1138,122 @@ async function processODFLResponses({ response }) {
     }
 }
 
+async function processABFSRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadABFS({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: ltl_rating.js:955 -> payload:`, payload);
+    let headers = {};
+    const baseUrl = "https://www.abfs.com/xml/aquotexml.asp";
+    const queryString = qs.stringify(payload);
+    const url = `${baseUrl}?${queryString}`;
+    console.log(`🙂 -> file: ltl_rating.js:1163 -> url:`, url);
+    const response = await axiosRequest(url, payload, headers, "get");
+    console.log(`🙂 -> file: ltl_rating.js:1164 -> response:`, response);
+    if (!response) return false;
+    await processABFSResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadABFS({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    xmlPayloadFormat["ABFS"]["ID"] = "99YGF074";
+    xmlPayloadFormat["ABFS"]["TPBAFF"] = "Y";
+    xmlPayloadFormat["ABFS"]["TPBPay"] = "Y";
+    xmlPayloadFormat["ABFS"]["TPBZip"] = "75019";
+    xmlPayloadFormat["ABFS"]["ShipZip"] = shipperZip;
+    xmlPayloadFormat["ABFS"]["ConsZip"] = consigneeZip;
+    xmlPayloadFormat["ABFS"]["DeclaredValue"] = insuredValue;
+    xmlPayloadFormat["ABFS"]["Acc_ELC"] = "Y";
+    xmlPayloadFormat["ABFS"]["DeclaredType"] = "N";
+    xmlPayloadFormat["ABFS"]["ShipMonth"] = moment(new Date(pickupTime)).get(
+        "month"
+    );
+    xmlPayloadFormat["ABFS"]["ShipDay"] = moment(new Date(pickupTime)).get(
+        "day"
+    );
+    xmlPayloadFormat["ABFS"]["ShipYear"] = moment(new Date(pickupTime)).get(
+        "year"
+    );
+    const shipmentLine = shipmentLines[0];
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const height = get(shipmentLine, "height");
+    const dimUOM = unitMapping["ABFS"][get(shipmentLine, "dimUOM")];
+    const hazmat = get(shipmentLine, "hazmat", false);
+    const freightClass = get(shipmentLine, "freightClass");
+    const pieces = get(shipmentLine, "pieces");
+    const pieceType = pieceTypeMappingABFS[get(shipmentLine, "pieceType")];
+    const weight = get(shipmentLine, "weight");
+    xmlPayloadFormat["ABFS"]["FrtHght1"] = height;
+    xmlPayloadFormat["ABFS"]["FrtLng1"] = length;
+    xmlPayloadFormat["ABFS"]["FrtWdth1"] = width;
+    xmlPayloadFormat["ABFS"]["FrtLWHType"] = dimUOM;
+    xmlPayloadFormat["ABFS"]["UnitNo1"] = pieces;
+    xmlPayloadFormat["ABFS"]["UnitType1"] = pieceType;
+    xmlPayloadFormat["ABFS"]["Class1"] = freightClass;
+    xmlPayloadFormat["ABFS"]["Wgt1"] = weight;
+    xmlPayloadFormat["ABFS"]["Acc_HAZ"] = hazmat ? "Y" : "N";
+    for (let item of accessorialList) {
+        if (item === "INSPU") {
+            xmlPayloadFormat["ABFS"]["Acc_IPU"] = "Y";
+        } else xmlPayloadFormat["ABFS"]["Acc_IPU"] = "N";
+        if (item === "RESID") {
+            xmlPayloadFormat["ABFS"]["Acc_RPU"] = "Y";
+        } else xmlPayloadFormat["ABFS"]["Acc_RPU"] = "N";
+        if (item === "LIFT") {
+            xmlPayloadFormat["ABFS"]["Acc_GRD_PU"] = "Y";
+        } else xmlPayloadFormat["ABFS"]["Acc_GRD_PU"] = "N";
+        if (item === "INDEL") {
+            xmlPayloadFormat["ABFS"]["Acc_IDEL"] = "Y";
+        } else xmlPayloadFormat["ABFS"]["Acc_IDEL"] = "N";
+        if (item === "RESDE") {
+            xmlPayloadFormat["ABFS"]["Acc_RDEL"] = "Y";
+        } else xmlPayloadFormat["ABFS"]["Acc_RDEL"] = "N";
+        if (item === "LIFTD") {
+            xmlPayloadFormat["ABFS"]["Acc_GRD_DEL"] = "Y";
+        } else xmlPayloadFormat["ABFS"]["Acc_GRD_DEL"] = "N";
+    }
+    return xmlPayloadFormat["ABFS"];
+}
+
+async function processABFSResponses({ response }) {
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const afb = get(parsed, "ABF", {});
+    const isError = Object.keys(afb).includes("ERROR");
+    const quoteNumber = get(afb, "QUOTEID[0]");
+    const totalRate = get(afb, "CHARGE[0]");
+    const transitDays = parseInt(get(afb, "ADVERTISEDTRANSIT[0]", 0), 10);
+    const data = {
+        carrier: "ABFS",
+        transitDays,
+        quoteNumber,
+        totalRate,
+    };
+    if (!isError) {
+        responseBodyFormat["ltlRateResponse"].push(data);
+    }
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -1135,6 +1290,10 @@ const unitMapping = {
         lb: "L",
     },
     FEXF: {
+        lb: "LB",
+        in: "IN",
+    },
+    ABFS: {
         lb: "LB",
         in: "IN",
     },
@@ -1222,6 +1381,18 @@ const transitDaysMappingFEXF = {
     SMARTPOST_TRANSIT_DAYS: "7",
     UNKNOWN: "99",
 };
+
+const pieceTypeMappingABFS = {
+    BND: "BDL",
+    BOX: "BX",
+    CRT: "CRT",
+    CAS: "CS",
+    CTN: "CTN",
+    PCE: "PC",
+    PLT: "PLT",
+    REL: "REL",
+    SKD: "SKD",
+};
 async function axiosRequest(url, payload, header = {}, method = "POST") {
     try {
         let config = {
@@ -1230,6 +1401,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST") {
             url,
             headers: { ...header },
             data: payload,
+            timeout: 20000,
         };
 
         const res = await axios.request(config);

@@ -1,7 +1,7 @@
 {
     "body": {
         "ltlRateRequest": {
-            "pickupTime": "2022-11-30T17:00:00",
+            "pickupTime": "2023-11-30T17:00:00",
             "insuredValue": 1000,
             "shipperZip": "90210",
             "consigneeZip": "94132",
