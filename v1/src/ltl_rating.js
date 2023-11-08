@@ -87,6 +87,7 @@ module.exports.handler = async (event, context) => {
                 "AVRT",
                 "DAFG",
                 "SEFN",
+                "PENS",
             ].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
@@ -175,6 +176,16 @@ module.exports.handler = async (event, context) => {
                 }
                 if (carrier === "SEFN") {
                     return await processSEFNRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "PENS") {
+                    return await processPENSRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -488,6 +499,33 @@ const xmlPayloadFormat = {
         chkID: "",
         chkPR: "",
         chkLGD: "",
+    },
+    PENS: {
+        "soap12:Envelope": {
+            $: {
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+                "xmlns:soap12": "http://www.w3.org/2003/05/soap-envelope",
+            },
+            "soap12:Body": {
+                CreatePensRateQuote: {
+                    $: { xmlns: "http://peninsulatruck.com/WebServices" },
+                    userId: "",
+                    password: "",
+                    account: "",
+                    customerType: "",
+                    nonePalletizedMode: "",
+                    originZip: "",
+                    destinationZip: "",
+                    classList: "",
+                    weightList: "",
+                    pltCountList: "",
+                    pltLengthList: "",
+                    pltWidthList: "",
+                    accessorialList: [],
+                },
+            },
+        },
     },
 };
 
@@ -1312,7 +1350,12 @@ function getXmlPayloadABFS({
     xmlPayloadFormat["ABFS"]["Class1"] = freightClass;
     xmlPayloadFormat["ABFS"]["Wgt1"] = weight;
     xmlPayloadFormat["ABFS"]["Acc_HAZ"] = hazmat ? "Y" : "N";
-    for (let item of accessorialList) {
+    setAccessorialForABFS(accessorialList);
+    return xmlPayloadFormat["ABFS"];
+}
+
+function setAccessorialForABFS(accessorialList) {
+    accessorialList.map((item) => {
         if (item === "INSPU") {
             xmlPayloadFormat["ABFS"]["Acc_IPU"] = "Y";
         } else xmlPayloadFormat["ABFS"]["Acc_IPU"] = "N";
@@ -1331,8 +1374,7 @@ function getXmlPayloadABFS({
         if (item === "LIFTD") {
             xmlPayloadFormat["ABFS"]["Acc_GRD_DEL"] = "Y";
         } else xmlPayloadFormat["ABFS"]["Acc_GRD_DEL"] = "N";
-    }
-    return xmlPayloadFormat["ABFS"];
+    });
 }
 
 async function processABFSResponses({ response }) {
@@ -1678,6 +1720,144 @@ async function processSEFNResponses({ response }) {
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+async function processPENSRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadPENS({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: index.js:350 -> payload:`, payload);
+    let headers = { "Content-Type": "application/soap+xml; charset=utf-8" };
+    const url =
+        "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
+    const response = await axiosRequest(url, payload, headers);
+    console.log(`🙂 -> file: index.js:356 -> response:`, response);
+    if (!response) return false;
+    await processPENSResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadPENS({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["userId"] = "OMNI";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["password"] = "OMNI123";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["account"] = "820504";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["customerType"] = "B";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["nonePalletizedMode"] = "";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["originZip"] = shipperZip;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["destinationZip"] = consigneeZip;
+    const shipmentLine = shipmentLines[0];
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const weight = get(shipmentLine, "weight");
+    const hazmat = get(shipmentLine, "hazmat", false);
+    const pieces = get(shipmentLine, "pieces");
+    const freightClass = get(shipmentLine, "freightClass");
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["classList"] = freightClass;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["weightList"] = weight;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["pltCountList"] = pieces;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["pltLengthList"] = length;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["pltWidthList"] = width;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["accessorialList"] = accessorialList
+        .filter((acc) => Object.keys(accessorialMappingPENS).includes(acc))
+        .map((item) => accessorialMappingPENS[item]);
+    if (hazmat)
+        xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+            "CreatePensRateQuote"
+        ]["accessorialList"].push("SP1HA");
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
+        "CreatePensRateQuote"
+    ]["accessorialList"].push(`FV${insuredValue}`);
+    const builder = new xml2js.Builder({
+        xmldec: { version: "1.0", encoding: "UTF-8" },
+    });
+    return builder.buildObject(xmlPayloadFormat["PENS"]);
+}
+
+async function processPENSResponses({ response }) {
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const CreatePensRateQuoteResponse = get(
+        parsed,
+        "soap:Envelope.soap:Body[0].CreatePensRateQuoteResponse[0].CreatePensRateQuoteResult[0]"
+    );
+    const error = get(CreatePensRateQuoteResponse, "errors[0]", false);
+    const quote = get(CreatePensRateQuoteResponse, "quote[0]");
+    const quoteNumber = get(quote, "quoteNumber[0]");
+    const totalRate = parseFloat(
+        get(quote, "totalCharge[0]", "0").replace(/\D/g, "")
+    ).toFixed(2);
+    const transitDays = get(
+        transitDaysMappingPENS,
+        get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
+        "##"
+    );
+    const message = get(quote, "quoteRemark.remarkItem", "");
+    const accessorialDetail = get(
+        quote,
+        "accessorialDetail[0].AccessorialItem",
+        []
+    );
+    const accessorialList = accessorialDetail.map((acc) => ({
+        code: get(acc, "code[0]"),
+        description: get(acc, "description[0]"),
+        charge: parseFloat(get(acc, "charge[0]")).toFixed(2),
+    }));
+    const data = {
+        carrier: "PENS",
+        serviceLevel: "",
+        serviceLevelDescription: "",
+        quoteNumber,
+        transitDays,
+        totalRate,
+        message,
+        accessorialList,
+    };
+    if (!error) responseBodyFormat["ltlRateResponse"].push(data);
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -1839,6 +2019,50 @@ const accessorialMappingSEFN = {
     INDEL: "IDC",
     RESDE: "RESID",
     LIFTD: "LIFTPU",
+};
+
+const transitDaysMappingPENS = {
+    NextBusinessDay: 1,
+    TwoBusinessDays: 2,
+    ThreeBusinessDays: 3,
+    FourBusinessDays: 4,
+    FiveBusinessDays: 5,
+    SixBusinessDays: 6,
+    SevenBusinessDays: 7,
+    EightBusinessDays: 8,
+    NineBusinessDays: 9,
+    TenBusinessDays: 10,
+    ElevenBusinessDays: 11,
+    TwelveBusinessDays: 12,
+    ThirteenBusinessDays: 13,
+    FourteenBusinessDays: 14,
+    FifteenBusinessDays: 15,
+    SixteenBusinessDays: 16,
+    SeventeenBusinessDays: 17,
+    EighteenBusinessDays: 18,
+    NineteenBusinessDays: 19,
+    TwentyBusinessDays: 20,
+    TwentyOneBusinessDays: 21,
+    TwentyTwoBusinessDays: 22,
+    TwentyThreeBusinessDays: 23,
+    TwentyFourBusinessDays: 24,
+    TwentyFiveBusinessDays: 25,
+    TwentySixBusinessDays: 26,
+    TwentySevenBusinessDays: 27,
+    TwentyEightBusinessDays: 28,
+    TwentyNineBusinessDays: 29,
+    ThirtyBusinessDays: 30,
+};
+
+const accessorialMappingPENS = {
+    APPT: "AF1",
+    INSPU: "IP1",
+    RESID: "RP1",
+    LIFT: "LP1",
+    APPTD: "AF1",
+    INDEL: "ID1",
+    RESDE: "RD1",
+    LIFTD: "SP1LD",
 };
 
 async function axiosRequest(url, payload, header = {}, method = "POST") {
