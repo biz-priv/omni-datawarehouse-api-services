@@ -27,18 +27,18 @@ module.exports.handler = async (event) => {
 
         if (get(event, "enhancedAuthContext.customerId", null) === "7L") {
             if (get(body, "vendorInvoiceRequest", null) === null) {
-                throw new Error({ message: "Given input body requires vendorInvoiceRequest data." });
+                throw new Error("Given input body requires vendorInvoiceRequest data.");
             } else {
                 if (get(body, "vendorInvoiceRequest.housebill", null) === null && get(body, "vendorInvoiceRequest.fileNumber", null) === null) {
-                    throw new Error({ message: "housebill or fileNumber is required in vendorInvoiceRequest." });
+                    throw new Error("housebill or fileNumber is required in vendorInvoiceRequest.");
                 } else if (get(body, "vendorInvoiceRequest.vendorReference", null) === null) {
-                    throw new Error({ message: "vendorReference is required in vendorInvoiceRequest." });
+                    throw new Error("vendorReference is required in vendorInvoiceRequest.");
                 } else if (get(body, "vendorInvoiceRequest.vendorId", null) === null) {
-                    throw new Error({ message: "vendorId is required in vendorInvoiceRequest." });
+                    throw new Error("vendorId is required in vendorInvoiceRequest.");
                 }
             }
         } else {
-            throw new Error({ message: "Unauthorized request." });
+            throw new Error("Unauthorized request.");
         }
 
         let getQuery;
@@ -58,7 +58,7 @@ module.exports.handler = async (event) => {
         console.info("No. of records: ", get(result, "recordset", []), "No of records: ", get(result, "recordset", []).length);
 
         if (get(result, "recordset", []).length === 0 || get(result, "recordset", []).length > 2) {
-            throw new Error({ message: "0 rows updated" });
+            throw new Error("0 rows updated");
         }
         const fileNumber = get(result, "recordset[0].FK_OrderNo", "");
         let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body, "vendorInvoiceRequest.vendorReference", null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
@@ -77,7 +77,7 @@ module.exports.handler = async (event) => {
     } catch (error) {
         console.error("Main lambda error: ", error)
         let errorMsgVal = ""
-        if (get(error, "message", null) === null) {
+        if (get(error, "message", null) !== null) {
             errorMsgVal = get(error, "message", "");
         } else {
             errorMsgVal = error;
