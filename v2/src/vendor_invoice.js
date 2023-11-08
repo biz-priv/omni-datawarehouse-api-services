@@ -108,7 +108,7 @@ async function connectToSQLServer() {
         user: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         server: process.env.DB_SERVER,
-        port: process.env.DB_PORT,
+        port: parseInt(process.env.DB_PORT),
         database: process.env.DB_DATABASE,
         options: {
             trustServerCertificate: true, // For self-signed certificates (optional)
