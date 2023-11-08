@@ -13,8 +13,6 @@ let itemObj = {
     vendorReference: "",
     createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
     eventBody: {},
-    xmlRequestPayload: "",
-    xmlResponsePayload: "",
     errorMsg: "",
     status: "",
     version: "v2",
@@ -29,23 +27,18 @@ module.exports.handler = async (event) => {
 
         if (get(event, "enhancedAuthContext.customerId", null) === "7L") {
             if (get(body, "vendorInvoiceRequest", null) === null) {
-                itemObj.errorMsg = "Given input body requires vendorInvoiceRequest data.";
+                throw new Error({ message: "Given input body requires vendorInvoiceRequest data." });
             } else {
                 if (get(body, "vendorInvoiceRequest.housebill", null) === null && get(body, "vendorInvoiceRequest.fileNumber", null) === null) {
-                    itemObj.errorMsg = "housebill or fileNumber is required in vendorInvoiceRequest.";
+                    throw new Error({ message: "housebill or fileNumber is required in vendorInvoiceRequest." });
                 } else if (get(body, "vendorInvoiceRequest.vendorReference", null) === null) {
-                    itemObj.errorMsg = "vendorReference is required in vendorInvoiceRequest.";
+                    throw new Error({ message: "vendorReference is required in vendorInvoiceRequest." });
                 } else if (get(body, "vendorInvoiceRequest.vendorId", null) === null) {
-                    itemObj.errorMsg = "vendorId is required in vendorInvoiceRequest.";
+                    throw new Error({ message: "vendorId is required in vendorInvoiceRequest." });
                 }
             }
         } else {
-            itemObj.errorMsg = "Unauthorized request."
-        }
-
-        if (get(itemObj, "errorMsg", null === null)) {
-            // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);  create dynamodb from terraform
-            return { statusCode: 400, message: itemObj.errorMsg };
+            throw new Error({ message: "Unauthorized request." });
         }
 
         let getQuery;
@@ -62,21 +55,21 @@ module.exports.handler = async (event) => {
         console.info("getQuery: ", getQuery);
         const request = await connectToSQLServer();
         const result = await request.query(getQuery);
-        console.log('Query result:', result);
-        console.log('Query records:', result.recordset);
+        console.info("No. of records: ", get(result, "recordset", []), "No of records: ", get(result, "recordset", []).length)
 
         if (get(result, "recordset", []).length === 0 || get(result, "recordset", []).length > 2) {
-            throw {
-                message: "0 rows updated"
-            }
+            throw new Error({ message: "0 rows updated" });
         }
         const fileNumber = get(result, "recordset[0].FK_OrderNo", "")
         let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body, "vendorInvoiceRequest.vendorReference", null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
         console.log("updateQuery: ", updateQuery)
+
         await request.query(updateQuery);
 
         sql.close();
         console.log('Connection closed');
+        itemObj.status = "SUCCESS"
+        await putItem(process.env.LOGS_TABLE, itemObj);
         return { id: itemObj.id, message: "success" };
 
     } catch (error) {
@@ -88,7 +81,8 @@ module.exports.handler = async (event) => {
             errorMsgVal = error;
         }
         itemObj.errorMsg = errorMsgVal;
-        // await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
+        itemObj.status = "FAILED";
+        await putItem(process.env.LOGS_TABLE, itemObj);
         return { statusCode: 400, message: errorMsgVal };
     }
 }
@@ -111,11 +105,11 @@ async function putItem(tableName, item) {
 
 async function connectToSQLServer() {
     const config = {
-        user: 'omnidbadmin',
-        password: 'JfC?EdX=:RPk9.[T~:PNn',
-        server: '10.9.110.16\\stageb',
-        port: 14034,
-        database: 'AIRTRAK',
+        user: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        server: process.env.DB_SERVER,
+        port: process.env.DB_PORT,
+        database: process.env.DB_DATABASE,
         options: {
             trustServerCertificate: true, // For self-signed certificates (optional)
         },
