@@ -95,7 +95,7 @@ async function putItem(item) {
             Item: item,
         };
         console.info("Insert Params: ", params)
-        return await dynamodb.put(params).promise();
+        await dynamodb.put(params).promise();
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
         throw new Error("PutItemError");
