@@ -70,7 +70,7 @@ module.exports.handler = async (event) => {
         sql.close();
         console.info('Connection closed');
         itemObj.status = "SUCCESS"
-        const dynamoInsert = await putItem(itemObj);
+        // const dynamoInsert = await putItem(itemObj);
         console.info("dynamoInsert: ", dynamoInsert)
         return { id: itemObj.id, message: "success" };
 
@@ -84,7 +84,7 @@ module.exports.handler = async (event) => {
         }
         itemObj.errorMsg = errorMsgVal;
         itemObj.status = "FAILED";
-        await putItem(itemObj);
+        // await putItem(itemObj);
         return { statusCode: 400, message: errorMsgVal };
     }
 }

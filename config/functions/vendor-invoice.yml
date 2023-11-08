@@ -7,11 +7,9 @@ function:
   vpc:
     securityGroupIds:
       - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/security-group}
-      - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
     subnetIds:
       - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet1}
       - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet2}
-      - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512
