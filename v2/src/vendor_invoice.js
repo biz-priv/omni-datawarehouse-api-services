@@ -91,13 +91,17 @@ module.exports.handler = async (event) => {
 
 
 async function putItem(item) {
+    let params;
     try {
-        let params = {
+        params = {
             TableName: process.env.LOGS_TABLE,
+            Key : {
+                id: get(itemObj, "id", "")
+            },
             Item: item,
         };
         console.info("Insert Params: ", params)
-        const dynamoInsert =  await dynamodb.update(params).promise();
+        const dynamoInsert = await dynamodb.update(params).promise();
         return dynamoInsert;
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
