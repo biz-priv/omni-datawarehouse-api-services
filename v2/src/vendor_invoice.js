@@ -55,23 +55,23 @@ module.exports.handler = async (event) => {
         console.info("getQuery: ", getQuery);
         const request = await connectToSQLServer();
         const result = await request.query(getQuery);
-        console.info("No. of records: ", get(result, "recordset", []), "No of records: ", get(result, "recordset", []).length)
+        console.info("No. of records: ", get(result, "recordset", []), "No of records: ", get(result, "recordset", []).length);
 
         if (get(result, "recordset", []).length === 0 || get(result, "recordset", []).length > 2) {
             throw new Error({ message: "0 rows updated" });
         }
-        const fileNumber = get(result, "recordset[0].FK_OrderNo", "")
+        const fileNumber = get(result, "recordset[0].FK_OrderNo", "");
         let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body, "vendorInvoiceRequest.vendorReference", null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
-        console.info("updateQuery: ", updateQuery)
+        console.info("updateQuery: ", updateQuery);
 
         const updateResult = await request.query(updateQuery);
-        console.info("updateResult: ", updateResult)
+        console.info("updateResult: ", updateResult);
 
         sql.close();
         console.info('Connection closed');
         itemObj.status = "SUCCESS"
         // const dynamoInsert = await putItem(itemObj);
-        console.info("dynamoInsert: ", dynamoInsert)
+        // console.info("dynamoInsert: ", dynamoInsert)
         return { id: itemObj.id, message: "success" };
 
     } catch (error) {
