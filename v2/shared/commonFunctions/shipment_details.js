@@ -14,6 +14,7 @@ const csvtojson = require('csvtojson');
 const tracking_notes_table = process.env.TRACKING_NOTES_TABLE
 
 const { tableValues, weightDimensionValue, INDEX_VALUES, customerTypeValue } = require("../constants/shipment_details");
+const { number } = require("joi");
 // const { parseAndMappingData } = require("../dataParser/shipmentDetailsDataParser");
 
 async function refParty(customerType) {
@@ -42,7 +43,7 @@ async function actualWeight(tableValue) {
   try {
     let actualWeight = 0
     await Promise.all(tableValue.map(async (val) => {
-      actualWeight += val.Weight
+      actualWeight += Number(val.Weight)
     }))
     return Number(actualWeight);
   } catch (error) {
@@ -53,7 +54,7 @@ async function ChargableWeight(tableValue) {
   try {
     let ChargableWeight = 0
     await Promise.all(tableValue.map(async (val) => {
-      ChargableWeight += val.ChargableWeight
+      ChargableWeight += Number(val.ChargableWeight)
     }))
     return Number(ChargableWeight);
   } catch {

@@ -14,7 +14,7 @@ module.exports.handler = async (event) => {
   const unmarshalledData = Converter.unmarshall(
     event.Records[0].dynamodb.NewImage
   );
-  let orderNo = unmarshalledData.PK_OrderNo;
+  let orderNo = unmarshalledData.FK_ConOrderNo;
   console.log("orderNo",orderNo)
   let mainResponse = {};
   let timeZoneTable = {};

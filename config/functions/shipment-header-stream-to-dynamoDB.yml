@@ -7,12 +7,11 @@ function:
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512
-
   package:
     include:
       - ${self:custom.alias}/src/shipmentDetailCollector/shipment_header_stream_to_dynamoDB.js
   events:
-     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
+    - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.streamArn~true}
     # - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone/ddb.streamArn~true}
     # - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/consignee/ddb.streamArn~true}
     # - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipper/ddb.streamArn~true}
@@ -36,3 +35,4 @@ function:
     SHIPMENT_MILESTONE_DETAIL_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone-detail/ddb.tableName}
     TRACKING_NOTES_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/tracking-notes/ddb.tableName~true}
     P44_LOCATION_UPDATE_TABLE: ${ssm:/omni-p44/location-updates/${self:provider.stage}/source/ddb.table_name}
+    SHIPMENT_DETAILS_Collector_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetailsCollector/ddb.tableName}

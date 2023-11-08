@@ -1,136 +1,349 @@
 const AWS = require("aws-sdk");
 const ddb = new AWS.DynamoDB.DocumentClient();
-const moment = require('moment');
-
-const { get } = require('lodash');
+const dynamo = new AWS.DynamoDB();
+const moment = require("moment");
+const { get } = require("lodash");
+const { Converter } = AWS.DynamoDB;
 // const { parseAndMappingData } = require("../shared/dataParser/shipmentDetailsDataParser");
 const Joi = require("joi");
-const { getDynamodbData, getDynamodbDataFromDateRange, parseAndMappingData } = require("../shared/commonFunctions/shipment_details");
+const {
+  getDynamodbData,
+  getDynamodbDataFromDateRange,
+  parseAndMappingData,
+} = require("../shared/commonFunctions/shipment_details");
 const sns = new AWS.SNS();
 
-const shipment_header_table = process.env.SHIPMENT_HEADER_TABLE
-const shipper_table = process.env.SHIPPER_TABLE
-const consignee_table = process.env.CONSIGNEE_TABLE
-const shipment_desc_table = process.env.SHIPMENT_DESC_TABLE
-const reference_table = process.env.REFERENCE_TABLE
-const shipment_milestone_table = process.env.SHIPMENT_MILESTONE_TABLE
-const tracking_notes_table_indexValue = process.env.TRACKING_NOTES_TABLE_INDEXVALUE
-const timezone_master_table = process.env.TIMEZONE_MASTER_TABLE
-const service_level_table = process.env.SERVICE_LEVEL_TABLE
-const milestone_table = process.env.MILESTONE_TABLE
-const shipment_milestone_detail_table = process.env.SHIPMENT_MILESTONE_DETAIL_TABLE
-const tracking_notes_table = process.env.TRACKING_NOTES_TABLE
-
-
 module.exports.handler = async (event) => {
-  console.log("event: ", event)
+  console.log("event: ", JSON.stringify(event));
   // const eventBody = JSON.parse(event)
   // console.log("query string ", event.queryStringParameters)
-  let timeZoneTable = {};
-  let dynamodbData = {};
-  let mainResponse = {};
 
+  let dataObj = [];
   try {
-    // const pKeyValue = "1787176";
     if (event.queryStringParameters) {
-      if (event.queryStringParameters.hasOwnProperty("fileNumber")) {
-        ({ dynamodbData, timeZoneTable } = await getDynamodbData("fileNumber", (event.queryStringParameters.fileNumber).toString()))
-        mainResponse["shipmentDetailResponse"] = []
-        mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
-      } else if (event.queryStringParameters.hasOwnProperty("housebill")) {
-        ({ dynamodbData, timeZoneTable } = await getDynamodbData("housebill", (event.queryStringParameters.housebill).toString()))
-        console.log("final dynamodb data ", dynamodbData)
-        console.log("timeZoneTable", timeZoneTable)
-        if (event.queryStringParameters.hasOwnProperty("milestone_history")) {
-          mainResponse["shipmentDetailResponse"] = []
-          mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, event.queryStringParameters.milestone_history))
+      if (
+        event.queryStringParameters.hasOwnProperty("fileNumber") ||
+        event.queryStringParameters.hasOwnProperty("housebill")
+      ) {
+        if (event.queryStringParameters.hasOwnProperty("fileNumber")) {
+          console.log("fileNumber");
+          dataObj = await queryWithFileNumber(
+            process.env.SHIPMENT_DETAILS_Collector_TABLE,
+            "fileNumberIndex",
+            event.queryStringParameters.fileNumber.toString()
+          );
         } else {
-          mainResponse["shipmentDetailResponse"] = []
-          mainResponse["shipmentDetailResponse"].push(await parseAndMappingData(dynamodbData, timeZoneTable, true))
+          console.log("housebill");
+          dataObj = await queryWithHouseBill(
+            process.env.SHIPMENT_DETAILS_Collector_TABLE,
+            event.queryStringParameters.housebill.toString()
+          );
         }
-      } else if (event.queryStringParameters.hasOwnProperty("activityFromDate") && event.queryStringParameters.hasOwnProperty("activityToDate")) {
-        const fromDate = moment(event.queryStringParameters.activityFromDate, 'YYYY-MM-DD HH:mm:ss.SSS');
-        const toDate = moment(event.queryStringParameters.activityToDate, 'YYYY-MM-DD HH:mm:ss.SSS');
+      } else if (
+        (event.queryStringParameters.hasOwnProperty("activityFromDate") &&
+          event.queryStringParameters.hasOwnProperty("activityToDate")) ||
+        (event.queryStringParameters.hasOwnProperty("shipmentFromDate") &&
+          event.queryStringParameters.hasOwnProperty("shipmentToDate"))
+      ) {
+        if (
+          event.queryStringParameters.hasOwnProperty("activityFromDate") &&
+          event.queryStringParameters.hasOwnProperty("activityToDate")
+        ) {
+          console.log("activityDate");
+          const fromDateTime = moment(event.queryStringParameters.activityFromDate,"YYYY-MM-DD HH:mm:ss.SSS");
+          const toDateTime = moment(event.queryStringParameters.activityToDate,"YYYY-MM-DD HH:mm:ss.SSS");
 
-        const daysDifference = toDate.diff(fromDate, 'days');
-        if (daysDifference < 0) {
-          console.log("activityToDate cannot be earlier than activityFromDate")
-          throw "activityToDate cannot be earlier than activityFromDate"
-        } else if (daysDifference > 7) {
-          console.log(`date range cannot be more than 7days \n your date range ${daysDifference}`)
-          throw `date range cannot be more than 7days \n your date range ${daysDifference}`
-        } else if (daysDifference == 0) {
-          const hoursDiff = toDate.diff(fromDate, 'hours');
-          if (hoursDiff < 0) {
-            console.log("activityToDate cannot be earlier than activityFromDate")
-            throw "activityToDate cannot be earlier than activityFromDate"
+          const daysDifference = toDateTime.diff(fromDateTime, "days");
+          if (daysDifference < 0) {
+            console.log("activityToDate cannot be earlier than activityFromDate");
+            throw "activityToDate cannot be earlier than activityFromDate";
+          } else if (daysDifference > 7) {
+            console.log(`date range cannot be more than 7days \n your date range ${daysDifference}`);
+            throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
+          } else if (daysDifference == 0) {
+            const hoursDiff = toDateTime.diff(fromDateTime, "hours");
+            if (hoursDiff < 0) {
+              console.log("activityToDate cannot be earlier than activityFromDate");
+              throw "activityToDate cannot be earlier than activityFromDate";
+            }
           }
-        }
-        console.log(daysDifference)
-        mainResponse = await getDynamodbDataFromDateRange("activityDate", event.queryStringParameters.activityFromDate, event.queryStringParameters.activityToDate)
-      } else if (event.queryStringParameters.hasOwnProperty("shipmentFromDate") && event.queryStringParameters.hasOwnProperty("shipmentToDate")) {
-        const fromDate = moment(event.queryStringParameters.shipmentFromDate, 'YYYY-MM-DD HH:mm:ss.SSS');
-        const toDate = moment(event.queryStringParameters.shipmentToDate, 'YYYY-MM-DD HH:mm:ss.SSS');
+          console.log(daysDifference);
+          dataObj = await dateRange("activityDate", fromDateTime, toDateTime);
+        } else {
+          console.log("shipmentDate");
+          const fromDateTime = moment(
+            event.queryStringParameters.activityFromDate,
+            "YYYY-MM-DD HH:mm:ss.SSS"
+          );
+          const toDateTime = moment(
+            event.queryStringParameters.activityToDate,
+            "YYYY-MM-DD HH:mm:ss.SSS"
+          );
 
-        const daysDifference = toDate.diff(fromDate, 'days');
-        if (daysDifference < 0) {
-          console.log("shipmentToDate cannot be earlier than shipmentFromDate")
-          throw "shipmentToDate cannot be earlier than shipmentFromDate"
-        } else if (daysDifference > 7) {
-          console.log(`date range cannot be more than 7days \n your date range: ${daysDifference}`)
-          throw `date range cannot be more than 7days \n your date range: ${daysDifference}`
-        } else if (daysDifference == 0) {
-          const hoursDiff = toDate.diff(fromDate, 'hours');
-          if (hoursDiff < 0) {
-            console.log("shipmentToDate cannot be earlier than shipmentFromDate")
-            throw "shipmentToDate cannot be earlier than shipmentFromDate"
+          const daysDifference = toDateTime.diff(fromDateTime, "days");
+          if (daysDifference < 0) {
+            console.log(
+              "activityToDate cannot be earlier than activityFromDate"
+            );
+            throw "activityToDate cannot be earlier than activityFromDate";
+          } else if (daysDifference > 7) {
+            console.log(
+              `date range cannot be more than 7days \n your date range ${daysDifference}`
+            );
+            throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
+          } else if (daysDifference == 0) {
+            const hoursDiff = toDateTime.diff(fromDateTime, "hours");
+            if (hoursDiff < 0) {
+              console.log(
+                "activityToDate cannot be earlier than activityFromDate"
+              );
+              throw "activityToDate cannot be earlier than activityFromDate";
+            }
           }
+          console.log(daysDifference);
+          dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime);
         }
-        console.log(daysDifference)
-        mainResponse = await getDynamodbDataFromDateRange("shipmentDate", event.queryStringParameters.shipmentFromDate, event.queryStringParameters.shipmentToDate)
-      } else {
-        console.log("Required any of the fields: fileNumber/housebill/shipmentFromDate and shipmentToDate/activityFromDate and activityToDate")
-        throw "Required any of the fields: fileNumber/housebill/shipmentFromDate and shipmentToDate/activityFromDate and activityToDate"
       }
-    } else {
-      console.log("Required any of the fields: fileNumber/housebill/shipmentFromDate and shipmentToDate/activityFromDate and activityToDate")
-      throw "Required any of the fields: fileNumber/housebill/shipmentFromDate and shipmentToDate/activityFromDate and activityToDate"
     }
+    console.log("dataObj", JSON.stringify(dataObj));
+    const data = await Promise.all(
+      dataObj.map((d) => {
+        return Converter.unmarshall(d);
+      })
+    );
+    // const unmarshalledDataObj = Converter.unmarshall(dataObj[0][0])
 
+    console.log("unmarshalledDataObj", JSON.stringify(data));
 
-    console.log(mainResponse.shipmentDetailResponse.length)
     return {
       statusCode: 200,
-      body:
-        JSON.stringify({
-          message: mainResponse
-        })
+      body: JSON.stringify({
+        message: "success",
+      }),
     };
-
-  } catch (error) {
-    console.log("in main function: \n", error)
-
-    // const params = {
-    //   Message: `Shipment details api Error: \n ${error}`, // The message you want to send
-    //   TopicArn: 'YOUR_TOPIC_ARN' // The ARN (Amazon Resource Name) of your SNS topic
-    // };
-    // sns.publish(params, function (err, data) {
-    //   if (err) {
-    //     console.log('Error sending message:', err);
-    //   } else {
-    //     console.log('Message sent:', data.MessageId);
-    //   }
-    // })
+  } catch {
+    console.log("in main function: \n", error);
     return {
       statusCode: 400,
-      body:
-        JSON.stringify({
-          message: `error: \n ${error}`
-        })
-    }
+      body: JSON.stringify({
+        message: `error: \n ${error}`,
+      }),
+    };
   }
-
-
 };
 
+async function queryWithFileNumber(tableName, indexName, fileNumber) {
+  const params = {
+    TableName: tableName,
+    IndexName: indexName,
+    KeyConditionExpression: "fileNumber = :value",
+    ExpressionAttributeValues: {
+      ":value": { S: fileNumber },
+    },
+  };
+  console.log("params:", params);
 
+  try {
+    const data = await dynamo.query(params).promise();
+    return data.Items;
+  } catch (error) {
+    console.error("Query Error:", error);
+    throw error;
+  }
+}
+
+async function queryWithHouseBill(tableName, HouseBillNumber) {
+  let params = {
+    TableName: tableName,
+    KeyConditionExpression: "HouseBillNumber = :value",
+    ExpressionAttributeValues: {
+      ":value": { S: HouseBillNumber },
+    },
+  };
+  try {
+    let data = await dynamo.query(params).promise();
+    return get(data, "Items", []);
+  } catch (e) {
+    console.error("Query Error:", error);
+    throw error;
+  }
+}
+
+async function dateRange(eventType, eventDateTimeFrom, eventDateTimeTo) {
+  try {
+    if (eventType == "activityDate") {
+      let eventObj = [];
+      let dataEventObj = [];
+      const fromDateTime = moment(eventDateTimeFrom);
+      const toDateTime = moment(eventDateTimeTo);
+
+      while (fromDateTime <= toDateTime) {
+        const eventDate = fromDateTime.format("YYYY-MM-DD");
+        const eventDateTimeEnd = moment.min(
+          moment(fromDateTime).endOf("day"),
+          toDateTime
+        );
+
+        const formattedStartDate = fromDateTime.format(
+          "YYYY-MM-DD HH:mm:ss.SSS"
+        );
+        const formattedEndDate = eventDateTimeEnd.format(
+          "YYYY-MM-DD HH:mm:ss.SSS"
+        );
+
+        eventObj.push({
+          eventDate: eventDate,
+          eventDateTimeStart: formattedStartDate,
+          eventDateTimeEnd: formattedEndDate,
+        });
+
+        fromDateTime.add(1, "days").startOf("day");
+      }
+
+      console.log("eventObj: ", eventObj);
+
+      //dataEventObj["shipmentDetailResponse"] = [];
+      if (eventObj.length > 0) {
+        for (const event of eventObj) {
+          try {
+            const data = await queryWithEventDate(
+              process.env.SHIPMENT_DETAILS_Collector_TABLE,
+              "EventDateIndex",
+              event.eventDate,
+              event.eventDateTimeStart,
+              event.eventDateTimeEnd
+            );
+            dataEventObj.push(...data);
+          } catch (error) {
+            console.error("Error querying with date and time:", error);
+          }
+        }
+      } else {
+        console.log("There are no orders in this date range");
+      }
+      console.log("dataEventObj: ", dataEventObj);
+      return dataEventObj;
+    } else {
+      let orderObj = [];
+      let dataOrderObj = [];
+      const fromDateTime = moment(orderDateTimeFrom);
+      const toDateTime = moment(orderDateTimeTo);
+
+      while (fromDateTime <= toDateTime) {
+        const orderDate = fromDateTime.format("YYYY-MM-DD");
+        const orderDateTimeEnd = moment.min(
+          moment(fromDateTime).endOf("day"),
+          toDateTime
+        );
+
+        const formattedStartDate = fromDateTime.format(
+          "YYYY-MM-DD HH:mm:ss.SSS"
+        );
+        const formattedEndDate = orderDateTimeEnd.format(
+          "YYYY-MM-DD HH:mm:ss.SSS"
+        );
+
+        orderObj.push({
+          orderDate: orderDate,
+          orderDateTimeStart: formattedStartDate,
+          orderDateTimeEnd: formattedEndDate,
+        });
+
+        fromDateTime.add(1, "days").startOf("day");
+      }
+
+      console.log("orderObj: ", orderObj);
+
+      //dataOrderObj["shipmentDetailResponse"] = [];
+      if (orderObj.length > 0) {
+        for (const order of orderObj) {
+          try {
+            const data = await queryWithOrderDate(
+              process.env.SHIPMENT_DETAILS_Collector_TABLE,
+              "OrderDateIndex",
+              order.orderDate,
+              order.orderDateTimeStart,
+              order.orderDateTimeEnd
+            );
+            dataOrderObj.push(...data);
+          } catch (error) {
+            console.error("Error querying with date and time:", error);
+          }
+        }
+      } else {
+        console.log("There are no orders in this date range");
+      }
+      console.log("dataOrderObj: ", dataOrderObj);
+      return dataOrderObj;
+    }
+  } catch (error) {
+    console.log("date range function: ", error);
+  }
+}
+
+async function queryWithEventDate(
+  tableName,
+  indexName,
+  date,
+  startSortKey,
+  endSortKey
+) {
+  const params = {
+    TableName: tableName,
+    IndexName: indexName,
+    KeyConditionExpression:
+      "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
+    ExpressionAttributeNames: {
+      "#date": "EventDate",
+      "#sortKey": "EventDateTime",
+    },
+    ExpressionAttributeValues: {
+      ":dateValue": { S: date },
+      ":startSortKey": { S: startSortKey },
+      ":endSortKey": { S: endSortKey },
+    },
+  };
+  console.log("params:", params);
+
+  try {
+    const data = await dynamo.query(params).promise();
+    console.log("data.Items: ", data.Items);
+    return data.Items;
+  } catch (error) {
+    console.error("Query Error:", error);
+    throw error;
+  }
+}
+
+async function queryWithOrderDate(
+  tableName,
+  indexName,
+  date,
+  startSortKey,
+  endSortKey
+) {
+  const params = {
+    TableName: tableName,
+    IndexName: indexName,
+    KeyConditionExpression:
+      "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
+    ExpressionAttributeNames: {
+      "#date": "OrderDate",
+      "#sortKey": "OrderDateTime",
+    },
+    ExpressionAttributeValues: {
+      ":dateValue": { S: date },
+      ":startSortKey": { S: startSortKey },
+      ":endSortKey": { S: endSortKey },
+    },
+  };
+  console.log("params:", params);
+
+  try {
+    const data = await dynamo.query(params).promise();
+    return data.Items;
+  } catch (error) {
+    console.error("Query Error:", error);
+    throw error;
+  }
+}

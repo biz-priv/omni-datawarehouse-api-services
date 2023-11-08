@@ -1,55 +1,20 @@
----
 function:
-  handler: ${self:custom.alias}/src/shipment_detail.handler
-  name: ${self:service}-shipment-detail-${self:provider.stage}
-  description: shipment detail api service - ${self:provider.stage}
+  handler: ${self:custom.alias}/src/shipmentDetailCollector/shipment_milestone_stream_to_dynamoDB.handler
+  name: ${self:service}-shipment-milestone-stream-to-dynamoDB-${self:provider.stage}
+  description: shipment milestone stream to dynamoDB - ${self:provider.stage}
   runtime: nodejs18.x
+  timeout: 300
   layers:
     - !Ref DWAPILayerLambdaLayer
-  warmup:
-    default:
-      enabled: true
-      alias: ${self:custom.alias}
-  events: 
-    - http: 
-        path: /shipment/detail
-        method: GET
-        cors: true
-        integration: lambda
-        private: true
-        authorizer: 
-          name: custom-authorizer
-          resultTtlInSeconds: 0
-          identitySource: method.request.header.x-api-key
-          type: request
-        response:
-          headers: ${self:custom.standardResponseHeaders}
-          statusCodes:
-            200:
-              pattern: ''
-            501:
-              pattern: '.*httpStatus\": 501.*'
-              headers:
-                Content-Type: "'application/json'"
-              template: ${file(responseTemplate.vtl)}
+  memorySize: 512
+
   package:
     include:
-    - v101/src/shipment_detail.py
-    - v1/src/shipment_detail.py
-    - v103/src/shipment_detail.py
-    - v104/src/shipment_detail.py
-    - v201/src/shipment_detail.py
-    - v2/src/shipment_detail.js
-    # - node_modules/**
-    - src/common.py
-    - psycopg2/*
-    - v2/src/shared/*
+      - ${self:custom.alias}/src/shipmentDetailCollector/shipment_milestone_stream_to_dynamoDB.js
+  events:
+     - stream: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone/ddb.streamArn~true}
+    
   environment:
-    db_username: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
-    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
-    db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
-    db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
-    db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port} 
     SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
     SHIPMENT_DETAILS_HOUSEBILL_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/houseBillKey/index}
     SHIPMENT_DETAILS_FILENUMBER_INDEX: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/FileNumber/index}
@@ -67,5 +32,4 @@ function:
     SHIPMENT_MILESTONE_DETAIL_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-milestone-detail/ddb.tableName}
     TRACKING_NOTES_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/tracking-notes/ddb.tableName~true}
     P44_LOCATION_UPDATE_TABLE: ${ssm:/omni-p44/location-updates/${self:provider.stage}/source/ddb.table_name}
-    ATHENA_RESULT_S3_BUCKET: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/athena/result/bucket.name}
     SHIPMENT_DETAILS_Collector_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetailsCollector/ddb.tableName}
