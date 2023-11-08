@@ -88,6 +88,7 @@ module.exports.handler = async (event, context) => {
                 "DAFG",
                 "SEFN",
                 "PENS",
+                "SAIA",
             ].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
@@ -186,6 +187,16 @@ module.exports.handler = async (event, context) => {
                 }
                 if (carrier === "PENS") {
                     return await processPENSRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "SAIA") {
+                    return await processSAIARequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -523,6 +534,52 @@ const xmlPayloadFormat = {
                     pltLengthList: "",
                     pltWidthList: "",
                     accessorialList: [],
+                },
+            },
+        },
+    },
+    SAIA: {
+        "soap:Envelope": {
+            $: {
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+            },
+            "soap:Body": {
+                Create: {
+                    $: {
+                        xmlns: "http://www.saiasecure.com/WebService/ratequote/",
+                    },
+                    request: {
+                        Details: {
+                            DetailItem: {
+                                Weight: "",
+                                Class: "",
+                            },
+                        },
+                        Dimensions: {
+                            DimensionItem: {
+                                Length: "",
+                                Width: "",
+                                Height: "",
+                                Units: "",
+                            },
+                        },
+                        Accessorials: {
+                            AccessorialItem: { Code: [] },
+                        },
+                        UserID: "",
+                        Password: "",
+                        TestMode: "",
+                        BillingTerms: "",
+                        AccountNumber: "",
+                        Application: "",
+                        OriginZipcode: "",
+                        DestinationCity: "",
+                        DestinationState: "",
+                        DestinationZipcode: "",
+                        FullValueCoverage: "",
+                    },
                 },
             },
         },
@@ -1858,6 +1915,147 @@ async function processPENSResponses({ response }) {
     if (!error) responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+async function processSAIARequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadSAIA({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
+    let headers = { "Content-Type": "text/xml; charset=utf-8" };
+    const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx";
+    const response = await axiosRequest(url, payload, headers);
+    if (!response) return false;
+    await processSAIAResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadSAIA({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const destination = zips[consigneeZip];
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "UserID"
+    ] = "callcenter";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "Password"
+    ] = "omni921";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "TestMode"
+    ] = "N";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "BillingTerms"
+    ] = "Prepaid";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "AccountNumber"
+    ] = "0698518";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "Application"
+    ] = "ThirdParty";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "OriginZipcode"
+    ] = shipperZip;
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "DestinationCity"
+    ] = get(destination, "city");
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "DestinationState"
+    ] = get(destination, "state");
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "DestinationZipcode"
+    ] = consigneeZip;
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "FullValueCoverage"
+    ] = insuredValue;
+
+    const shipmentLine = shipmentLines[0];
+    const height = get(shipmentLine, "height");
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const weight = get(shipmentLine, "weight");
+    const hazmat = get(shipmentLine, "hazmat", false);
+    const pieces = get(shipmentLine, "pieces");
+    const freightClass = get(shipmentLine, "freightClass");
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "Details"
+    ]["DetailItem"] = {
+        Weight: weight,
+        Class: freightClass,
+    };
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "Dimensions"
+    ]["DimensionItem"] = {
+        Height: height,
+        Length: length,
+        Units: pieces,
+        Width: width,
+    };
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
+        "Accessorials"
+    ]["AccessorialItem"]["Code"] = accessorialList
+        .filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc))
+        .map((item) => accessorialMappingSAIA[item]);
+    if (hazmat)
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"][
+            "request"
+        ]["Accessorials"]["AccessorialItem"]["Code"].push("Hazardous");
+    const builder = new xml2js.Builder({
+        xmldec: { version: "1.0", encoding: "UTF-8" },
+    });
+    return builder.buildObject(xmlPayloadFormat["SAIA"]);
+}
+
+async function processSAIAResponses({ response }) {
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const body = get(
+        parsed,
+        "soap:Envelope.soap:Body[0].CreateResponse[0].CreateResult[0]"
+    );
+    const error = get(body, "Message[0]", "") !== "";
+    const quoteNumber = get(body, "QuoteNumber[0]");
+    const totalRate = parseFloat(
+        get(body, "TotalInvoice[0]", "0").replace(/\D/g, "")
+    ).toFixed(2);
+    const transitDays = get(body, "StandardServiceDays[0]", "");
+    console.log(`🙂 -> file: index.js:651 -> parsed:`, error);
+    const accessorialList = get(
+        body,
+        "RateAccessorials[0].RateAccessorialItem",
+        []
+    ).map((acc) => ({
+        code: get(acc, "Code[0]"),
+        description: get(acc, "Description[0]"),
+        charge: parseFloat(get(acc, "Amount[0]")).toFixed(2),
+    }));
+    const data = {
+        carrier: "SAIA",
+        serviceLevel: "",
+        serviceLevelDescription: "",
+        quoteNumber,
+        transitDays,
+        totalRate,
+        accessorialList,
+    };
+    console.log(`🙂 -> file: index.js:685 -> data:`, data);
+    if (!error) responseBodyFormat["ltlRateResponse"].push(data);
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -2063,6 +2261,16 @@ const accessorialMappingPENS = {
     INDEL: "ID1",
     RESDE: "RD1",
     LIFTD: "SP1LD",
+};
+
+const accessorialMappingSAIA = {
+    INSPU: "InsidePickup",
+    RESID: "ResidentialPickup",
+    LIFT: "LiftgateServicePU",
+    APPTD: "ArrivalNotice/Appointment",
+    INDEL: "InsideDelivery",
+    RESDE: "ResidentialDelivery",
+    LIFTD: "LiftgateService",
 };
 
 async function axiosRequest(url, payload, header = {}, method = "POST") {
