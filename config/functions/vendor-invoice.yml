@@ -6,10 +6,12 @@ function:
   timeout: 30
   vpc:
     securityGroupIds:
-      - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/security-group} # Replace with your Security Group ID
+      - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/security-group}
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/sgId}
     subnetIds:
       - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet1}
       - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet2}
+      - ${ssm:/omni-dw/${self:provider.stage}/lambda/subnetA}
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512

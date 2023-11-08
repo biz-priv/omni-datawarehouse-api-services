@@ -95,13 +95,10 @@ async function putItem(item) {
     try {
         params = {
             TableName: process.env.LOGS_TABLE,
-            Key : {
-                id: get(itemObj, "id", "")
-            },
             Item: item,
         };
         console.info("Insert Params: ", params)
-        const dynamoInsert = await dynamodb.update(params).promise();
+        const dynamoInsert = await dynamodb.put(params).promise();
         return dynamoInsert;
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
