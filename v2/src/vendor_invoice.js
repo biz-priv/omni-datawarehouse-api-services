@@ -62,14 +62,16 @@ module.exports.handler = async (event) => {
         }
         const fileNumber = get(result, "recordset[0].FK_OrderNo", "")
         let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body, "vendorInvoiceRequest.vendorReference", null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
-        console.log("updateQuery: ", updateQuery)
+        console.info("updateQuery: ", updateQuery)
 
-        await request.query(updateQuery);
+        const updateResult = await request.query(updateQuery);
+        console.info("updateResult: ", updateResult)
 
         sql.close();
-        console.log('Connection closed');
+        console.info('Connection closed');
         itemObj.status = "SUCCESS"
-        await putItem(itemObj);
+        const dynamoInsert = await putItem(itemObj);
+        console.info("dynamoInsert: ", dynamoInsert)
         return { id: itemObj.id, message: "success" };
 
     } catch (error) {
@@ -95,7 +97,8 @@ async function putItem(item) {
             Item: item,
         };
         console.info("Insert Params: ", params)
-        await dynamodb.put(params).promise();
+        const dynamoInsert =  await dynamodb.put(params).promise();
+        return dynamoInsert;
     } catch (e) {
         console.error("Put Item Error: ", e, "\nPut params: ", params);
         throw new Error("PutItemError");
@@ -115,9 +118,8 @@ async function connectToSQLServer() {
     };
 
     try {
-        console.log("config: ", config)
         await sql.connect(config);
-        console.log('Connected to SQL Server');
+        console.info('Connected to SQL Server');
         const request = new sql.Request();
         return request;
 
