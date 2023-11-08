@@ -30,8 +30,8 @@ function:
           type: request
   environment:
     LOGS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice-logs/ddb.tableName}
-    DB_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice-logs/userName}
-    DB_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice-logs/password}
-    DB_SERVER: ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice-logs/serverName}
-    DB_PORT: ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice-logs/port}
-    DB_DATABASE: ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice-logs/name}
+    DB_USERNAME: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/userName}
+    DB_PASSWORD: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/password}
+    DB_SERVER: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/serverName}
+    DB_PORT: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/port}
+    DB_DATABASE: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/name}

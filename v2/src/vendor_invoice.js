@@ -69,7 +69,7 @@ module.exports.handler = async (event) => {
         sql.close();
         console.log('Connection closed');
         itemObj.status = "SUCCESS"
-        await putItem(process.env.LOGS_TABLE, itemObj);
+        await putItem(itemObj);
         return { id: itemObj.id, message: "success" };
 
     } catch (error) {
@@ -82,17 +82,16 @@ module.exports.handler = async (event) => {
         }
         itemObj.errorMsg = errorMsgVal;
         itemObj.status = "FAILED";
-        await putItem(process.env.LOGS_TABLE, itemObj);
+        await putItem(itemObj);
         return { statusCode: 400, message: errorMsgVal };
     }
 }
 
 
-async function putItem(tableName, item) {
-    let params;
+async function putItem(item) {
     try {
-        params = {
-            TableName: tableName,
+        let params = {
+            TableName: process.env.LOGS_TABLE,
             Item: item,
         };
         console.info("Insert Params: ", params)
@@ -116,12 +115,14 @@ async function connectToSQLServer() {
     };
 
     try {
-        await sql.connect(config);
+        console.log("config: ", config)
+        await sql.connect(config).promise();
         console.log('Connected to SQL Server');
         const request = new sql.Request();
         return request;
 
     } catch (err) {
-        console.error('Error:', err);
+        console.error('Error: ', err);
+        throw err;
     }
 }
