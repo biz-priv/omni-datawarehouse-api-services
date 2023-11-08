@@ -116,7 +116,7 @@ async function connectToSQLServer() {
 
     try {
         console.log("config: ", config)
-        await sql.connect(config).promise();
+        await sql.connect(config);
         console.log('Connected to SQL Server');
         const request = new sql.Request();
         return request;
