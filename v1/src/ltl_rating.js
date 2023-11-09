@@ -6,6 +6,8 @@ const axios = require("axios");
 const moment = require("moment");
 const qs = require("qs");
 const { zips } = require("../../src/shared/ltlRater/zipCode.js");
+const AWS = require("aws-sdk");
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -89,6 +91,7 @@ module.exports.handler = async (event, context) => {
                 "SEFN",
                 "PENS",
                 "SAIA",
+                "XPOL",
             ].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
@@ -197,6 +200,16 @@ module.exports.handler = async (event, context) => {
                 }
                 if (carrier === "SAIA") {
                     return await processSAIARequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "XPOL") {
+                    return await processXPOLRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -581,6 +594,27 @@ const xmlPayloadFormat = {
                         FullValueCoverage: "",
                     },
                 },
+            },
+        },
+    },
+    XPOL: {
+        shipmentInfo: {
+            shipmentDate: "",
+            shipper: {
+                address: {
+                    postalCd: "",
+                },
+            },
+            consignee: {
+                address: {
+                    postalCd: "",
+                },
+            },
+            commodity: [,],
+            accessorials: [],
+            paymentTermCd: "",
+            bill2Party: {
+                acctInstId: "",
             },
         },
     },
@@ -2056,6 +2090,203 @@ async function processSAIAResponses({ response }) {
     if (!error) responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+async function processXPOLRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadXPOL({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
+    const token = await getTokenForXPOL();
+    let headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+    };
+    const url = "https://api.ltl.xpo.com/rating/1.0/ratequotes";
+    const response = await axiosRequest(url, payload, headers);
+    if (!response) return false;
+    await processXPOLResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadXPOL({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["shipmentDate"] = pickupTime;
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["shipper"]["address"]["postalCd"] =
+        shipperZip;
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["consignee"]["address"][
+        "postalCd"
+    ] = consigneeZip;
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["paymentTermCd"] = "P";
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["bill2Party"]["acctInstId"] =
+        "70250271";
+
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["commodity"] = shipmentLines.map(
+        (shipmentLine) => {
+            const height = get(shipmentLine, "height");
+            const length = get(shipmentLine, "length");
+            const width = get(shipmentLine, "width");
+            const weight = get(shipmentLine, "weight");
+            const hazmat = get(shipmentLine, "hazmat", false);
+            const pieces = get(shipmentLine, "pieces");
+            const weightUom = get(shipmentLine, "weightUOM");
+            const dimUOM = get(shipmentLine, "dimUOM");
+            const freightClass = get(shipmentLine, "freightClass");
+
+            return {
+                pieceCnt: pieces,
+                grossWeight: {
+                    weight: weight,
+                    weightUom: get(unitMapping["XPOL"], weightUom, "lbs"),
+                },
+                dimensions: {
+                    length: length,
+                    width: width,
+                    height: height,
+                    dimensionsUom: get(unitMapping["XPOL"], dimUOM, "INCH"),
+                },
+                hazmatInd: hazmat,
+                nmfcClass: freightClass,
+            };
+        }
+    );
+    const addedAcc = [];
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [
+        ...new Set(
+            accessorialList
+                .filter((acc) =>
+                    Object.keys(accessorialMappingXPOL).includes(acc)
+                )
+                .map((item) => addedAcc.includes(accessorialMappingXPOL[item]))
+        ),
+    ].map((item2) => ({
+        accessorialCd: accessorialMappingXPOL[item2],
+    }));
+    const hazmat0 = get(shipmentLines, "[0].hazmat", false);
+    if (hazmat0)
+        xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"].push({
+            accessorialCd: "ZHM",
+        });
+    return xmlPayloadFormat["XPOL"];
+}
+
+async function processXPOLResponses({ response }) {
+    const body = get(response, "data");
+    const quoteNumber = get(body, "rateQuote.confirmationNbr");
+    const totalRate = parseFloat(
+        get(body, "rateQuote.totCharge[0].amt", "0")
+    ).toFixed(2);
+    const transitDays = get(body, "transitTime.transitDays", "");
+    const accessorialList = get(
+        body,
+        "rateQuote.shipmentInfo.accessorials",
+        []
+    ).map((acc) => ({
+        code: get(acc, "accessorialCd"),
+        description: get(acc, "accessorialDesc"),
+        charge: parseFloat(get(acc, "chargeAmt.amt")).toFixed(2),
+    }));
+    const data = {
+        carrier: "XPOL",
+        serviceLevel: "",
+        serviceLevelDescription: "",
+        quoteNumber,
+        transitDays,
+        totalRate,
+        accessorialList,
+    };
+    console.log(`🙂 -> file: index.js:685 -> data:`, data);
+    responseBodyFormat["ltlRateResponse"].push(data);
+}
+
+async function getTokenForXPOL() {
+    const dynamoResponse = await getXPOLTokenFromDynamo();
+    if (dynamoResponse) return dynamoResponse;
+    const url = `https://api.ltl.xpo.com/token?grant_type=password&username=hmichel%40omnilogistics.com&password=OmniXpo22`;
+    const headers = {
+        Authorization:
+            "Basic S01aaHZBWHNyUlFnUGs5QjI4SnEydG1tM3ljYTpJMWVSZkVSYWZMS2FoWmRTSWZJMUpGWnlraVFh",
+        "Content-Type": "application/x-www-form-urlencoded",
+    };
+    let data = qs.stringify({
+        access_token: "305ba928-4623-30bf-85f2-6f0657e63b03",
+        refresh_token: "d2a22671-9dab-3660-8bca-3a148e302b15",
+        scope: "default",
+        token_type: "Bearer",
+        expires_in: "36986",
+    });
+    const { access_token } = await axiosRequest(url, data, headers);
+    await putXPOLTokenFromDynamo(access_token);
+    return access_token;
+}
+
+async function getXPOLTokenFromDynamo() {
+    const params = {
+        TableName: "omni-dw-api-services-ltl-rating-logs-dev",
+        Key: {
+            pKey: "token",
+            sKey: moment().format("DD-MM-YYYY"),
+        },
+    };
+    try {
+        let data = await dynamoDB.get(params).promise();
+        console.info("QUERY RESP :", data);
+        return get(data, "Item.token", false);
+    } catch (err) {
+        console.log(
+            `🙂 -> file: ltl_rating.js:2071 -> params:`,
+            params,
+            "err",
+            err
+        );
+        throw err;
+    }
+}
+
+async function putXPOLTokenFromDynamo(token) {
+    const currentDate = moment().format("DD-MM-YYYY");
+    const params = {
+        TableName: "omni-dw-api-services-ltl-rating-logs-dev",
+        Key: {
+            pKey: "token",
+            sKey: currentDate,
+            token: token,
+            expiration: Math.floor(
+                new Date(moment().add(11, "hours").format()).getTime() / 1000
+            ),
+        },
+    };
+    try {
+        let data = await dynamoDB.put(params).promise();
+        console.info("QUERY RESP :", data);
+        return data;
+    } catch (err) {
+        console.log(
+            `🙂 -> file: ltl_rating.js:2071 -> params:`,
+            params,
+            "err",
+            err
+        );
+        throw err;
+    }
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -2271,6 +2502,17 @@ const accessorialMappingSAIA = {
     INDEL: "InsideDelivery",
     RESDE: "ResidentialDelivery",
     LIFTD: "LiftgateService",
+};
+
+const accessorialMappingXPOL = {
+    APPT: "TDC",
+    INSPU: "OIP",
+    RESID: "RSO",
+    LIFT: "OLG",
+    APPTD: "TDC",
+    INDEL: "DID",
+    RESDE: "RSD",
+    LIFTD: "DLG",
 };
 
 async function axiosRequest(url, payload, header = {}, method = "POST") {
