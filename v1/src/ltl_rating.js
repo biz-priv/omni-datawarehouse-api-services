@@ -92,6 +92,7 @@ module.exports.handler = async (event, context) => {
                 "PENS",
                 "SAIA",
                 "XPOL",
+                "RDFS",
             ].map(async (carrier) => {
                 if (carrier === "FWDA") {
                     console.log(
@@ -210,6 +211,16 @@ module.exports.handler = async (event, context) => {
                 }
                 if (carrier === "XPOL") {
                     return await processXPOLRequest({
+                        pickupTime,
+                        insuredValue,
+                        shipperZip,
+                        consigneeZip,
+                        shipmentLines,
+                        accessorialList,
+                    });
+                }
+                if (carrier === "RDFS") {
+                    return await processRDFSRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -615,6 +626,46 @@ const xmlPayloadFormat = {
             paymentTermCd: "",
             bill2Party: {
                 acctInstId: "",
+            },
+        },
+    },
+    RDFS: {
+        "soap:Envelope": {
+            $: {
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+            },
+            "soap:Header": {
+                AuthenticationHeader: {
+                    $: { xmlns: "https://webservices.rrts.com/ratequote/" },
+                    UserName: "",
+                    Password: "",
+                    Site: "",
+                },
+            },
+            "soap:Body": {
+                RateQuote: {
+                    $: { xmlns: "https://webservices.rrts.com/ratequote/" },
+                    request: {
+                        ShipDate: "",
+                        OriginZip: "",
+                        DestinationZip: "",
+                        ShipmentDetails: {
+                            ShipmentDetail: {
+                                ActualClass: "",
+                                Weight: "",
+                            },
+                        },
+                        OriginType: "",
+                        PaymentType: "",
+                        CubicFeet: "",
+                        Pieces: "",
+                        ServiceDeliveryOptions: {
+                            ServiceOptions: { ServiceCode: [] },
+                        },
+                    },
+                },
             },
         },
     },
@@ -2287,6 +2338,147 @@ async function putXPOLTokenFromDynamo(token) {
     }
 }
 
+async function processRDFSRequest({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    const payload = getXmlPayloadRDFS({
+        pickupTime,
+        insuredValue,
+        shipperZip,
+        consigneeZip,
+        shipmentLines,
+        accessorialList,
+    });
+    console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
+
+    let headers = {
+        "Content-Type": "text/xml; charset=utf-8",
+    };
+    const url = "https://webservices.rrts.com/rating/ratequote.asmx";
+    const response = await axiosRequest(url, payload, headers);
+    if (!response) return false;
+    await processRDFSResponses({ response });
+    return { response };
+}
+
+function getXmlPayloadRDFS({
+    pickupTime,
+    insuredValue,
+    shipperZip,
+    consigneeZip,
+    shipmentLines,
+    accessorialList,
+}) {
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Header"][
+        "AuthenticationHeader"
+    ]["UserName"] = "omlog";
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Header"][
+        "AuthenticationHeader"
+    ]["Password"] = "AllinRoad#1";
+
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["ShipDate"] = pickupTime.split("T")[0];
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["OriginZip"] = shipperZip;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["DestinationZip"] = consigneeZip;
+
+    const shipmentLine = shipmentLines[0];
+    const height = get(shipmentLine, "height");
+    const length = get(shipmentLine, "length");
+    const width = get(shipmentLine, "width");
+    const weight = get(shipmentLine, "weight");
+    const hazmat = get(shipmentLine, "hazmat", false);
+    const pieces = get(shipmentLine, "pieces");
+    const weightUom = get(shipmentLine, "weightUOM");
+    const dimUOM = get(shipmentLine, "dimUOM");
+    const freightClass = get(shipmentLine, "freightClass");
+    const cubicFeet = parseInt((length * width * height) / Math.pow(12, 3));
+
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["ShipmentDetails"]["ShipmentDetail"]["ActualClass"] = freightClass;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["ShipmentDetails"]["ShipmentDetail"]["Weight"] = weight;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["OriginType"] = "B";
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["PaymentType"] = "P";
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["CubicFeet"] = cubicFeet;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["Pieces"] = pieces;
+
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+        "request"
+    ]["ServiceDeliveryOptions"]["ServiceOptions"] = [
+        ...new Set(
+            accessorialList
+                .filter((acc) =>
+                    Object.keys(accessorialMappingRDFS).includes(acc)
+                )
+                .map((item) => accessorialMappingRDFS[item])
+        ),
+    ].map((item2) => ({
+        ServiceCode: item2,
+    }));
+
+    if (hazmat)
+        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
+            "request"
+        ]["ServiceDeliveryOptions"]["ServiceOptions"].push({
+            ServiceCode: "HAZ",
+        });
+
+    const builder = new xml2js.Builder({
+        xmldec: { version: "1.0", encoding: "UTF-8" },
+    });
+    return builder.buildObject(xmlPayloadFormat.RDFS);
+}
+
+async function processRDFSResponses({ response }) {
+    let parser = new xml2js.Parser({ trim: true });
+    const parsed = await parser.parseStringPromise(response);
+    const body = get(
+        parsed,
+        "soap:Envelope.soap:Body[0].RateQuoteResponse[0].RateQuoteResult[0]"
+    );
+    const quoteNumber = get(body, "QuoteNumber[0]");
+    const totalRate = parseFloat(get(body, "NetCharge[0]", "0")).toFixed(2);
+    const transitDays = get(body, "RoutingInfo[0].EstimatedTransitDays[0]", "");
+    const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map(
+        (acc) => ({
+            code: get(acc, "Code[0]"),
+            description: get(acc, "Description[0]"),
+            charge: parseFloat(get(acc, "Charge[0]")).toFixed(2),
+        })
+    );
+    const data = {
+        carrier: "RDFS",
+        serviceLevel: "",
+        serviceLevelDescription: "",
+        quoteNumber,
+        transitDays,
+        totalRate,
+        accessorialList,
+    };
+    console.log(`🙂 -> file: index.js:685 -> data:`, data);
+    responseBodyFormat["ltlRateResponse"].push(data);
+}
+
 const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
@@ -2513,6 +2705,17 @@ const accessorialMappingXPOL = {
     INDEL: "DID",
     RESDE: "RSD",
     LIFTD: "DLG",
+};
+
+const accessorialMappingRDFS = {
+    APPT: "APT",
+    INSPU: "IP",
+    RESID: "RSP",
+    LIFT: "LGP",
+    APPTD: "APT",
+    INDEL: "ID",
+    RESDE: "RSD",
+    LIFTD: "LGD",
 };
 
 async function axiosRequest(url, payload, header = {}, method = "POST") {
