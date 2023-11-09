@@ -125,15 +125,6 @@ functions:
   # shipment-detail-collector: ${file(config/functions/shipment-details-collector.yml):function}
   vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
   
-  #  lambda's responsible for inserting values from streams to shipment-header table
-  shipment-header-stream-to-dynamoDB: ${file(config/functions/shipment-header-stream-to-dynamoDB.yml):function}
-  consignee-stream-to-dynamoDB: ${file(config/functions/consignee-stream-to-dynamoDB.yml):function}
-  references-stream-to-dynamoDB: ${file(config/functions/references-stream-to-dynamoDB.yml):function}
-  shipment-desc-stream-to-dynamoDB: ${file(config/functions/shipment-desc-stream-to-dynamoDB.yml):function}
-  shipment-milestone-stream-to-dynamoDB: ${file(config/functions/shipment-milestone-stream-to-dynamoDB.yml):function}
-  shipper-stream-to-dynamoDB: ${file(config/functions/shipper-stream-to-dynamoDB.yml):function}
-  shipment-milestone-details-stream-to-dynamoDB: ${file(config/functions/shipment-milestone-details-stream-to-dynamoDB.yml):function}
-  tracking-notes-stream-to-dynamoDB: ${file(config/functions/tracking-notes-stream-to-dynamoDB.yml):function}
 
 resources:
   Resources:
@@ -275,10 +266,6 @@ resources:
     # Shipment File table stream queue for amazon pod
     # amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
     # amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
-
-    # Shipment Detail Queue 
-    # ShipmentDetailQueue: ${file(config/queues/shipmentDetailQueue.yml):ShipmentDetailQueue}
-    # ShipmentDetailDLQ: ${file(config/queues/shipmentDetailQueue.yml):ShipmentDetailDLQ}
 
     DocumentBucket:
       Type: AWS::S3::Bucket
