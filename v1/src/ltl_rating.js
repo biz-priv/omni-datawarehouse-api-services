@@ -2263,7 +2263,7 @@ async function putXPOLTokenFromDynamo(token) {
     const currentDate = moment().format("DD-MM-YYYY");
     const params = {
         TableName: "omni-dw-api-services-ltl-rating-logs-dev",
-        Key: {
+        Item: {
             pKey: "token",
             sKey: currentDate,
             token: token,
