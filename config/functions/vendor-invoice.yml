@@ -4,12 +4,12 @@ function:
   description: vendor invoice api service - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 30
-  vpc:
-    securityGroupIds:
-      - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/security-group}
-    subnetIds:
-      - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet1}
-      - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet2}
+  # vpc:
+  #   securityGroupIds:
+  #     - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/security-group}
+  #   subnetIds:
+  #     - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet1}
+  #     - ${ssm:/omni-dw/${self:provider.stage}/vendor-invoice/subnet2}
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512
