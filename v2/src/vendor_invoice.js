@@ -11,7 +11,7 @@ let itemObj = {
     fileNumber: "",
     vendorId: "",
     vendorReference: "",
-    createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
+    createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss"),
     eventBody: {},
     errorMsg: "",
     status: "",
@@ -46,10 +46,10 @@ module.exports.handler = async (event) => {
         itemObj.vendorReference = get(body, "vendorInvoiceRequest.vendorReference", null)
         if (get(body, "vendorInvoiceRequest.fileNumber", null) !== null) {
             itemObj.fileNumber = get(body, "vendorInvoiceRequest.fileNumber", null)
-            getQuery = `select * from tbl_shipmentapar where fk_orderno='${get(body, "vendorInvoiceRequest.fileNumber", null)}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
+            getQuery = `select FK_OrderNo from dbo.tbl_shipmentapar where fk_orderno='${get(body, "vendorInvoiceRequest.fileNumber", null)}' and fk_vendorid='${get(body, "vendorInvoiceRequest.vendorId", null)}' and finalize<>'Y'`
         } else {
             itemObj.housebill = get(body, "vendorInvoiceRequest.housebill", null)
-            getQuery = `select * from tbl_ShipmentHeader a join tbl_shipmentapar b on a.PK_Orderno=b.FK_OrderNo where a.Housebill='${get(body, "vendorInvoiceRequest.housebill", null)}' and b.FK_VendorId='${get(body, "vendorInvoiceRequest.vendorId", null)}' and b.Finalize<>'Y'`
+            getQuery = `select b.FK_OrderNo from dbo.tbl_ShipmentHeader a join dbo.tbl_shipmentapar b on a.PK_Orderno=b.FK_OrderNo where a.Housebill='${get(body, "vendorInvoiceRequest.housebill", null)}' and b.FK_VendorId='${get(body, "vendorInvoiceRequest.vendorId", null)}' and b.Finalize<>'Y'`
         }
 
         console.info("getQuery: ", getQuery);
