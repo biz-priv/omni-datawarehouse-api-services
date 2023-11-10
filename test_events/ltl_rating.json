@@ -3,8 +3,8 @@
         "ltlRateRequest": {
             "pickupTime": "2023-11-30T17:00:00",
             "insuredValue": 1000,
-            "shipperZip": "90210",
-            "consigneeZip": "94132",
+            "shipperZip": "97230",
+            "consigneeZip": "98134",
             "reference": "e7713a22-7b5c-48d5-baa9-1cfc0fd55e79",
             "shipmentLines": [
                 {

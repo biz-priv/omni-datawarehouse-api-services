@@ -722,15 +722,15 @@ async function processFWDAResponses({ response }) {
         carrier: "FWDA",
         serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
         serviceLevelDescription: "",
-        transitDays: get(FAQuoteResponse, "TransitDaysTotal[0]"),
-        totalRate: get(FAQuoteResponse, "QuoteTotal[0]"),
+        transitDays: parseInt(get(FAQuoteResponse, "TransitDaysTotal[0]")),
+        totalRate: parseFloat(get(FAQuoteResponse, "QuoteTotal[0]")),
         message: "",
         accessorialList: [],
     };
     data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
         code: get(chargeLineItem, "Code[0]"),
         description: get(chargeLineItem, "Description[0]"),
-        charge: get(chargeLineItem, "Amount[0]"),
+        charge: parseFloat(get(chargeLineItem, "Amount[0]")),
     }));
     responseBodyFormat["ltlRateResponse"].push(data);
     console.log(
@@ -872,10 +872,8 @@ async function processEXLAResponses({ response }) {
         const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
         const deliveryDate = moment(new Date(delivery));
         const transitDays = deliveryDate.diff(pickupDate, "days");
-        const totalRate = get(
-            quoteInfo,
-            "rat:pricing[0].rat:totalPrice[0]",
-            "0"
+        const totalRate = parseFloat(
+            get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0")
         );
         const accessorialInfo = get(
             quoteInfo,
@@ -896,7 +894,7 @@ async function processEXLAResponses({ response }) {
         data["accessorialList"] = accessorialInfo.map((accessorial) => ({
             code: get(accessorial, "rat:code[0]"),
             description: get(accessorial, "rat:description[0]"),
-            charge: get(accessorial, "rat:charge[0]"),
+            charge: parseFloat(get(accessorial, "rat:charge[0]")),
         }));
         return data;
     });
@@ -1258,7 +1256,9 @@ function processFEXFResponses({ response }) {
         ratedShipmentDetails.map((ratedShipmentDetail) => {
             const rateType = get(ratedShipmentDetail, "rateType", "");
             const quoteNumber = get(ratedShipmentDetail, "quoteNumber");
-            const totalRate = get(ratedShipmentDetail, "totalNetCharge");
+            const totalRate = parseFloat(
+                get(ratedShipmentDetail, "totalNetCharge")
+            );
             const shipmentRateDetail = get(
                 ratedShipmentDetail,
                 "shipmentRateDetail.surCharges",
@@ -1268,7 +1268,7 @@ function processFEXFResponses({ response }) {
             const accessorialList = shipmentRateDetail.map((acc) => ({
                 code: get(acc, "type"),
                 description: get(acc, "description"),
-                charge: get(acc, "amount"),
+                charge: parseFloat(get(acc, "amount")),
             }));
             const data = {
                 serviceLevel,
@@ -1395,20 +1395,20 @@ async function processODFLResponses({ response }) {
     );
     const returnObj = get(getLTLRateEstimateResponse, "return[0]");
     const success = get(returnObj, "success[0]");
-    const transitDays = get(returnObj, "destinationCities[0].serviceDays[0]");
+    const transitDays = parseInt(get(returnObj, "destinationCities[0].serviceDays[0]"));
     const quoteNumber = get(returnObj, "referenceNumber[0]");
     const rateEstimate = get(returnObj, "rateEstimate[0]");
-    const totalRate = get(rateEstimate, "netFreightCharge[0]");
+    const totalRate = parseFloat(get(rateEstimate, "netFreightCharge[0]"));
     const accessorialList = get(rateEstimate, "accessorialCharges", []).map(
         (acc) => ({
             code: "",
             description: get(acc, "description[0]"),
-            charge: get(acc, "amount[0]"),
+            charge: parseFloat(get(acc, "amount[0]")),
         })
     );
     const data = {
         carrier: "ODFL",
-        transitDays: transitDays,
+        transitDays,
         quoteNumber,
         totalRate,
         accessorialList,
@@ -1525,7 +1525,7 @@ async function processABFSResponses({ response }) {
     const afb = get(parsed, "ABF", {});
     const isError = Object.keys(afb).includes("ERROR");
     const quoteNumber = get(afb, "QUOTEID[0]");
-    const totalRate = get(afb, "CHARGE[0]");
+    const totalRate = parseFloat(get(afb, "CHARGE[0]"));
     const transitDays = parseInt(get(afb, "ADVERTISEDTRANSIT[0]", 0), 10);
     const data = {
         carrier: "ABFS",
@@ -1631,12 +1631,12 @@ function processAVRTResponses({ response }) {
     const quoteDetails = get(response, "quoteDetails");
     const quoteNumber = get(quoteDetails, "rateQuoteNumber");
     const serviceLevelDescription = get(quoteDetails, "deliveryOption");
-    const totalRate = get(quoteDetails, "totalCharge");
-    const transitDays = get(quoteDetails, "estimatedServiceDays");
+    const totalRate = parseFloat(get(quoteDetails, "totalCharge"));
+    const transitDays = parseInt(get(quoteDetails, "estimatedServiceDays"));
     const accessorialList = get(response, "accessorialCharges", []).map(
         (acc) => ({
             description: get(acc, "description"),
-            charge: get(acc, "value"),
+            charge: parseFloat(get(acc, "value")),
         })
     );
     const data = {
@@ -1720,12 +1720,12 @@ function getXmlPayloadDAFG({
 
 function processDAFGResponses({ response }) {
     const quoteNumber = get(response, "id");
-    const totalRate = get(response, "total");
-    const transitDays = get(response, "serviceEligibility.serviceDays");
+    const totalRate = parseFloat(get(response, "total"));
+    const transitDays = parseInt(get(response, "serviceEligibility.serviceDays"));
     const accessorialList = get(response, "accessorials", []).map((acc) => ({
         code: get(acc, "code"),
         description: get(acc, "name"),
-        charge: get(acc, "amount"),
+        charge: parseFloat(get(acc, "amount")),
     }));
     const data = {
         serviceLevel: "",
@@ -1836,8 +1836,8 @@ async function processSEFNResponses({ response }) {
     const dataRoot = get(parsed, "root");
     const error = get(dataRoot, "error[0]") !== "";
     const quoteNumber = get(dataRoot, "quoteId[0]");
-    const totalRate = get(dataRoot, "rateQuote[0]");
-    const transitDays = get(dataRoot, "transitTime[0]");
+    const totalRate = parseFloat(get(dataRoot, "rateQuote[0]"));
+    const transitDays = parseInt(get(dataRoot, "transitTime[0]"));
     const details = get(dataRoot, "details[0]");
     const typeCharge = get(details, "typeCharge", []);
     const descArray = get(details, "description", []);
@@ -1847,7 +1847,7 @@ async function processSEFNResponses({ response }) {
         const code = typeCharge[index] ?? "";
         const description = descArray[index] ?? "";
         const charge = chargeArray[index] ?? "";
-        accessorialList.push({ code, description, charge });
+        accessorialList.push({ code, description, charge: parseFloat(charge) });
     }
     const data = {
         carrier: "SEFN",
@@ -1969,13 +1969,13 @@ async function processPENSResponses({ response }) {
     const quote = get(CreatePensRateQuoteResponse, "quote[0]");
     const quoteNumber = get(quote, "quoteNumber[0]");
     const totalRate = parseFloat(
-        get(quote, "totalCharge[0]", "0").replace(/\D/g, "")
-    ).toFixed(2);
-    const transitDays = get(
+        get(quote, "totalCharge[0]", "0").replace(/\$/g, "")
+    );
+    const transitDays = parseInt(get(
         transitDaysMappingPENS,
         get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
         "##"
-    );
+    ));
     const message = get(quote, "quoteRemark.remarkItem", "");
     const accessorialDetail = get(
         quote,
@@ -1985,7 +1985,7 @@ async function processPENSResponses({ response }) {
     const accessorialList = accessorialDetail.map((acc) => ({
         code: get(acc, "code[0]"),
         description: get(acc, "description[0]"),
-        charge: parseFloat(get(acc, "charge[0]")).toFixed(2),
+        charge: parseFloat(get(acc, "charge[0]")),
     }));
     const data = {
         carrier: "PENS",
@@ -2114,10 +2114,8 @@ async function processSAIAResponses({ response }) {
     );
     const error = get(body, "Message[0]", "") !== "";
     const quoteNumber = get(body, "QuoteNumber[0]");
-    const totalRate = parseFloat(
-        get(body, "TotalInvoice[0]", "0").replace(/\D/g, "")
-    ).toFixed(2);
-    const transitDays = get(body, "StandardServiceDays[0]", "");
+    const totalRate = parseFloat(get(body, "TotalInvoice[0]", "0"));
+    const transitDays = parseInt(get(body, "StandardServiceDays[0]", ""));
     console.log(`🙂 -> file: index.js:651 -> parsed:`, error);
     const accessorialList = get(
         body,
@@ -2126,7 +2124,7 @@ async function processSAIAResponses({ response }) {
     ).map((acc) => ({
         code: get(acc, "Code[0]"),
         description: get(acc, "Description[0]"),
-        charge: parseFloat(get(acc, "Amount[0]")).toFixed(2),
+        charge: parseFloat(get(acc, "Amount[0]")),
     }));
     const data = {
         carrier: "SAIA",
@@ -2240,10 +2238,8 @@ function getXmlPayloadXPOL({
 async function processXPOLResponses({ response }) {
     const body = get(response, "data");
     const quoteNumber = get(body, "rateQuote.confirmationNbr");
-    const totalRate = parseFloat(
-        get(body, "rateQuote.totCharge[0].amt", "0")
-    ).toFixed(2);
-    const transitDays = get(body, "transitTime.transitDays", "");
+    const totalRate = parseFloat(get(body, "rateQuote.totCharge[0].amt", "0"));
+    const transitDays = parseInt(get(body, "transitTime.transitDays", ""));
     const accessorialList = get(
         body,
         "rateQuote.shipmentInfo.accessorials",
@@ -2251,7 +2247,7 @@ async function processXPOLResponses({ response }) {
     ).map((acc) => ({
         code: get(acc, "accessorialCd"),
         description: get(acc, "accessorialDesc"),
-        charge: parseFloat(get(acc, "chargeAmt.amt")).toFixed(2),
+        charge: parseFloat(get(acc, "chargeAmt.amt")),
     }));
     const data = {
         carrier: "XPOL",
@@ -2457,13 +2453,13 @@ async function processRDFSResponses({ response }) {
         "soap:Envelope.soap:Body[0].RateQuoteResponse[0].RateQuoteResult[0]"
     );
     const quoteNumber = get(body, "QuoteNumber[0]");
-    const totalRate = parseFloat(get(body, "NetCharge[0]", "0")).toFixed(2);
-    const transitDays = get(body, "RoutingInfo[0].EstimatedTransitDays[0]", "");
+    const totalRate = parseFloat(get(body, "NetCharge[0]", "0"));
+    const transitDays = parseInt(get(body, "RoutingInfo[0].EstimatedTransitDays[0]", ""));
     const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map(
         (acc) => ({
             code: get(acc, "Code[0]"),
             description: get(acc, "Description[0]"),
-            charge: parseFloat(get(acc, "Charge[0]")).toFixed(2),
+            charge: parseFloat(get(acc, "Charge[0]")),
         })
     );
     const data = {
@@ -2586,28 +2582,28 @@ const accessorialMappingFEXF = {
 };
 
 const transitDaysMappingFEXF = {
-    EIGHT_DAYS: "8",
-    EIGHTEEN_DAYS: "18",
-    ELEVEN_DAYS: "11",
-    FIFTEEN_DAYS: "15",
-    FIVE_DAYS: "5",
-    FOUR_DAYS: "4",
-    FOURTEEN_DAYS: "14",
-    NINE_DAYS: "9",
-    NINETEEN_DAYS: "19",
-    ONE_DAY: "1",
-    SEVEN_DAYS: "7",
-    SEVENTEEN_DAYS: "17",
-    SIX_DAYS: "6",
-    SIXTEEN_DAYS: "16",
-    TEN_DAYS: "10",
-    THIRTEEN_DAYS: "13",
-    THREE_DAYS: "3",
-    TWELVE_DAYS: "12",
-    TWENTY_DAYS: "20",
-    TWO_DAYS: "2",
-    SMARTPOST_TRANSIT_DAYS: "7",
-    UNKNOWN: "99",
+    EIGHT_DAYS: 8,
+    EIGHTEEN_DAYS: 18,
+    ELEVEN_DAYS: 11,
+    FIFTEEN_DAYS: 15,
+    FIVE_DAYS: 5,
+    FOUR_DAYS: 4,
+    FOURTEEN_DAYS: 14,
+    NINE_DAYS: 9,
+    NINETEEN_DAYS: 19,
+    ONE_DAY: 1,
+    SEVEN_DAYS: 7,
+    SEVENTEEN_DAYS: 17,
+    SIX_DAYS: 6,
+    SIXTEEN_DAYS: 16,
+    TEN_DAYS: 10,
+    THIRTEEN_DAYS: 13,
+    THREE_DAYS: 3,
+    TWELVE_DAYS: 12,
+    TWENTY_DAYS: 20,
+    TWO_DAYS: 2,
+    SMARTPOST_TRANSIT_DAYS: 7,
+    UNKNOWN: 99,
 };
 
 const pieceTypeMappingABFS = {
