@@ -18,3 +18,5 @@ function:
         integration: lambda
         private: true
         cors: true
+  environment:
+    LTL_LOG_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-rating/log-table-name}

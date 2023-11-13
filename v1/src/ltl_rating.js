@@ -8,6 +8,7 @@ const qs = require("qs");
 const { zips } = require("../../src/shared/ltlRater/zipCode.js");
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const { LTL_LOG_TABLE } = process.env;
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -676,6 +677,7 @@ const responseBodyFormat = {
     ltlRateResponse: [],
 };
 
+// ===================FWDA=======================
 async function processFWDARequest({
     pickupTime,
     insuredValue,
@@ -820,6 +822,7 @@ function getXmlPayloadFWDA({
     return builder.buildObject(xmlPayloadFormat.FWDA);
 }
 
+// ===================EXLA=======================
 async function processEXLARequest({
     pickupTime,
     insuredValue,
@@ -1008,6 +1011,7 @@ function getXmlPayloadEXLA({
     return builder.buildObject(xmlPayloadFormat.EXLA);
 }
 
+// ===================FEXF=======================
 async function processFEXFRequest({
     pickupTime,
     insuredValue,
@@ -1285,6 +1289,7 @@ function processFEXFResponses({ response }) {
     });
 }
 
+// ===================ODFL=======================
 async function processODFLRequest({
     pickupTime,
     insuredValue,
@@ -1395,7 +1400,9 @@ async function processODFLResponses({ response }) {
     );
     const returnObj = get(getLTLRateEstimateResponse, "return[0]");
     const success = get(returnObj, "success[0]");
-    const transitDays = parseInt(get(returnObj, "destinationCities[0].serviceDays[0]"));
+    const transitDays = parseInt(
+        get(returnObj, "destinationCities[0].serviceDays[0]")
+    );
     const quoteNumber = get(returnObj, "referenceNumber[0]");
     const rateEstimate = get(returnObj, "rateEstimate[0]");
     const totalRate = parseFloat(get(rateEstimate, "netFreightCharge[0]"));
@@ -1418,6 +1425,7 @@ async function processODFLResponses({ response }) {
     }
 }
 
+// ===================ABFS=======================
 async function processABFSRequest({
     pickupTime,
     insuredValue,
@@ -1538,6 +1546,7 @@ async function processABFSResponses({ response }) {
     }
 }
 
+// ===================AVRT=======================
 async function processAVRTRequest({
     pickupTime,
     insuredValue,
@@ -1650,6 +1659,7 @@ function processAVRTResponses({ response }) {
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+// ===================DAFG=======================
 async function processDAFGRequest({
     pickupTime,
     insuredValue,
@@ -1721,7 +1731,9 @@ function getXmlPayloadDAFG({
 function processDAFGResponses({ response }) {
     const quoteNumber = get(response, "id");
     const totalRate = parseFloat(get(response, "total"));
-    const transitDays = parseInt(get(response, "serviceEligibility.serviceDays"));
+    const transitDays = parseInt(
+        get(response, "serviceEligibility.serviceDays")
+    );
     const accessorialList = get(response, "accessorials", []).map((acc) => ({
         code: get(acc, "code"),
         description: get(acc, "name"),
@@ -1740,6 +1752,7 @@ function processDAFGResponses({ response }) {
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+// ===================SEFN=======================
 async function processSEFNRequest({
     pickupTime,
     insuredValue,
@@ -1862,6 +1875,7 @@ async function processSEFNResponses({ response }) {
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+// ===================PENS=======================
 async function processPENSRequest({
     pickupTime,
     insuredValue,
@@ -1971,11 +1985,13 @@ async function processPENSResponses({ response }) {
     const totalRate = parseFloat(
         get(quote, "totalCharge[0]", "0").replace(/\$/g, "")
     );
-    const transitDays = parseInt(get(
-        transitDaysMappingPENS,
-        get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
-        "##"
-    ));
+    const transitDays = parseInt(
+        get(
+            transitDaysMappingPENS,
+            get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
+            "##"
+        )
+    );
     const message = get(quote, "quoteRemark.remarkItem", "");
     const accessorialDetail = get(
         quote,
@@ -2000,6 +2016,7 @@ async function processPENSResponses({ response }) {
     if (!error) responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+// ===================SAIA=======================
 async function processSAIARequest({
     pickupTime,
     insuredValue,
@@ -2139,6 +2156,7 @@ async function processSAIAResponses({ response }) {
     if (!error) responseBodyFormat["ltlRateResponse"].push(data);
 }
 
+// ===================XPOL=======================
 async function processXPOLRequest({
     pickupTime,
     insuredValue,
@@ -2285,7 +2303,8 @@ async function getTokenForXPOL() {
 
 async function getXPOLTokenFromDynamo() {
     const params = {
-        TableName: "omni-dw-api-services-ltl-rating-logs-dev",
+        TableName: LTL_LOG_TABLE,
+        // TableName: "omni-dw-api-services-ltl-rating-logs-dev",
         Key: {
             pKey: "token",
             sKey: moment().format("DD-MM-YYYY"),
@@ -2334,6 +2353,7 @@ async function putXPOLTokenFromDynamo(token) {
     }
 }
 
+// ===================RDFS=======================
 async function processRDFSRequest({
     pickupTime,
     insuredValue,
@@ -2454,7 +2474,9 @@ async function processRDFSResponses({ response }) {
     );
     const quoteNumber = get(body, "QuoteNumber[0]");
     const totalRate = parseFloat(get(body, "NetCharge[0]", "0"));
-    const transitDays = parseInt(get(body, "RoutingInfo[0].EstimatedTransitDays[0]", ""));
+    const transitDays = parseInt(
+        get(body, "RoutingInfo[0].EstimatedTransitDays[0]", "")
+    );
     const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map(
         (acc) => ({
             code: get(acc, "Code[0]"),
@@ -2536,6 +2558,7 @@ const pieceTypeMappingEXLA = {
     SKD: "SK",
     UNT: "PC",
 };
+
 const pieceTypeMappingFEXF = {
     BND: "BUNDLE",
     BOX: "BOX",
