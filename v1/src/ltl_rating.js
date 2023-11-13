@@ -15,12 +15,8 @@ const ltlRateRequestSchema = Joi.object({
         pickupTime: Joi.string().required().label("pickupTime"),
         reference: Joi.string().required().label("Reference").length(36),
         insuredValue: Joi.number().optional().label("insuredValue"),
-        shipperZip: Joi.string()
-            .required()
-            .label("shipperZip"),
-        consigneeZip: Joi.string()
-            .required()
-            .label("consigneeZip"),
+        shipperZip: Joi.string().required().label("shipperZip"),
+        consigneeZip: Joi.string().required().label("consigneeZip"),
         shipmentLines: Joi.array()
             .max(99)
             .items(
@@ -839,6 +835,7 @@ async function processEXLARequest({
         accessorialList,
         reference,
     });
+    console.info(`🙂 -> file: ltl_rating.js:842 -> xmlPayload:`, xmlPayload);
     let headers = {
         soapAction: "http://ws.estesexpress.com/ratequote/getQuote",
         "Content-Type": "text/xml",
@@ -2754,6 +2751,10 @@ async function axiosRequest(url, payload, header = {}, method = "POST") {
 
         const res = await axios.request(config);
         if (res.status < 300) {
+            console.info(
+                `🙂 -> file: ltl_rating.js:2758 -> res.status:`,
+                get(res, "data", {})
+            );
             return get(res, "data", {});
         } else {
             return false;
