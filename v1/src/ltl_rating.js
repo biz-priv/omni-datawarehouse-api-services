@@ -13,7 +13,7 @@ const { LTL_LOG_TABLE } = process.env;
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
         pickupTime: Joi.string().required().label("pickupTime"),
-        reference: Joi.string().required().label("Reference").length(36),
+        reference: Joi.string().required().label("Reference"),
         insuredValue: Joi.number().optional().label("insuredValue"),
         shipperZip: Joi.string().required().label("shipperZip"),
         consigneeZip: Joi.string().required().label("consigneeZip"),
