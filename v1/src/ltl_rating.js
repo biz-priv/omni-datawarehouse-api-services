@@ -14,15 +14,13 @@ const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
         pickupTime: Joi.string().required().label("pickupTime"),
         reference: Joi.string().required().label("Reference").length(36),
-        insuredValue: Joi.number().optional().label("insuredValue is invalid."),
+        insuredValue: Joi.number().optional().label("insuredValue"),
         shipperZip: Joi.string()
             .required()
-            // .length(10)
-            .label("shipperZip is invalid."),
+            .label("shipperZip"),
         consigneeZip: Joi.string()
             .required()
-            // .length(10)
-            .label("consigneeZip is invalid."),
+            .label("consigneeZip"),
         shipmentLines: Joi.array()
             .max(99)
             .items(
@@ -48,11 +46,11 @@ const ltlRateRequestSchema = Joi.object({
                 })
             )
             .required()
-            .label("shipmentLines is invalid."),
+            .label("shipmentLines"),
         accessorialList: Joi.array()
             .items(Joi.string())
             .optional()
-            .label("accessorialList is invalid."),
+            .label("accessorialList"),
     }),
 });
 
@@ -1022,6 +1020,7 @@ async function processFEXFRequest({
     reference,
 }) {
     const accessToken = await processFEXFAuthRequest();
+    if (!accessToken) return;
     const payload = getXmlPayloadFEXF({
         pickupTime,
         insuredValue,
@@ -1045,22 +1044,27 @@ async function processFEXFRequest({
 }
 
 async function processFEXFAuthRequest() {
-    let data = qs.stringify({
-        grant_type: "client_credentials",
-        client_id: "l789c1e90d306b419bb8870284bdea1e7b",
-        client_secret: "810186e0a5c2488289753bae1e8507a8",
-    });
-    let config = {
-        method: "post",
-        maxBodyLength: Infinity,
-        url: "https://apis.fedex.com/oauth/token",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        data: data,
-    };
-    const authReqRes = await axios.request(config);
-    return get(authReqRes, "data.access_token");
+    try {
+        let data = qs.stringify({
+            grant_type: "client_credentials",
+            client_id: "l789c1e90d306b419bb8870284bdea1e7b",
+            client_secret: "810186e0a5c2488289753bae1e8507a8",
+        });
+        let config = {
+            method: "post",
+            maxBodyLength: Infinity,
+            url: "https://apis.fedex.com/oauth/token",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            data: data,
+        };
+        const authReqRes = await axios.request(config);
+        return get(authReqRes, "data.access_token");
+    } catch (e) {
+        console.log(`🙂 -> file: ltl_rating.js:1064 -> e:`, e);
+        return false;
+    }
 }
 
 function getXmlPayloadFEXF({
