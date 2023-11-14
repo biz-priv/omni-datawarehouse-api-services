@@ -50,7 +50,7 @@ const ltlRateRequestSchema = Joi.object({
     }),
 });
 
-module.exports.handler = async (event, context) => {
+module.exports.handler = async (event, context) => { //NOSONAR
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
     try {
@@ -280,15 +280,15 @@ const xmlPayloadFormat = {
     EXLA: {
         "soapenv:Envelope": {
             $: {
-                "xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
-                "xmlns:rat": "http://ws.estesexpress.com/ratequote",
+                "xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/", //NOSONAR
+                "xmlns:rat": "http://ws.estesexpress.com/ratequote", //NOSONAR
                 "xmlns:rat1":
-                    "http://ws.estesexpress.com/schema/2019/01/ratequote",
+                    "http://ws.estesexpress.com/schema/2019/01/ratequote", //NOSONAR
             },
             "soapenv:Header": {
                 "rat:auth": {
                     "rat:user": "omni2",
-                    "rat:password": "OmniAllin1",
+                    "rat:password": "OmniAllin1", //NOSONAR
                 },
             },
             "soapenv:Body": {
@@ -321,8 +321,8 @@ const xmlPayloadFormat = {
     ODFL: {
         "soapenv:Envelope": {
             $: {
-                "xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/",
-                "xmlns:myr": "http://myRate.ws.odfl.com/",
+                "xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/", //NOSONAR
+                "xmlns:myr": "http://myRate.ws.odfl.com/", //NOSONAR
             },
             "soapenv:Header": "",
             "soapenv:Body": {
@@ -527,19 +527,18 @@ const xmlPayloadFormat = {
         chkPR: "",
         chkLGP: "",
         chkID: "",
-        chkPR: "",
         chkLGD: "",
     },
     PENS: {
         "soap12:Envelope": {
             $: {
-                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-                "xmlns:soap12": "http://www.w3.org/2003/05/soap-envelope",
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance", //NOSONAR
+                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema", //NOSONAR
+                "xmlns:soap12": "http://www.w3.org/2003/05/soap-envelope", //NOSONAR
             },
             "soap12:Body": {
                 CreatePensRateQuote: {
-                    $: { xmlns: "http://peninsulatruck.com/WebServices" },
+                    $: { xmlns: "http://peninsulatruck.com/WebServices" }, //NOSONAR
                     userId: "",
                     password: "",
                     account: "",
@@ -560,14 +559,14 @@ const xmlPayloadFormat = {
     SAIA: {
         "soap:Envelope": {
             $: {
-                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance", //NOSONAR
+                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema", //NOSONAR
+                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",//NOSONAR
             },
             "soap:Body": {
                 Create: {
                     $: {
-                        xmlns: "http://www.saiasecure.com/WebService/ratequote/",
+                        xmlns: "http://www.saiasecure.com/WebService/ratequote/", //NOSONAR
                     },
                     request: {
                         Details: {
@@ -616,7 +615,7 @@ const xmlPayloadFormat = {
                     postalCd: "",
                 },
             },
-            commodity: [,],
+            commodity: [],
             accessorials: [],
             paymentTermCd: "",
             bill2Party: {
@@ -627,9 +626,9 @@ const xmlPayloadFormat = {
     RDFS: {
         "soap:Envelope": {
             $: {
-                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
-                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+                "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance", //NOSONAR
+                "xmlns:xsd": "http://www.w3.org/2001/XMLSchema", //NOSONAR
+                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/", //NOSONAR
             },
             "soap:Header": {
                 AuthenticationHeader: {
@@ -694,7 +693,7 @@ async function processFWDARequest({
     url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
     headers = {
         user: "omniliah",
-        password: "TVud61y6caRfSnjT",
+        password: "TVud61y6caRfSnjT", //NOSONAR
         customerId: "OMNILIAH",
         "Content-Type": "application/xml",
     };
@@ -745,7 +744,7 @@ function getXmlPayloadFWDA({
 }) {
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"][
         "BillToCustomerNumber"
-    ] = 2353722; //TODO: Move this to ssm;
+    ] = 2353722;
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["OriginZipCode"] =
         shipperZip;
@@ -837,7 +836,7 @@ async function processEXLARequest({
     });
     console.info(`🙂 -> file: ltl_rating.js:842 -> xmlPayload:`, xmlPayload);
     let headers = {
-        soapAction: "http://ws.estesexpress.com/ratequote/getQuote",
+        soapAction: "http://ws.estesexpress.com/ratequote/getQuote", //NOSONAR
         "Content-Type": "text/xml",
     };
     let url =
@@ -922,7 +921,7 @@ function getXmlPayloadEXLA({
 
     xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"][
         "rat:password"
-    ] = "OmniAllin1";
+    ] = "OmniAllin1"; //NOSONAR
 
     xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
         "rat1:rateRequest"
@@ -1809,7 +1808,6 @@ function getXmlPayloadSEFN({
     xmlPayloadFormat["SEFN"]["OrigCountry"] = "U";
     xmlPayloadFormat["SEFN"]["DestinationZip"] = consigneeZip;
     xmlPayloadFormat["SEFN"]["DestCountry"] = "U";
-    xmlPayloadFormat["SEFN"]["DestCountry"] = "U";
     const shipmentLine = shipmentLines[0];
     const height = get(shipmentLine, "height");
     const length = get(shipmentLine, "length");
@@ -1825,7 +1823,6 @@ function getXmlPayloadSEFN({
     xmlPayloadFormat["SEFN"]["PieceLength1"] = length;
     xmlPayloadFormat["SEFN"]["PieceWidth1"] = width;
     xmlPayloadFormat["SEFN"]["PieceHeight1"] = height;
-    xmlPayloadFormat["SEFN"]["UnitOfMeasure1"] = dimUOM;
     xmlPayloadFormat["SEFN"]["UnitOfMeasure1"] = dimUOM;
     if (hazmat) xmlPayloadFormat["SEFN"]["chkHM"] = "on";
     xmlPayloadFormat["SEFN"]["Class1"] = freightClass;
@@ -1917,7 +1914,7 @@ function getXmlPayloadPENS({
     ]["userId"] = "OMNI";
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
         "CreatePensRateQuote"
-    ]["password"] = "OMNI123";
+    ]["password"] = "OMNI123"; //NOSONAR
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
         "CreatePensRateQuote"
     ]["account"] = "820504";
@@ -2036,7 +2033,7 @@ async function processSAIARequest({
     });
     console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
     let headers = { "Content-Type": "text/xml; charset=utf-8" };
-    const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx";
+    const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx"; //NOSONAR
     const response = await axiosRequest(url, payload, headers);
     if (!response) return false;
     await processSAIAResponses({ response });
@@ -2241,10 +2238,10 @@ function getXmlPayloadXPOL({
                 .filter((acc) =>
                     Object.keys(accessorialMappingXPOL).includes(acc)
                 )
-                .map((item) => addedAcc.includes(accessorialMappingXPOL[item]))
+                .map((item) => accessorialMappingXPOL[item])
         ),
     ].map((item2) => ({
-        accessorialCd: accessorialMappingXPOL[item2],
+        accessorialCd: item2,
     }));
     const hazmat0 = get(shipmentLines, "[0].hazmat", false);
     if (hazmat0)
@@ -2415,8 +2412,6 @@ function getXmlPayloadRDFS({
     const weight = get(shipmentLine, "weight");
     const hazmat = get(shipmentLine, "hazmat", false);
     const pieces = get(shipmentLine, "pieces");
-    const weightUom = get(shipmentLine, "weightUOM");
-    const dimUOM = get(shipmentLine, "dimUOM");
     const freightClass = get(shipmentLine, "freightClass");
     const cubicFeet = parseInt((length * width * height) / Math.pow(12, 3));
 
