@@ -71,6 +71,9 @@ custom:
     enabled: true
     destinationArn: arn:aws:logs:${self:provider.region}:332753493246:destination:bce-logs-cw-destination-${self:provider.region}-${self:provider.stage}
     filterPattern: '{$.service-name = "*"}'
+  apigwBinary:
+    types:           #list of mime-types
+      - 'text/csv'
 
 plugins:
   - serverless-layers
