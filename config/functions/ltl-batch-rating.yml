@@ -18,6 +18,6 @@ function:
         integration: lambda
         private: true
         cors: true
-        request:
-            contentHandling: CONVERT_TO_BINARY
-            parser: multipart/form-data
+        # request:
+        #     contentHandling: CONVERT_TO_BINARY
+        #     parser: multipart/form-data

@@ -73,7 +73,7 @@ custom:
     filterPattern: '{$.service-name = "*"}'
   apigwBinary:
     types:           #list of mime-types
-      - 'text/csv'
+      - text/csv
 
 plugins:
   - serverless-layers
