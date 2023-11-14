@@ -50,7 +50,8 @@ const ltlRateRequestSchema = Joi.object({
     }),
 });
 
-module.exports.handler = async (event, context) => { //NOSONAR
+module.exports.handler = async (event, context) => {
+    //NOSONAR
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
     try {
@@ -561,7 +562,7 @@ const xmlPayloadFormat = {
             $: {
                 "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance", //NOSONAR
                 "xmlns:xsd": "http://www.w3.org/2001/XMLSchema", //NOSONAR
-                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",//NOSONAR
+                "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/", //NOSONAR
             },
             "soap:Body": {
                 Create: {
