@@ -30,6 +30,7 @@
     "pdfkit": "^0.13.0",
     "pg-promise": "^10.11.1",
     "pngjs": "^7.0.0",
+    "qs": "^6.11.2",
     "serverless": "^2.11.1",
     "serverless-add-api-key": "4.2.0",
     "serverless-aws-alias-fixed": "2.0.1",
@@ -43,7 +44,9 @@
     "util": "^0.12.5",
     "uuid": "^9.0.0",
     "xml2js": "^0.6.2",
-    "qs": "^6.11.2",
     "xmlbuilder2": "^3.0.2"
+  },
+  "devDependencies": {
+    "serverless-apigw-binary": "^0.4.4"
   }
 }
