@@ -124,6 +124,7 @@ functions:
   shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
   vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
   ltl-rating: ${file(config/functions/ltl-rating.yml):function}
+  ltl-batch-rating: ${file(config/functions/ltl-batch-rating.yml):function}
 
 resources:
   Resources:
