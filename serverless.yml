@@ -81,7 +81,7 @@ plugins:
   - serverless-plugin-existing-s3
   - serverless-offline
   - serverless-plugin-log-subscription
-  # - serverless-apigw-binary
+  - serverless-apigw-binary
 
 package:
   individually: true
