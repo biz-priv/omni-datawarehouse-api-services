@@ -44,9 +44,7 @@
     "util": "^0.12.5",
     "uuid": "^9.0.0",
     "xml2js": "^0.6.2",
-    "xmlbuilder2": "^3.0.2"
-  },
-  "devDependencies": {
+    "xmlbuilder2": "^3.0.2",
     "serverless-apigw-binary": "^0.4.4"
   }
 }
