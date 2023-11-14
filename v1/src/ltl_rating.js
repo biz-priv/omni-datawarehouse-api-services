@@ -2231,7 +2231,6 @@ function getXmlPayloadXPOL({
             };
         }
     );
-    const addedAcc = [];
     xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [
         ...new Set(
             accessorialList
