@@ -71,10 +71,10 @@ custom:
     enabled: true
     destinationArn: arn:aws:logs:${self:provider.region}:332753493246:destination:bce-logs-cw-destination-${self:provider.region}-${self:provider.stage}
     filterPattern: '{$.service-name = "*"}'
-  apigwBinary:
-    types:           #list of mime-types
-      - text/csv
-      - multipart/form-data
+  # apigwBinary:
+  #   types:           #list of mime-types
+  #     - text/csv
+  #     - multipart/form-data
 
 plugins:
   - serverless-layers
@@ -85,7 +85,7 @@ plugins:
   - serverless-plugin-existing-s3
   - serverless-offline
   - serverless-plugin-log-subscription
-  - serverless-apigw-binary
+  # - serverless-apigw-binary
 
 package:
   individually: true
