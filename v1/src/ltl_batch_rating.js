@@ -5,12 +5,14 @@ const xlsx = require("xlsx");
 module.exports.handler = async (event, context) => {
     try {
         let body;
-        body = get(event, "body");
+        console.info(`🙂 -> file: ltl_batch_rating.js:6 -> event:`, event);
+        body = get(event, "body", "");
         if (typeof body === "string") body = JSON.parse(body);
-        const fileBase64 = get(body, "file");
+        const fileBase64 = get(body, "data");
+        console.info(`🙂 -> file: ltl_batch_rating.js:11 -> fileBase64:`, fileBase64);
         const filePath = "/tmp/output.xslx";
         const file = base64ToXlsx(fileBase64, filePath);
-        const isXlsx = isValidXlsx(file);
+        const isXlsx = isValidXlsx(filePath);
         if (!isXlsx) throw new Error("Invalid file");
         console.log(`🙂 -> file: ltl_batch_rating.js:10 -> isXlsx:`, isXlsx);
         const response = {
