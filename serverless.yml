@@ -74,6 +74,7 @@ custom:
   apigwBinary:
     types:           #list of mime-types
       - text/csv
+      - multipart/form-data
 
 plugins:
   - serverless-layers
