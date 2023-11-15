@@ -248,21 +248,21 @@ const xmlPayloadFormat = {
         FAQuoteRequest: {
             BillToCustomerNumber: 2353722,
             Origin: {
-                OriginZipCode: 90210,
+                OriginZipCode: "",
                 Pickup: {
                     AirportPickup: "N",
                     PickupAccessorials: {
-                        PickupAccessorial: "APP",
+                        PickupAccessorial: [],
                     },
                 },
             },
             Destination: {
-                DestinationZipCode: "94132",
+                DestinationZipCode: "",
                 Delivery: {
                     AirportDelivery: "N",
                 },
                 DeliveryAccessorials: {
-                    DeliveryAccessorial: "ADE",
+                    DeliveryAccessorial: [],
                 },
             },
             FreightDetails: {
@@ -274,8 +274,8 @@ const xmlPayloadFormat = {
             },
             Hazmat: "N",
             InBondShipment: "N",
-            DeclaredValue: 10000.0,
-            ShippingDate: "2020-11-02T17:00:00",
+            DeclaredValue: 0,
+            ShippingDate: "",
         },
     },
     EXLA: {
@@ -295,25 +295,25 @@ const xmlPayloadFormat = {
             "soapenv:Body": {
                 "rat1:rateRequest": {
                     "rat1:requestID": "test",
-                    "rat1:account": "5098931",
+                    "rat1:account": "",
                     "rat1:originPoint": {
-                        "rat1:countryCode": "US",
-                        "rat1:postalCode": "90210",
+                        "rat1:countryCode": "",
+                        "rat1:postalCode": "",
                     },
                     "rat1:destinationPoint": {
-                        "rat1:countryCode": "US",
-                        "rat1:postalCode": "94132",
+                        "rat1:countryCode": "",
+                        "rat1:postalCode": "",
                     },
                     "rat1:payor": "T",
                     "rat1:terms": "PPD",
                     "rat1:pickup": {
-                        "rat1:date": "2022-11-30",
-                        "rat1:ready": "17:00:00",
+                        "rat1:date": "",
+                        "rat1:ready": "",
                     },
-                    "rat1:declaredValue": 1000,
+                    "rat1:declaredValue": 0,
                     "rat1:fullCommodities": { "rat1:commodity": [] },
                     "rat1:accessorials": {
-                        "rat1:accessorialCode": ["APT", "APT", "HAZ"],
+                        "rat1:accessorialCode": [],
                     },
                 },
             },
@@ -329,21 +329,21 @@ const xmlPayloadFormat = {
             "soapenv:Body": {
                 "myr:getLTLRateEstimate": {
                     arg0: {
-                        accessorials: ["IPC", "IDC", "HAZ"],
-                        destinationPostalCode: 94132,
+                        accessorials: [],
+                        destinationPostalCode: "",
                         freightItems: {
-                            height: 20,
-                            width: 20,
-                            numberOfUnits: 3,
-                            ratedClass: 70,
-                            weight: 255,
+                            height: "",
+                            width: "",
+                            numberOfUnits: "",
+                            ratedClass: "",
+                            weight: "",
                         },
-                        insuranceAmount: 1000,
+                        insuranceAmount: 0,
                         odfl4MeUser: "OmniDFW",
                         odfl4MePassword: "Omnidfw1!",
-                        odflCustomerAccount: "13469717",
-                        originPostalCode: "90210",
-                        pickupDateTime: "2023-10-01T14:00:00",
+                        odflCustomerAccount: "",
+                        originPostalCode: "",
+                        pickupDateTime: "",
                         requestReferenceNumber: 1,
                         shipType: "LTL",
                         tariff: "559",
@@ -446,30 +446,30 @@ const xmlPayloadFormat = {
         ID: "99YGF074",
         TPBAFF: "Y",
         TPBPay: "Y",
-        TPBZip: "75019",
-        ShipZip: "90210",
-        ConsZip: "94132",
-        DeclaredValue: "1000",
-        Acc_ELC: "Y",
-        DeclaredType: "N",
-        ShipMonth: "10",
-        ShipDay: "01",
-        ShipYear: "2023",
-        FrtHght1: "30",
-        FrtLng1: "20",
-        FrtWdth1: "20",
-        FrtLWHType: "IN",
-        UnitNo1: "3",
-        UnitType1: "PC",
-        Class1: "70",
-        Wgt1: "225",
-        Acc_HAZ: "Y",
-        Acc_IPU: "Y",
-        Acc_RPU: "Y",
-        Acc_GRD_PU: "Y",
-        Acc_IDEL: "Y",
-        Acc_RDEL: "Y",
-        Acc_GRD_DEL: "Y",
+        TPBZip: "",
+        ShipZip: "",
+        ConsZip: "",
+        DeclaredValue: "",
+        Acc_ELC: "",
+        DeclaredType: "",
+        ShipMonth: "",
+        ShipDay: "",
+        ShipYear: "",
+        FrtHght1: "",
+        FrtLng1: "",
+        FrtWdth1: "",
+        FrtLWHType: "",
+        UnitNo1: "",
+        UnitType1: "",
+        Class1: "",
+        Wgt1: "",
+        Acc_HAZ: "",
+        Acc_IPU: "",
+        Acc_RPU: "",
+        Acc_GRD_PU: "",
+        Acc_IDEL: "",
+        Acc_RDEL: "",
+        Acc_GRD_DEL: "",
     },
     AVRT: {
         accountNumber: "",
@@ -758,7 +758,7 @@ function getXmlPayloadFWDA({
         if (["APPT", "INSPU", "RESID"].includes(accessorial)) {
             xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"][
                 "PickupAccessorials"
-            ]["PickupAccessorial"] = accessorialMappingFWDA[accessorial];
+            ]["PickupAccessorial"].push(accessorialMappingFWDA[accessorial]);
         }
     }
 
@@ -774,7 +774,7 @@ function getXmlPayloadFWDA({
         if (["APPTD", "INDEL", "RESDE"].includes(accessorial)) {
             xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"][
                 "DeliveryAccessorials"
-            ]["DeliveryAccessorial"] = accessorialMappingFWDA[accessorial];
+            ]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
         }
     }
 
