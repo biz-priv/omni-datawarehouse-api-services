@@ -36,12 +36,10 @@ module.exports.handler = async (event) => {
           "housebill or fileNumber is required in vendorInvoiceRequest."
         );
       } else if (
-        get(body, "vendorInvoiceRequest.vendorReference", null) === null
+        get(body, "vendorInvoiceRequest.vendorReference", null) === null || get(body, "vendorInvoiceRequest.vendorId", null) === null
       ) {
-        throw new Error("vendorReference is required in vendorInvoiceRequest.");
-      } else if (get(body, "vendorInvoiceRequest.vendorId", null) === null) {
-        throw new Error("vendorId is required in vendorInvoiceRequest.");
-      }
+        throw new Error("vendorReference or vendorId is required in vendorInvoiceRequest.");
+      } 
     } else {
       throw new Error("Unauthorized request.");
     }
