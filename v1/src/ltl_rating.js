@@ -702,7 +702,7 @@ async function processFWDARequest({
         "Content-Type": "application/xml",
     };
     payload = xmlPayload;
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processFWDAResponses({ response });
     return { response };
@@ -842,7 +842,7 @@ async function processEXLARequest({
     let url =
         "https://www.estes-express.com/tools/rating/ratequote/v4.0/services/RateQuoteService";
     let payload = xmlPayload;
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processEXLAResponses({ response });
     return { response };
@@ -1028,7 +1028,7 @@ async function processFEXFRequest({
         "Content-Type": "application/json",
     };
     let url = "https://apis.fedex.com/rate/v1/freight/rates/quotes";
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     processFEXFResponses({ response });
     return { response };
@@ -1316,7 +1316,7 @@ async function processODFLRequest({
         "Content-Type": "application/xml",
     };
     let url = "https://www.odfl.com/wsRate_v6/RateService";
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processODFLResponses({ response });
     return { response };
@@ -1574,7 +1574,7 @@ async function processAVRTRequest({
     });
     let headers = {};
     const url = `https://api.averittexpress.com/rate-quotes/ltl?api_key=f6723fe521a149c0871694379cf0c047`;
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     processAVRTResponses({ response });
     return { response };
@@ -1692,7 +1692,7 @@ async function processDAFGRequest({
         url,
         JSON.stringify(payload),
         headers,
-        null,
+        "POST",
         carrier
     );
     if (!response) return false;
@@ -1919,7 +1919,7 @@ async function processPENSRequest({
     let headers = { "Content-Type": "application/soap+xml; charset=utf-8" };
     const url =
         "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processPENSResponses({ response });
     return { response };
@@ -2062,7 +2062,7 @@ async function processSAIARequest({
     });
     let headers = { "Content-Type": "text/xml; charset=utf-8" };
     const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx"; //NOSONAR
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processSAIAResponses({ response });
     return { response };
@@ -2209,7 +2209,7 @@ async function processXPOLRequest({
         Authorization: `Bearer ${token}`,
     };
     const url = "https://api.ltl.xpo.com/rating/1.0/ratequotes";
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processXPOLResponses({ response });
     return { response };
@@ -2401,7 +2401,7 @@ async function processRDFSRequest({
         "Content-Type": "text/xml; charset=utf-8",
     };
     const url = "https://webservices.rrts.com/rating/ratequote.asmx";
-    const response = await axiosRequest(url, payload, headers, null, carrier);
+    const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processRDFSResponses({ response });
     return { response };
