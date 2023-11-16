@@ -224,7 +224,11 @@ module.exports.handler = async (event, context) => {
         const response = { ...responseBodyFormat };
         return response;
     } catch (err) {
-        console.error(`🙂 -> file: ltl_rating.js:95 -> err:`, err);
+        const errResponse = JSON.stringify(get(err, "response.data", ""));
+        console.error(
+            `🙂 -> file: ltl_rating.js:95 -> err:`,
+            errResponse !== "" ? errResponse : err
+        );
         const response = {
             statusCode: 400,
             body: { message: err.message },
@@ -1033,8 +1037,12 @@ async function processFEXFAuthRequest() {
             get(authReqRes, "data")
         );
         return get(authReqRes, "data.access_token");
-    } catch (e) {
-        console.error(`🙂 -> file: ltl_rating.js:1064 -> e:`, e);
+    } catch (err) {
+        const errResponse = JSON.stringify(get(err, "response.data", ""));
+        console.error(
+            `🙂 -> file: ltl_rating.js:1043 -> err:`,
+            errResponse !== "" ? errResponse : err
+        );
         return false;
     }
 }
@@ -2271,11 +2279,10 @@ async function getXPOLTokenFromDynamo() {
         console.info("QUERY RESP :", data);
         return get(data, "Item.token", false);
     } catch (err) {
+        const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(
-            `🙂 -> file: ltl_rating.js:2071 -> params:`,
-            params,
-            "err",
-            err
+            `🙂 -> file: ltl_rating.js:2284 -> err:`,
+            errResponse !== "" ? errResponse : err
         );
         throw err;
     }
@@ -2299,11 +2306,10 @@ async function putXPOLTokenFromDynamo(token) {
         console.info("QUERY RESP :", data);
         return data;
     } catch (err) {
+        const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(
-            `🙂 -> file: ltl_rating.js:2071 -> params:`,
-            params,
-            "err",
-            err
+            `🙂 -> file: ltl_rating.js:2311 -> err:`,
+            errResponse !== "" ? errResponse : err
         );
         throw err;
     }
@@ -2716,8 +2722,12 @@ async function axiosRequest(url, payload, header = {}, method = "POST") {
         } else {
             return false;
         }
-    } catch (e) {
-        console.error(`🙂 -> file: ltl_rating.js:361 -> e:`, e);
+    } catch (err) {
+        const errResponse = JSON.stringify(get(err, "response.data", ""));
+        console.error(
+            `🙂 -> file: ltl_rating.js:2728 -> err:`,
+            errResponse !== "" ? errResponse : err
+        );
         return false;
     }
 }
