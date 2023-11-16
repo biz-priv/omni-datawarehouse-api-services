@@ -709,29 +709,33 @@ async function processFWDARequest({
 }
 
 async function processFWDAResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
-    const ChargeLineItems = get(
-        FAQuoteResponse,
-        "ChargeLineItems[0].ChargeLineItem",
-        []
-    );
-    const data = {
-        carrier: "FWDA",
-        serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
-        serviceLevelDescription: "",
-        transitDays: parseInt(get(FAQuoteResponse, "TransitDaysTotal[0]")),
-        totalRate: parseFloat(get(FAQuoteResponse, "QuoteTotal[0]")),
-        message: "",
-        accessorialList: [],
-    };
-    data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
-        code: get(chargeLineItem, "Code[0]"),
-        description: get(chargeLineItem, "Description[0]"),
-        charge: parseFloat(get(chargeLineItem, "Amount[0]")),
-    }));
-    responseBodyFormat["ltlRateResponse"].push(data);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
+        const ChargeLineItems = get(
+            FAQuoteResponse,
+            "ChargeLineItems[0].ChargeLineItem",
+            []
+        );
+        const data = {
+            carrier: "FWDA",
+            serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
+            serviceLevelDescription: "",
+            transitDays: parseInt(get(FAQuoteResponse, "TransitDaysTotal[0]")),
+            totalRate: parseFloat(get(FAQuoteResponse, "QuoteTotal[0]")),
+            message: "",
+            accessorialList: [],
+        };
+        data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
+            code: get(chargeLineItem, "Code[0]"),
+            description: get(chargeLineItem, "Description[0]"),
+            charge: parseFloat(get(chargeLineItem, "Amount[0]")),
+        }));
+        responseBodyFormat["ltlRateResponse"].push(data);
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:737 -> err:`, err);
+    }
 }
 
 function getXmlPayloadFWDA({
@@ -845,56 +849,60 @@ async function processEXLARequest({
 }
 
 async function processEXLAResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const Envelope = get(parsed, "soapenv:Envelope", {});
-    const Body = get(Envelope, "soapenv:Body[0]", {});
-    const rateQuote = get(Body, "rat:rateQuote[0]", {});
-    const quoteInfo = get(rateQuote, "rat:quoteInfo[0]", "");
-    const quote = get(quoteInfo, "rat:quote", []);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const Envelope = get(parsed, "soapenv:Envelope", {});
+        const Body = get(Envelope, "soapenv:Body[0]", {});
+        const rateQuote = get(Body, "rat:rateQuote[0]", {});
+        const quoteInfo = get(rateQuote, "rat:quoteInfo[0]", "");
+        const quote = get(quoteInfo, "rat:quote", []);
 
-    const quoteList = quote.map((quoteInfo) => {
-        const serviceLevel = get(
-            quoteInfo,
-            "rat:serviceLevel[0].rat:id[0]",
-            "0"
-        );
-        const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
-        const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
-        const pickupDate = moment(new Date(pickup));
-        const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
-        const deliveryDate = moment(new Date(delivery));
-        const transitDays = deliveryDate.diff(pickupDate, "days");
-        const totalRate = parseFloat(
-            get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0")
-        );
-        const accessorialInfo = get(
-            quoteInfo,
-            "rat:accessorialInfo[0].rat:accessorial",
-            []
-        );
+        const quoteList = quote.map((quoteInfo) => {
+            const serviceLevel = get(
+                quoteInfo,
+                "rat:serviceLevel[0].rat:id[0]",
+                "0"
+            );
+            const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
+            const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
+            const pickupDate = moment(new Date(pickup));
+            const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
+            const deliveryDate = moment(new Date(delivery));
+            const transitDays = deliveryDate.diff(pickupDate, "days");
+            const totalRate = parseFloat(
+                get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0")
+            );
+            const accessorialInfo = get(
+                quoteInfo,
+                "rat:accessorialInfo[0].rat:accessorial",
+                []
+            );
 
-        const data = {
-            carrier: "EXLA",
-            quoteNumber,
-            serviceLevel,
-            serviceLevelDescription: "",
-            transitDays: transitDays,
-            totalRate,
-            message: "",
-            accessorialList: [],
-        };
-        data["accessorialList"] = accessorialInfo.map((accessorial) => ({
-            code: get(accessorial, "rat:code[0]"),
-            description: get(accessorial, "rat:description[0]"),
-            charge: parseFloat(get(accessorial, "rat:charge[0]")),
-        }));
-        return data;
-    });
-    responseBodyFormat["ltlRateResponse"] = [
-        ...responseBodyFormat["ltlRateResponse"],
-        ...quoteList,
-    ];
+            const data = {
+                carrier: "EXLA",
+                quoteNumber,
+                serviceLevel,
+                serviceLevelDescription: "",
+                transitDays: transitDays,
+                totalRate,
+                message: "",
+                accessorialList: [],
+            };
+            data["accessorialList"] = accessorialInfo.map((accessorial) => ({
+                code: get(accessorial, "rat:code[0]"),
+                description: get(accessorial, "rat:description[0]"),
+                charge: parseFloat(get(accessorial, "rat:charge[0]")),
+            }));
+            return data;
+        });
+        responseBodyFormat["ltlRateResponse"] = [
+            ...responseBodyFormat["ltlRateResponse"],
+            ...quoteList,
+        ];
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:902 -> err:`, err);
+    }
 }
 
 function getXmlPayloadEXLA({
@@ -1385,37 +1393,41 @@ function getXmlPayloadODFL({
 }
 
 async function processODFLResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const Body = get(parsed, "soapenv:Envelope.soapenv:Body[0]");
-    const getLTLRateEstimateResponse = get(
-        Body,
-        "ns2:getLTLRateEstimateResponse[0]"
-    );
-    const returnObj = get(getLTLRateEstimateResponse, "return[0]");
-    const success = get(returnObj, "success[0]");
-    const transitDays = parseInt(
-        get(returnObj, "destinationCities[0].serviceDays[0]")
-    );
-    const quoteNumber = get(returnObj, "referenceNumber[0]");
-    const rateEstimate = get(returnObj, "rateEstimate[0]");
-    const totalRate = parseFloat(get(rateEstimate, "netFreightCharge[0]"));
-    const accessorialList = get(rateEstimate, "accessorialCharges", []).map(
-        (acc) => ({
-            code: "",
-            description: get(acc, "description[0]"),
-            charge: parseFloat(get(acc, "amount[0]")),
-        })
-    );
-    const data = {
-        carrier: "ODFL",
-        transitDays,
-        quoteNumber,
-        totalRate,
-        accessorialList,
-    };
-    if (success === true || success === "true") {
-        responseBodyFormat["ltlRateResponse"].push(data);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const Body = get(parsed, "soapenv:Envelope.soapenv:Body[0]");
+        const getLTLRateEstimateResponse = get(
+            Body,
+            "ns2:getLTLRateEstimateResponse[0]"
+        );
+        const returnObj = get(getLTLRateEstimateResponse, "return[0]");
+        const success = get(returnObj, "success[0]");
+        const transitDays = parseInt(
+            get(returnObj, "destinationCities[0].serviceDays[0]")
+        );
+        const quoteNumber = get(returnObj, "referenceNumber[0]");
+        const rateEstimate = get(returnObj, "rateEstimate[0]");
+        const totalRate = parseFloat(get(rateEstimate, "netFreightCharge[0]"));
+        const accessorialList = get(rateEstimate, "accessorialCharges", []).map(
+            (acc) => ({
+                code: "",
+                description: get(acc, "description[0]"),
+                charge: parseFloat(get(acc, "amount[0]")),
+            })
+        );
+        const data = {
+            carrier: "ODFL",
+            transitDays,
+            quoteNumber,
+            totalRate,
+            accessorialList,
+        };
+        if (success === true || success === "true") {
+            responseBodyFormat["ltlRateResponse"].push(data);
+        }
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:1428 -> err:`, err);
     }
 }
 
@@ -1520,21 +1532,25 @@ function setAccessorialForABFS(accessorialList) {
 }
 
 async function processABFSResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const afb = get(parsed, "ABF", {});
-    const isError = Object.keys(afb).includes("ERROR");
-    const quoteNumber = get(afb, "QUOTEID[0]");
-    const totalRate = parseFloat(get(afb, "CHARGE[0]"));
-    const transitDays = parseInt(get(afb, "ADVERTISEDTRANSIT[0]", 0), 10);
-    const data = {
-        carrier: "ABFS",
-        transitDays,
-        quoteNumber,
-        totalRate,
-    };
-    if (!isError) {
-        responseBodyFormat["ltlRateResponse"].push(data);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const afb = get(parsed, "ABF", {});
+        const isError = Object.keys(afb).includes("ERROR");
+        const quoteNumber = get(afb, "QUOTEID[0]");
+        const totalRate = parseFloat(get(afb, "CHARGE[0]"));
+        const transitDays = parseInt(get(afb, "ADVERTISEDTRANSIT[0]", 0), 10);
+        const data = {
+            carrier: "ABFS",
+            transitDays,
+            quoteNumber,
+            totalRate,
+        };
+        if (!isError) {
+            responseBodyFormat["ltlRateResponse"].push(data);
+        }
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:1551 -> err:`, err);
     }
 }
 
@@ -1843,35 +1859,43 @@ function getXmlPayloadSEFN({
 }
 
 async function processSEFNResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const dataRoot = get(parsed, "root");
-    const error = get(dataRoot, "error[0]") !== "";
-    const quoteNumber = get(dataRoot, "quoteId[0]");
-    const totalRate = parseFloat(get(dataRoot, "rateQuote[0]"));
-    const transitDays = parseInt(get(dataRoot, "transitTime[0]"));
-    const details = get(dataRoot, "details[0]");
-    const typeCharge = get(details, "typeCharge", []);
-    const descArray = get(details, "description", []);
-    const chargeArray = get(details, "charges", []);
-    const accessorialList = [];
-    for (let index = 0; index < typeCharge.length; index++) {
-        const code = typeCharge[index] ?? "";
-        const description = descArray[index] ?? "";
-        const charge = chargeArray[index] ?? "";
-        accessorialList.push({ code, description, charge: parseFloat(charge) });
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const dataRoot = get(parsed, "root");
+        const error = get(dataRoot, "error[0]") !== "";
+        const quoteNumber = get(dataRoot, "quoteId[0]");
+        const totalRate = parseFloat(get(dataRoot, "rateQuote[0]"));
+        const transitDays = parseInt(get(dataRoot, "transitTime[0]"));
+        const details = get(dataRoot, "details[0]");
+        const typeCharge = get(details, "typeCharge", []);
+        const descArray = get(details, "description", []);
+        const chargeArray = get(details, "charges", []);
+        const accessorialList = [];
+        for (let index = 0; index < typeCharge.length; index++) {
+            const code = typeCharge[index] ?? "";
+            const description = descArray[index] ?? "";
+            const charge = chargeArray[index] ?? "";
+            accessorialList.push({
+                code,
+                description,
+                charge: parseFloat(charge),
+            });
+        }
+        const data = {
+            carrier: "SEFN",
+            serviceLevel: "",
+            serviceLevelDescription: "",
+            quoteNumber,
+            transitDays,
+            totalRate,
+            accessorialList,
+        };
+        if (error) return false;
+        responseBodyFormat["ltlRateResponse"].push(data);
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:1891 -> err:`, err);
     }
-    const data = {
-        carrier: "SEFN",
-        serviceLevel: "",
-        serviceLevelDescription: "",
-        quoteNumber,
-        transitDays,
-        totalRate,
-        accessorialList,
-    };
-    if (error) return false;
-    responseBodyFormat["ltlRateResponse"].push(data);
 }
 
 // ===================PENS=======================
@@ -1971,47 +1995,51 @@ function getXmlPayloadPENS({
 }
 
 async function processPENSResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const CreatePensRateQuoteResponse = get(
-        parsed,
-        "soap:Envelope.soap:Body[0].CreatePensRateQuoteResponse[0].CreatePensRateQuoteResult[0]"
-    );
-    const error = get(CreatePensRateQuoteResponse, "errors[0]", false);
-    const quote = get(CreatePensRateQuoteResponse, "quote[0]");
-    const quoteNumber = get(quote, "quoteNumber[0]");
-    const totalRate = parseFloat(
-        get(quote, "totalCharge[0]", "0").replace(/\$/g, "")
-    );
-    const transitDays = parseInt(
-        get(
-            transitDaysMappingPENS,
-            get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
-            "##"
-        )
-    );
-    const message = get(quote, "quoteRemark.remarkItem", "");
-    const accessorialDetail = get(
-        quote,
-        "accessorialDetail[0].AccessorialItem",
-        []
-    );
-    const accessorialList = accessorialDetail.map((acc) => ({
-        code: get(acc, "code[0]"),
-        description: get(acc, "description[0]"),
-        charge: parseFloat(get(acc, "charge[0]")),
-    }));
-    const data = {
-        carrier: "PENS",
-        serviceLevel: "",
-        serviceLevelDescription: "",
-        quoteNumber,
-        transitDays,
-        totalRate,
-        message,
-        accessorialList,
-    };
-    if (!error) responseBodyFormat["ltlRateResponse"].push(data);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const CreatePensRateQuoteResponse = get(
+            parsed,
+            "soap:Envelope.soap:Body[0].CreatePensRateQuoteResponse[0].CreatePensRateQuoteResult[0]"
+        );
+        const error = get(CreatePensRateQuoteResponse, "errors[0]", false);
+        const quote = get(CreatePensRateQuoteResponse, "quote[0]");
+        const quoteNumber = get(quote, "quoteNumber[0]");
+        const totalRate = parseFloat(
+            get(quote, "totalCharge[0]", "0").replace(/\$/g, "")
+        );
+        const transitDays = parseInt(
+            get(
+                transitDaysMappingPENS,
+                get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
+                "##"
+            )
+        );
+        const message = get(quote, "quoteRemark.remarkItem", "");
+        const accessorialDetail = get(
+            quote,
+            "accessorialDetail[0].AccessorialItem",
+            []
+        );
+        const accessorialList = accessorialDetail.map((acc) => ({
+            code: get(acc, "code[0]"),
+            description: get(acc, "description[0]"),
+            charge: parseFloat(get(acc, "charge[0]")),
+        }));
+        const data = {
+            carrier: "PENS",
+            serviceLevel: "",
+            serviceLevelDescription: "",
+            quoteNumber,
+            transitDays,
+            totalRate,
+            message,
+            accessorialList,
+        };
+        if (!error) responseBodyFormat["ltlRateResponse"].push(data);
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:2039 -> err:`, err);
+    }
 }
 
 // ===================SAIA=======================
@@ -2121,36 +2149,40 @@ function getXmlPayloadSAIA({
 }
 
 async function processSAIAResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const body = get(
-        parsed,
-        "soap:Envelope.soap:Body[0].CreateResponse[0].CreateResult[0]"
-    );
-    const error = get(body, "Message[0]", "") !== "";
-    console.info(`🙂 -> file: ltl_rating.js:2093 -> error:`, error);
-    const quoteNumber = get(body, "QuoteNumber[0]");
-    const totalRate = parseFloat(get(body, "TotalInvoice[0]", "0"));
-    const transitDays = parseInt(get(body, "StandardServiceDays[0]", ""));
-    const accessorialList = get(
-        body,
-        "RateAccessorials[0].RateAccessorialItem",
-        []
-    ).map((acc) => ({
-        code: get(acc, "Code[0]"),
-        description: get(acc, "Description[0]"),
-        charge: parseFloat(get(acc, "Amount[0]")),
-    }));
-    const data = {
-        carrier: "SAIA",
-        serviceLevel: "",
-        serviceLevelDescription: "",
-        quoteNumber,
-        transitDays,
-        totalRate,
-        accessorialList,
-    };
-    if (!error) responseBodyFormat["ltlRateResponse"].push(data);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const body = get(
+            parsed,
+            "soap:Envelope.soap:Body[0].CreateResponse[0].CreateResult[0]"
+        );
+        const error = get(body, "Message[0]", "") !== "";
+        console.info(`🙂 -> file: ltl_rating.js:2093 -> error:`, error);
+        const quoteNumber = get(body, "QuoteNumber[0]");
+        const totalRate = parseFloat(get(body, "TotalInvoice[0]", "0"));
+        const transitDays = parseInt(get(body, "StandardServiceDays[0]", ""));
+        const accessorialList = get(
+            body,
+            "RateAccessorials[0].RateAccessorialItem",
+            []
+        ).map((acc) => ({
+            code: get(acc, "Code[0]"),
+            description: get(acc, "Description[0]"),
+            charge: parseFloat(get(acc, "Amount[0]")),
+        }));
+        const data = {
+            carrier: "SAIA",
+            serviceLevel: "",
+            serviceLevelDescription: "",
+            quoteNumber,
+            transitDays,
+            totalRate,
+            accessorialList,
+        };
+        if (!error) responseBodyFormat["ltlRateResponse"].push(data);
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:2182 -> err:`, err);
+    }
 }
 
 // ===================XPOL=======================
@@ -2457,34 +2489,38 @@ function getXmlPayloadRDFS({
 }
 
 async function processRDFSResponses({ response }) {
-    let parser = new xml2js.Parser({ trim: true });
-    const parsed = await parser.parseStringPromise(response);
-    const body = get(
-        parsed,
-        "soap:Envelope.soap:Body[0].RateQuoteResponse[0].RateQuoteResult[0]"
-    );
-    const quoteNumber = get(body, "QuoteNumber[0]");
-    const totalRate = parseFloat(get(body, "NetCharge[0]", "0"));
-    const transitDays = parseInt(
-        get(body, "RoutingInfo[0].EstimatedTransitDays[0]", "")
-    );
-    const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map(
-        (acc) => ({
-            code: get(acc, "Code[0]"),
-            description: get(acc, "Description[0]"),
-            charge: parseFloat(get(acc, "Charge[0]")),
-        })
-    );
-    const data = {
-        carrier: "RDFS",
-        serviceLevel: "",
-        serviceLevelDescription: "",
-        quoteNumber,
-        transitDays,
-        totalRate,
-        accessorialList,
-    };
-    responseBodyFormat["ltlRateResponse"].push(data);
+    try {
+        let parser = new xml2js.Parser({ trim: true });
+        const parsed = await parser.parseStringPromise(response);
+        const body = get(
+            parsed,
+            "soap:Envelope.soap:Body[0].RateQuoteResponse[0].RateQuoteResult[0]"
+        );
+        const quoteNumber = get(body, "QuoteNumber[0]");
+        const totalRate = parseFloat(get(body, "NetCharge[0]", "0"));
+        const transitDays = parseInt(
+            get(body, "RoutingInfo[0].EstimatedTransitDays[0]", "")
+        );
+        const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map(
+            (acc) => ({
+                code: get(acc, "Code[0]"),
+                description: get(acc, "Description[0]"),
+                charge: parseFloat(get(acc, "Charge[0]")),
+            })
+        );
+        const data = {
+            carrier: "RDFS",
+            serviceLevel: "",
+            serviceLevelDescription: "",
+            quoteNumber,
+            transitDays,
+            totalRate,
+            accessorialList,
+        };
+        responseBodyFormat["ltlRateResponse"].push(data);
+    } catch (err) {
+        console.info(`🙂 -> file: ltl_rating.js:2520 -> err:`, err);
+    }
 }
 
 const accessorialMappingFWDA = {
