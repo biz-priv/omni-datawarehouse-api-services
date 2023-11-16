@@ -2695,9 +2695,15 @@ const accessorialMappingRDFS = {
     LIFTD: "LGD",
 };
 
-async function axiosRequest(url, payload, header = {}, method = "POST") {
+async function axiosRequest(
+    url,
+    payload,
+    header = {},
+    method = "POST",
+    carrier = ""
+) {
     console.info(
-        `🙂 -> file: ltl_rating.js:2737 -> url, payload, header:`,
+        `🙂 -> file: ltl_rating.js:2737 -> ${carrier} url, payload, header:`,
         url,
         payload,
         header
@@ -2725,7 +2731,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST") {
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(
-            `🙂 -> file: ltl_rating.js:2728 -> err:`,
+            `🙂 -> file: ltl_rating.js:2728 -> ${carrier} err:`,
             errResponse !== "" ? errResponse : err
         );
         return false;
