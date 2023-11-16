@@ -60,8 +60,6 @@ module.exports.handler = async (event, context) => {
         );
         console.info(`🙂 -> file: ltl_rating.js:32 -> validation:`, validation);
         const { error, value } = validation;
-        console.info(`🙂 -> file: ltl_rating.js:57 -> error:`, error);
-        console.info(`🙂 -> file: ltl_rating.js:57 -> value:`, value);
         if (error) throw error;
         const body = get(event, "body");
         const ltlRateRequest = get(body, "ltlRateRequest");
@@ -90,11 +88,11 @@ module.exports.handler = async (event, context) => {
                 "XPOL",
                 "RDFS",
             ].map(async (carrier) => {
+                console.info(
+                    `🙂 -> file: ltl_rating.js:91 -> carrier:`,
+                    carrier
+                );
                 if (carrier === "FWDA") {
-                    console.log(
-                        `🙂 -> file: ltl_rating.js:81 -> carrier:`,
-                        carrier
-                    );
                     return await processFWDARequest({
                         pickupTime,
                         insuredValue,
@@ -105,10 +103,6 @@ module.exports.handler = async (event, context) => {
                     });
                 }
                 if (carrier === "EXLA") {
-                    console.log(
-                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
-                        carrier
-                    );
                     return await processEXLARequest({
                         pickupTime,
                         insuredValue,
@@ -120,10 +114,6 @@ module.exports.handler = async (event, context) => {
                     });
                 }
                 if (carrier === "FEXF") {
-                    console.log(
-                        `🙂 -> file: ltl_rating.js:92 -> carrier:`,
-                        carrier
-                    );
                     return await processFEXFRequest({
                         pickupTime,
                         insuredValue,
@@ -227,7 +217,7 @@ module.exports.handler = async (event, context) => {
                 }
             })
         );
-        console.log(
+        console.info(
             `🙂 -> file: ltl_rating.js:127 -> apiResponse:`,
             apiResponse
         );
@@ -729,10 +719,6 @@ async function processFWDAResponses({ response }) {
         charge: parseFloat(get(chargeLineItem, "Amount[0]")),
     }));
     responseBodyFormat["ltlRateResponse"].push(data);
-    console.log(
-        `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
-        responseBodyFormat
-    );
 }
 
 function getXmlPayloadFWDA({
@@ -809,10 +795,6 @@ function getXmlPayloadFWDA({
     const builder = new xml2js.Builder({
         xmldec: { version: "1.0", encoding: "UTF-8" },
     });
-    console.log(
-        `🙂 -> file: index.js:223 -> xmlPayloadFormat.FWDA:`,
-        JSON.stringify(xmlPayloadFormat.FWDA)
-    );
     return builder.buildObject(xmlPayloadFormat.FWDA);
 }
 
@@ -835,7 +817,6 @@ async function processEXLARequest({
         accessorialList,
         reference,
     });
-    console.info(`🙂 -> file: ltl_rating.js:842 -> xmlPayload:`, xmlPayload);
     let headers = {
         soapAction: "http://ws.estesexpress.com/ratequote/getQuote", //NOSONAR
         "Content-Type": "text/xml",
@@ -900,10 +881,6 @@ async function processEXLAResponses({ response }) {
         ...responseBodyFormat["ltlRateResponse"],
         ...quoteList,
     ];
-    console.log(
-        `🙂 -> file: ltl_rating.js:127 -> responseBodyFormat:`,
-        responseBodyFormat
-    );
 }
 
 function getXmlPayloadEXLA({
@@ -999,10 +976,6 @@ function getXmlPayloadEXLA({
     const builder = new xml2js.Builder({
         xmldec: { version: "1.0", encoding: "UTF-8" },
     });
-    console.log(
-        `🙂 -> file: index.js:223 -> xmlPayloadFormat.FWDA:`,
-        JSON.stringify(xmlPayloadFormat.EXLA)
-    );
     return builder.buildObject(xmlPayloadFormat.EXLA);
 }
 
@@ -1027,14 +1000,12 @@ async function processFEXFRequest({
         accessorialList,
         reference,
     });
-    console.log(`🙂 -> file: ltl_rating.js:753 -> payload:`, payload);
     let headers = {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
     };
     let url = "https://apis.fedex.com/rate/v1/freight/rates/quotes";
     const response = await axiosRequest(url, payload, headers);
-    console.log(`🙂 -> file: ltl_rating.js:760 -> response:`, response);
     if (!response) return false;
     processFEXFResponses({ response });
     return { response };
@@ -1057,9 +1028,13 @@ async function processFEXFAuthRequest() {
             data: data,
         };
         const authReqRes = await axios.request(config);
+        console.info(
+            `🙂 -> file: ltl_rating.js:1031 -> authReqRes:`,
+            get(authReqRes, "data")
+        );
         return get(authReqRes, "data.access_token");
     } catch (e) {
-        console.log(`🙂 -> file: ltl_rating.js:1064 -> e:`, e);
+        console.error(`🙂 -> file: ltl_rating.js:1064 -> e:`, e);
         return false;
     }
 }
@@ -1309,13 +1284,11 @@ async function processODFLRequest({
         accessorialList,
         reference,
     });
-    console.log(`🙂 -> file: ltl_rating.js:955 -> payload:`, payload);
     let headers = {
         "Content-Type": "application/xml",
     };
     let url = "https://www.odfl.com/wsRate_v6/RateService";
     const response = await axiosRequest(url, payload, headers);
-    console.log(`🙂 -> file: ltl_rating.js:961 -> response:`, response);
     if (!response) return false;
     await processODFLResponses({ response });
     return { response };
@@ -1443,14 +1416,11 @@ async function processABFSRequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: ltl_rating.js:955 -> payload:`, payload);
     let headers = {};
     const baseUrl = "https://www.abfs.com/xml/aquotexml.asp";
     const queryString = qs.stringify(payload);
     const url = `${baseUrl}?${queryString}`;
-    console.log(`🙂 -> file: ltl_rating.js:1163 -> url:`, url);
     const response = await axiosRequest(url, payload, headers, "get");
-    console.log(`🙂 -> file: ltl_rating.js:1164 -> response:`, response);
     if (!response) return false;
     await processABFSResponses({ response });
     return { response };
@@ -1564,12 +1534,9 @@ async function processAVRTRequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: ltl_rating.js:955 -> payload:`, payload);
     let headers = {};
     const url = `https://api.averittexpress.com/rate-quotes/ltl?api_key=f6723fe521a149c0871694379cf0c047`;
-    console.log(`🙂 -> file: ltl_rating.js:1163 -> url:`, url);
     const response = await axiosRequest(url, payload, headers);
-    console.log(`🙂 -> file: ltl_rating.js:1164 -> response:`, response);
     if (!response) return false;
     processAVRTResponses({ response });
     return { response };
@@ -1749,7 +1716,6 @@ function processDAFGResponses({ response }) {
         totalRate,
         accessorialList,
     };
-    console.log(`🙂 -> file: index.js:324 -> data:`, data);
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
@@ -1770,13 +1736,11 @@ async function processSEFNRequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: index.js:350 -> payload:`, payload);
     let headers = {};
     const baseUrl = `https://www.sefl.com/webconnect/ratequotes`;
     const query = qs.stringify(payload);
     const url = `${baseUrl}?${query}`;
     const response = await axiosRequest(url, undefined, headers, "get");
-    console.log(`🙂 -> file: ltl_rating.js:1571 -> url:`, url);
     if (!response) return false;
     await processSEFNResponses({ response });
     return { response };
@@ -1891,12 +1855,10 @@ async function processPENSRequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: index.js:350 -> payload:`, payload);
     let headers = { "Content-Type": "application/soap+xml; charset=utf-8" };
     const url =
         "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
     const response = await axiosRequest(url, payload, headers);
-    console.log(`🙂 -> file: index.js:356 -> response:`, response);
     if (!response) return false;
     await processPENSResponses({ response });
     return { response };
@@ -2032,7 +1994,6 @@ async function processSAIARequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
     let headers = { "Content-Type": "text/xml; charset=utf-8" };
     const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx"; //NOSONAR
     const response = await axiosRequest(url, payload, headers);
@@ -2129,10 +2090,10 @@ async function processSAIAResponses({ response }) {
         "soap:Envelope.soap:Body[0].CreateResponse[0].CreateResult[0]"
     );
     const error = get(body, "Message[0]", "") !== "";
+    console.info(`🙂 -> file: ltl_rating.js:2093 -> error:`, error);
     const quoteNumber = get(body, "QuoteNumber[0]");
     const totalRate = parseFloat(get(body, "TotalInvoice[0]", "0"));
     const transitDays = parseInt(get(body, "StandardServiceDays[0]", ""));
-    console.log(`🙂 -> file: index.js:651 -> parsed:`, error);
     const accessorialList = get(
         body,
         "RateAccessorials[0].RateAccessorialItem",
@@ -2151,7 +2112,6 @@ async function processSAIAResponses({ response }) {
         totalRate,
         accessorialList,
     };
-    console.log(`🙂 -> file: index.js:685 -> data:`, data);
     if (!error) responseBodyFormat["ltlRateResponse"].push(data);
 }
 
@@ -2172,7 +2132,6 @@ async function processXPOLRequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
     const token = await getTokenForXPOL();
     let headers = {
         "Content-Type": "application/json",
@@ -2274,7 +2233,6 @@ async function processXPOLResponses({ response }) {
         totalRate,
         accessorialList,
     };
-    console.log(`🙂 -> file: index.js:685 -> data:`, data);
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
@@ -2313,7 +2271,7 @@ async function getXPOLTokenFromDynamo() {
         console.info("QUERY RESP :", data);
         return get(data, "Item.token", false);
     } catch (err) {
-        console.log(
+        console.error(
             `🙂 -> file: ltl_rating.js:2071 -> params:`,
             params,
             "err",
@@ -2341,7 +2299,7 @@ async function putXPOLTokenFromDynamo(token) {
         console.info("QUERY RESP :", data);
         return data;
     } catch (err) {
-        console.log(
+        console.error(
             `🙂 -> file: ltl_rating.js:2071 -> params:`,
             params,
             "err",
@@ -2368,7 +2326,6 @@ async function processRDFSRequest({
         shipmentLines,
         accessorialList,
     });
-    console.log(`🙂 -> file: index.js:482 -> payload:`, payload);
 
     let headers = {
         "Content-Type": "text/xml; charset=utf-8",
@@ -2489,7 +2446,6 @@ async function processRDFSResponses({ response }) {
         totalRate,
         accessorialList,
     };
-    console.log(`🙂 -> file: index.js:685 -> data:`, data);
     responseBodyFormat["ltlRateResponse"].push(data);
 }
 
@@ -2734,6 +2690,12 @@ const accessorialMappingRDFS = {
 };
 
 async function axiosRequest(url, payload, header = {}, method = "POST") {
+    console.info(
+        `🙂 -> file: ltl_rating.js:2737 -> url, payload, header:`,
+        url,
+        payload,
+        header
+    );
     try {
         let config = {
             method: method,
@@ -2755,7 +2717,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST") {
             return false;
         }
     } catch (e) {
-        console.log(`🙂 -> file: ltl_rating.js:361 -> e:`, e);
+        console.error(`🙂 -> file: ltl_rating.js:361 -> e:`, e);
         return false;
     }
 }
