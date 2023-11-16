@@ -2771,10 +2771,12 @@ async function axiosRequest(
     carrier = ""
 ) {
     console.info(
-        `🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header:`,
+        `🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header, method, carrier:`,
         url,
         payload,
-        header
+        header,
+        method,
+        carrier
     );
     try {
         let config = {
