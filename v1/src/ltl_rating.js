@@ -236,11 +236,7 @@ module.exports.handler = async (event, context) => {
         const response = { ...responseBodyFormat };
         return response;
     } catch (err) {
-        const errResponse = JSON.stringify(get(err, "response.data", ""));
-        console.error(
-            `🙂 -> file: ltl_rating.js:95 -> err:`,
-            errResponse !== "" ? errResponse : err
-        );
+        console.error(`🙂 -> file: ltl_rating.js:239 -> err:`, err);
         const response = {
             statusCode: 400,
             body: { message: err.message },
