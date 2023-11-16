@@ -100,6 +100,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "EXLA") {
@@ -111,6 +112,7 @@ module.exports.handler = async (event, context) => {
                         shipmentLines,
                         accessorialList,
                         reference,
+                        carrier,
                     });
                 }
                 if (carrier === "FEXF") {
@@ -122,6 +124,7 @@ module.exports.handler = async (event, context) => {
                         shipmentLines,
                         accessorialList,
                         reference,
+                        carrier,
                     });
                 }
                 if (carrier === "ODFL") {
@@ -133,6 +136,7 @@ module.exports.handler = async (event, context) => {
                         shipmentLines,
                         accessorialList,
                         reference,
+                        carrier,
                     });
                 }
                 if (carrier === "ABFS") {
@@ -143,6 +147,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "AVRT") {
@@ -153,6 +158,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "DAFG") {
@@ -163,6 +169,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "SEFN") {
@@ -173,6 +180,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "PENS") {
@@ -183,6 +191,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "SAIA") {
@@ -193,6 +202,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "XPOL") {
@@ -203,6 +213,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
                 if (carrier === "RDFS") {
@@ -213,6 +224,7 @@ module.exports.handler = async (event, context) => {
                         consigneeZip,
                         shipmentLines,
                         accessorialList,
+                        carrier,
                     });
                 }
             })
@@ -673,6 +685,7 @@ async function processFWDARequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const xmlPayload = getXmlPayloadFWDA({
         pickupTime,
@@ -693,7 +706,7 @@ async function processFWDARequest({
         "Content-Type": "application/xml",
     };
     payload = xmlPayload;
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processFWDAResponses({ response });
     return { response };
@@ -811,6 +824,7 @@ async function processEXLARequest({
     shipmentLines,
     accessorialList,
     reference,
+    carrier,
 }) {
     const xmlPayload = getXmlPayloadEXLA({
         pickupTime,
@@ -828,7 +842,7 @@ async function processEXLARequest({
     let url =
         "https://www.estes-express.com/tools/rating/ratequote/v4.0/services/RateQuoteService";
     let payload = xmlPayload;
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processEXLAResponses({ response });
     return { response };
@@ -992,6 +1006,7 @@ async function processFEXFRequest({
     shipmentLines,
     accessorialList,
     reference,
+    carrier,
 }) {
     const accessToken = await processFEXFAuthRequest();
     if (!accessToken) return;
@@ -1009,7 +1024,7 @@ async function processFEXFRequest({
         "Content-Type": "application/json",
     };
     let url = "https://apis.fedex.com/rate/v1/freight/rates/quotes";
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     processFEXFResponses({ response });
     return { response };
@@ -1282,6 +1297,7 @@ async function processODFLRequest({
     shipmentLines,
     accessorialList,
     reference,
+    carrier,
 }) {
     const payload = getXmlPayloadODFL({
         pickupTime,
@@ -1296,7 +1312,7 @@ async function processODFLRequest({
         "Content-Type": "application/xml",
     };
     let url = "https://www.odfl.com/wsRate_v6/RateService";
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processODFLResponses({ response });
     return { response };
@@ -1415,6 +1431,7 @@ async function processABFSRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadABFS({
         pickupTime,
@@ -1428,7 +1445,7 @@ async function processABFSRequest({
     const baseUrl = "https://www.abfs.com/xml/aquotexml.asp";
     const queryString = qs.stringify(payload);
     const url = `${baseUrl}?${queryString}`;
-    const response = await axiosRequest(url, payload, headers, "get");
+    const response = await axiosRequest(url, payload, headers, "get", carrier);
     if (!response) return false;
     await processABFSResponses({ response });
     return { response };
@@ -1533,6 +1550,7 @@ async function processAVRTRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadAVRT({
         pickupTime,
@@ -1544,7 +1562,7 @@ async function processAVRTRequest({
     });
     let headers = {};
     const url = `https://api.averittexpress.com/rate-quotes/ltl?api_key=f6723fe521a149c0871694379cf0c047`;
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     processAVRTResponses({ response });
     return { response };
@@ -1643,6 +1661,7 @@ async function processDAFGRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadDAFG({
         pickupTime,
@@ -1657,7 +1676,13 @@ async function processDAFGRequest({
         "Content-Type": "application/json",
     };
     const url = `https://api.daytonfreight.com/api/Rates`;
-    const response = await axiosRequest(url, JSON.stringify(payload), headers);
+    const response = await axiosRequest(
+        url,
+        JSON.stringify(payload),
+        headers,
+        null,
+        carrier
+    );
     if (!response) return false;
     processDAFGResponses({ response });
     return { response };
@@ -1735,6 +1760,7 @@ async function processSEFNRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadSEFN({
         pickupTime,
@@ -1748,7 +1774,13 @@ async function processSEFNRequest({
     const baseUrl = `https://www.sefl.com/webconnect/ratequotes`;
     const query = qs.stringify(payload);
     const url = `${baseUrl}?${query}`;
-    const response = await axiosRequest(url, undefined, headers, "get");
+    const response = await axiosRequest(
+        url,
+        undefined,
+        headers,
+        "get",
+        carrier
+    );
     if (!response) return false;
     await processSEFNResponses({ response });
     return { response };
@@ -1854,6 +1886,7 @@ async function processPENSRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadPENS({
         pickupTime,
@@ -1866,7 +1899,7 @@ async function processPENSRequest({
     let headers = { "Content-Type": "application/soap+xml; charset=utf-8" };
     const url =
         "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processPENSResponses({ response });
     return { response };
@@ -1993,6 +2026,7 @@ async function processSAIARequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadSAIA({
         pickupTime,
@@ -2004,7 +2038,7 @@ async function processSAIARequest({
     });
     let headers = { "Content-Type": "text/xml; charset=utf-8" };
     const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx"; //NOSONAR
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processSAIAResponses({ response });
     return { response };
@@ -2131,6 +2165,7 @@ async function processXPOLRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadXPOL({
         pickupTime,
@@ -2146,7 +2181,7 @@ async function processXPOLRequest({
         Authorization: `Bearer ${token}`,
     };
     const url = "https://api.ltl.xpo.com/rating/1.0/ratequotes";
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processXPOLResponses({ response });
     return { response };
@@ -2323,6 +2358,7 @@ async function processRDFSRequest({
     consigneeZip,
     shipmentLines,
     accessorialList,
+    carrier,
 }) {
     const payload = getXmlPayloadRDFS({
         pickupTime,
@@ -2337,7 +2373,7 @@ async function processRDFSRequest({
         "Content-Type": "text/xml; charset=utf-8",
     };
     const url = "https://webservices.rrts.com/rating/ratequote.asmx";
-    const response = await axiosRequest(url, payload, headers);
+    const response = await axiosRequest(url, payload, headers, null, carrier);
     if (!response) return false;
     await processRDFSResponses({ response });
     return { response };
@@ -2703,7 +2739,7 @@ async function axiosRequest(
     carrier = ""
 ) {
     console.info(
-        `🙂 -> file: ltl_rating.js:2737 -> ${carrier} url, payload, header:`,
+        `🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header:`,
         url,
         payload,
         header
@@ -2721,7 +2757,7 @@ async function axiosRequest(
         const res = await axios.request(config);
         if (res.status < 300) {
             console.info(
-                `🙂 -> file: ltl_rating.js:2758 -> res.status:`,
+                `🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`,
                 get(res, "data", {})
             );
             return get(res, "data", {});
@@ -2731,7 +2767,7 @@ async function axiosRequest(
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(
-            `🙂 -> file: ltl_rating.js:2728 -> ${carrier} err:`,
+            `🙂 -> file: ltl_rating.js:2728 -> ${carrier} -> err:`,
             errResponse !== "" ? errResponse : err
         );
         return false;
