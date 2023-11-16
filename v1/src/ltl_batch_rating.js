@@ -15,7 +15,7 @@ module.exports.handler = async (event, context) => {
             fileBase64
         );
         const filePath = "/tmp/output.xslx";
-        const file = base64ToXlsx(fileBase64, filePath);
+        base64ToXlsx(fileBase64, filePath);
         const isXlsx = isValidXlsx(filePath);
         if (!isXlsx) throw new Error("Invalid file");
         console.log(`🙂 -> file: ltl_batch_rating.js:10 -> isXlsx:`, isXlsx);
@@ -27,8 +27,8 @@ module.exports.handler = async (event, context) => {
         const response = {
             statusCode: 200,
             body: JSON.stringify({
-                message: "CSV file uploaded successfully!",
-                input: ltlOnly,
+                message:
+                    "File is acknowledged. We will inform you when the rating is done.",
             }),
         };
         return response;
@@ -39,9 +39,13 @@ module.exports.handler = async (event, context) => {
 };
 
 function base64ToXlsx(base64String, filePath) {
-    const buffer = Buffer.from(base64String, "base64");
-    fs.writeFileSync(filePath, buffer);
-    console.log(`XLSX file created at: ${filePath}`);
+    try {
+        const buffer = Buffer.from(base64String, "base64");
+        fs.writeFileSync(filePath, buffer);
+        console.log(`XLSX file created at: ${filePath}`);
+    } catch (error) {
+        throw new Error(error.message);
+    }
 }
 
 function isValidXlsx(filePath) {
