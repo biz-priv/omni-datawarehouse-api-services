@@ -7,8 +7,9 @@ module.exports.handler = async (event, context) => {
     try {
         let body;
         console.info(`🙂 -> file: ltl_batch_rating.js:6 -> event:`, event);
+        return
         body = get(event, "body", "");
-        if (typeof body === "string") body = JSON.parse(body);
+        // if (typeof body === "string") body = JSON.parse(body);
         const fileBase64 = get(body, "data");
         console.info(
             `🙂 -> file: ltl_batch_rating.js:11 -> fileBase64:`,
