@@ -21,3 +21,5 @@ function:
         request:
             contentHandling: CONVERT_TO_BINARY
             parser: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+            schemas:
+              application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: ${file(xlsx_format.vtl)}
