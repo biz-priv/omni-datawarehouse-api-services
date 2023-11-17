@@ -275,7 +275,7 @@ function addCommodityWeightPerPiece(inputData) {
     );
   }
   if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
-    inputData.shipmentLines[0].weight = Math.round(
+    inputData.shipmentLines[0].weightPerPiece = Math.round(
       inputData.shipmentLines[0].weight * 2.2046
     );
   }else{
