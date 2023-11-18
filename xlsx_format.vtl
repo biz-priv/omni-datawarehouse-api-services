@@ -1,3 +1,5 @@
+#set($inputRoot = $input.path('$'))
 {
-    "body": "$input.body"
+  "metadata": "$input.params('metadata')",
+  "file": "$util.escapeJavaScript($util.base64Encode($input.body))"
 }

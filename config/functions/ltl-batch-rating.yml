@@ -26,4 +26,5 @@ function:
             template:
                 application/json: null
                 application/x-www-form-urlencoded: null
+                multipart/form-data: ${file(xlsx_format.vtl)}
                 # application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: ${file(xlsx_format.vtl)}
