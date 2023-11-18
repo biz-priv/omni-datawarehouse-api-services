@@ -73,8 +73,9 @@ custom:
     filterPattern: '{$.service-name = "*"}'
   apigwBinary:
     types:           #list of mime-types
-      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-      - application/vnd.ms-excel
+      # - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      # - application/vnd.ms-excel
+      - multipart/form-data
 
 plugins:
   - serverless-layers

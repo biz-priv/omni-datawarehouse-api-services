@@ -7,14 +7,10 @@ module.exports.handler = async (event, context) => {
     try {
         let body;
         console.info(`🙂 -> file: ltl_batch_rating.js:6 -> event:`, event);
-        return
         body = get(event, "body", "");
         // if (typeof body === "string") body = JSON.parse(body);
         const fileBase64 = get(body, "data");
-        console.info(
-            `🙂 -> file: ltl_batch_rating.js:11 -> fileBase64:`,
-            fileBase64
-        );
+        console.info(`🙂 -> file: ltl_batch_rating.js:11 -> fileBase64:`, fileBase64);
         const filePath = "/tmp/output.xslx";
         base64ToXlsx(fileBase64, filePath);
         const isXlsx = isValidXlsx(filePath);
@@ -28,8 +24,7 @@ module.exports.handler = async (event, context) => {
         const response = {
             statusCode: 200,
             body: JSON.stringify({
-                message:
-                    "File is acknowledged. We will inform you when the rating is done.",
+                message: "File is acknowledged. We will inform you when the rating is done.",
             }),
         };
         return response;

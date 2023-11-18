@@ -20,9 +20,10 @@ function:
         cors: true
         request:
             contentHandling: CONVERT_TO_BINARY
+            parser: multipart/form-data
             # parser: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
             passThrough: WHEN_NO_TEMPLATES
             template:
                 application/json: null
                 application/x-www-form-urlencoded: null
-                application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: ${file(xlsx_format.vtl)}
+                # application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: ${file(xlsx_format.vtl)}
