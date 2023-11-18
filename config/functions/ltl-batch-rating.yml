@@ -22,7 +22,7 @@ function:
             contentHandling: CONVERT_TO_BINARY
             parser: multipart/form-data
             # parser: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-            passThrough: WHEN_NO_TEMPLATES
+            passThrough: WHEN_NO_MATCH
             template:
                 application/json: null
                 application/x-www-form-urlencoded: null
