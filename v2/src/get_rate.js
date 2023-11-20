@@ -276,7 +276,7 @@ function addCommodityWeightPerPiece(inputData) {
   }
   if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
     inputData.shipmentLines[0].weightPerPiece = Math.round(
-      inputData.shipmentLines[0].weight * 2.2046
+      (inputData.shipmentLines[0].weight * 2.2046) / inputData.shipmentLines[0].pieces
     );
   }else{
     inputData.shipmentLines[0].weightPerPiece = Math.round(
@@ -378,8 +378,8 @@ function makeXmlToJson(data) {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
               e.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: parseFloat(e.StandardTotalRate),
-            freightCharge: parseFloat(e.StandardFreightCharge),
+            totalRate: parseFloat(e.StandardTotalRate.replace(/,/g, '')),
+            freightCharge: parseFloat(e.StandardFreightCharge.replace(/,/g, '')),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: e.Message,
           };
@@ -418,7 +418,7 @@ function makeXmlToJson(data) {
               ? (list[i].charge =
                 parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
                     i
-                  ].AccessorialCharge))
+                  ].AccessorialCharge.replace(/,/g, '')))
               : console.info("no charge");
           }
           AccessorialOutput = list;
@@ -442,7 +442,7 @@ function makeXmlToJson(data) {
               list[i].charge =
               parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
                   i
-                ].AccessorialCharge);
+                ].AccessorialCharge.replace(/,/g, ''));
             }
             AccessorialOutput = list;
           }
@@ -472,8 +472,8 @@ function makeXmlToJson(data) {
             serviceLevel: modifiedObj.ServiceLevelID,
             estimatedDelivery:
               modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: parseFloat(modifiedObj.StandardTotalRate),
-            freightCharge: parseFloat(modifiedObj.StandardFreightCharge),
+            totalRate: parseFloat(modifiedObj.StandardTotalRate.replace(/,/g, '')),
+            freightCharge: parseFloat(modifiedObj.StandardFreightCharge.replace(/,/g, '')),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: modifiedObj.Message,
           }];
@@ -497,7 +497,7 @@ function getAccessorialOutput(AccessorialOutput) {
         list[i].description =
           AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
         list[i].charge =
-        parseFloat(AccessorialOutput.AccessorialOutput[i].AccessorialCharge);
+        parseFloat(AccessorialOutput.AccessorialOutput[i].AccessorialCharge.replace(/,/g, ''));
       }
     }
   } else {
@@ -505,7 +505,7 @@ function getAccessorialOutput(AccessorialOutput) {
     list[i] = {};
     list[i].code = AccessorialOutput.AccessorialOutput.AccessorialCode;
     list[i].description = AccessorialOutput.AccessorialOutput.AccessorialDesc;
-    list[i].charge = parseFloat(AccessorialOutput.AccessorialOutput.AccessorialCharge);
+    list[i].charge = parseFloat(AccessorialOutput.AccessorialOutput.AccessorialCharge.replace(/,/g, ''));
   }
   return list;
 }
