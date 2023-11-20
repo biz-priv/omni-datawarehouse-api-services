@@ -25,12 +25,12 @@ module.exports.handler = async (event, context, callback) => {
         // const toJSON = utils.sheet_to_json(Loads);
         // console.info(`🙂 -> file: excelTest.js:5 -> workbook:`, toJSON);
         // const ltlOnly = toJSON.filter((item) => get(item, "LTL", false));
-        // const response = {
-        //     statusCode: 200,
-        //     body: JSON.stringify({
-        //         message: "File is acknowledged. We will inform you when the rating is done.",
-        //     }),
-        // };
+        const response = {
+            statusCode: 200,
+            body: JSON.stringify({
+                message: "File is acknowledged. We will inform you when the rating is done.",
+            }),
+        };
         return response;
     } catch (error) {
         console.log(`🙂 -> file: ltl_batch_rating.js:18 -> error:`, error);
