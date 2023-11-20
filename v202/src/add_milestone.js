@@ -59,6 +59,19 @@ const eventLocValidation = Joi.object()
     })
     .required();
 
+    const eventOthValidation = Joi.object()
+    .keys({
+        addMilestoneRequest: Joi.object()
+            .keys({
+                housebill: Joi.string().required(),
+                statusCode: statusCodeValidation,
+                note: Joi.string().required(),
+                eventTime: Joi.string(),
+            })
+            .required(),
+    })
+    .required();
+
 let itemObj = {
     id: uuidv4().toString(),
     housebill: "",
@@ -67,6 +80,7 @@ let itemObj = {
     longitude: "",
     eventTime: "",
     signatory: "",
+    note: "",
     createdAt: momentTZ.tz("America/Chicago").format("YYYY-MM-DD HH:mm:ss").toString(),
     payload: "",
     xmlRequestPayload: "",
@@ -87,6 +101,7 @@ module.exports.handler = async (event, context, callback) => {
         itemObj.longitude = get(body, "addMilestoneRequest.longitude", "");
         itemObj.eventTime = get(body, "addMilestoneRequest.eventTime", "");
         itemObj.signatory = get(body, "addMilestoneRequest.signatory", "");
+        itemObj.note = get(body, "addMilestoneRequest.note", "");
         itemObj.payload = body;
 
         if (get(body, "addMilestoneRequest", null) === null) {
@@ -97,11 +112,13 @@ module.exports.handler = async (event, context, callback) => {
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
         let validationData = ""
-        if (statusCode == "DEL" || statusCode == "LOC") {
+        if (statusCode == "DEL" || statusCode == "LOC" || statusCode == "OTH") {
             if (statusCode == "DEL") {
                 validationData = eventDelValidation.validate(body);
-            } else {
+            } else if (statusCode == "LOC") {
                 validationData = eventLocValidation.validate(body);
+            }else{
+                validationData = eventOthValidation.validate(body);
             }
         } else {
             validationData = eventValidation.validate(body);
@@ -268,6 +285,33 @@ function makeJsonToXml(data) {
                 }
             }
         });
+    }else if (get(data, "statusCode", "") === "OTH") {
+        xml = convert({
+            "soap:Envelope": {
+              "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+              "@xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+              "@xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+              "soap:Header": {
+                "AuthHeader": {
+                  "@xmlns": "http://tempuri.org/",//NOSONAR
+                  "UserName": "eeprod",
+                  "Password": "eE081020!"
+                }
+              },
+              "soap:Body": {
+                "WriteTrackingNote": {
+                  "@xmlns": "http://tempuri.org/",//NOSONAR
+                  HandlingStation: "",
+                  HouseBill: get(data, "housebill", ""),
+                  TrackingNotes: {
+                    TrackingNotes: {
+                      TrackingNoteMessage: get(data, "note", "")
+                    }
+                  }
+                }
+              }
+            }
+          });
     } else {
         xml = convert({
             "soap:Envelope": {
@@ -305,7 +349,7 @@ async function addMilestoneApi(postData) {
 
         if (get(itemObj, "statusCode", "") === "DEL") {
             config.url = `${process.env.ADD_MILESTONE_URL}?op=SubmitPOD`;
-        } else if (get(itemObj, "statusCode", "") === "LOC") {
+        } else if (get(itemObj, "statusCode", "") === "LOC" || get(itemObj, "statusCode", "") === "OTH") {
             config.url = `${process.env.ADD_MILESTONE_LOC_URL}?op=WriteTrackingNote`;
         } else {
             config.url = `${process.env.ADD_MILESTONE_URL}?op=UpdateStatus`;
@@ -313,12 +357,6 @@ async function addMilestoneApi(postData) {
 
         console.log("config: ", config)
         const res = await axios.request(config);
-        // const res = await axios.post(process.env.ADD_MILESTONE_URL, postData, {
-        //     headers: {
-        //         "Accept": "text/xml",
-        //         "Content-Type": "text/xml",
-        //     },
-        // });
         if (get(res, "status", "") == 200) {
             return get(res, "data", "");
         } else {
