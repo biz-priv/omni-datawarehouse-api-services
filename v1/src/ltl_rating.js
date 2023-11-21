@@ -1040,7 +1040,7 @@ function getXmlPayloadFEXF({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["alternateBillingParty"]["accountNumber"] = {
         value: "554332390",
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"] = { freightShipmentSpecialServices: { specialServiceTypes: accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).map((item) => accessorialMappingFEXF[item]) } };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"] = { specialServiceTypes: accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).map((item) => accessorialMappingFEXF[item]) };
     return xmlPayloadFormat["FEXF"];
 }
 
