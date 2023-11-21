@@ -13,19 +13,16 @@ const validateQueryParams = (params) => {
     housebill: Joi.string().allow(""),
     fileNumber: Joi.string().allow(""),
     activityFromDate: Joi.string().allow(""),
-    activityToDate: Joi.string().allow("").when('activityFromDate', {
-        is: Joi.exist(), then: Joi.required()
+    activityToDate: Joi.string().allow("").when("activityFromDate", {
+      is: Joi.exist(),
+      then: Joi.required(),
     }),
     shipmentFromDate: Joi.string().allow(""),
-    shipmentToDate: Joi.string().allow("").when('shipmentFromDate', {
-        is: Joi.exist(), then: Joi.required()
-    })
-  }).or(
-    'housebill',
-    'fileNumber',
-    'activityFromDate',
-    'shipmentFromDate'
-  );
+    shipmentToDate: Joi.string().allow("").when("shipmentFromDate", {
+      is: Joi.exist(),
+      then: Joi.required(),
+    }),
+  }).or("housebill", "fileNumber", "activityFromDate", "shipmentFromDate");
 
   return schema.validate(params);
 };
@@ -37,13 +34,13 @@ module.exports.handler = async (event) => {
 
   const queryParams = {
     housebill: get(event, "query.housebill", null),
-    milestone_history: get(event,"query.milestone_history",null),
+    milestone_history: get(event, "query.milestone_history", null),
     fileNumber: get(event, "query.fileNumber", null),
-    activityFromDate: get(event,"query.activityFromDate",null),
+    activityFromDate: get(event, "query.activityFromDate", null),
     activityToDate: get(event, "query.activityToDate", null),
-    shipmentFromDate: get(event,"query.shipmentFromDate",null),
+    shipmentFromDate: get(event, "query.shipmentFromDate", null),
     shipmentToDate: get(event, "query.shipmentToDate", null),
-    lastEvaluatedKey: get(event,"query.lastEvaluatedKey",null),
+    lastEvaluatedKey: get(event, "query.lastEvaluatedKey", null),
   };
 
   const { error, value } = validateQueryParams(queryParams);
@@ -61,7 +58,7 @@ module.exports.handler = async (event) => {
     activityToDate: get(queryStringParams, "activityToDate", null),
     shipmentFromDate: get(queryStringParams, "shipmentFromDate", null),
     shipmentToDate: get(queryStringParams, "shipmentToDate", null),
-    lastEvaluatedKey : get(queryStringParams,"lastEvaluatedKey",null),
+    lastEvaluatedKey: get(queryStringParams, "lastEvaluatedKey", null),
     api_status_code: "",
     errorMsg: "",
     payload: "",
@@ -77,7 +74,11 @@ module.exports.handler = async (event) => {
   try {
     if (get(queryStringParams, "fileNumber", null)) {
       console.log("fileNumber");
-      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE,"fileNumberIndex",get(queryStringParams, "fileNumber", null));
+      dataObj = await queryWithFileNumber(
+        process.env.SHIPMENT_DETAILS_Collector_TABLE,
+        "fileNumberIndex",
+        get(queryStringParams, "fileNumber", null)
+      );
       //console.log("dataObj: ",dataObj)
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
@@ -99,7 +100,10 @@ module.exports.handler = async (event) => {
       await putItem(logObj);
     } else if (get(queryStringParams, "housebill", null)) {
       console.log("housebill");
-      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "housebill", null));
+      dataObj = await queryWithHouseBill(
+        process.env.SHIPMENT_DETAILS_Collector_TABLE,
+        get(queryStringParams, "housebill", null)
+      );
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
       } else {
@@ -110,7 +114,10 @@ module.exports.handler = async (event) => {
         );
         //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         if (get(queryStringParams, "milestone_history", null)) {
-          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestone_history", null));
+          mainResponse = await mappingPayload(
+            unmarshalledDataObj,
+            get(queryStringParams, "milestone_history", null)
+          );
           logObj = {
             ...logObj,
             api_status_code: "200",
@@ -153,8 +160,11 @@ module.exports.handler = async (event) => {
       //   lastKey = ""
       // }
 
-      const lastKey = moment(get(queryStringParams,"lastEvaluatedKey",null),"YYYY-MM-DD HH:mm:ss.SSS");
-      console.log("startDate,endDate",fromDateTime,toDateTime,lastKey)
+      const lastKey = moment(
+        get(queryStringParams, "lastEvaluatedKey", null),
+        "YYYY-MM-DD HH:mm:ss.SSS"
+      );
+      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
 
       // const daysDifference = toDateTime.diff(fromDateTime, "days");
       // if (daysDifference < 0) {
@@ -193,9 +203,16 @@ module.exports.handler = async (event) => {
       //   }
       // }
       // console.log(daysDifference);
-      fullDataObj = await dateRange("activityDate",fromDateTime,toDateTime,lastKey);
-      console.log("fullDataObj: ",fullDataObj)
-      dataObj = fullDataObj.items.Items.filter((item) => item.status.S == "Ready");
+      fullDataObj = await dateRange(
+        "activityDate",
+        fromDateTime,
+        toDateTime,
+        lastKey
+      );
+      console.log("fullDataObj: ", fullDataObj);
+      dataObj = fullDataObj.items.Items.filter(
+        (item) => item.status.S == "Ready"
+      );
       console.log("dataObj: ", dataObj);
       if (dataObj.length == 0) {
         mainResponse = "Payloads are not ready yet, please try again later";
@@ -230,17 +247,17 @@ module.exports.handler = async (event) => {
         get(queryStringParams, "shipmentFromDate", null) + " 00:00:00.000",
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
-      
+
       const toDateTime = moment(
         get(queryStringParams, "shipmentToDate", null) + " 23:59:59.999",
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
       const lastKey = moment(
-        get(queryStringParams,"lastEvaluatedKey",null) + " 00:00:00.000",
+        get(queryStringParams, "lastEvaluatedKey", null) + " 00:00:00.000",
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
-       
-      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey)
+
+      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
       const daysDifference = toDateTime.diff(fromDateTime, "days");
       if (daysDifference < 0) {
         console.log("shipmentToDate cannot be earlier than shipmentFromDate");
@@ -279,9 +296,16 @@ module.exports.handler = async (event) => {
         }
       }
       //console.log(daysDifference);
-      fullDataObj = await dateRange("shipmentDate",fromDateTime,toDateTime,lastKey);
-      console.log("fullDataObj: ",fullDataObj)
-      dataObj = fullDataObj.items.Items.filter((item) => item.status.S == "Ready");
+      fullDataObj = await dateRange(
+        "shipmentDate",
+        fromDateTime,
+        toDateTime,
+        lastKey
+      );
+      console.log("fullDataObj: ", fullDataObj);
+      dataObj = fullDataObj.items.Items.filter(
+        (item) => item.status.S == "Ready"
+      );
       console.log("dataObj: ", dataObj);
       if (dataObj.length == 0) {
         mainResponse = "Payloads are not ready yet, please try again later";
@@ -303,11 +327,8 @@ module.exports.handler = async (event) => {
       await putItem(logObj);
     }
     return {
-      statusCode: 200,
-      body: JSON.stringify({
-        Items: mainResponse,
-        LastEvaluatedKey: get(fullDataObj,"lastEvaluatedKey",null)
-      }),
+      Items: mainResponse,
+      LastEvaluatedKey: get(fullDataObj, "lastEvaluatedKey", null),
     };
   } catch (error) {
     console.log("in main function: \n", error);
@@ -358,7 +379,12 @@ async function queryWithHouseBill(tableName, HouseBillNumber) {
   }
 }
 
-async function dateRange(eventType, eventDateTimeFrom, eventDateTimeTo,lastEvaluatedKey) {
+async function dateRange(
+  eventType,
+  eventDateTimeFrom,
+  eventDateTimeTo,
+  lastEvaluatedKey
+) {
   try {
     if (eventType == "activityDate") {
       const fromDateTime = moment(eventDateTimeFrom);
@@ -368,7 +394,12 @@ async function dateRange(eventType, eventDateTimeFrom, eventDateTimeTo,lastEvalu
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithEventDate(eventDate,formattedStartDate,formattedEndDate,formattedLastKey);
+      return await queryWithEventDate(
+        eventDate,
+        formattedStartDate,
+        formattedEndDate,
+        formattedLastKey
+      );
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
@@ -377,14 +408,24 @@ async function dateRange(eventType, eventDateTimeFrom, eventDateTimeTo,lastEvalu
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithOrderDate(eventDate,formattedStartDate,formattedEndDate,formattedLastKey);
+      return await queryWithOrderDate(
+        eventDate,
+        formattedStartDate,
+        formattedEndDate,
+        formattedLastKey
+      );
     }
   } catch (error) {
     console.log("date range function: ", error);
   }
 }
 
-async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
+async function queryWithEventDate(
+  date,
+  startSortKey,
+  endSortKey,
+  lastEvaluatedKey
+) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
     IndexName: "EventYearIndex",
@@ -402,10 +443,10 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
     Limit: 10,
   };
   console.log("queryWithEventDate,params:", params);
-  if (lastEvaluatedKey) {
-    params.ExclusiveStartKey = lastEvaluatedKey;
-    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
-  }
+  // if (lastEvaluatedKey) {
+  //   params.ExclusiveStartKey = lastEvaluatedKey;
+  //   console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
+  // }
 
   try {
     const result = await dynamo.query(params).promise();
@@ -421,7 +462,12 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
   }
 }
 
-async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
+async function queryWithOrderDate(
+  date,
+  startSortKey,
+  endSortKey,
+  lastEvaluatedKey
+) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
     IndexName: "OrderYearIndex",
@@ -439,11 +485,11 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
     Limit: 10,
   };
   console.log("queryWithOrderDate,params:", params);
-  console.log("lastEvaluatedKey",lastEvaluatedKey)
-  if (lastEvaluatedKey) {
-    params.ExclusiveStartKey = lastEvaluatedKey;
-    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
-  }
+  console.log("lastEvaluatedKey", lastEvaluatedKey);
+  // if (lastEvaluatedKey) {
+  //   params.ExclusiveStartKey = lastEvaluatedKey;
+  //   console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
+  // }
 
   try {
     const result = await dynamo.query(params).promise();
