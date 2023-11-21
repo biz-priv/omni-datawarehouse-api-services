@@ -450,7 +450,7 @@ const xmlPayloadFormat = {
         },
     },
     DAFG: {
-        accessorials: [],
+        // accessorials: [],
         account: "",
         destination: "",
         handlingUnits: [],
@@ -511,7 +511,7 @@ const xmlPayloadFormat = {
                     pltCountList: "",
                     pltLengthList: "",
                     pltWidthList: "",
-                    accessorialList: [],
+                    // accessorialList: [],
                 },
             },
         },
@@ -615,9 +615,9 @@ const xmlPayloadFormat = {
                         PaymentType: "",
                         CubicFeet: "",
                         Pieces: "",
-                        ServiceDeliveryOptions: {
-                            ServiceOptions: { ServiceCode: [] },
-                        },
+                        // ServiceDeliveryOptions: {
+                        //     ServiceOptions: { ServiceCode: [] },
+                        // },
                     },
                 },
             },
@@ -691,7 +691,7 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["AirportPickup"] = "N";
 
     if (accessorialList.filter((accessorial) => ["APPT", "INSPU", "RESID"].includes(accessorial)).length > 0) {
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"]["PickupAccessorial"] = [];
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"] = { PickupAccessorials: { PickupAccessorial: [] } };
     }
     for (const accessorial of accessorialList) {
         if (["APPT", "INSPU", "RESID"].includes(accessorial)) {
@@ -704,7 +704,7 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["AirportDelivery"] = "N";
 
     if (accessorialList.filter((accessorial) => ["APPTD", "INDEL", "RESDE"].includes(accessorial)).length > 0) {
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"] = [];
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"] = { DeliveryAccessorials: { DeliveryAccessorial: [] } };
     }
     for (const accessorial of accessorialList) {
         if (["APPTD", "INDEL", "RESDE"].includes(accessorial)) {
@@ -834,7 +834,7 @@ function getXmlPayloadEXLA({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:declaredValue"] = insuredValue;
 
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:accessorials"]["rat1:accessorialCode"] = [];
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:accessorials"] = { "rat1:accessorialCode": [] };
     }
     for (const accessorial of accessorialList) {
         xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:accessorials"]["rat1:accessorialCode"].push(accessorialMappingEXLA[accessorial]);
@@ -1394,7 +1394,7 @@ function getXmlPayloadDAFG({ pickupTime, insuredValue, shipperZip, consigneeZip,
         weight,
     });
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["DAFG"]["accessorials"] = 0;
+        xmlPayloadFormat["DAFG"]["accessorials"] = [];
     }
     xmlPayloadFormat["DAFG"]["accessorials"] = accessorialList.filter((acc) => Object.keys(accessorialMappingDAFG).includes(acc)).map((item) => accessorialMappingDAFG[item]);
     if (hazmat) xmlPayloadFormat["DAFG"]["accessorials"].push("HMF");
@@ -1664,7 +1664,7 @@ function getXmlPayloadSAIA({ pickupTime, insuredValue, shipperZip, consigneeZip,
         Width: width,
     };
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = [];
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"] = { AccessorialItem: { Code: [] } };
     }
     xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = accessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => accessorialMappingSAIA[item]);
     if (hazmat) xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"].push("Hazardous");
@@ -1761,7 +1761,7 @@ function getXmlPayloadXPOL({ pickupTime, insuredValue, shipperZip, consigneeZip,
         };
     });
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"];
+        xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [];
     }
     xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).map((item) => accessorialMappingXPOL[item]))].map((item2) => ({
         accessorialCd: item2,
@@ -1904,7 +1904,7 @@ function getXmlPayloadRDFS({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["CubicFeet"] = cubicFeet;
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["Pieces"] = pieces;
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"] = [];
+        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"] = { ServiceDeliveryOptions: { ServiceOptions: [] } };
     }
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingRDFS).includes(acc)).map((item) => accessorialMappingRDFS[item]))].map((item2) => ({
         ServiceCode: item2,
