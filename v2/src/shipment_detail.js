@@ -98,8 +98,8 @@ module.exports.handler = async (event) => {
       console.log("logObj", logObj);
       await putItem(logObj);
     } else if (get(queryStringParams, "housebill", null)) {
-      //console.log("housebill");
-      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "milestone_history", null));
+      console.log("housebill");
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "housebill", null));
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
       } else {
