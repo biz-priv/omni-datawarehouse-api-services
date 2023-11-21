@@ -36,14 +36,14 @@ module.exports.handler = async (event) => {
   console.info("event: ", JSON.stringify(event));
 
   const queryParams = {
-    housebill: get(event, "queryStringParameters.housebill", null),
-    milestone_history: get(event,"queryStringParameters.milestone_history",null),
-    fileNumber: get(event, "queryStringParameters.fileNumber", null),
-    activityFromDate: get(event,"queryStringParameters.activityFromDate",null),
-    activityToDate: get(event, "queryStringParameters.activityToDate", null),
-    shipmentFromDate: get(event,"queryStringParameters.shipmentFromDate",null),
-    shipmentToDate: get(event, "queryStringParameters.shipmentToDate", null),
-    lastEvaluatedKey: get(event,"queryStringParameters.lastEvaluatedKey",null),
+    housebill: get(event, "query.housebill", null),
+    milestone_history: get(event,"query.milestone_history",null),
+    fileNumber: get(event, "query.fileNumber", null),
+    activityFromDate: get(event,"query.activityFromDate",null),
+    activityToDate: get(event, "query.activityToDate", null),
+    shipmentFromDate: get(event,"query.shipmentFromDate",null),
+    shipmentToDate: get(event, "query.shipmentToDate", null),
+    lastEvaluatedKey: get(event,"query.lastEvaluatedKey",null),
   };
 
   const { error, value } = validateQueryParams(queryParams);
