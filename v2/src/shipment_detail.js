@@ -583,9 +583,16 @@ async function putItem(item) {
   }
 }
 
+// function response(code, message) {
+//   return {
+//     httpStatus: code,
+//     message,
+//   };
+// }
+
 function response(code, message) {
-  return {
+  return JSON.stringify({
     httpStatus: code,
     message,
-  };
+  });
 }
