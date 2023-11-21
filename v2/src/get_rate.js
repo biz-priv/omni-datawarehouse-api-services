@@ -265,13 +265,13 @@ function addCommodityWeightPerPiece(inputData) {
   };
   if (inputData.shipmentLines[0].dimUOM.toLowerCase() == "cm") {
     inputData.shipmentLines[0].length = Math.round(
-      inputData.shipmentLines[0].length * 2.54
+      inputData.shipmentLines[0].length * 0.393701
     );
     inputData.shipmentLines[0].width = Math.round(
-      inputData.shipmentLines[0].width * 2.54
+      inputData.shipmentLines[0].width * 0.393701
     );
     inputData.shipmentLines[0].height = Math.round(
-      inputData.shipmentLines[0].height * 2.54
+      inputData.shipmentLines[0].height * 0.393701
     );
   }
   if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
