@@ -34,10 +34,7 @@ pipeline {
                 anyOf {
                     branch 'master';
                     branch 'develop';
-<<<<<<< HEAD
                     branch 'feature/31197';
-=======
->>>>>>> 39f291acf16d5d8452cc48f3f719582d331d5e8e
                 }
                 expression {
                     return true;
