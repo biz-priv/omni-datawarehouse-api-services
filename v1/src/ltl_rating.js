@@ -51,7 +51,7 @@ module.exports.handler = async (event, context) => {
         const body = get(event, "body");
         const ltlRateRequest = get(body, "ltlRateRequest");
         const pickupTime = get(ltlRateRequest, "pickupTime");
-        const insuredValue = get(ltlRateRequest, "insuredValue");
+        const insuredValue = get(ltlRateRequest, "insuredValue", 0);
         const shipperZip = get(ltlRateRequest, "shipperZip");
         const consigneeZip = get(ltlRateRequest, "consigneeZip");
         const shipmentLines = get(ltlRateRequest, "shipmentLines", []);
