@@ -22,31 +22,20 @@ const ltlRateRequestSchema = Joi.object({
             .items(
                 Joi.object({
                     pieces: Joi.number().required().label("pieces is invalid."),
-                    pieceType: Joi.string()
-                        .optional()
-                        .label("pieceType is invalid."),
+                    pieceType: Joi.string().optional().label("pieceType is invalid."),
                     weight: Joi.number().required().label("weight is invalid."),
-                    weightUOM: Joi.string()
-                        .required()
-                        .label("weightUOM is invalid."),
+                    weightUOM: Joi.string().required().label("weightUOM is invalid."),
                     length: Joi.number().required().label("length is invalid."),
                     width: Joi.number().required().label("width is invalid."),
                     height: Joi.number().required().label("height is invalid."),
                     dimUOM: Joi.string().required().label("dimUOM is invalid."),
-                    hazmat: Joi.boolean()
-                        .optional()
-                        .label("hazmat is invalid."),
-                    freightClass: Joi.number()
-                        .optional()
-                        .label("freightClass is invalid."),
+                    hazmat: Joi.boolean().optional().label("hazmat is invalid."),
+                    freightClass: Joi.number().optional().label("freightClass is invalid."),
                 })
             )
             .required()
             .label("shipmentLines"),
-        accessorialList: Joi.array()
-            .items(Joi.string())
-            .optional()
-            .label("accessorialList"),
+        accessorialList: Joi.array().items(Joi.string()).optional().label("accessorialList"),
     }),
 });
 
@@ -55,9 +44,7 @@ module.exports.handler = async (event, context) => {
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
     try {
-        const validation = await ltlRateRequestSchema.validateAsync(
-            get(event, "body")
-        );
+        const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
         console.info(`🙂 -> file: ltl_rating.js:32 -> validation:`, validation);
         const { error, value } = validation;
         if (error) throw error;
@@ -74,24 +61,8 @@ module.exports.handler = async (event, context) => {
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
-            [
-                "FWDA",
-                "EXLA",
-                "FEXF",
-                "ODFL",
-                "ABFS",
-                "AVRT",
-                "DAFG",
-                "SEFN",
-                "PENS",
-                "SAIA",
-                "XPOL",
-                "RDFS",
-            ].map(async (carrier) => {
-                console.info(
-                    `🙂 -> file: ltl_rating.js:91 -> carrier:`,
-                    carrier
-                );
+            ["FWDA", "EXLA", "FEXF", "ODFL", "ABFS", "AVRT", "DAFG", "SEFN", "PENS", "SAIA", "XPOL", "RDFS"].map(async (carrier) => {
+                console.info(`🙂 -> file: ltl_rating.js:91 -> carrier:`, carrier);
                 if (carrier === "FWDA") {
                     return await processFWDARequest({
                         pickupTime,
@@ -229,10 +200,7 @@ module.exports.handler = async (event, context) => {
                 }
             })
         );
-        console.info(
-            `🙂 -> file: ltl_rating.js:127 -> apiResponse:`,
-            apiResponse
-        );
+        console.info(`🙂 -> file: ltl_rating.js:127 -> apiResponse:`, apiResponse);
         const response = { ...responseBodyFormat };
         return response;
     } catch (err) {
@@ -253,18 +221,12 @@ const xmlPayloadFormat = {
                 OriginZipCode: "",
                 Pickup: {
                     AirportPickup: "N",
-                    PickupAccessorials: {
-                        PickupAccessorial: [],
-                    },
                 },
             },
             Destination: {
                 DestinationZipCode: "",
                 Delivery: {
                     AirportDelivery: "N",
-                },
-                DeliveryAccessorials: {
-                    DeliveryAccessorial: [],
                 },
             },
             FreightDetails: {
@@ -285,8 +247,7 @@ const xmlPayloadFormat = {
             $: {
                 "xmlns:soapenv": "http://schemas.xmlsoap.org/soap/envelope/", //NOSONAR
                 "xmlns:rat": "http://ws.estesexpress.com/ratequote", //NOSONAR
-                "xmlns:rat1":
-                    "http://ws.estesexpress.com/schema/2019/01/ratequote", //NOSONAR
+                "xmlns:rat1": "http://ws.estesexpress.com/schema/2019/01/ratequote", //NOSONAR
             },
             "soapenv:Header": {
                 "rat:auth": {
@@ -314,9 +275,6 @@ const xmlPayloadFormat = {
                     },
                     "rat1:declaredValue": 0,
                     "rat1:fullCommodities": { "rat1:commodity": [] },
-                    "rat1:accessorials": {
-                        "rat1:accessorialCode": [],
-                    },
                 },
             },
         },
@@ -331,7 +289,6 @@ const xmlPayloadFormat = {
             "soapenv:Body": {
                 "myr:getLTLRateEstimate": {
                     arg0: {
-                        accessorials: [],
                         destinationPostalCode: "",
                         freightItems: {
                             height: "",
@@ -439,9 +396,9 @@ const xmlPayloadFormat = {
                     },
                 },
             },
-            freightShipmentSpecialServices: {
-                specialServiceTypes: [],
-            },
+            // freightShipmentSpecialServices: {
+            //     specialServiceTypes: [],
+            // },
         },
     },
     ABFS: {
@@ -465,13 +422,13 @@ const xmlPayloadFormat = {
         UnitType1: "",
         Class1: "",
         Wgt1: "",
-        Acc_HAZ: "",
-        Acc_IPU: "",
-        Acc_RPU: "",
-        Acc_GRD_PU: "",
-        Acc_IDEL: "",
-        Acc_RDEL: "",
-        Acc_GRD_DEL: "",
+        Acc_HAZ: "N",
+        Acc_IPU: "N",
+        Acc_RPU: "N",
+        Acc_GRD_PU: "N",
+        Acc_IDEL: "N",
+        Acc_RDEL: "N",
+        Acc_GRD_DEL: "N",
     },
     AVRT: {
         accountNumber: "",
@@ -489,7 +446,7 @@ const xmlPayloadFormat = {
         cubicFeet: "",
         shipmentInfo: {
             items: [],
-            accessorials: {},
+            // accessorials: {},
         },
     },
     DAFG: {
@@ -586,9 +543,9 @@ const xmlPayloadFormat = {
                                 Units: "",
                             },
                         },
-                        Accessorials: {
-                            AccessorialItem: { Code: [] },
-                        },
+                        // Accessorials: {
+                        //     AccessorialItem: { Code: [] },
+                        // },
                         UserID: "",
                         Password: "",
                         TestMode: "",
@@ -619,7 +576,7 @@ const xmlPayloadFormat = {
                 },
             },
             commodity: [],
-            accessorials: [],
+            // accessorials: [],
             paymentTermCd: "",
             bill2Party: {
                 acctInstId: "",
@@ -674,15 +631,7 @@ const responseBodyFormat = {
 };
 
 // ===================FWDA=======================
-async function processFWDARequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processFWDARequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const xmlPayload = getXmlPayloadFWDA({
         pickupTime,
         insuredValue,
@@ -713,11 +662,7 @@ async function processFWDAResponses({ response }) {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
         const FAQuoteResponse = get(parsed, "FAQuoteResponse", {});
-        const ChargeLineItems = get(
-            FAQuoteResponse,
-            "ChargeLineItems[0].ChargeLineItem",
-            []
-        );
+        const ChargeLineItems = get(FAQuoteResponse, "ChargeLineItems[0].ChargeLineItem", []);
         const data = {
             carrier: "FWDA",
             serviceLevel: get(ChargeLineItems, "[0].ServiceLevel[0]", "0"),
@@ -738,46 +683,32 @@ async function processFWDAResponses({ response }) {
     }
 }
 
-function getXmlPayloadFWDA({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
-    xmlPayloadFormat["FWDA"]["FAQuoteRequest"][
-        "BillToCustomerNumber"
-    ] = 2353722;
+function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["BillToCustomerNumber"] = 2353722;
 
-    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["OriginZipCode"] =
-        shipperZip;
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["OriginZipCode"] = shipperZip;
 
-    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"][
-        "AirportPickup"
-    ] = "N";
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["AirportPickup"] = "N";
 
+    if (["APPT", "INSPU", "RESID"].includes(accessorial)) {
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"]["PickupAccessorial"] = [];
+    }
     for (const accessorial of accessorialList) {
         if (["APPT", "INSPU", "RESID"].includes(accessorial)) {
-            xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"][
-                "PickupAccessorials"
-            ]["PickupAccessorial"].push(accessorialMappingFWDA[accessorial]);
+            xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"]["PickupAccessorial"].push(accessorialMappingFWDA[accessorial]);
         }
     }
 
-    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"][
-        "DestinationZipCode"
-    ] = consigneeZip;
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DestinationZipCode"] = consigneeZip;
 
-    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"][
-        "AirportDelivery"
-    ] = "N";
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["AirportDelivery"] = "N";
 
+    if (["APPTD", "INDEL", "RESDE"].includes(accessorial)) {
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"] = [];
+    }
     for (const accessorial of accessorialList) {
         if (["APPTD", "INDEL", "RESDE"].includes(accessorial)) {
-            xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"][
-                "DeliveryAccessorials"
-            ]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
+            xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
         }
     }
 
@@ -788,20 +719,14 @@ function getXmlPayloadFWDA({
 
     for (let index = 0; index < shipmentLines.length; index++) {
         const shipmentLine = shipmentLines[index];
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["FreightDetails"][
-            "FreightDetail"
-        ][index] = {
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["FreightDetails"]["FreightDetail"][index] = {
             Weight: get(shipmentLine, "weight"),
-            WeightType:
-                unitMapping["FWDA"][get(shipmentLine, "weightUOM")] ??
-                get(shipmentLine, "weightUOM"),
+            WeightType: unitMapping["FWDA"][get(shipmentLine, "weightUOM")] ?? get(shipmentLine, "weightUOM"),
             Pieces: get(shipmentLine, "pieces"),
             FreightClass: get(shipmentLine, "freightClass"),
         };
 
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"]["Dimension"][
-            index
-        ] = {
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"]["Dimension"][index] = {
             Pieces: get(shipmentLine, "pieces"),
             Length: get(shipmentLine, "length"),
             Width: get(shipmentLine, "width"),
@@ -816,16 +741,7 @@ function getXmlPayloadFWDA({
 }
 
 // ===================EXLA=======================
-async function processEXLARequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    reference,
-    carrier,
-}) {
+async function processEXLARequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference, carrier }) {
     const xmlPayload = getXmlPayloadEXLA({
         pickupTime,
         insuredValue,
@@ -839,8 +755,7 @@ async function processEXLARequest({
         soapAction: "http://ws.estesexpress.com/ratequote/getQuote", //NOSONAR
         "Content-Type": "text/xml",
     };
-    let url =
-        "https://www.estes-express.com/tools/rating/ratequote/v4.0/services/RateQuoteService";
+    let url = "https://www.estes-express.com/tools/rating/ratequote/v4.0/services/RateQuoteService";
     let payload = xmlPayload;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
@@ -859,25 +774,15 @@ async function processEXLAResponses({ response }) {
         const quote = get(quoteInfo, "rat:quote", []);
 
         const quoteList = quote.map((quoteInfo) => {
-            const serviceLevel = get(
-                quoteInfo,
-                "rat:serviceLevel[0].rat:id[0]",
-                "0"
-            );
+            const serviceLevel = get(quoteInfo, "rat:serviceLevel[0].rat:id[0]", "0");
             const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
             const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
             const pickupDate = moment(new Date(pickup));
             const delivery = get(quoteInfo, "rat:delivery[0].rat:date[0]", "0");
             const deliveryDate = moment(new Date(delivery));
             const transitDays = deliveryDate.diff(pickupDate, "days");
-            const totalRate = parseFloat(
-                get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0")
-            );
-            const accessorialInfo = get(
-                quoteInfo,
-                "rat:accessorialInfo[0].rat:accessorial",
-                []
-            );
+            const totalRate = parseFloat(get(quoteInfo, "rat:pricing[0].rat:totalPrice[0]", "0"));
+            const accessorialInfo = get(quoteInfo, "rat:accessorialInfo[0].rat:accessorial", []);
 
             const data = {
                 carrier: "EXLA",
@@ -896,98 +801,57 @@ async function processEXLAResponses({ response }) {
             }));
             return data;
         });
-        responseBodyFormat["ltlRateResponse"] = [
-            ...responseBodyFormat["ltlRateResponse"],
-            ...quoteList,
-        ];
+        responseBodyFormat["ltlRateResponse"] = [...responseBodyFormat["ltlRateResponse"], ...quoteList];
     } catch (err) {
         console.info(`🙂 -> file: ltl_rating.js:902 -> err:`, err);
     }
 }
 
-function getXmlPayloadEXLA({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    reference,
-}) {
+function getXmlPayloadEXLA({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference }) {
     // For ESTES
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"][
-        "rat:user"
-    ] = "omni2";
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"]["rat:user"] = "omni2";
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"][
-        "rat:password"
-    ] = "OmniAllin1"; //NOSONAR
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Header"]["rat:auth"]["rat:password"] = "OmniAllin1"; //NOSONAR
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:requestID"] = reference;
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:requestID"] = reference;
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:account"] = "5098931";
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:originPoint"]["rat1:countryCode"] = "US";
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:originPoint"]["rat1:countryCode"] = "US";
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:originPoint"]["rat1:postalCode"] = shipperZip;
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:originPoint"]["rat1:postalCode"] = shipperZip;
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:destinationPoint"]["rat1:countryCode"] = "US";
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:destinationPoint"]["rat1:countryCode"] = "US";
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:destinationPoint"]["rat1:postalCode"] = consigneeZip;
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:destinationPoint"]["rat1:postalCode"] = consigneeZip;
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:payor"] = "T";
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:payor"] = "T";
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:terms"] = "PPD";
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:terms"] = "PPD";
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:pickup"]["rat1:date"] = pickupTime.split("T")[0];
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:pickup"]["rat1:date"] = pickupTime.split("T")[0];
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:pickup"]["rat1:ready"] = pickupTime.split("T")[1];
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:pickup"]["rat1:ready"] = pickupTime.split("T")[1];
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:declaredValue"] = insuredValue;
 
-    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-        "rat1:rateRequest"
-    ]["rat1:declaredValue"] = insuredValue;
-
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:accessorials"]["rat1:accessorialCode"] = [];
+    }
     for (const accessorial of accessorialList) {
-        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-            "rat1:rateRequest"
-        ]["rat1:accessorials"]["rat1:accessorialCode"].push(
-            accessorialMappingEXLA[accessorial]
-        );
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:accessorials"]["rat1:accessorialCode"].push(accessorialMappingEXLA[accessorial]);
     }
 
     if (get(shipmentLines, "[0].hazmat") === true) {
-        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-            "rat1:rateRequest"
-        ]["rat1:accessorials"]["rat1:accessorialCode"].push("HAZ");
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:accessorials"]["rat1:accessorialCode"].push("HAZ");
     }
 
     for (let index = 0; index < shipmentLines.length; index++) {
         const shipmentLine = shipmentLines[index];
 
-        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"][
-            "rat1:rateRequest"
-        ]["rat1:fullCommodities"]["rat1:commodity"][index] = {
+        xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:fullCommodities"]["rat1:commodity"][index] = {
             "rat1:class": get(shipmentLine, "freightClass"),
             "rat1:weight": get(shipmentLine, "weight"),
             "rat1:pieces": get(shipmentLine, "pieces"),
-            "rat1:pieceType":
-                pieceTypeMappingEXLA[get(shipmentLine, "pieceType")],
+            "rat1:pieceType": pieceTypeMappingEXLA[get(shipmentLine, "pieceType")],
             "rat1:dimensions": {
                 "rat1:length": get(shipmentLine, "length"),
                 "rat1:width": get(shipmentLine, "width"),
@@ -1002,16 +866,7 @@ function getXmlPayloadEXLA({
 }
 
 // ===================FEXF=======================
-async function processFEXFRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    reference,
-    carrier,
-}) {
+async function processFEXFRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference, carrier }) {
     const accessToken = await processFEXFAuthRequest();
     if (!accessToken) return;
     const payload = getXmlPayloadFEXF({
@@ -1051,54 +906,32 @@ async function processFEXFAuthRequest() {
             data: data,
         };
         const authReqRes = await axios.request(config);
-        console.info(
-            `🙂 -> file: ltl_rating.js:1031 -> authReqRes:`,
-            get(authReqRes, "data")
-        );
+        console.info(`🙂 -> file: ltl_rating.js:1031 -> authReqRes:`, get(authReqRes, "data"));
         return get(authReqRes, "data.access_token");
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
-        console.error(
-            `🙂 -> file: ltl_rating.js:1043 -> err:`,
-            errResponse !== "" ? errResponse : err
-        );
+        console.error(`🙂 -> file: ltl_rating.js:1043 -> err:`, errResponse !== "" ? errResponse : err);
         return false;
     }
 }
 
-function getXmlPayloadFEXF({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    reference,
-}) {
+function getXmlPayloadFEXF({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference }) {
     const shipper = zips[shipperZip];
     const consignee = zips[consigneeZip];
 
     xmlPayloadFormat["FEXF"]["accountNumber"]["value"] = 226811362;
-    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"][
-        "returnTransitTimes"
-    ] = true;
-    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"][
-        "servicesNeededOnRateFailure"
-    ] = true;
-    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"]["rateSortOrder"] =
-        "SERVICENAMETRADITIONAL";
+    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"]["returnTransitTimes"] = true;
+    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"]["servicesNeededOnRateFailure"] = true;
+    xmlPayloadFormat["FEXF"]["rateRequestControlParameters"]["rateSortOrder"] = "SERVICENAMETRADITIONAL";
 
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shipper"]["address"] =
-        {
-            city: get(shipper, "city"),
-            stateOrProvinceCode: get(shipper, "state"),
-            postalCode: get(shipper, "zip_code"),
-            countryCode: "US",
-            residential: false,
-        };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["recipient"][
-        "address"
-    ] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shipper"]["address"] = {
+        city: get(shipper, "city"),
+        stateOrProvinceCode: get(shipper, "state"),
+        postalCode: get(shipper, "zip_code"),
+        countryCode: "US",
+        residential: false,
+    };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["recipient"]["address"] = {
         city: get(consignee, "city"),
         stateOrProvinceCode: get(consignee, "state"),
         postalCode: get(consignee, "zip_code"),
@@ -1106,33 +939,23 @@ function getXmlPayloadFEXF({
         residential: false,
     };
 
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "shippingChargesPayment"
-    ]["payor"]["responsibleParty"]["address"] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shippingChargesPayment"]["payor"]["responsibleParty"]["address"] = {
         city: "HOUSTON",
         stateOrProvinceCode: "TX",
         postalCode: "77032",
         countryCode: "US",
         residential: false,
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "shippingChargesPayment"
-    ]["payor"]["responsibleParty"]["accountNumber"]["value"] = 554332390;
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shippingChargesPayment"]["payor"]["responsibleParty"]["accountNumber"]["value"] = 554332390;
 
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["rateRequestType"] = [
-        "ACCOUNT",
-    ];
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["rateRequestType"] = ["ACCOUNT"];
 
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shipDateStamp"] =
-        pickupTime.split("T")[0];
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["shipDateStamp"] = pickupTime.split("T")[0];
     let totalPackageCount = 0;
     let totalWeight = 0;
     for (let index = 0; index < shipmentLines.length; index++) {
         const shipmentLine = shipmentLines[index];
-        const pieceType =
-            pieceTypeMappingFEXF[
-                get(shipmentLine, "pieceType", "").toUpperCase()
-            ];
+        const pieceType = pieceTypeMappingFEXF[get(shipmentLine, "pieceType", "").toUpperCase()];
         const pieces = get(shipmentLine, "pieces");
         const weight = get(shipmentLine, "weight");
         const weightUOM = unitMapping["FEXF"][get(shipmentLine, "weightUOM")];
@@ -1167,9 +990,7 @@ function getXmlPayloadFEXF({
                 },
             ],
         };
-        xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-            "requestedPackageLineItems"
-        ].push(packageLineItem);
+        xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["requestedPackageLineItems"].push(packageLineItem);
 
         const lineItems = {
             subPackagingType: pieceType,
@@ -1188,61 +1009,39 @@ function getXmlPayloadFEXF({
                 units: dimUOM,
             },
         };
-        xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-            "freightShipmentDetail"
-        ]["lineItem"].push(lineItems);
+        xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["lineItem"].push(lineItems);
     }
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["totalPackageCount"] =
-        totalPackageCount;
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["totalWeight"] =
-        totalWeight;
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["role"] = "SHIPPER";
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["accountNumber"] = { value: "226811362" };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["shipmentDimensions"] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["totalPackageCount"] = totalPackageCount;
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["totalWeight"] = totalWeight;
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["role"] = "SHIPPER";
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["accountNumber"] = { value: "226811362" };
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["shipmentDimensions"] = {
         length: get(shipmentLines, "[0].length"),
         width: get(shipmentLines, "[0].width"),
         height: get(shipmentLines, "[0].height"),
         units: unitMapping["FEXF"][get(shipmentLines, "[0].dimUOM")],
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["fedExFreightBillingContactAndAddress"]["address"] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["fedExFreightBillingContactAndAddress"]["address"] = {
         city: "HOUSTON",
         stateOrProvinceCode: "TX",
         postalCode: "77032",
         countryCode: "US",
         residential: false,
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["fedExFreightBillingContactAndAddress"]["accountNumber"] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["fedExFreightBillingContactAndAddress"]["accountNumber"] = {
         value: "554332390",
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["alternateBillingParty"]["address"] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["alternateBillingParty"]["address"] = {
         city: "HOUSTON",
         stateOrProvinceCode: "TX",
         postalCode: "77032",
         countryCode: "US",
         residential: false,
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentDetail"
-    ]["alternateBillingParty"]["accountNumber"] = {
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["alternateBillingParty"]["accountNumber"] = {
         value: "554332390",
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"][
-        "freightShipmentSpecialServices"
-    ]["specialServiceTypes"] = accessorialList
-        .filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc))
-        .map((item) => accessorialMappingFEXF[item]);
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"]["specialServiceTypes"] = accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).map((item) => accessorialMappingFEXF[item]);
     return xmlPayloadFormat["FEXF"];
 }
 
@@ -1251,26 +1050,13 @@ function processFEXFResponses({ response }) {
     const rateReplyDetails = get(output, "rateReplyDetails", []);
     rateReplyDetails.map((rateReplyDetail) => {
         const serviceLevel = get(rateReplyDetail, "serviceType");
-        const transitDays = get(
-            rateReplyDetail,
-            "commit.transitDays.minimumTransitTime"
-        );
-        const ratedShipmentDetails = get(
-            rateReplyDetail,
-            "ratedShipmentDetails",
-            []
-        );
+        const transitDays = get(rateReplyDetail, "commit.transitDays.minimumTransitTime");
+        const ratedShipmentDetails = get(rateReplyDetail, "ratedShipmentDetails", []);
         ratedShipmentDetails.map((ratedShipmentDetail) => {
             const rateType = get(ratedShipmentDetail, "rateType", "");
             const quoteNumber = get(ratedShipmentDetail, "quoteNumber");
-            const totalRate = parseFloat(
-                get(ratedShipmentDetail, "totalNetCharge")
-            );
-            const shipmentRateDetail = get(
-                ratedShipmentDetail,
-                "shipmentRateDetail.surCharges",
-                []
-            );
+            const totalRate = parseFloat(get(ratedShipmentDetail, "totalNetCharge"));
+            const shipmentRateDetail = get(ratedShipmentDetail, "shipmentRateDetail.surCharges", []);
 
             const accessorialList = shipmentRateDetail.map((acc) => ({
                 code: get(acc, "type"),
@@ -1286,23 +1072,13 @@ function processFEXFResponses({ response }) {
                 totalRate,
                 accessorialList,
             };
-            if (rateType.toUpperCase() === "ACCOUNT")
-                return responseBodyFormat["ltlRateResponse"].push(data);
+            if (rateType.toUpperCase() === "ACCOUNT") return responseBodyFormat["ltlRateResponse"].push(data);
         });
     });
 }
 
 // ===================ODFL=======================
-async function processODFLRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    reference,
-    carrier,
-}) {
+async function processODFLRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference, carrier }) {
     const payload = getXmlPayloadODFL({
         pickupTime,
         insuredValue,
@@ -1322,54 +1098,23 @@ async function processODFLRequest({
     return { response };
 }
 
-function getXmlPayloadODFL({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    reference,
-}) {
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["odfl4MeUser"] = "OmniDFW";
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["odfl4MePassword"] = "Omnidfw1!";
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["odflCustomerAccount"] = "13469717";
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["shipType"] = "LTL";
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["tariff"] = "559";
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["requestReferenceNumber"] = 1;
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["originPostalCode"] = shipperZip;
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["destinationPostalCode"] = consigneeZip;
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["pickupDateTime"] = pickupTime;
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["insuranceAmount"] = insuredValue;
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["accessorials"] = accessorialList
-        .filter((acc) => Object.keys(accessorialMappingODFL).includes(acc))
-        .map((item) => accessorialMappingODFL[item]);
+function getXmlPayloadODFL({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference }) {
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["odfl4MeUser"] = "OmniDFW";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["odfl4MePassword"] = "Omnidfw1!";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["odflCustomerAccount"] = "13469717";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["shipType"] = "LTL";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["tariff"] = "559";
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["requestReferenceNumber"] = 1;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["originPostalCode"] = shipperZip;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["destinationPostalCode"] = consigneeZip;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["pickupDateTime"] = pickupTime;
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["insuranceAmount"] = insuredValue;
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"] = [];
+    }
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"] = accessorialList.filter((acc) => Object.keys(accessorialMappingODFL).includes(acc)).map((item) => accessorialMappingODFL[item]);
     const shipmentLine = shipmentLines[0];
-    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-        "myr:getLTLRateEstimate"
-    ]["arg0"]["freightItems"] = {
+    xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["freightItems"] = {
         height: get(shipmentLine, "height"),
         width: get(shipmentLine, "width"),
         length: get(shipmentLine, "length"),
@@ -1377,13 +1122,8 @@ function getXmlPayloadODFL({
         ratedClass: get(shipmentLine, "freightClass"),
         weight: get(shipmentLine, "weight"),
     };
-    if (
-        get(shipmentLine, "hazmat") === true ||
-        get(shipmentLine, "hazmat") === "true"
-    ) {
-        xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"][
-            "myr:getLTLRateEstimate"
-        ]["arg0"]["accessorials"].push("HAZ");
+    if (get(shipmentLine, "hazmat") === true || get(shipmentLine, "hazmat") === "true") {
+        xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"].push("HAZ");
     }
 
     const builder = new xml2js.Builder({
@@ -1397,25 +1137,18 @@ async function processODFLResponses({ response }) {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
         const Body = get(parsed, "soapenv:Envelope.soapenv:Body[0]");
-        const getLTLRateEstimateResponse = get(
-            Body,
-            "ns2:getLTLRateEstimateResponse[0]"
-        );
+        const getLTLRateEstimateResponse = get(Body, "ns2:getLTLRateEstimateResponse[0]");
         const returnObj = get(getLTLRateEstimateResponse, "return[0]");
         const success = get(returnObj, "success[0]");
-        const transitDays = parseInt(
-            get(returnObj, "destinationCities[0].serviceDays[0]")
-        );
+        const transitDays = parseInt(get(returnObj, "destinationCities[0].serviceDays[0]"));
         const quoteNumber = get(returnObj, "referenceNumber[0]");
         const rateEstimate = get(returnObj, "rateEstimate[0]");
         const totalRate = parseFloat(get(rateEstimate, "netFreightCharge[0]"));
-        const accessorialList = get(rateEstimate, "accessorialCharges", []).map(
-            (acc) => ({
-                code: "",
-                description: get(acc, "description[0]"),
-                charge: parseFloat(get(acc, "amount[0]")),
-            })
-        );
+        const accessorialList = get(rateEstimate, "accessorialCharges", []).map((acc) => ({
+            code: "",
+            description: get(acc, "description[0]"),
+            charge: parseFloat(get(acc, "amount[0]")),
+        }));
         const data = {
             carrier: "ODFL",
             transitDays,
@@ -1432,15 +1165,7 @@ async function processODFLResponses({ response }) {
 }
 
 // ===================ABFS=======================
-async function processABFSRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processABFSRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadABFS({
         pickupTime,
         insuredValue,
@@ -1459,14 +1184,7 @@ async function processABFSRequest({
     return { response };
 }
 
-function getXmlPayloadABFS({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
+function getXmlPayloadABFS({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
     xmlPayloadFormat["ABFS"]["ID"] = "99YGF074";
     xmlPayloadFormat["ABFS"]["TPBAFF"] = "Y";
     xmlPayloadFormat["ABFS"]["TPBPay"] = "Y";
@@ -1476,15 +1194,14 @@ function getXmlPayloadABFS({
     xmlPayloadFormat["ABFS"]["DeclaredValue"] = insuredValue;
     xmlPayloadFormat["ABFS"]["Acc_ELC"] = "Y";
     xmlPayloadFormat["ABFS"]["DeclaredType"] = "N";
-    xmlPayloadFormat["ABFS"]["ShipMonth"] = moment(new Date(pickupTime)).get(
-        "month"
-    );
-    xmlPayloadFormat["ABFS"]["ShipDay"] = moment(new Date(pickupTime)).get(
-        "date"
-    );
-    xmlPayloadFormat["ABFS"]["ShipYear"] = moment(new Date(pickupTime)).get(
-        "year"
-    );
+    if (!insuredValue || insuredValue === 0) {
+        delete xmlPayloadFormat["ABFS"]["DeclaredValue"];
+        delete xmlPayloadFormat["ABFS"]["Acc_ELC"];
+        delete xmlPayloadFormat["ABFS"]["DeclaredType"];
+    }
+    xmlPayloadFormat["ABFS"]["ShipMonth"] = moment(new Date(pickupTime)).get("month");
+    xmlPayloadFormat["ABFS"]["ShipDay"] = moment(new Date(pickupTime)).get("date");
+    xmlPayloadFormat["ABFS"]["ShipYear"] = moment(new Date(pickupTime)).get("year");
     const shipmentLine = shipmentLines[0];
     const length = get(shipmentLine, "length");
     const width = get(shipmentLine, "width");
@@ -1555,15 +1272,7 @@ async function processABFSResponses({ response }) {
 }
 
 // ===================AVRT=======================
-async function processAVRTRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processAVRTRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadAVRT({
         pickupTime,
         insuredValue,
@@ -1580,33 +1289,18 @@ async function processAVRTRequest({
     return { response };
 }
 
-function getXmlPayloadAVRT({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
+function getXmlPayloadAVRT({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
     const shipperDetails = zips[shipperZip];
     const destinationDetails = zips[consigneeZip];
     xmlPayloadFormat["AVRT"]["accountNumber"] = "0834627";
     xmlPayloadFormat["AVRT"]["customerType"] = "Third Party";
     xmlPayloadFormat["AVRT"]["paymentType"] = "Prepaid";
-    xmlPayloadFormat["AVRT"]["originZip"] =
-        get(shipperDetails, "zip_code") + "";
+    xmlPayloadFormat["AVRT"]["originZip"] = get(shipperDetails, "zip_code") + "";
     xmlPayloadFormat["AVRT"]["originCity"] = get(shipperDetails, "city");
     xmlPayloadFormat["AVRT"]["originState"] = get(shipperDetails, "state");
-    xmlPayloadFormat["AVRT"]["destinationZip"] =
-        get(destinationDetails, "zip_code") + "";
-    xmlPayloadFormat["AVRT"]["destinationCity"] = get(
-        destinationDetails,
-        "city"
-    );
-    xmlPayloadFormat["AVRT"]["destinationState"] = get(
-        destinationDetails,
-        "state"
-    );
+    xmlPayloadFormat["AVRT"]["destinationZip"] = get(destinationDetails, "zip_code") + "";
+    xmlPayloadFormat["AVRT"]["destinationCity"] = get(destinationDetails, "city");
+    xmlPayloadFormat["AVRT"]["destinationState"] = get(destinationDetails, "state");
     xmlPayloadFormat["AVRT"]["additionalCargoLiability"] = insuredValue;
     xmlPayloadFormat["AVRT"]["shipDate"] = pickupTime.split("T")[0];
     const shipmentLine = shipmentLines[0];
@@ -1620,23 +1314,11 @@ function getXmlPayloadAVRT({
         shipmentClass: get(shipmentLine, "freightClass"),
         shipmentWeight: get(shipmentLine, "weight"),
     });
-    if (get(shipmentLine, "hazmat"))
-        xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
-            "hazmat"
-        ] = true;
+    if (get(shipmentLine, "hazmat")) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["hazmat"] = true;
     accessorialList.forEach((acc) => {
-        if (["LIFT", "LIFTD"].includes(acc))
-            xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
-                "liftgate"
-            ] = true;
-        if (acc === "INDEL")
-            xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
-                "insideDelivery"
-            ] = true;
-        if (acc === "RESDE")
-            xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"][
-                "residentialDelivery"
-            ] = true;
+        if (["LIFT", "LIFTD"].includes(acc)) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["liftgate"] = true;
+        if (acc === "INDEL") xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["insideDelivery"] = true;
+        if (acc === "RESDE") xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["residentialDelivery"] = true;
     });
 
     return xmlPayloadFormat["AVRT"];
@@ -1648,12 +1330,10 @@ function processAVRTResponses({ response }) {
     const serviceLevelDescription = get(quoteDetails, "deliveryOption");
     const totalRate = parseFloat(get(quoteDetails, "totalCharge"));
     const transitDays = parseInt(get(quoteDetails, "estimatedServiceDays"));
-    const accessorialList = get(response, "accessorialCharges", []).map(
-        (acc) => ({
-            description: get(acc, "description"),
-            charge: parseFloat(get(acc, "value")),
-        })
-    );
+    const accessorialList = get(response, "accessorialCharges", []).map((acc) => ({
+        description: get(acc, "description"),
+        charge: parseFloat(get(acc, "value")),
+    }));
     const data = {
         serviceLevelDescription,
         carrier: "AVRT",
@@ -1666,15 +1346,7 @@ function processAVRTResponses({ response }) {
 }
 
 // ===================DAFG=======================
-async function processDAFGRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processDAFGRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadDAFG({
         pickupTime,
         insuredValue,
@@ -1688,26 +1360,13 @@ async function processDAFGRequest({
         "Content-Type": "application/json",
     };
     const url = `https://api.daytonfreight.com/api/Rates`;
-    const response = await axiosRequest(
-        url,
-        JSON.stringify(payload),
-        headers,
-        "POST",
-        carrier
-    );
+    const response = await axiosRequest(url, JSON.stringify(payload), headers, "POST", carrier);
     if (!response) return false;
     processDAFGResponses({ response });
     return { response };
 }
 
-function getXmlPayloadDAFG({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
+function getXmlPayloadDAFG({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
     xmlPayloadFormat["DAFG"]["account"] = "AE11312";
     xmlPayloadFormat["DAFG"]["destination"] = consigneeZip;
     xmlPayloadFormat["DAFG"]["origin"] = shipperZip;
@@ -1734,9 +1393,10 @@ function getXmlPayloadDAFG({
         class: freightClass,
         weight,
     });
-    xmlPayloadFormat["DAFG"]["accessorials"] = accessorialList
-        .filter((acc) => Object.keys(accessorialMappingDAFG).includes(acc))
-        .map((item) => accessorialMappingDAFG[item]);
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["DAFG"]["accessorials"] = 0;
+    }
+    xmlPayloadFormat["DAFG"]["accessorials"] = accessorialList.filter((acc) => Object.keys(accessorialMappingDAFG).includes(acc)).map((item) => accessorialMappingDAFG[item]);
     if (hazmat) xmlPayloadFormat["DAFG"]["accessorials"].push("HMF");
     return xmlPayloadFormat["DAFG"];
 }
@@ -1744,9 +1404,7 @@ function getXmlPayloadDAFG({
 function processDAFGResponses({ response }) {
     const quoteNumber = get(response, "id");
     const totalRate = parseFloat(get(response, "total"));
-    const transitDays = parseInt(
-        get(response, "serviceEligibility.serviceDays")
-    );
+    const transitDays = parseInt(get(response, "serviceEligibility.serviceDays"));
     const accessorialList = get(response, "accessorials", []).map((acc) => ({
         code: get(acc, "code"),
         description: get(acc, "name"),
@@ -1765,15 +1423,7 @@ function processDAFGResponses({ response }) {
 }
 
 // ===================SEFN=======================
-async function processSEFNRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processSEFNRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadSEFN({
         pickupTime,
         insuredValue,
@@ -1786,40 +1436,22 @@ async function processSEFNRequest({
     const baseUrl = `https://www.sefl.com/webconnect/ratequotes`;
     const query = qs.stringify(payload);
     const url = `${baseUrl}?${query}`;
-    const response = await axiosRequest(
-        url,
-        undefined,
-        headers,
-        "get",
-        carrier
-    );
+    const response = await axiosRequest(url, undefined, headers, "get", carrier);
     if (!response) return false;
     await processSEFNResponses({ response });
     return { response };
 }
 
-function getXmlPayloadSEFN({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
+function getXmlPayloadSEFN({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
     xmlPayloadFormat["SEFN"]["Username"] = "OMNILOG";
     xmlPayloadFormat["SEFN"]["Password"] = "OMN474";
     xmlPayloadFormat["SEFN"]["CustomerAccount"] = 999840398;
     xmlPayloadFormat["SEFN"]["returnX"] = "Y";
     xmlPayloadFormat["SEFN"]["rateXML"] = "Y";
     xmlPayloadFormat["SEFN"]["Option"] = "T";
-    xmlPayloadFormat["SEFN"]["PickupDateMM"] =
-        moment(new Date(pickupTime)).get("month") + 1;
-    xmlPayloadFormat["SEFN"]["PickupDateDD"] = moment(new Date(pickupTime)).get(
-        "date"
-    );
-    xmlPayloadFormat["SEFN"]["PickupDateYYYY"] = moment(
-        new Date(pickupTime)
-    ).get("year");
+    xmlPayloadFormat["SEFN"]["PickupDateMM"] = moment(new Date(pickupTime)).get("month") + 1;
+    xmlPayloadFormat["SEFN"]["PickupDateDD"] = moment(new Date(pickupTime)).get("date");
+    xmlPayloadFormat["SEFN"]["PickupDateYYYY"] = moment(new Date(pickupTime)).get("year");
     xmlPayloadFormat["SEFN"]["Terms"] = "P";
     xmlPayloadFormat["SEFN"]["OriginZip"] = shipperZip;
     xmlPayloadFormat["SEFN"]["OrigCountry"] = "U";
@@ -1899,15 +1531,7 @@ async function processSEFNResponses({ response }) {
 }
 
 // ===================PENS=======================
-async function processPENSRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processPENSRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadPENS({
         pickupTime,
         insuredValue,
@@ -1917,43 +1541,21 @@ async function processPENSRequest({
         accessorialList,
     });
     let headers = { "Content-Type": "application/soap+xml; charset=utf-8" };
-    const url =
-        "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
+    const url = "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processPENSResponses({ response });
     return { response };
 }
 
-function getXmlPayloadPENS({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["userId"] = "OMNI";
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["password"] = "OMNI123"; //NOSONAR
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["account"] = "820504";
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["customerType"] = "B";
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["nonePalletizedMode"] = "";
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["originZip"] = shipperZip;
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["destinationZip"] = consigneeZip;
+function getXmlPayloadPENS({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["userId"] = "OMNI";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["password"] = "OMNI123"; //NOSONAR
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["account"] = "820504";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["customerType"] = "B";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["nonePalletizedMode"] = "";
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["originZip"] = shipperZip;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["destinationZip"] = consigneeZip;
     const shipmentLine = shipmentLines[0];
     const length = get(shipmentLine, "length");
     const width = get(shipmentLine, "width");
@@ -1961,33 +1563,17 @@ function getXmlPayloadPENS({
     const hazmat = get(shipmentLine, "hazmat", false);
     const pieces = get(shipmentLine, "pieces");
     const freightClass = get(shipmentLine, "freightClass");
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["classList"] = freightClass;
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["weightList"] = weight;
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["pltCountList"] = pieces;
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["pltLengthList"] = length;
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["pltWidthList"] = width;
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["accessorialList"] = accessorialList
-        .filter((acc) => Object.keys(accessorialMappingPENS).includes(acc))
-        .map((item) => accessorialMappingPENS[item]);
-    if (hazmat)
-        xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-            "CreatePensRateQuote"
-        ]["accessorialList"].push("SP1HA");
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"][
-        "CreatePensRateQuote"
-    ]["accessorialList"].push(`FV${insuredValue}`);
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["classList"] = freightClass;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["weightList"] = weight;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["pltCountList"] = pieces;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["pltLengthList"] = length;
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["pltWidthList"] = width;
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = [];
+    }
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = accessorialList.filter((acc) => Object.keys(accessorialMappingPENS).includes(acc)).map((item) => accessorialMappingPENS[item]);
+    if (hazmat) xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push("SP1HA");
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push(`FV${insuredValue}`);
     const builder = new xml2js.Builder({
         xmldec: { version: "1.0", encoding: "UTF-8" },
     });
@@ -1998,29 +1584,14 @@ async function processPENSResponses({ response }) {
     try {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
-        const CreatePensRateQuoteResponse = get(
-            parsed,
-            "soap:Envelope.soap:Body[0].CreatePensRateQuoteResponse[0].CreatePensRateQuoteResult[0]"
-        );
+        const CreatePensRateQuoteResponse = get(parsed, "soap:Envelope.soap:Body[0].CreatePensRateQuoteResponse[0].CreatePensRateQuoteResult[0]");
         const error = get(CreatePensRateQuoteResponse, "errors[0]", false);
         const quote = get(CreatePensRateQuoteResponse, "quote[0]");
         const quoteNumber = get(quote, "quoteNumber[0]");
-        const totalRate = parseFloat(
-            get(quote, "totalCharge[0]", "0").replace(/\$/g, "")
-        );
-        const transitDays = parseInt(
-            get(
-                transitDaysMappingPENS,
-                get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""),
-                "##"
-            )
-        );
+        const totalRate = parseFloat(get(quote, "totalCharge[0]", "0").replace(/\$/g, ""));
+        const transitDays = parseInt(get(transitDaysMappingPENS, get(quote, "transitType[0]", "").replace(/[^a-zA-Z]/g, ""), "##"));
         const message = get(quote, "quoteRemark.remarkItem", "");
-        const accessorialDetail = get(
-            quote,
-            "accessorialDetail[0].AccessorialItem",
-            []
-        );
+        const accessorialDetail = get(quote, "accessorialDetail[0].AccessorialItem", []);
         const accessorialList = accessorialDetail.map((acc) => ({
             code: get(acc, "code[0]"),
             description: get(acc, "description[0]"),
@@ -2043,15 +1614,7 @@ async function processPENSResponses({ response }) {
 }
 
 // ===================SAIA=======================
-async function processSAIARequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processSAIARequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadSAIA({
         pickupTime,
         insuredValue,
@@ -2068,48 +1631,19 @@ async function processSAIARequest({
     return { response };
 }
 
-function getXmlPayloadSAIA({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
+function getXmlPayloadSAIA({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
     const destination = zips[consigneeZip];
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "UserID"
-    ] = "callcenter";
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "Password"
-    ] = "omni921";
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "TestMode"
-    ] = "N";
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "BillingTerms"
-    ] = "Prepaid";
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "AccountNumber"
-    ] = "0698518";
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "Application"
-    ] = "ThirdParty";
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "OriginZipcode"
-    ] = shipperZip;
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "DestinationCity"
-    ] = get(destination, "city");
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "DestinationState"
-    ] = get(destination, "state");
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "DestinationZipcode"
-    ] = consigneeZip;
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "FullValueCoverage"
-    ] = insuredValue;
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["UserID"] = "callcenter";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Password"] = "omni921";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["TestMode"] = "N";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["BillingTerms"] = "Prepaid";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["AccountNumber"] = "0698518";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Application"] = "ThirdParty";
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["OriginZipcode"] = shipperZip;
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["DestinationCity"] = get(destination, "city");
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["DestinationState"] = get(destination, "state");
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["DestinationZipcode"] = consigneeZip;
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["FullValueCoverage"] = insuredValue;
 
     const shipmentLine = shipmentLines[0];
     const height = get(shipmentLine, "height");
@@ -2119,29 +1653,21 @@ function getXmlPayloadSAIA({
     const hazmat = get(shipmentLine, "hazmat", false);
     const pieces = get(shipmentLine, "pieces");
     const freightClass = get(shipmentLine, "freightClass");
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "Details"
-    ]["DetailItem"] = {
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Details"]["DetailItem"] = {
         Weight: weight,
         Class: freightClass,
     };
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "Dimensions"
-    ]["DimensionItem"] = {
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Dimensions"]["DimensionItem"] = {
         Height: height,
         Length: length,
         Units: pieces,
         Width: width,
     };
-    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"][
-        "Accessorials"
-    ]["AccessorialItem"]["Code"] = accessorialList
-        .filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc))
-        .map((item) => accessorialMappingSAIA[item]);
-    if (hazmat)
-        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"][
-            "request"
-        ]["Accessorials"]["AccessorialItem"]["Code"].push("Hazardous");
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = [];
+    }
+    xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = accessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => accessorialMappingSAIA[item]);
+    if (hazmat) xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"].push("Hazardous");
     const builder = new xml2js.Builder({
         xmldec: { version: "1.0", encoding: "UTF-8" },
     });
@@ -2152,20 +1678,13 @@ async function processSAIAResponses({ response }) {
     try {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
-        const body = get(
-            parsed,
-            "soap:Envelope.soap:Body[0].CreateResponse[0].CreateResult[0]"
-        );
+        const body = get(parsed, "soap:Envelope.soap:Body[0].CreateResponse[0].CreateResult[0]");
         const error = get(body, "Message[0]", "") !== "";
         console.info(`🙂 -> file: ltl_rating.js:2093 -> error:`, error);
         const quoteNumber = get(body, "QuoteNumber[0]");
         const totalRate = parseFloat(get(body, "TotalInvoice[0]", "0"));
         const transitDays = parseInt(get(body, "StandardServiceDays[0]", ""));
-        const accessorialList = get(
-            body,
-            "RateAccessorials[0].RateAccessorialItem",
-            []
-        ).map((acc) => ({
+        const accessorialList = get(body, "RateAccessorials[0].RateAccessorialItem", []).map((acc) => ({
             code: get(acc, "Code[0]"),
             description: get(acc, "Description[0]"),
             charge: parseFloat(get(acc, "Amount[0]")),
@@ -2186,15 +1705,7 @@ async function processSAIAResponses({ response }) {
 }
 
 // ===================XPOL=======================
-async function processXPOLRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processXPOLRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadXPOL({
         pickupTime,
         insuredValue,
@@ -2215,62 +1726,44 @@ async function processXPOLRequest({
     return { response };
 }
 
-function getXmlPayloadXPOL({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
+function getXmlPayloadXPOL({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
     xmlPayloadFormat["XPOL"]["shipmentInfo"]["shipmentDate"] = pickupTime;
-    xmlPayloadFormat["XPOL"]["shipmentInfo"]["shipper"]["address"]["postalCd"] =
-        shipperZip;
-    xmlPayloadFormat["XPOL"]["shipmentInfo"]["consignee"]["address"][
-        "postalCd"
-    ] = consigneeZip;
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["shipper"]["address"]["postalCd"] = shipperZip;
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["consignee"]["address"]["postalCd"] = consigneeZip;
     xmlPayloadFormat["XPOL"]["shipmentInfo"]["paymentTermCd"] = "P";
-    xmlPayloadFormat["XPOL"]["shipmentInfo"]["bill2Party"]["acctInstId"] =
-        "70250271";
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["bill2Party"]["acctInstId"] = "70250271";
 
-    xmlPayloadFormat["XPOL"]["shipmentInfo"]["commodity"] = shipmentLines.map(
-        (shipmentLine) => {
-            const height = get(shipmentLine, "height");
-            const length = get(shipmentLine, "length");
-            const width = get(shipmentLine, "width");
-            const weight = get(shipmentLine, "weight");
-            const hazmat = get(shipmentLine, "hazmat", false);
-            const pieces = get(shipmentLine, "pieces");
-            const weightUom = get(shipmentLine, "weightUOM");
-            const dimUOM = get(shipmentLine, "dimUOM");
-            const freightClass = get(shipmentLine, "freightClass");
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["commodity"] = shipmentLines.map((shipmentLine) => {
+        const height = get(shipmentLine, "height");
+        const length = get(shipmentLine, "length");
+        const width = get(shipmentLine, "width");
+        const weight = get(shipmentLine, "weight");
+        const hazmat = get(shipmentLine, "hazmat", false);
+        const pieces = get(shipmentLine, "pieces");
+        const weightUom = get(shipmentLine, "weightUOM");
+        const dimUOM = get(shipmentLine, "dimUOM");
+        const freightClass = get(shipmentLine, "freightClass");
 
-            return {
-                pieceCnt: pieces,
-                grossWeight: {
-                    weight: weight,
-                    weightUom: get(unitMapping["XPOL"], weightUom, "lbs"),
-                },
-                dimensions: {
-                    length: length,
-                    width: width,
-                    height: height,
-                    dimensionsUom: get(unitMapping["XPOL"], dimUOM, "INCH"),
-                },
-                hazmatInd: hazmat,
-                nmfcClass: freightClass,
-            };
-        }
-    );
-    xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [
-        ...new Set(
-            accessorialList
-                .filter((acc) =>
-                    Object.keys(accessorialMappingXPOL).includes(acc)
-                )
-                .map((item) => accessorialMappingXPOL[item])
-        ),
-    ].map((item2) => ({
+        return {
+            pieceCnt: pieces,
+            grossWeight: {
+                weight: weight,
+                weightUom: get(unitMapping["XPOL"], weightUom, "lbs"),
+            },
+            dimensions: {
+                length: length,
+                width: width,
+                height: height,
+                dimensionsUom: get(unitMapping["XPOL"], dimUOM, "INCH"),
+            },
+            hazmatInd: hazmat,
+            nmfcClass: freightClass,
+        };
+    });
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"];
+    }
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).map((item) => accessorialMappingXPOL[item]))].map((item2) => ({
         accessorialCd: item2,
     }));
     const hazmat0 = get(shipmentLines, "[0].hazmat", false);
@@ -2286,11 +1779,7 @@ async function processXPOLResponses({ response }) {
     const quoteNumber = get(body, "rateQuote.confirmationNbr");
     const totalRate = parseFloat(get(body, "rateQuote.totCharge[0].amt", "0"));
     const transitDays = parseInt(get(body, "transitTime.transitDays", ""));
-    const accessorialList = get(
-        body,
-        "rateQuote.shipmentInfo.accessorials",
-        []
-    ).map((acc) => ({
+    const accessorialList = get(body, "rateQuote.shipmentInfo.accessorials", []).map((acc) => ({
         code: get(acc, "accessorialCd"),
         description: get(acc, "accessorialDesc"),
         charge: parseFloat(get(acc, "chargeAmt.amt")),
@@ -2312,8 +1801,7 @@ async function getTokenForXPOL() {
     if (dynamoResponse) return dynamoResponse;
     const url = `https://api.ltl.xpo.com/token?grant_type=password&username=hmichel%40omnilogistics.com&password=OmniXpo22`;
     const headers = {
-        Authorization:
-            "Basic S01aaHZBWHNyUlFnUGs5QjI4SnEydG1tM3ljYTpJMWVSZkVSYWZMS2FoWmRTSWZJMUpGWnlraVFh",
+        Authorization: "Basic S01aaHZBWHNyUlFnUGs5QjI4SnEydG1tM3ljYTpJMWVSZkVSYWZMS2FoWmRTSWZJMUpGWnlraVFh",
         "Content-Type": "application/x-www-form-urlencoded",
     };
     let data = qs.stringify({
@@ -2343,10 +1831,7 @@ async function getXPOLTokenFromDynamo() {
         return get(data, "Item.token", false);
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
-        console.error(
-            `🙂 -> file: ltl_rating.js:2284 -> err:`,
-            errResponse !== "" ? errResponse : err
-        );
+        console.error(`🙂 -> file: ltl_rating.js:2284 -> err:`, errResponse !== "" ? errResponse : err);
         throw err;
     }
 }
@@ -2359,9 +1844,7 @@ async function putXPOLTokenFromDynamo(token) {
             pKey: "token",
             sKey: currentDate,
             token: token,
-            expiration: Math.floor(
-                new Date(moment().add(11, "hours").format()).getTime() / 1000
-            ),
+            expiration: Math.floor(new Date(moment().add(11, "hours").format()).getTime() / 1000),
         },
     };
     try {
@@ -2370,24 +1853,13 @@ async function putXPOLTokenFromDynamo(token) {
         return data;
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
-        console.error(
-            `🙂 -> file: ltl_rating.js:2311 -> err:`,
-            errResponse !== "" ? errResponse : err
-        );
+        console.error(`🙂 -> file: ltl_rating.js:2311 -> err:`, errResponse !== "" ? errResponse : err);
         throw err;
     }
 }
 
 // ===================RDFS=======================
-async function processRDFSRequest({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-    carrier,
-}) {
+async function processRDFSRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, carrier }) {
     const payload = getXmlPayloadRDFS({
         pickupTime,
         insuredValue,
@@ -2407,30 +1879,13 @@ async function processRDFSRequest({
     return { response };
 }
 
-function getXmlPayloadRDFS({
-    pickupTime,
-    insuredValue,
-    shipperZip,
-    consigneeZip,
-    shipmentLines,
-    accessorialList,
-}) {
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Header"][
-        "AuthenticationHeader"
-    ]["UserName"] = "omlog";
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Header"][
-        "AuthenticationHeader"
-    ]["Password"] = "AllinRoad#1";
+function getXmlPayloadRDFS({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Header"]["AuthenticationHeader"]["UserName"] = "omlog";
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Header"]["AuthenticationHeader"]["Password"] = "AllinRoad#1";
 
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["ShipDate"] = pickupTime.split("T")[0];
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["OriginZip"] = shipperZip;
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["DestinationZip"] = consigneeZip;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ShipDate"] = pickupTime.split("T")[0];
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["OriginZip"] = shipperZip;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["DestinationZip"] = consigneeZip;
 
     const shipmentLine = shipmentLines[0];
     const height = get(shipmentLine, "height");
@@ -2442,43 +1897,21 @@ function getXmlPayloadRDFS({
     const freightClass = get(shipmentLine, "freightClass");
     const cubicFeet = parseInt((length * width * height) / Math.pow(12, 3));
 
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["ShipmentDetails"]["ShipmentDetail"]["ActualClass"] = freightClass;
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["ShipmentDetails"]["ShipmentDetail"]["Weight"] = weight;
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["OriginType"] = "B";
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["PaymentType"] = "P";
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["CubicFeet"] = cubicFeet;
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["Pieces"] = pieces;
-
-    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-        "request"
-    ]["ServiceDeliveryOptions"]["ServiceOptions"] = [
-        ...new Set(
-            accessorialList
-                .filter((acc) =>
-                    Object.keys(accessorialMappingRDFS).includes(acc)
-                )
-                .map((item) => accessorialMappingRDFS[item])
-        ),
-    ].map((item2) => ({
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ShipmentDetails"]["ShipmentDetail"]["ActualClass"] = freightClass;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ShipmentDetails"]["ShipmentDetail"]["Weight"] = weight;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["OriginType"] = "B";
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["PaymentType"] = "P";
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["CubicFeet"] = cubicFeet;
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["Pieces"] = pieces;
+    if (accessorialList.length > 0) {
+        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"] = [];
+    }
+    xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingRDFS).includes(acc)).map((item) => accessorialMappingRDFS[item]))].map((item2) => ({
         ServiceCode: item2,
     }));
 
     if (hazmat)
-        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"][
-            "request"
-        ]["ServiceDeliveryOptions"]["ServiceOptions"].push({
+        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"].push({
             ServiceCode: "HAZ",
         });
 
@@ -2492,22 +1925,15 @@ async function processRDFSResponses({ response }) {
     try {
         let parser = new xml2js.Parser({ trim: true });
         const parsed = await parser.parseStringPromise(response);
-        const body = get(
-            parsed,
-            "soap:Envelope.soap:Body[0].RateQuoteResponse[0].RateQuoteResult[0]"
-        );
+        const body = get(parsed, "soap:Envelope.soap:Body[0].RateQuoteResponse[0].RateQuoteResult[0]");
         const quoteNumber = get(body, "QuoteNumber[0]");
         const totalRate = parseFloat(get(body, "NetCharge[0]", "0"));
-        const transitDays = parseInt(
-            get(body, "RoutingInfo[0].EstimatedTransitDays[0]", "")
-        );
-        const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map(
-            (acc) => ({
-                code: get(acc, "Code[0]"),
-                description: get(acc, "Description[0]"),
-                charge: parseFloat(get(acc, "Charge[0]")),
-            })
-        );
+        const transitDays = parseInt(get(body, "RoutingInfo[0].EstimatedTransitDays[0]", ""));
+        const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map((acc) => ({
+            code: get(acc, "Code[0]"),
+            description: get(acc, "Description[0]"),
+            charge: parseFloat(get(acc, "Charge[0]")),
+        }));
         const data = {
             carrier: "RDFS",
             serviceLevel: "",
@@ -2763,21 +2189,8 @@ const accessorialMappingRDFS = {
     LIFTD: "LGD",
 };
 
-async function axiosRequest(
-    url,
-    payload,
-    header = {},
-    method = "POST",
-    carrier = ""
-) {
-    console.info(
-        `🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header, method, carrier:`,
-        url,
-        payload,
-        header,
-        method,
-        carrier
-    );
+async function axiosRequest(url, payload, header = {}, method = "POST", carrier = "") {
+    console.info(`🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header, method, carrier:`, url, payload, header, method, carrier);
     try {
         let config = {
             method: method,
@@ -2790,20 +2203,14 @@ async function axiosRequest(
 
         const res = await axios.request(config);
         if (res.status < 300) {
-            console.info(
-                `🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`,
-                get(res, "data", {})
-            );
+            console.info(`🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`, get(res, "data", {}));
             return get(res, "data", {});
         } else {
             return false;
         }
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
-        console.error(
-            `🙂 -> file: ltl_rating.js:2728 -> ${carrier} -> err:`,
-            errResponse !== "" ? errResponse : err
-        );
+        console.error(`🙂 -> file: ltl_rating.js:2728 -> ${carrier} -> err:`, errResponse !== "" ? errResponse : err);
         return false;
     }
 }
