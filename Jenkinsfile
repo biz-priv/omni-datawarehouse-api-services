@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'ecs' }
     parameters {
-        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v202')
+        string(name: 'ALIAS_VERSION', description: 'Alias version', defaultValue: 'v2')
     }
     stages {
         stage('Set parameters') {
@@ -34,7 +34,10 @@ pipeline {
                 anyOf {
                     branch 'master';
                     branch 'develop';
+<<<<<<< HEAD
                     branch 'feature/31197';
+=======
+>>>>>>> 39f291acf16d5d8452cc48f3f719582d331d5e8e
                 }
                 expression {
                     return true;
@@ -57,3 +60,4 @@ pipeline {
         }
     }
 }
+
