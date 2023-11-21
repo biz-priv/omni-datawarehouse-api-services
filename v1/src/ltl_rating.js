@@ -2192,7 +2192,7 @@ const accessorialMappingRDFS = {
 };
 
 async function axiosRequest(url, payload, header = {}, method = "POST", carrier = "") {
-    console.info(`🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header, method, carrier:`, url, payload, header, method, carrier);
+    console.info(`🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header, method, carrier:`, url, JSON.stringify(payload), header, method, carrier);
     try {
         let config = {
             method: method,
@@ -2205,7 +2205,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
 
         const res = await axios.request(config);
         if (res.status < 300) {
-            console.info(`🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`, get(res, "data", {}));
+            console.info(`🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`, JSON.stringify(get(res, "data", {})));
             return get(res, "data", {});
         } else {
             return false;
