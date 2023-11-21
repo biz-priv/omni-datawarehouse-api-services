@@ -1,35 +1,67 @@
 const AWS = require("aws-sdk");
-const ddb = new AWS.DynamoDB.DocumentClient();
 const dynamo = new AWS.DynamoDB();
 const moment = require("moment");
 const { get } = require("lodash");
 const { Converter } = AWS.DynamoDB;
 const { v4: uuidv4 } = require("uuid");
-const momentTZ = require("moment-timezone"); 
-// const { parseAndMappingData } = require("../shared/dataParser/shipmentDetailsDataParser");
+const momentTZ = require("moment-timezone");
 const Joi = require("joi");
-const {
-  getDynamodbData,
-  getDynamodbDataFromDateRange,
-  parseAndMappingData,
-} = require("../shared/commonFunctions/shipment_details");
 const sns = new AWS.SNS();
+
+const validateQueryParams = (params) => {
+  const schema = Joi.object({
+    housebill: Joi.string().allow(""),
+    fileNumber: Joi.string().allow(""),
+    activityFromDate: Joi.string().allow(""),
+    activityToDate: Joi.string().allow("").when('activityFromDate', {
+        is: Joi.exist(), then: Joi.required()
+    }),
+    shipmentFromDate: Joi.string().allow(""),
+    shipmentToDate: Joi.string().allow("").when('shipmentFromDate', {
+        is: Joi.exist(), then: Joi.required()
+    })
+  }).or(
+    'housebill',
+    'fileNumber',
+    'activityFromDate',
+    'shipmentFromDate'
+  );
+
+  return schema.validate(params);
+};
 
 let logObj = {};
 
 module.exports.handler = async (event) => {
-  console.log("event: ", JSON.stringify(event));
-  // const eventBody = JSON.parse(event)
-  // console.log("query string ", event.queryStringParameters)
+  console.info("event: ", JSON.stringify(event));
+
+  const queryParams = {
+    housebill: get(event, "queryStringParameters.housebill", null),
+    milestone_history: get(event,"queryStringParameters.milestone_history",null),
+    fileNumber: get(event, "queryStringParameters.fileNumber", null),
+    activityFromDate: get(event,"queryStringParameters.activityFromDate",null),
+    activityToDate: get(event, "queryStringParameters.activityToDate", null),
+    shipmentFromDate: get(event,"queryStringParameters.shipmentFromDate",null),
+    shipmentToDate: get(event, "queryStringParameters.shipmentToDate", null),
+    lastEvaluatedKey: get(event,"queryStringParameters.lastEvaluatedKey",null),
+  };
+
+  const { error, value } = validateQueryParams(queryParams);
+
+  console.log("value: ", value);
+
+  let queryStringParams = value;
+
   logObj = {
-    Id: uuidv4(),
-    housebill: event.queryStringParameters.fileNumber.toString() ?? "",
-    milestone_history: event.queryStringParameters.fileNumber.toString() ?? "",
-    fileNumber: event.queryStringParameters.fileNumber.toString() ?? "",
-    activityFromDate: event.queryStringParameters.fileNumber.toString() ?? "",
-    activityToDate: event.queryStringParameters.fileNumber.toString() ?? "",
-    shipmentFromDate: event.queryStringParameters.fileNumber.toString() ?? "",
-    shipmentToDate: event.queryStringParameters.fileNumber.toString() ?? "",
+    id: uuidv4(),
+    housebill: get(queryStringParams, "housebill", null),
+    milestone_history: get(queryStringParams, "milestone_history", null),
+    fileNumber: get(queryStringParams, "fileNumber", null),
+    activityFromDate: get(queryStringParams, "activityFromDate", null),
+    activityToDate: get(queryStringParams, "activityToDate", null),
+    shipmentFromDate: get(queryStringParams, "shipmentFromDate", null),
+    shipmentToDate: get(queryStringParams, "shipmentToDate", null),
+    lastEvaluatedKey : get(queryStringParams,"lastEvaluatedKey",null),
     api_status_code: "",
     errorMsg: "",
     payload: "",
@@ -38,217 +70,243 @@ module.exports.handler = async (event) => {
       .format("YYYY:MM:DD HH:mm:ss")
       .toString(),
   };
+  console.log("logObj: ", logObj);
   let dataObj = [];
   let mainResponse = {};
+  let fullDataObj = {};
   try {
-    if (event.queryStringParameters) {
-      if (
-        event.queryStringParameters.hasOwnProperty("fileNumber") ||
-        event.queryStringParameters.hasOwnProperty("housebill")
-      ) {
-        if (event.queryStringParameters.hasOwnProperty("fileNumber")) {
-          //console.log("fileNumber");
-          dataObj = await queryWithFileNumber(
-            process.env.SHIPMENT_DETAILS_Collector_TABLE,
-            "fileNumberIndex",
-            event.queryStringParameters.fileNumber.toString()
-          );
-          const unmarshalledDataObj = await Promise.all(
-            dataObj.map((d) => {
-              return Converter.unmarshall(d);
-            })
-          );
-          //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
+    if (get(queryStringParams, "fileNumber", null)) {
+      console.log("fileNumber");
+      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE,"fileNumberIndex",get(queryStringParams, "fileNumber", null));
+      //console.log("dataObj: ",dataObj)
+      if (dataObj[0].status.S == "Pending") {
+        mainResponse = "Payload is not ready yet, please try again later";
+      } else {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      }
+      logObj = {
+        ...logObj,
+        api_status_code: "200",
+        payload: mainResponse,
+      };
+      console.log("logObj", logObj);
+      await putItem(logObj);
+    } else if (get(queryStringParams, "housebill", null)) {
+      //console.log("housebill");
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "milestone_history", null));
+      if (dataObj[0].status.S == "Pending") {
+        mainResponse = "Payload is not ready yet, please try again later";
+      } else {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
+        if (get(queryStringParams, "milestone_history", null)) {
+          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestone_history", null));
+          logObj = {
+            ...logObj,
+            api_status_code: "200",
+            payload: mainResponse,
+          };
+          console.log("logObj", logObj);
+          await putItem(logObj);
+        } else {
           mainResponse = await mappingPayload(unmarshalledDataObj, true);
           logObj = {
             ...logObj,
             api_status_code: "200",
             payload: mainResponse,
           };
-          console.log("eventLogObj", eventLogObj);
-          await putItem(logObj);
-        } else {
-          //console.log("housebill");
-          dataObj = await queryWithHouseBill(
-            process.env.SHIPMENT_DETAILS_Collector_TABLE,
-            event.queryStringParameters.housebill.toString()
-          );
-          const unmarshalledDataObj = await Promise.all(
-            dataObj.map((d) => {
-              return Converter.unmarshall(d);
-            })
-          );
-          //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
-          if(event.queryStringParameters.hasOwnProperty("milestone_history")){
-          mainResponse = await mappingPayload(unmarshalledDataObj, event.queryStringParameters.milestone_history);
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          }
-          console.log("eventLogObj", eventLogObj);
-          await putItem(logObj);
-        }
-          else{
-          mainResponse = await mappingPayload(unmarshalledDataObj, true);
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          }
-          console.log("eventLogObj", eventLogObj);
-          await putItem(logObj);
-          }
-        }
-      } else if (
-        (event.queryStringParameters.hasOwnProperty("activityFromDate") &&
-          event.queryStringParameters.hasOwnProperty("activityToDate")) ||
-        (event.queryStringParameters.hasOwnProperty("shipmentFromDate") &&
-          event.queryStringParameters.hasOwnProperty("shipmentToDate"))
-      ) {
-        if (
-          event.queryStringParameters.hasOwnProperty("activityFromDate") &&
-          event.queryStringParameters.hasOwnProperty("activityToDate")
-        ) {
-          //console.log("activityDate");
-          const fromDateTime = moment(
-            event.queryStringParameters.activityFromDate,
-            "YYYY-MM-DD HH:mm:ss.SSS"
-          );
-          const toDateTime = moment(
-            event.queryStringParameters.activityToDate,
-            "YYYY-MM-DD HH:mm:ss.SSS"
-          );
-
-          const daysDifference = toDateTime.diff(fromDateTime, "days");
-          if (daysDifference < 0) {
-            console.log("activityToDate cannot be earlier than activityFromDate");
-            logObj = {
-              ...logObj,
-              api_status_code: "400",
-              errorMsg: "activityToDate cannot be earlier than activityFromDate",
-              payload: mainResponse,
-            }
-            console.log("eventLogObj", eventLogObj);
-            await putItem(logObj);
-            throw "activityToDate cannot be earlier than activityFromDate";
-          } else if (daysDifference > 7) {
-            console.log(`date range cannot be more than 7days \n your date range ${daysDifference}`);
-            logObj = {
-              ...logObj,
-              api_status_code: "400",
-              errorMsg: "date range cannot be more than 7days",
-              payload: mainResponse,
-            }
-            console.log("eventLogObj", eventLogObj);
-            throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
-          } else if (daysDifference == 0) {
-            const hoursDiff = toDateTime.diff(fromDateTime, "hours");
-            if (hoursDiff < 0) {
-              console.log("activityToDate cannot be earlier than activityFromDate");
-              logObj = {
-                ...logObj,
-                api_status_code: "400",
-                errorMsg: "activityToDate cannot be earlier than activityFromDate",
-                payload: mainResponse,
-              }
-              console.log("eventLogObj", eventLogObj);
-              throw "activityToDate cannot be earlier than activityFromDate";
-            }
-          }
-          //console.log(daysDifference);
-          dataObj = await dateRange("activityDate", fromDateTime, toDateTime);
-          const unmarshalledDataObj = await Promise.all(
-            dataObj.map((d) => {
-              return Converter.unmarshall(d);
-            })
-          );
-          //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
-          mainResponse = await mappingPayload(unmarshalledDataObj, true);
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          }
-          console.log("eventLogObj", eventLogObj);
-          await putItem(logObj);
-        } else {
-          //console.log("shipmentDate");
-          const fromDateTime = moment(
-            event.queryStringParameters.activityFromDate,
-            "YYYY-MM-DD HH:mm:ss.SSS"
-          );
-          const toDateTime = moment(
-            event.queryStringParameters.activityToDate,
-            "YYYY-MM-DD HH:mm:ss.SSS"
-          );
-
-          const daysDifference = toDateTime.diff(fromDateTime, "days");
-          if (daysDifference < 0) {
-            console.log("shipmentToDate cannot be earlier than shipmentFromDate");
-            logObj = {
-              ...logObj,
-              api_status_code: "400",
-              errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
-              payload: mainResponse,
-            }
-            console.log("eventLogObj", eventLogObj);
-            throw "shipmentToDate cannot be earlier than shipmentFromDate";
-          } else if (daysDifference > 7) {
-            console.log(
-              `date range cannot be more than 7days \n your date range ${daysDifference}`
-            );
-            logObj = {
-              ...logObj,
-              api_status_code: "400",
-              errorMsg: "date range cannot be more than 7days",
-              payload: mainResponse,
-            }
-            console.log("eventLogObj", eventLogObj);
-            throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
-          } else if (daysDifference == 0) {
-            const hoursDiff = toDateTime.diff(fromDateTime, "hours");
-            if (hoursDiff < 0) {
-              console.log(
-                "shipmentToDate cannot be earlier than shipmentFromDate"
-              );
-              logObj = {
-                ...logObj,
-                api_status_code: "400",
-                errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
-                payload: mainResponse,
-              }
-              console.log("eventLogObj", eventLogObj);
-              throw "shipmentToDate cannot be earlier than shipmentFromDate";
-            }
-          }
-          //console.log(daysDifference);
-          dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime);
-          const unmarshalledDataObj = await Promise.all(
-            dataObj.map((d) => {
-              return Converter.unmarshall(d);
-            })
-          );
-          // console.log(
-          //   "unmarshalledDataObj",
-          //   JSON.stringify(unmarshalledDataObj)
-          // );
-          mainResponse = await mappingPayload(unmarshalledDataObj, true);
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          }
-          console.log("eventLogObj", eventLogObj);
+          console.log("logObj", logObj);
           await putItem(logObj);
         }
       }
-    }
+    } else if (
+      get(queryStringParams, "activityFromDate", null) &&
+      get(queryStringParams, "activityToDate", null)
+    ) {
+      console.log("activityDate");
+      const fromDateTime = moment(
+        get(queryStringParams, "activityFromDate", null),
+        "YYYY-MM-DD HH:mm:ss.SSS"
+      );
+      const toDateTime = moment(
+        get(queryStringParams, "activityToDate", null),
+        "YYYY-MM-DD HH:mm:ss.SSS"
+      );
+      // let lastKey;
 
+      // if(get(queryStringParams,"lastEvaluatedKey",null)){
+      //   lastKey = moment(
+      //     get(queryStringParams,"lastEvaluatedKey",null),
+      //     "YYYY-MM-DD HH:mm:ss.SSS"
+      //   );
+      // }else{
+      //   lastKey = ""
+      // }
+
+      const lastKey = moment(get(queryStringParams,"lastEvaluatedKey",null),"YYYY-MM-DD HH:mm:ss.SSS");
+      console.log("startDate,endDate",fromDateTime,toDateTime,lastKey)
+
+      // const daysDifference = toDateTime.diff(fromDateTime, "days");
+      // if (daysDifference < 0) {
+      //   console.log("activityToDate cannot be earlier than activityFromDate");
+      //   logObj = {
+      //     ...logObj,
+      //     api_status_code: "400",
+      //     errorMsg: "activityToDate cannot be earlier than activityFromDate",
+      //     payload: mainResponse,
+      //   }
+      //   console.log("logObj", logObj);
+      //   await putItem(logObj);
+      //   throw "activityToDate cannot be earlier than activityFromDate";
+      // } else if (daysDifference > 7) {
+      //   console.log(`date range cannot be more than 7days \n your date range ${daysDifference}`);
+      //   logObj = {
+      //     ...logObj,
+      //     api_status_code: "400",
+      //     errorMsg: "date range cannot be more than 7days",
+      //     payload: mainResponse,
+      //   }
+      //   console.log("logObj", logObj);
+      //   throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
+      // } else if (daysDifference == 0) {
+      //   const hoursDiff = toDateTime.diff(fromDateTime, "hours");
+      //   if (hoursDiff < 0) {
+      //     console.log("activityToDate cannot be earlier than activityFromDate");
+      //     logObj = {
+      //       ...logObj,
+      //       api_status_code: "400",
+      //       errorMsg: "activityToDate cannot be earlier than activityFromDate",
+      //       payload: mainResponse,
+      //     }
+      //     console.log("logObj", logObj);
+      //     throw "activityToDate cannot be earlier than activityFromDate";
+      //   }
+      // }
+      // console.log(daysDifference);
+      fullDataObj = await dateRange("activityDate",fromDateTime,toDateTime,lastKey);
+      console.log("fullDataObj: ",fullDataObj)
+      dataObj = fullDataObj.items.Items.filter((item) => item.status.S == "Ready");
+      console.log("dataObj: ", dataObj);
+      if (dataObj.length == 0) {
+        mainResponse = "Payloads are not ready yet, please try again later";
+      } else {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      }
+      logObj = {
+        ...logObj,
+        api_status_code: "200",
+        payload: mainResponse,
+      };
+      console.log("logObj", logObj);
+      await putItem(logObj);
+    } else {
+      //console.log("shipmentDate");
+      // const fromDateTime = moment(
+      //   get(queryStringParams, "shipmentFromDate", null),
+      //   "YYYY-MM-DD HH:mm:ss.SSS"
+      // );
+      // const toDateTime = moment(
+      //   get(queryStringParams, "shipmentToDate", null),
+      //   "YYYY-MM-DD HH:mm:ss.SSS"
+      // );
+
+      const fromDateTime = moment(
+        get(queryStringParams, "shipmentFromDate", null) + " 00:00:00.000",
+        "YYYY-MM-DD HH:mm:ss.SSS"
+      );
+      
+      const toDateTime = moment(
+        get(queryStringParams, "shipmentToDate", null) + " 23:59:59.999",
+        "YYYY-MM-DD HH:mm:ss.SSS"
+      );
+      const lastKey = moment(
+        get(queryStringParams,"lastEvaluatedKey",null) + " 00:00:00.000",
+        "YYYY-MM-DD HH:mm:ss.SSS"
+      );
+       
+      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey)
+      const daysDifference = toDateTime.diff(fromDateTime, "days");
+      if (daysDifference < 0) {
+        console.log("shipmentToDate cannot be earlier than shipmentFromDate");
+        logObj = {
+          ...logObj,
+          api_status_code: "400",
+          errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
+          payload: mainResponse,
+        };
+        console.log("logObj", logObj);
+        throw "shipmentToDate cannot be earlier than shipmentFromDate";
+      } else if (daysDifference > 7) {
+        console.log(
+          `date range cannot be more than 7days \n your date range ${daysDifference}`
+        );
+        logObj = {
+          ...logObj,
+          api_status_code: "400",
+          errorMsg: "date range cannot be more than 7days",
+          payload: mainResponse,
+        };
+        console.log("logObj", logObj);
+        throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
+      } else if (daysDifference == 0) {
+        const hoursDiff = toDateTime.diff(fromDateTime, "hours");
+        if (hoursDiff < 0) {
+          console.log("shipmentToDate cannot be earlier than shipmentFromDate");
+          logObj = {
+            ...logObj,
+            api_status_code: "400",
+            errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
+            payload: mainResponse,
+          };
+          console.log("logObj", logObj);
+          throw "shipmentToDate cannot be earlier than shipmentFromDate";
+        }
+      }
+      //console.log(daysDifference);
+      fullDataObj = await dateRange("shipmentDate",fromDateTime,toDateTime,lastKey);
+      console.log("fullDataObj: ",fullDataObj)
+      dataObj = fullDataObj.items.Items.filter((item) => item.status.S == "Ready");
+      console.log("dataObj: ", dataObj);
+      if (dataObj.length == 0) {
+        mainResponse = "Payloads are not ready yet, please try again later";
+      } else {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      }
+      logObj = {
+        ...logObj,
+        api_status_code: "200",
+        payload: mainResponse,
+      };
+      console.log("logObj", logObj);
+      await putItem(logObj);
+    }
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: mainResponse,
+        Items: mainResponse,
+        LastEvaluatedKey: get(fullDataObj,"lastEvaluatedKey",null)
       }),
     };
   } catch (error) {
@@ -300,132 +358,40 @@ async function queryWithHouseBill(tableName, HouseBillNumber) {
   }
 }
 
-async function dateRange(eventType, eventDateTimeFrom, eventDateTimeTo) {
+async function dateRange(eventType, eventDateTimeFrom, eventDateTimeTo,lastEvaluatedKey) {
   try {
     if (eventType == "activityDate") {
-      let eventObj = [];
-      let dataEventObj = [];
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
-
-      while (fromDateTime <= toDateTime) {
-        const eventDate = fromDateTime.format("YYYY-MM-DD");
-        const eventDateTimeEnd = moment.min(
-          moment(fromDateTime).endOf("day"),
-          toDateTime
-        );
-
-        const formattedStartDate = fromDateTime.format(
-          "YYYY-MM-DD HH:mm:ss.SSS"
-        );
-        const formattedEndDate = eventDateTimeEnd.format(
-          "YYYY-MM-DD HH:mm:ss.SSS"
-        );
-
-        eventObj.push({
-          eventDate: eventDate,
-          eventDateTimeStart: formattedStartDate,
-          eventDateTimeEnd: formattedEndDate,
-        });
-
-        fromDateTime.add(1, "days").startOf("day");
-      }
-
-      //console.log("eventObj: ", eventObj);
-
-      //dataEventObj["shipmentDetailResponse"] = [];
-      if (eventObj.length > 0) {
-        for (const event of eventObj) {
-          try {
-            const data = await queryWithEventDate(
-              process.env.SHIPMENT_DETAILS_Collector_TABLE,
-              "EventDateIndex",
-              event.eventDate,
-              event.eventDateTimeStart,
-              event.eventDateTimeEnd
-            );
-            dataEventObj.push(...data);
-          } catch (error) {
-            console.error("Error querying with date and time:", error);
-          }
-        }
-      } else {
-        console.log("There are no orders in this date range");
-      }
-      console.log("dataEventObj: ", dataEventObj);
-      return dataEventObj;
+      const lastKey = moment(lastEvaluatedKey);
+      const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
+      const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
+      const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
+      const eventDate = fromDateTime.format("YYYY");
+      return await queryWithEventDate(eventDate,formattedStartDate,formattedEndDate,formattedLastKey);
     } else {
-      let orderObj = [];
-      let dataOrderObj = [];
-      const fromDateTime = moment(orderDateTimeFrom);
-      const toDateTime = moment(orderDateTimeTo);
-
-      while (fromDateTime <= toDateTime) {
-        const orderDate = fromDateTime.format("YYYY-MM-DD");
-        const orderDateTimeEnd = moment.min(
-          moment(fromDateTime).endOf("day"),
-          toDateTime
-        );
-
-        const formattedStartDate = fromDateTime.format(
-          "YYYY-MM-DD HH:mm:ss.SSS"
-        );
-        const formattedEndDate = orderDateTimeEnd.format(
-          "YYYY-MM-DD HH:mm:ss.SSS"
-        );
-
-        orderObj.push({
-          orderDate: orderDate,
-          orderDateTimeStart: formattedStartDate,
-          orderDateTimeEnd: formattedEndDate,
-        });
-
-        fromDateTime.add(1, "days").startOf("day");
-      }
-
-      //console.log("orderObj: ", orderObj);
-
-      //dataOrderObj["shipmentDetailResponse"] = [];
-      if (orderObj.length > 0) {
-        for (const order of orderObj) {
-          try {
-            const data = await queryWithOrderDate(
-              process.env.SHIPMENT_DETAILS_Collector_TABLE,
-              "OrderDateIndex",
-              order.orderDate,
-              order.orderDateTimeStart,
-              order.orderDateTimeEnd
-            );
-            dataOrderObj.push(...data);
-          } catch (error) {
-            console.error("Error querying with date and time:", error);
-          }
-        }
-      } else {
-        console.log("There are no orders in this date range");
-      }
-      console.log("dataOrderObj: ", dataOrderObj);
-      return dataOrderObj;
+      const fromDateTime = moment(eventDateTimeFrom);
+      const toDateTime = moment(eventDateTimeTo);
+      const lastKey = moment(lastEvaluatedKey);
+      const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
+      const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
+      const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
+      const eventDate = fromDateTime.format("YYYY");
+      return await queryWithOrderDate(eventDate,formattedStartDate,formattedEndDate,formattedLastKey);
     }
   } catch (error) {
     console.log("date range function: ", error);
   }
 }
 
-async function queryWithEventDate(
-  tableName,
-  indexName,
-  date,
-  startSortKey,
-  endSortKey
-) {
+async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
   const params = {
-    TableName: tableName,
-    IndexName: indexName,
+    TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
+    IndexName: "EventYearIndex",
     KeyConditionExpression:
       "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
     ExpressionAttributeNames: {
-      "#date": "EventDate",
+      "#date": "EventYear",
       "#sortKey": "EventDateTime",
     },
     ExpressionAttributeValues: {
@@ -433,33 +399,36 @@ async function queryWithEventDate(
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
     },
+    Limit: 10,
   };
-  //console.log("params:", params);
+  console.log("queryWithEventDate,params:", params);
+  if (lastEvaluatedKey) {
+    params.ExclusiveStartKey = lastEvaluatedKey;
+    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
+  }
 
   try {
-    const data = await dynamo.query(params).promise();
-    //console.log("data.Items: ", data.Items);
-    return data.Items;
+    const result = await dynamo.query(params).promise();
+    console.log("result");
+    return {
+      items: result,
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
   } catch (error) {
-    console.error("Query Error:", error);
+    console.error("EventDate,Query Error:", error);
+    console.log("params:", params);
     throw error;
   }
 }
 
-async function queryWithOrderDate(
-  tableName,
-  indexName,
-  date,
-  startSortKey,
-  endSortKey
-) {
+async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
   const params = {
-    TableName: tableName,
-    IndexName: indexName,
+    TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
+    IndexName: "OrderYearIndex",
     KeyConditionExpression:
       "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
     ExpressionAttributeNames: {
-      "#date": "OrderDate",
+      "#date": "OrderYear",
       "#sortKey": "OrderDateTime",
     },
     ExpressionAttributeValues: {
@@ -467,25 +436,33 @@ async function queryWithOrderDate(
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
     },
+    Limit: 10,
   };
-  //console.log("params:", params);
+  console.log("queryWithOrderDate,params:", params);
+  console.log("lastEvaluatedKey",lastEvaluatedKey)
+  if (lastEvaluatedKey) {
+    params.ExclusiveStartKey = lastEvaluatedKey;
+    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
+  }
 
   try {
-    const data = await dynamo.query(params).promise();
-    return data.Items;
+    const result = await dynamo.query(params).promise();
+    console.log("result");
+    return {
+      items: result,
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
   } catch (error) {
-    console.error("Query Error:", error);
+    console.error("OrderDate,Query Error:", error);
+    console.log("params:", params);
     throw error;
   }
 }
 
 async function mappingPayload(data, milestone_history) {
-  // const response = {};
-  // response["shipmentDetailResponse"] = [];
-  const response = [];
-  //console.log("mappingPayload");
+  const response = {};
+  response["shipmentDetailResponse"] = [];
   for (const i of data) {
-    //console.log("data.filnumb", i);
     const payload = {
       fileNumber: get(i, "fileNumber", null),
       housebill: get(i, "HouseBillNumber", null),
@@ -531,25 +508,9 @@ async function mappingPayload(data, milestone_history) {
       };
       payload["milestones"] = milestoneData.milestones;
     }
-    // response["shipmentDetailResponse"].push(payload)
-    response.push(payload)
-    //console.log("response: ", response);
+    response["shipmentDetailResponse"].push(payload);
   }
-  // return response
-  const pageSize = 10;
-  const pageNumber = 1;
-  const paginatedResult = {};
-  paginatedResult["shipmentDetailResponse"]=[];
-  paginatedResult["shipmentDetailResponse"].push(await paginateData(response, pageNumber, pageSize));
-  console.log("paginatedResult",paginatedResult)
-  return paginatedResult
-}
-
-async function paginateData(data, pageNumber, pageSize) {
-  const startIndex = (pageNumber - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedData = data.slice(startIndex, endIndex);
-  return paginatedData;
+  return response;
 }
 
 async function putItem(item) {
@@ -563,7 +524,7 @@ async function putItem(item) {
       TableName: process.env.SHIPMENT_DETAILS_LOGS__TABLE,
       Item: item,
     };
-    console.log("Inserted");
+    console.log("Inserted into logs table");
     await dynamodb.put(params).promise();
   } catch (e) {
     console.error("Put Item Error: ", e, "\nPut params: ", params);
