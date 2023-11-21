@@ -114,6 +114,7 @@ module.exports.handler = async (event) => {
         );
         //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         if (get(queryStringParams, "milestone_history", null)) {
+          console.log("milestone_history:",get(queryStringParams, "milestone_history", null))
           mainResponse = await mappingPayload(
             unmarshalledDataObj,
             get(queryStringParams, "milestone_history", null)
@@ -548,7 +549,7 @@ async function mappingPayload(data, milestone_history) {
       customerReference: get(i, "customerReference", []),
       locations: get(i, "locations", []),
     };
-    if (milestone_history == true) {
+    if (milestone_history == "true") {
       const milestoneData = {
         milestones: get(i, "milestones", []),
       };
