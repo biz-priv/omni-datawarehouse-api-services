@@ -690,7 +690,7 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["AirportPickup"] = "N";
 
-    if (["APPT", "INSPU", "RESID"].includes(accessorial)) {
+    if (accessorialList.filter((accessorial) => ["APPT", "INSPU", "RESID"].includes(accessorial)).length > 0) {
         xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"]["PickupAccessorial"] = [];
     }
     for (const accessorial of accessorialList) {
@@ -703,7 +703,7 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["AirportDelivery"] = "N";
 
-    if (["APPTD", "INDEL", "RESDE"].includes(accessorial)) {
+    if (accessorialList.filter((accessorial) => ["APPTD", "INDEL", "RESDE"].includes(accessorial)).length > 0) {
         xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"] = [];
     }
     for (const accessorial of accessorialList) {
