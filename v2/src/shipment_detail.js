@@ -29,8 +29,13 @@ const validateQueryParams = (params) => {
 
 let logObj = {};
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event,context,callback) => {
   console.info("event: ", JSON.stringify(event));
+
+  if (event.source === "serverless-plugin-warmup") {
+    console.log("WarmUp - Lambda is warm!");
+    return "Lambda is warm!";
+  }
 
   const queryParams = {
     housebill: get(event, "query.housebill", null),
@@ -333,12 +338,12 @@ module.exports.handler = async (event) => {
     };
   } catch (error) {
     console.log("in main function: \n", error);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        message: `error: \n ${error}`,
-      }),
-    };
+    return callback(
+      response(
+        "[400]",
+         error
+      )
+    )
   }
 };
 
@@ -576,4 +581,11 @@ async function putItem(item) {
   } catch (e) {
     console.error("Put Item Error: ", e, "\nPut params: ", params);
   }
+}
+
+function response(code, message) {
+  return {
+    httpStatus: code,
+    message,
+  };
 }
