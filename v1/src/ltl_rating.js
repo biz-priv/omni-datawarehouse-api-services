@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { get } = require("lodash");
+const { get, set } = require("lodash");
 const { v4 } = require("uuid");
 const xml2js = require("xml2js");
 const axios = require("axios");
@@ -39,14 +39,18 @@ const ltlRateRequestSchema = Joi.object({
     }),
 });
 
+let payloadForQueue = [];
+
 module.exports.handler = async (event, context) => {
     //NOSONAR
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
+    payloadForQueue = [];
+    const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
         console.info(`🙂 -> file: ltl_rating.js:32 -> validation:`, validation);
-        const { error, value } = validation;
+        const { error } = validation;
         if (error) throw error;
         const body = get(event, "body");
         const ltlRateRequest = get(body, "ltlRateRequest");
@@ -57,7 +61,8 @@ module.exports.handler = async (event, context) => {
         const shipmentLines = get(ltlRateRequest, "shipmentLines", []);
         const accessorialList = get(ltlRateRequest, "accessorialList", []);
         const reference = get(ltlRateRequest, "reference", []);
-
+        set(queueData, "reference", reference);
+        set(queueData, "payload", JSON.stringify(body));
         responseBodyFormat["transactionId"] = reference;
 
         const apiResponse = await Promise.all(
@@ -202,6 +207,11 @@ module.exports.handler = async (event, context) => {
         );
         console.info(`🙂 -> file: ltl_rating.js:127 -> apiResponse:`, apiResponse);
         const response = { ...responseBodyFormat };
+
+        set(queueData, "status", 200);
+        set(queueData, "response", JSON.stringify(response));
+        payloadForQueue[0] = queueData;
+        await sendMessageToQueue(payloadForQueue);
         return response;
     } catch (err) {
         console.error(`🙂 -> file: ltl_rating.js:239 -> err:`, err);
@@ -209,6 +219,10 @@ module.exports.handler = async (event, context) => {
             statusCode: 400,
             body: { message: err.message },
         };
+        set(queueData, "status", 400);
+        set(queueData, "response", err.message);
+        payloadForQueue[0] = queueData;
+        await sendMessageToQueue(payloadForQueue);
         return response;
     }
 };
@@ -1438,7 +1452,7 @@ async function processSEFNRequest({ pickupTime, insuredValue, shipperZip, consig
     const baseUrl = `https://www.sefl.com/webconnect/ratequotes`;
     const query = qs.stringify(payload);
     const url = `${baseUrl}?${query}`;
-    const response = await axiosRequest(url, undefined, headers, "get", carrier);
+    const response = await axiosRequest(url, payload, headers, "get", carrier);
     if (!response) return false;
     await processSEFNResponses({ response });
     return { response };
@@ -1908,7 +1922,7 @@ function getXmlPayloadRDFS({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["CubicFeet"] = cubicFeet;
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["Pieces"] = pieces;
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"] = { ServiceDeliveryOptions: { ServiceOptions: [] } };
+        xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"] = { ServiceOptions: [] };
         xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingRDFS).includes(acc)).map((item) => accessorialMappingRDFS[item]))].map((item2) => ({
             ServiceCode: item2,
         }));
@@ -2193,8 +2207,27 @@ const accessorialMappingRDFS = {
     LIFTD: "LGD",
 };
 
+async function sendMessageToQueue(payloadForQueue) {
+    try {
+        const queueMessage = {
+            QueueUrl: "https://sqs.us-east-1.amazonaws.com/332281781429/omni-dw-backend-ltl-rating-log-insertion-queue-dev",
+            MessageBody: JSON.stringify({
+                data: payloadForQueue,
+            }),
+        };
+        console.info(`🙂 -> file: ltl_rating.js:2218 -> queueMessage:`, queueMessage);
+        await sqs.sendMessage(queueMessage).promise();
+    } catch (err) {
+        console.error(`🙂 -> file: ltl_rating.js:2221 -> err:`, err);
+        throw err;
+    }
+}
+
 async function axiosRequest(url, payload, header = {}, method = "POST", carrier = "") {
     console.info(`🙂 -> file: ltl_rating.js:2737 -> ${carrier} -> url, payload, header, method, carrier:`, url, JSON.stringify(payload), header, method, carrier);
+    const logData = {};
+    set(logData, "carrier", carrier);
+    set(logData, "payload", JSON.stringify(payload));
     try {
         let config = {
             method: method,
@@ -2204,10 +2237,12 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
             data: payload,
             timeout: 20000,
         };
-
         const res = await axios.request(config);
         if (res.status < 300) {
             console.info(`🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`, JSON.stringify(get(res, "data", {})));
+            set(logData, "status", get(res, "status"));
+            set(logData, "result", JSON.stringify(get(res, "data", "")));
+            payloadForQueue.push(logData);
             return get(res, "data", {});
         } else {
             return false;
@@ -2215,6 +2250,9 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(`🙂 -> file: ltl_rating.js:2728 -> ${carrier} -> err:`, errResponse !== "" ? errResponse : err);
+        set(logData, "status", get(err, "response.status"));
+        set(logData, "data", errResponse !== "" ? JSON.stringify(errResponse) : err);
+        payloadForQueue.push(logData);
         return false;
     }
 }
