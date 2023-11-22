@@ -297,7 +297,6 @@ function addCommodityWeightPerPiece(inputData) {
         obj.CommodityInput[new_key] = shipmentLine[shipKey];
       }
     }
-
     shipmentLinesArray.push(obj);
   }
   return shipmentLinesArray;
