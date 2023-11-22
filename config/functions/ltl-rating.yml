@@ -4,6 +4,7 @@ function:
   description: ltl rating api service - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 30
+  role: ShippeoPODRole
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512
