@@ -1315,11 +1315,11 @@ function getXmlPayloadAVRT({ pickupTime, insuredValue, shipperZip, consigneeZip,
         shipmentClass: get(shipmentLine, "freightClass"),
         shipmentWeight: get(shipmentLine, "weight"),
     });
-    if (get(shipmentLine, "hazmat")) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["hazmat"] = true;
+    if (get(shipmentLine, "hazmat")) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"] = { hazmat: true };
     accessorialList.forEach((acc) => {
-        if (["LIFT", "LIFTD"].includes(acc)) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["liftgate"] = true;
-        if (acc === "INDEL") xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["insideDelivery"] = true;
-        if (acc === "RESDE") xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["residentialDelivery"] = true;
+        if (["LIFT", "LIFTD"].includes(acc)) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"] = { liftgate: true };
+        if (acc === "INDEL") xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"] = { insideDelivery: true };
+        if (acc === "RESDE") xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"] = { residentialDelivery: true };
     });
 
     return xmlPayloadFormat["AVRT"];
