@@ -137,9 +137,6 @@ module.exports.handler = async (event, context, callback) => {
     log(correlationId, JSON.stringify(valError), 200);
     return callback(response("[400]", valError));
   } else if (error) {
-    let msg = get(error,`details[0].message`, "")
-      .split('" ')[1]
-      .replace(new RegExp('"', "g"), "");
     let key = get(error, `details[0].context.key`, "");
     log(correlationId, JSON.stringify(error), 200);
     if (error.toString().includes("shipmentLines")) {
@@ -256,7 +253,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(
       response(
         "[400]",
-        error != null ?? get(error, `message`, error)
+        error ?? get(error, `message`, error)
       )
     );
   }
@@ -344,10 +341,8 @@ function makeXmlToJson(data) {
             get(e, `AccessorialOutput.AccessorialOutput[0]`, "") == null
           ) {
             AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);
-          } else {
-            if (get(e, `AccessorialOutput.AccessorialOutput`, null) !== null) {
+          } else if (get(e, `AccessorialOutput.AccessorialOutput`, null) !== null) {
               AccessorialOutput = getAccessorialOutput(get(e, `AccessorialOutput`, null));
-            }
           }
           let EstimatedDelivery;
           if (get(e, `DeliveryTime`, null) !== null && get(e, `DeliveryTime`, null) != null) {
