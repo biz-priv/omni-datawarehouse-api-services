@@ -376,19 +376,15 @@ async function dateRange(
     if (eventType == "activityDate") {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
-      // const lastKey = moment(lastEvaluatedKey);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
-      // const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
       return await queryWithEventDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
-      // const lastKey = moment(lastEvaluatedKey);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
-      // const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
       return await queryWithOrderDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
     }
