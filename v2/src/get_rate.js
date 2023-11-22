@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
 const { convert } = require("xmlbuilder2");
+const { get } = require("lodash");
 const moment = require("moment");
 const { v4: uuidv4 } = require("uuid");
 const { log, logUtilization } = require("../../src/shared/logger");
@@ -45,7 +46,7 @@ module.exports.handler = async (event, context, callback) => {
   }
   log(correlationId, JSON.stringify(event), 200);
   const { body } = event;
-  const apiKey = event.headers["x-api-key"];
+  const apiKey = get(event,`headers["x-api-key"]`, "");
   console.log("apiKey", apiKey);
 
   let reqFields = {};
@@ -58,7 +59,7 @@ module.exports.handler = async (event, context, callback) => {
   };
   let customerNumber;
 
-  if (event.enhancedAuthContext.customerId != "customer-portal-admin") {
+  if (get(event, `enhancedAuthContext.customerId`, "") != "customer-portal-admin") {
     customerNumber = await getCustomerNumber(apiKey);
     console.log("customerNumber", customerNumber);
     if (customerNumber == "failure") {
@@ -69,10 +70,10 @@ module.exports.handler = async (event, context, callback) => {
         )
       );
     } else {
-      customerNumber = customerNumber.BillToAcct;
+      customerNumber = get(customerNumber,"BillToAcct", "");
     }
   } else {
-    customerNumber = body.shipmentRateRequest.customerNumber;
+    customerNumber = get(body,"shipmentRateRequest.customerNumber", "");
   }
   console.log("customerNumber===>", customerNumber);
   await logUtilization(customerNumber);
@@ -83,45 +84,48 @@ module.exports.handler = async (event, context, callback) => {
   // return {};
   if (
     !("enhancedAuthContext" in event) ||
-    !("customerId" in event.enhancedAuthContext)
+    !("customerId" in get(event,"enhancedAuthContext", ""))
   ) {
     valError = "CustomerId not found.";
   } else if (!("shipmentRateRequest" in body)) {
     valError = "shipmentRateRequest is required.";
   } else if (
-    !("shipperZip" in body.shipmentRateRequest) ||
-    !("consigneeZip" in body.shipmentRateRequest) ||
-    !("pickupTime" in body.shipmentRateRequest)
+    !("shipperZip" in get(body,"shipmentRateRequest", "")) ||
+    !("consigneeZip" in get(body,"shipmentRateRequest", "")) ||
+    !("pickupTime" in get(body,"shipmentRateRequest", ""))
   ) {
     valError =
       "shipperZip, consigneeZip, and pickupTime are required fields. Please ensure you are sending all 3 of these values.";
   } else if (
-    !Number.isInteger(Number(body.shipmentRateRequest.shipperZip)) ||
-    !Number.isInteger(Number(body.shipmentRateRequest.consigneeZip))
+    !Number.isInteger(Number(get(body,"shipmentRateRequest.shipperZip", ""))) ||
+    !Number.isInteger(Number(get(body,"shipmentRateRequest.consigneeZip", "")))
   ) {
     valError = "Invalid zip value.";
   } else if (
     event.enhancedAuthContext.customerId == "customer-portal-admin" &&
-    !("customerNumber" in body.shipmentRateRequest)
+    !("customerNumber" in get(body,"shipmentRateRequest", ""))
   ) {
     valError = "customerNumber is a required field for this request.";
   } else if (
-    !("shipmentLines" in body.shipmentRateRequest) ||
-    body.shipmentRateRequest.shipmentLines.length <= 0
+    !("shipmentLines" in get(body,"shipmentRateRequest", "")) ||
+    get(body, `shipmentRateRequest.shipmentLines.length`, "") <= 0
   ) {
     valError = "At least 1 shipmentLine is required for this request.";
   } else {
-    reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
-    reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
-    reqFields.pickupTime = body.shipmentRateRequest.pickupTime.replace('Z', '+00:00');
+    reqFields.shipperZip = get(body, "shipmentRateRequest.shipperZip", "");
+    reqFields.consigneeZip = get(body, "shipmentRateRequest.consigneeZip", "");
+    reqFields.pickupTime = get(body, `shipmentRateRequest.pickupTime`, "").replace(
+      "Z",
+      "+00:00"
+    );
     reqFields.shipmentLines = [];
 
-    for (let i = 0; i < body.shipmentRateRequest.shipmentLines.length; i++) {
+    for (let i = 0; i < get(body, "shipmentRateRequest.shipmentLines.length", 0); i++) {
       reqFields.shipmentLines.push({});
-      for (let key in body.shipmentRateRequest.shipmentLines[i]) {
+      for (let key in get(body, `shipmentRateRequest.shipmentLines[${i}]`)) {
         if (!key.includes("//")) {
           reqFields.shipmentLines[i][key] =
-            body.shipmentRateRequest.shipmentLines[i][key];
+            get(body, `shipmentRateRequest.shipmentLines[${i}][${key}]`);
         }
       }
     }
@@ -133,38 +137,35 @@ module.exports.handler = async (event, context, callback) => {
     log(correlationId, JSON.stringify(valError), 200);
     return callback(response("[400]", valError));
   } else if (error) {
-    let msg = error.details[0].message
-      .split('" ')[1]
-      .replace(new RegExp('"', "g"), "");
-    let key = error.details[0].context.key;
+    let key = get(error, `details[0].context.key`, "");
     log(correlationId, JSON.stringify(error), 200);
     if (error.toString().includes("shipmentLines")) {
       return callback(
         response(
           "[400]",
-          "shipmentLines." + key + error.details[0].message.split('"')[2]
+          "shipmentLines." + key + get(error, `details[0].message`, "").split('"')[2]
         )
       );
     } else {
       return callback(response("[400]", key + " " + error));
     }
   } else {
-    newJSON.RatingInput.OriginZip = reqFields.shipperZip;
-    newJSON.RatingInput.DestinationZip = reqFields.consigneeZip;
-    newJSON.RatingInput.PickupTime = reqFields.pickupTime.toString();
-    newJSON.RatingInput.PickupDate = reqFields.pickupTime.toString();
+    newJSON.RatingInput.OriginZip = get(reqFields, `shipperZip`, "");
+    newJSON.RatingInput.DestinationZip = get(reqFields, `consigneeZip`, "");
+    newJSON.RatingInput.PickupTime = get(reqFields,`pickupTime`, "").toString();
+    newJSON.RatingInput.PickupDate = get(reqFields, `pickupTime`, "").toString();
     newJSON.RatingInput.PickupLocationCloseTime =
-      reqFields.pickupTime.toString();
+      get(reqFields, `pickupTime`, "").toString();
   }
 
   newJSON.RatingInput.RequestID = 20221104;
 
   log(correlationId, JSON.stringify(newJSON), 200);
-  if ("insuredValue" in body.shipmentRateRequest) {
+  if ("insuredValue" in get(body, `shipmentRateRequest`, "")) {
     try {
       if (
-        Number(body.shipmentRateRequest.insuredValue) > 0 &&
-        Number(body.shipmentRateRequest.insuredValue) <=
+        Number(get(body, `shipmentRateRequest.insuredValue`, 0)) > 0 &&
+        Number(get(body, `shipmentRateRequest.insuredValue`, 0)) <=
           9999999999999999999999999999n
       ) {
         newJSON.RatingInput.LiabilityType = "INSP";
@@ -172,7 +173,9 @@ module.exports.handler = async (event, context, callback) => {
         //   body.shipmentRateRequest.insuredValue.toLocaleString("fullwide", {
         //     useGrouping: false,
         //   });
-        newJSON.RatingInput.DeclaredValue = Number(body.shipmentRateRequest.insuredValue);
+        newJSON.RatingInput.DeclaredValue = Number(
+          get(body, `shipmentRateRequest.insuredValue`, "")
+        );
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
@@ -201,9 +204,7 @@ module.exports.handler = async (event, context, callback) => {
 
   log(correlationId, JSON.stringify(newJSON), 200);
   try {
-    newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-      body.shipmentRateRequest
-    );
+    newJSON.CommodityInput = addCommodityWeightPerPiece(get(body, `shipmentRateRequest`, ""));
     log(correlationId, JSON.stringify(newJSON), 200);
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
@@ -215,18 +216,18 @@ module.exports.handler = async (event, context, callback) => {
       };
       for (
         let x = 0;
-        x < body.shipmentRateRequest.accessorialList.length;
+        x < get(body, `shipmentRateRequest.accessorialList.length`, 0);
         x++
       ) {
         newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
-          body.shipmentRateRequest.accessorialList[x]
+          get(body, `shipmentRateRequest.accessorialList[${x}]`)
         );
       }
     }
 
-    console.log("newJSON", newJSON);
+    console.log("newJSON", JSON.stringify(newJSON));
     // return {};
-    log(correlationId, JSON.stringify(newJSON.AccessorialInput), 200);
+    log(correlationId, JSON.stringify(get(newJSON, `AccessorialInput`, "")), 200);
     const postData = makeJsonToXml(newJSON);
     console.log("postData", postData);
     log(correlationId, JSON.stringify(postData), 200);
@@ -236,11 +237,10 @@ module.exports.handler = async (event, context, callback) => {
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
     // console.log("dataObj====>", dataObj);
 
-    // return {};
-    if ("Error" in dataObj.shipmentRateResponse) {
-      return callback(response("[400]", dataObj.shipmentRateResponse.Error));
+    if ("Error" in get(dataObj, `shipmentRateResponse`, "")) {
+      return callback(response("[400]", get(dataObj, `shipmentRateResponse.Error`, "")));
     } else {
-      for (let m = 0; m < dataObj.shipmentRateResponse.length; m++) {
+      for (let m = 0; m < get(dataObj, `shipmentRateResponse.length`, 0); m++) {
         if (
           typeof dataObj.shipmentRateResponse[m].accessorialList == "string"
         ) {
@@ -253,54 +253,50 @@ module.exports.handler = async (event, context, callback) => {
     return callback(
       response(
         "[400]",
-        error != null && error.hasOwnProperty("message") ? error.message : error
+        error ?? get(error, `message`, error)
       )
     );
   }
 };
 
 function addCommodityWeightPerPiece(inputData) {
-  let commodityInput = {
-    CommodityInput: {},
-  };
-  if (inputData.shipmentLines[0].dimUOM.toLowerCase() == "cm") {
-    inputData.shipmentLines[0].length = Math.round(
-      inputData.shipmentLines[0].length * 0.393701
-    );
-    inputData.shipmentLines[0].width = Math.round(
-      inputData.shipmentLines[0].width * 0.393701
-    );
-    inputData.shipmentLines[0].height = Math.round(
-      inputData.shipmentLines[0].height * 0.393701
-    );
-  }
-  if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
-    inputData.shipmentLines[0].weightPerPiece = Math.round(
-      (inputData.shipmentLines[0].weight * 2.2046) / inputData.shipmentLines[0].pieces
-    );
-  }else{
-    inputData.shipmentLines[0].weightPerPiece = Math.round(
-      inputData.shipmentLines[0].weight / inputData.shipmentLines[0].pieces
-    );
-  }
-  log(correlationId, JSON.stringify(inputData.shipmentLines), 200);
-  for (const shipKey in inputData.shipmentLines[0]) {
-    if (shipKey.includes("//")) {
-      continue;
+  let shipmentLinesArray = [];
+  for (let shipmentLine of get(inputData, `shipmentLines`, [])) {
+    let obj = {
+      CommodityInput: {},
+    };
+    if (shipmentLine.dimUOM.toLowerCase() == "cm") {
+      shipmentLine.length = Math.round(get(shipmentLine, `length`, 0) * 0.393701);
+      shipmentLine.width = Math.round(get(shipmentLine, `width`, 0) * 0.393701);
+      shipmentLine.height = Math.round(get(shipmentLine, `height`, 0) * 0.393701);
     }
-    if (shipKey == "hazmat") {
-        commodityInput.CommodityInput.CommodityHazmat = inputData.shipmentLines[0].hazmat ? 'Y' : 'N';
+    if (shipmentLine.weightUOM.toLowerCase() == "kg") {
+      shipmentLine.weightPerPiece = Math.round(
+        (get(shipmentLine, `weight`, 0) * 2.2046) / get(shipmentLine, `pieces`, 1)
+      );
+    } else {
+      shipmentLine.weightPerPiece = Math.round(
+        get(shipmentLine, `weight`, 0) / get(shipmentLine, `pieces`, 1)
+      );
     }
-    else if (shipKey != "dimUOM" && shipKey != "weightUOM") {
-      new_key =
-        "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-      commodityInput.CommodityInput[new_key] =
-        inputData.shipmentLines[0][shipKey];
+    log(correlationId, JSON.stringify(shipmentLine), 200);
+    for (const shipKey in shipmentLine) {
+      if (shipKey.includes("//")) {
+        continue;
+      }
+      if (shipKey == "hazmat") {
+        obj.CommodityInput.CommodityHazmat = get(shipmentLine, `hazmat`, "")
+          ? "Y"
+          : "N";
+      } else if (shipKey != "dimUOM" && shipKey != "weightUOM") {
+        new_key =
+          "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+        obj.CommodityInput[new_key] = get(shipmentLine, shipKey, "");
+      }
     }
-   
+    shipmentLinesArray.push(obj);
   }
-
-  return commodityInput.CommodityInput;
+  return shipmentLinesArray;
 }
 
 function makeJsonToXml(data) {
@@ -312,7 +308,7 @@ function makeJsonToXml(data) {
       "soap12:Body": {
         GetRatingByCustomer: {
           "@xmlns": "http://tempuri.org/",
-          RatingParam: data,
+          RatingParam:  data,
         },
       },
     },
@@ -324,42 +320,37 @@ function makeXmlToJson(data) {
     let obj = convert(data, { format: "object" });
     log(correlationId, JSON.stringify(obj), 200);
     if (
-      obj["soap:Envelope"][
-        "soap:Body"
-      ].GetRatingByCustomerResponse.GetRatingByCustomerResult.hasOwnProperty(
+      get(obj, `soap:Envelope.soap:Body.GetRatingByCustomerResponse.GetRatingByCustomerResult`, "").hasOwnProperty(
         "RatingOutput"
       )
     ) {
       const modifiedObj =
-        obj["soap:Envelope"]["soap:Body"].GetRatingByCustomerResponse
-          .GetRatingByCustomerResult.RatingOutput;
+        get(obj, `soap:Envelope.soap:Body.GetRatingByCustomerResponse.GetRatingByCustomerResult.RatingOutput`, "");
       log(correlationId, JSON.stringify(modifiedObj), 200);
       if (isArray(modifiedObj)) {
         console.info("isArray");
         return modifiedObj.map((e) => {
-          log(correlationId, JSON.stringify(e.AccessorialOutput), 200);
-          if (isEmpty(e.Message)) {
+          log(correlationId, JSON.stringify(get(e, `AccessorialOutput`, "")), 200);
+          if (isEmpty(get(e, `Message`, ""))) {
             e.Message = "";
           }
           let AccessorialOutput = null;
           if (
-            e.AccessorialOutput &&
-            e.AccessorialOutput.AccessorialOutput &&
-            e.AccessorialOutput.AccessorialOutput[0] == null
+            get(e, `AccessorialOutput`, null) !== null &&
+            get(e, `AccessorialOutput.AccessorialOutput`, null) !== null &&
+            get(e, `AccessorialOutput.AccessorialOutput[0]`, "") == null
           ) {
             AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);
-          } else {
-            if (e.AccessorialOutput.AccessorialOutput) {
-              AccessorialOutput = getAccessorialOutput(e.AccessorialOutput);
-            }
+          } else if (get(e, `AccessorialOutput.AccessorialOutput`, null) !== null) {
+              AccessorialOutput = getAccessorialOutput(get(e, `AccessorialOutput`, null));
           }
           let EstimatedDelivery;
-          if (e.DeliveryTime && e.DeliveryTime != null) {
+          if (get(e, `DeliveryTime`, null) !== null && get(e, `DeliveryTime`, null) != null) {
             // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
             console.info("EstimatedDelivery-----");
             //----------------------------------------------------------------
             const dateStr = JSON.stringify(
-              e.DeliveryDate + " " + e.DeliveryTime
+              get(e, `DeliveryDate`, "") + " " + get(e, `DeliveryTime`, "")
             );
             const dateObj = moment(dateStr, "M/D/YYYY h:mm:ssA");
             const deliveryStr = dateObj.format("YYYY-MM-DDTHH:mm:ss");
@@ -367,93 +358,97 @@ function makeXmlToJson(data) {
             //----------------------------------------------------------------
           }
           if (
-            e.ServiceLevelID.length == undefined &&
-            e.DeliveryTime.length == undefined &&
-            e.Message != null
+            get(e, `ServiceLevelID.length`, undefined) == undefined &&
+            get(e, `DeliveryTime.length`, undefined) == undefined &&
+            get(e, `Message`, "") != null
           ) {
             return { Error: e.Message };
           }
           log(correlationId, JSON.stringify(EstimatedDelivery), 200);
           return {
-            serviceLevel: e.ServiceLevelID,
+            serviceLevel: get(e, `ServiceLevelID`, ""),
             estimatedDelivery:
               e.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: parseFloat(e.StandardTotalRate.replace(/,/g, '')),
-            freightCharge: parseFloat(e.StandardFreightCharge.replace(/,/g, '')),
+            totalRate: parseFloat(get(e, `StandardTotalRate`, "").replace(/,/g, "")),
+            freightCharge: parseFloat(
+              get(e, `StandardFreightCharge`, "").replace(/,/g, "")
+            ),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
-            message: e.Message,
+            message: get(e, `Message`, ""),
           };
         });
       } else {
         console.info("object");
-        if (isEmpty(modifiedObj.Message)) {
+        if (isEmpty(get(modifiedObj, `Message`, ""))) {
           modifiedObj.Message = "";
         }
         let AccessorialOutput = null;
         if (
-          modifiedObj.AccessorialOutput &&
-          modifiedObj.AccessorialOutput.AccessorialOutput &&
-          modifiedObj.AccessorialOutput.AccessorialOutput[0] == null
+          get(modifiedObj, `AccessorialOutput`, null) !== null &&
+          get(modifiedObj, `AccessorialOutput.AccessorialOutput`, null) !== null &&
+          get(modifiedObj, `AccessorialOutput.AccessorialOutput[0]`, "") == null
         ) {
           const list = [];
           for (
             let i = 0;
-            i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
+            i < get(modifiedObj,`AccessorialOutput.AccessorialOutput.length`, 0);
             i++
           ) {
             list[i] = {};
-            modifiedObj.AccessorialOutput.AccessorialOutput[i].AccessorialCode
+            get(modifiedObj, `AccessorialOutput.AccessorialOutput[${i}].AccessorialCode`, null)
               ? (list[i].code =
-                  modifiedObj.AccessorialOutput.AccessorialOutput[
-                    i
-                  ].AccessorialCode)
-              : modifiedObj.AccessorialOutput.AccessorialOutput[i]
-                  .AccessorialDesc
+                  get(modifiedObj, `AccessorialOutput.AccessorialOutput[
+                    ${i}
+                  ].AccessorialCode`, ""))
+              : get(modifiedObj, `AccessorialOutput.AccessorialOutput[${i}]
+                  .AccessorialDesc`, "")
               ? (list[i].description =
-                  modifiedObj.AccessorialOutput.AccessorialOutput[
-                    i
-                  ].AccessorialDesc)
-              : modifiedObj.AccessorialOutput.AccessorialOutput[i]
-                  .AccessorialCharge
-              ? (list[i].charge =
-                parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
-                    i
-                  ].AccessorialCharge.replace(/,/g, '')))
+                  get(modifiedObj, `AccessorialOutput.AccessorialOutput[
+                    ${i}
+                  ].AccessorialDesc`))
+              : get(modifiedObj, `AccessorialOutput.AccessorialOutput[${i}]
+                  .AccessorialCharge`, "")
+              ? (list[i].charge = parseFloat(
+                  get(modifiedObj, `AccessorialOutput.AccessorialOutput[
+                    ${i}
+                  ].AccessorialCharge`).replace(/,/g, "")
+                ))
               : console.info("no charge");
           }
           AccessorialOutput = list;
         } else {
           const list = [];
-          if (modifiedObj.AccessorialOutput.AccessorialOutput) {
+          if (get(modifiedObj, `AccessorialOutput.AccessorialOutput`, null) !== null) {
             for (
               let i = 0;
-              i < modifiedObj.AccessorialOutput.AccessorialOutput.length;
+              i < get(modifiedObj, `AccessorialOutput.AccessorialOutput.length`, 0);
               i++
             ) {
               list[i] = {};
               list[i].code =
-                modifiedObj.AccessorialOutput.AccessorialOutput[
-                  i
-                ].AccessorialCode;
+                get(modifiedObj, `AccessorialOutput.AccessorialOutput[
+                  ${i}
+                ].AccessorialCode`, "");
               list[i].description =
-                modifiedObj.AccessorialOutput.AccessorialOutput[
-                  i
-                ].AccessorialDesc;
-              list[i].charge =
-              parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
-                  i
-                ].AccessorialCharge.replace(/,/g, ''));
+                get(modifiedObj, `AccessorialOutput.AccessorialOutput[
+                  ${i}
+                ].AccessorialDesc`, "");
+              list[i].charge = parseFloat(
+                get(modifiedObj, `AccessorialOutput.AccessorialOutput[
+                  ${i}
+                ].AccessorialCharge`, "").replace(/,/g, "")
+              );
             }
             AccessorialOutput = list;
           }
         }
         let EstimatedDelivery;
-        if (modifiedObj.DeliveryTime && modifiedObj.DeliveryTime != null) {
+        if (get(modifiedObj, `DeliveryTime`, null) !== null && get(modifiedObj, `DeliveryTime`, "") != null) {
           // EstimatedDelivery = new Date(modifiedObj.DeliveryDate);
           console.info("EstimatedDelivery=========>");
           //----------------------------------------------------------------
           const dateStr = JSON.stringify(
-            modifiedObj.DeliveryDate + " " + modifiedObj.DeliveryTime
+            get(modifiedObj, `DeliveryDate`, "") + " " + get(modifiedObj, `DeliveryTime`, "")
           );
           const dateObj = moment(dateStr, "M/D/YYYY h:mm:ssA");
           const deliveryStr = dateObj.format("YYYY-MM-DDTHH:mm:ss");
@@ -462,50 +457,63 @@ function makeXmlToJson(data) {
         }
 
         if (
-          modifiedObj.ServiceLevelID.length == undefined &&
-          modifiedObj.DeliveryTime.length == undefined &&
-          modifiedObj.Message != null
+          get(modifiedObj, `ServiceLevelID.length`, undefined) == undefined &&
+          get(modifiedObj, `DeliveryTime.length`, undefined) == undefined &&
+          get(modifiedObj, `Message`, "") != null
         ) {
-          return { Error: modifiedObj.Message };
+          return { Error: get(modifiedObj, `Message`, "") };
         } else {
-          return [{
-            serviceLevel: modifiedObj.ServiceLevelID,
-            estimatedDelivery:
-              modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: parseFloat(modifiedObj.StandardTotalRate.replace(/,/g, '')),
-            freightCharge: parseFloat(modifiedObj.StandardFreightCharge.replace(/,/g, '')),
-            accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
-            message: modifiedObj.Message,
-          }];
+          return [
+            {
+              serviceLevel: get(modifiedObj, `ServiceLevelID`, ""),
+              estimatedDelivery:
+                get(modifiedObj, `DeliveryDate`, "") == "1/1/1900" ? "" : EstimatedDelivery,
+              totalRate: parseFloat(
+                get(modifiedObj, `StandardTotalRate`, "").replace(/,/g, "")
+              ),
+              freightCharge: parseFloat(
+                get(modifiedObj, `StandardFreightCharge`, "").replace(/,/g, "")
+              ),
+              accessorialList:
+                AccessorialOutput == null ? "" : AccessorialOutput,
+              message: get(modifiedObj, `Message`, ""),
+            },
+          ];
         }
       }
     } else {
       throw "Rate not found.";
     }
   } catch (e) {
-    throw e.hasOwnProperty("message") ? e.message : e;
+    throw get(e, `message`, e);
   }
 }
 
 function getAccessorialOutput(AccessorialOutput) {
   let list = [];
-  if (Array.isArray(AccessorialOutput.AccessorialOutput)) {
-    if (AccessorialOutput.AccessorialOutput) {
-      for (let i = 0; i < AccessorialOutput.AccessorialOutput.length; i++) {
+  if (Array.isArray(get(AccessorialOutput, `AccessorialOutput`, ""))) {
+    if (get(AccessorialOutput, `AccessorialOutput`, "")) {
+      for (let i = 0; i < get(AccessorialOutput, `AccessorialOutput.length`, ""); i++) {
         list[i] = {};
-        list[i].code = AccessorialOutput.AccessorialOutput[i].AccessorialCode;
+        list[i].code = get(AccessorialOutput, `AccessorialOutput[${i}].AccessorialCode`, "");
         list[i].description =
-          AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
-        list[i].charge =
-        parseFloat(AccessorialOutput.AccessorialOutput[i].AccessorialCharge.replace(/,/g, ''));
+          get(AccessorialOutput, `AccessorialOutput[${i}].AccessorialDesc`, "");
+        list[i].charge = parseFloat(
+          get(AccessorialOutput, `AccessorialOutput[${i}].AccessorialCharge`, "").replace(
+            /,/g,
+            ""
+          )
+        );
       }
     }
   } else {
     let i = 0;
     list[i] = {};
-    list[i].code = AccessorialOutput.AccessorialOutput.AccessorialCode;
-    list[i].description = AccessorialOutput.AccessorialOutput.AccessorialDesc;
-    list[i].charge = parseFloat(AccessorialOutput.AccessorialOutput.AccessorialCharge.replace(/,/g, ''));
+    list[i].code = get(AccessorialOutput, `AccessorialOutput.AccessorialCode`, "");
+    list[i].description = get(AccessorialOutput, `AccessorialOutput.AccessorialDesc`, "");
+    list[i].charge = parseFloat(
+      get(AccessorialOutput, `AccessorialOutput.AccessorialCharge`, "").replace(/,/g, "")
+    );
   }
   return list;
 }
@@ -534,14 +542,14 @@ async function getCustomerId(customerId) {
       ExpressionAttributeValues: { ":CustomerID": customerId },
     };
     const response = await documentClient.query(params).promise();
-    if (response.Items && response.Items.length > 0) {
-      log(correlationId, JSON.stringify(response.Items), 200);
-      return response.Items[0];
+    if (get(response, `Items.length`, 0) > 0) {
+      log(correlationId, JSON.stringify(get(response, `Items`, "")), 200);
+      return get(response, `Items[0]`, "");
     } else {
       return "failure";
     }
   } catch (e) {
-    throw e.hasOwnProperty("message") ? e.message : e;
+    throw e.hasOwnProperty("message") ? get(e, `message`, "") : e;
   }
 }
 
@@ -556,15 +564,13 @@ async function getRating(postData) {
     if (res.status == 200) {
       return res.data;
     } else {
-      throw e.response.statusText;
+      throw get(e, `response.statusText`, "");
     }
   } catch (e) {
-    let obj = convert(e.response.data, { format: "object" });
+    let obj = convert(get(e, `response.data`, ""), { format: "object" });
     let errorMessage =
-      obj["soap:Envelope"]["soap:Body"]["soap:Fault"]["soap:Reason"][
-        "soap:Text"
-      ]["#"];
-    log(correlationId, JSON.stringify(e.response), 200);
+      get(obj, `soap:Envelope.soap:Body.soap:Fault.soap:Reason.soap:Text.#`, "");
+    log(correlationId, JSON.stringify(get(e, `response`, "")), 200);
     throw e.hasOwnProperty("response") ? errorMessage : e;
   }
 }
@@ -586,13 +592,13 @@ async function getCustomerNumber(xApiKey) {
     const validatorResp = await documentClient.query(validatorParams).promise();
     console.log("validatorResp", validatorResp);
 
-    if (validatorResp.Items && validatorResp.Items.length > 0) {
-      log(correlationId, JSON.stringify(validatorResp.Items), 200);
-      const customerId = validatorResp.Items[0].CustomerID;
+    if (get(validatorResp, `Items`, null) !== null && get(validatorResp, `Items.length`, 0) > 0) {
+      log(correlationId, JSON.stringify(get(validatorResp, `Items`, "")), 200);
+      const customerId = get(validatorResp, `Items[0].CustomerID`, "");
       const response = await getCustomerId(customerId);
       console.log("CustomerIdResponse", response);
       if (Object.keys(response).length > 0) {
-        log(correlationId, JSON.stringify(response.Items), 200);
+        log(correlationId, JSON.stringify(get(response, `Items`, "")), 200);
         return response;
       } else {
         return "failure";
@@ -601,6 +607,6 @@ async function getCustomerNumber(xApiKey) {
       return callback(response("[400]", "No response from Validator Table"));
     }
   } catch (e) {
-    throw e.hasOwnProperty("message") ? e.message : e;
+    throw e.hasOwnProperty("message") ? get(e, `message`, "") : e;
   }
 }
