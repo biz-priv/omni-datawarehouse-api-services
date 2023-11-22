@@ -1110,6 +1110,7 @@ function getXmlPayloadODFL({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["destinationPostalCode"] = consigneeZip;
     xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["pickupDateTime"] = pickupTime;
     xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["insuranceAmount"] = insuredValue;
+    const shipmentLine = shipmentLines[0];
     if (accessorialList.length > 0) {
         xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"] = [];
         xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"] = accessorialList.filter((acc) => Object.keys(accessorialMappingODFL).includes(acc)).map((item) => accessorialMappingODFL[item]);
@@ -1117,7 +1118,6 @@ function getXmlPayloadODFL({ pickupTime, insuredValue, shipperZip, consigneeZip,
             xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"].push("HAZ");
         }
     }
-    const shipmentLine = shipmentLines[0];
     xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["freightItems"] = {
         height: get(shipmentLine, "height"),
         width: get(shipmentLine, "width"),

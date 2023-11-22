@@ -1,26 +1,25 @@
 {
     "body": {
         "ltlRateRequest": {
-            "pickupTime": "2023-11-30T17:00:00",
-            "insuredValue": 1000,
-            "shipperZip": "97230",
-            "consigneeZip": "98134",
-            "reference": "e7713a22-7b5c-48d5-baa9-1cfc0fd55e79",
+            "reference": "12345678-9abc-def0-1234-56789abcdef1",
+            "pickupTime": "2023-11-23T17:00:00",
+            "shipperZip": "78045",
+            "consigneeZip": "62025",
             "shipmentLines": [
                 {
-                    "pieces": 10,
-                    "pieceType": "BOX",
-                    "weight": 225,
+                    "pieces": 12,
+                    "pieceType": "PCE",
+                    "weight": 38,
                     "weightUOM": "lb",
-                    "length": 20,
-                    "width": 20,
-                    "height": 30,
+                    "length": 18,
+                    "width": 14,
+                    "height": 3,
                     "dimUOM": "in",
                     "hazmat": false,
-                    "freightClass": 70
+                    "freightClass": 50
                 }
             ],
-            "accessorialList": ["APPT", "APPTD", "INSPU", "RESDE", "LIFTD"]
+            "accessorialList": ["APPT"]
         }
     }
 }
