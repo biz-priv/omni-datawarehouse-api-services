@@ -113,7 +113,10 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     reqFields.shipperZip = body.shipmentRateRequest.shipperZip;
     reqFields.consigneeZip = body.shipmentRateRequest.consigneeZip;
-    reqFields.pickupTime = body.shipmentRateRequest.pickupTime.replace('Z', '+00:00');
+    reqFields.pickupTime = body.shipmentRateRequest.pickupTime.replace(
+      "Z",
+      "+00:00"
+    );
     reqFields.shipmentLines = [];
 
     for (let i = 0; i < body.shipmentRateRequest.shipmentLines.length; i++) {
@@ -172,7 +175,9 @@ module.exports.handler = async (event, context, callback) => {
         //   body.shipmentRateRequest.insuredValue.toLocaleString("fullwide", {
         //     useGrouping: false,
         //   });
-        newJSON.RatingInput.DeclaredValue = Number(body.shipmentRateRequest.insuredValue);
+        newJSON.RatingInput.DeclaredValue = Number(
+          body.shipmentRateRequest.insuredValue
+        );
       } else {
         newJSON.RatingInput.LiabilityType = "LL";
       }
@@ -201,9 +206,7 @@ module.exports.handler = async (event, context, callback) => {
 
   log(correlationId, JSON.stringify(newJSON), 200);
   try {
-    newJSON.CommodityInput.CommodityInput = addCommodityWeightPerPiece(
-      body.shipmentRateRequest
-    );
+    newJSON.CommodityInput = addCommodityWeightPerPiece(body.shipmentRateRequest);
     log(correlationId, JSON.stringify(newJSON), 200);
     // newJSON.CommodityInput = addCommodityWeightPerPiece(
     //   body.shipmentRateRequest
@@ -224,7 +227,7 @@ module.exports.handler = async (event, context, callback) => {
       }
     }
 
-    console.log("newJSON", newJSON);
+    console.log("newJSON", JSON.stringify(newJSON));
     // return {};
     log(correlationId, JSON.stringify(newJSON.AccessorialInput), 200);
     const postData = makeJsonToXml(newJSON);
@@ -260,47 +263,44 @@ module.exports.handler = async (event, context, callback) => {
 };
 
 function addCommodityWeightPerPiece(inputData) {
-  let commodityInput = {
-    CommodityInput: {},
-  };
-  if (inputData.shipmentLines[0].dimUOM.toLowerCase() == "cm") {
-    inputData.shipmentLines[0].length = Math.round(
-      inputData.shipmentLines[0].length * 0.393701
-    );
-    inputData.shipmentLines[0].width = Math.round(
-      inputData.shipmentLines[0].width * 0.393701
-    );
-    inputData.shipmentLines[0].height = Math.round(
-      inputData.shipmentLines[0].height * 0.393701
-    );
-  }
-  if (inputData.shipmentLines[0].weightUOM.toLowerCase() == "kg") {
-    inputData.shipmentLines[0].weightPerPiece = Math.round(
-      (inputData.shipmentLines[0].weight * 2.2046) / inputData.shipmentLines[0].pieces
-    );
-  }else{
-    inputData.shipmentLines[0].weightPerPiece = Math.round(
-      inputData.shipmentLines[0].weight / inputData.shipmentLines[0].pieces
-    );
-  }
-  log(correlationId, JSON.stringify(inputData.shipmentLines), 200);
-  for (const shipKey in inputData.shipmentLines[0]) {
-    if (shipKey.includes("//")) {
-      continue;
+  let shipmentLinesArray = [];
+  for (let shipmentLine of inputData.shipmentLines) {
+    let obj = {
+      CommodityInput: {},
+    };
+    if (shipmentLine.dimUOM.toLowerCase() == "cm") {
+      shipmentLine.length = Math.round(shipmentLine.length * 0.393701);
+      shipmentLine.width = Math.round(shipmentLine.width * 0.393701);
+      shipmentLine.height = Math.round(shipmentLine.height * 0.393701);
     }
-    if (shipKey == "hazmat") {
-        commodityInput.CommodityInput.CommodityHazmat = inputData.shipmentLines[0].hazmat ? 'Y' : 'N';
+    if (shipmentLine.weightUOM.toLowerCase() == "kg") {
+      shipmentLine.weightPerPiece = Math.round(
+        (shipmentLine.weight * 2.2046) / shipmentLine.pieces
+      );
+    } else {
+      shipmentLine.weightPerPiece = Math.round(
+        shipmentLine.weight / shipmentLine.pieces
+      );
     }
-    else if (shipKey != "dimUOM" && shipKey != "weightUOM") {
-      new_key =
-        "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
-      commodityInput.CommodityInput[new_key] =
-        inputData.shipmentLines[0][shipKey];
+    log(correlationId, JSON.stringify(shipmentLine), 200);
+    for (const shipKey in shipmentLine) {
+      if (shipKey.includes("//")) {
+        continue;
+      }
+      if (shipKey == "hazmat") {
+        obj.CommodityInput.CommodityHazmat = inputData.shipmentLines[0].hazmat
+          ? "Y"
+          : "N";
+      } else if (shipKey != "dimUOM" && shipKey != "weightUOM") {
+        new_key =
+          "Commodity" + shipKey.charAt(0).toUpperCase() + shipKey.slice(1);
+        obj.CommodityInput[new_key] = shipmentLine[shipKey];
+      }
     }
-   
-  }
 
-  return commodityInput.CommodityInput;
+    shipmentLinesArray.push(obj);
+  }
+  return shipmentLinesArray;
 }
 
 function makeJsonToXml(data) {
@@ -312,7 +312,7 @@ function makeJsonToXml(data) {
       "soap12:Body": {
         GetRatingByCustomer: {
           "@xmlns": "http://tempuri.org/",
-          RatingParam: data,
+          RatingParam:  data,
         },
       },
     },
@@ -378,8 +378,10 @@ function makeXmlToJson(data) {
             serviceLevel: e.ServiceLevelID,
             estimatedDelivery:
               e.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: parseFloat(e.StandardTotalRate.replace(/,/g, '')),
-            freightCharge: parseFloat(e.StandardFreightCharge.replace(/,/g, '')),
+            totalRate: parseFloat(e.StandardTotalRate.replace(/,/g, "")),
+            freightCharge: parseFloat(
+              e.StandardFreightCharge.replace(/,/g, "")
+            ),
             accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
             message: e.Message,
           };
@@ -415,10 +417,11 @@ function makeXmlToJson(data) {
                   ].AccessorialDesc)
               : modifiedObj.AccessorialOutput.AccessorialOutput[i]
                   .AccessorialCharge
-              ? (list[i].charge =
-                parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
+              ? (list[i].charge = parseFloat(
+                  modifiedObj.AccessorialOutput.AccessorialOutput[
                     i
-                  ].AccessorialCharge.replace(/,/g, '')))
+                  ].AccessorialCharge.replace(/,/g, "")
+                ))
               : console.info("no charge");
           }
           AccessorialOutput = list;
@@ -439,10 +442,11 @@ function makeXmlToJson(data) {
                 modifiedObj.AccessorialOutput.AccessorialOutput[
                   i
                 ].AccessorialDesc;
-              list[i].charge =
-              parseFloat(modifiedObj.AccessorialOutput.AccessorialOutput[
+              list[i].charge = parseFloat(
+                modifiedObj.AccessorialOutput.AccessorialOutput[
                   i
-                ].AccessorialCharge.replace(/,/g, ''));
+                ].AccessorialCharge.replace(/,/g, "")
+              );
             }
             AccessorialOutput = list;
           }
@@ -468,15 +472,22 @@ function makeXmlToJson(data) {
         ) {
           return { Error: modifiedObj.Message };
         } else {
-          return [{
-            serviceLevel: modifiedObj.ServiceLevelID,
-            estimatedDelivery:
-              modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
-            totalRate: parseFloat(modifiedObj.StandardTotalRate.replace(/,/g, '')),
-            freightCharge: parseFloat(modifiedObj.StandardFreightCharge.replace(/,/g, '')),
-            accessorialList: AccessorialOutput == null ? "" : AccessorialOutput,
-            message: modifiedObj.Message,
-          }];
+          return [
+            {
+              serviceLevel: modifiedObj.ServiceLevelID,
+              estimatedDelivery:
+                modifiedObj.DeliveryDate == "1/1/1900" ? "" : EstimatedDelivery,
+              totalRate: parseFloat(
+                modifiedObj.StandardTotalRate.replace(/,/g, "")
+              ),
+              freightCharge: parseFloat(
+                modifiedObj.StandardFreightCharge.replace(/,/g, "")
+              ),
+              accessorialList:
+                AccessorialOutput == null ? "" : AccessorialOutput,
+              message: modifiedObj.Message,
+            },
+          ];
         }
       }
     } else {
@@ -496,8 +507,12 @@ function getAccessorialOutput(AccessorialOutput) {
         list[i].code = AccessorialOutput.AccessorialOutput[i].AccessorialCode;
         list[i].description =
           AccessorialOutput.AccessorialOutput[i].AccessorialDesc;
-        list[i].charge =
-        parseFloat(AccessorialOutput.AccessorialOutput[i].AccessorialCharge.replace(/,/g, ''));
+        list[i].charge = parseFloat(
+          AccessorialOutput.AccessorialOutput[i].AccessorialCharge.replace(
+            /,/g,
+            ""
+          )
+        );
       }
     }
   } else {
@@ -505,7 +520,9 @@ function getAccessorialOutput(AccessorialOutput) {
     list[i] = {};
     list[i].code = AccessorialOutput.AccessorialOutput.AccessorialCode;
     list[i].description = AccessorialOutput.AccessorialOutput.AccessorialDesc;
-    list[i].charge = parseFloat(AccessorialOutput.AccessorialOutput.AccessorialCharge.replace(/,/g, ''));
+    list[i].charge = parseFloat(
+      AccessorialOutput.AccessorialOutput.AccessorialCharge.replace(/,/g, "")
+    );
   }
   return list;
 }
