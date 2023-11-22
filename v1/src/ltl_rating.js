@@ -2242,7 +2242,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
         if (res.status < 300) {
             console.info(`🙂 -> file: ltl_rating.js:2758 -> ${carrier} -> res.status:`, JSON.stringify(get(res, "data", {})));
             set(logData, "status", get(res, "status"));
-            set(logData, "result", JSON.stringify(get(res, "data", "")));
+            set(logData, "response", JSON.stringify(get(res, "data", "")));
             payloadForQueue.push(logData);
             return get(res, "data", {});
         } else {
@@ -2252,7 +2252,7 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
         const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(`🙂 -> file: ltl_rating.js:2728 -> ${carrier} -> err:`, errResponse !== "" ? errResponse : err);
         set(logData, "status", get(err, "response.status"));
-        set(logData, "data", errResponse !== "" ? JSON.stringify(errResponse) : err);
+        set(logData, "response", errResponse !== "" ? JSON.stringify(errResponse) : err);
         payloadForQueue.push(logData);
         return false;
     }
