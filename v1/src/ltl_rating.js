@@ -1198,7 +1198,7 @@ function getXmlPayloadABFS({ pickupTime, insuredValue, shipperZip, consigneeZip,
         delete xmlPayloadFormat["ABFS"]["Acc_ELC"];
         delete xmlPayloadFormat["ABFS"]["DeclaredType"];
     }
-    xmlPayloadFormat["ABFS"]["ShipMonth"] = moment(new Date(pickupTime)).get("month");
+    xmlPayloadFormat["ABFS"]["ShipMonth"] = moment(new Date(pickupTime)).get("month") + 1;
     xmlPayloadFormat["ABFS"]["ShipDay"] = moment(new Date(pickupTime)).get("date");
     xmlPayloadFormat["ABFS"]["ShipYear"] = moment(new Date(pickupTime)).get("year");
     const shipmentLine = shipmentLines[0];
