@@ -47,7 +47,15 @@ module.exports.handler = async (event, context) => {
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
     payloadForQueue = [];
-    xmlPayloadFormat = { ...initialXmlPayloadFormat };
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["FreightDetails"]["FreightDetail"] = [];
+    xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Dimensions"]["Dimension"] = [];
+    xmlPayloadFormat["EXLA"]["soapenv:Envelope"]["soapenv:Body"]["rat1:rateRequest"]["rat1:fullCommodities"]["rat1:commodity"] = [];
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["requestedPackageLineItems"] = [];
+    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["lineItem"] = [];
+    xmlPayloadFormat["AVRT"]["shipmentInfo"]["items"] = [];
+    xmlPayloadFormat["DAFG"]["handlingUnits"] = [];
+    xmlPayloadFormat["DAFG"]["items"] = [];
+    xmlPayloadFormat["XPOL"]["shipmentInfo"]["commodity"] = [];
     const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
@@ -229,9 +237,7 @@ module.exports.handler = async (event, context) => {
     }
 };
 
-let xmlPayloadFormat;
-
-const initialXmlPayloadFormat = {
+const xmlPayloadFormat = {
     FWDA: {
         FAQuoteRequest: {
             BillToCustomerNumber: 2353722,
@@ -414,9 +420,6 @@ const initialXmlPayloadFormat = {
                     },
                 },
             },
-            // freightShipmentSpecialServices: {
-            //     specialServiceTypes: [],
-            // },
         },
     },
     ABFS: {
@@ -464,11 +467,9 @@ const initialXmlPayloadFormat = {
         cubicFeet: "",
         shipmentInfo: {
             items: [],
-            // accessorials: {},
         },
     },
     DAFG: {
-        // accessorials: [],
         account: "",
         destination: "",
         handlingUnits: [],
@@ -529,7 +530,6 @@ const initialXmlPayloadFormat = {
                     pltCountList: "",
                     pltLengthList: "",
                     pltWidthList: "",
-                    // accessorialList: [],
                 },
             },
         },
@@ -561,9 +561,6 @@ const initialXmlPayloadFormat = {
                                 Units: "",
                             },
                         },
-                        // Accessorials: {
-                        //     AccessorialItem: { Code: [] },
-                        // },
                         UserID: "",
                         Password: "",
                         TestMode: "",
@@ -594,7 +591,6 @@ const initialXmlPayloadFormat = {
                 },
             },
             commodity: [],
-            // accessorials: [],
             paymentTermCd: "",
             bill2Party: {
                 acctInstId: "",
@@ -633,9 +629,6 @@ const initialXmlPayloadFormat = {
                         PaymentType: "",
                         CubicFeet: "",
                         Pieces: "",
-                        // ServiceDeliveryOptions: {
-                        //     ServiceOptions: { ServiceCode: [] },
-                        // },
                     },
                 },
             },
