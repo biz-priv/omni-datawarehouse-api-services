@@ -57,7 +57,7 @@ module.exports.handler = async (event) => {
   console.info("event: ", JSON.stringify(event));
 
   if (event.source === "serverless-plugin-warmup") {
-    console.log("WarmUp - Lambda is warm!");
+    console.info("WarmUp - Lambda is warm!");
     return "Lambda is warm!";
   }
 
@@ -73,8 +73,6 @@ module.exports.handler = async (event) => {
   };
 
   const { error, value } = validateQueryParams(queryParams);
-
-  console.log("value: ", value);
 
   let queryStringParams = value;
 
@@ -97,19 +95,12 @@ module.exports.handler = async (event) => {
       .toString(),
   };
 
-  //console.log("logObj: ", logObj);
   let dataObj = [];
   let mainResponse = {};
   let fullDataObj = {};
   try {
     if (get(queryStringParams, "fileNumber", null)) {
-      console.log("fileNumber");
-      dataObj = await queryWithFileNumber(
-        process.env.SHIPMENT_DETAILS_Collector_TABLE,
-        "fileNumberIndex",
-        get(queryStringParams, "fileNumber", null)
-      );
-      //console.log("dataObj: ",dataObj)
+      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE,"fileNumberIndex",get(queryStringParams, "fileNumber", null));
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
       } else {
@@ -118,7 +109,6 @@ module.exports.handler = async (event) => {
             return Converter.unmarshall(d);
           })
         );
-        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         mainResponse = await mappingPayload(unmarshalledDataObj, true);
       }
       logObj = {
@@ -126,14 +116,9 @@ module.exports.handler = async (event) => {
         api_status_code: "200",
         payload: mainResponse,
       };
-      console.log("logObj", logObj);
       await putItem(logObj);
     } else if (get(queryStringParams, "housebill", null)) {
-      console.log("housebill");
-      dataObj = await queryWithHouseBill(
-        process.env.SHIPMENT_DETAILS_Collector_TABLE,
-        get(queryStringParams, "housebill", null)
-      );
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "housebill", null));
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
       } else {
@@ -142,22 +127,13 @@ module.exports.handler = async (event) => {
             return Converter.unmarshall(d);
           })
         );
-        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         if (get(queryStringParams, "milestone_history", null)) {
-          console.log(
-            "milestone_history:",
-            get(queryStringParams, "milestone_history", null)
-          );
-          mainResponse = await mappingPayload(
-            unmarshalledDataObj,
-            get(queryStringParams, "milestone_history", null)
-          );
+          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestone_history", null));
           logObj = {
             ...logObj,
             api_status_code: "200",
             payload: mainResponse,
           };
-          console.log("logObj", logObj);
           await putItem(logObj);
         } else {
           mainResponse = await mappingPayload(unmarshalledDataObj, "true");
@@ -166,7 +142,6 @@ module.exports.handler = async (event) => {
             api_status_code: "200",
             payload: mainResponse,
           };
-          console.log("logObj", logObj);
           await putItem(logObj);
         }
       }
@@ -174,7 +149,6 @@ module.exports.handler = async (event) => {
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
     ) {
-      console.log("activityDate");
       const fromDateTime = moment(
         get(queryStringParams, "activityFromDate", null),
         "YYYY-MM-DD HH:mm:ss.SSS"
@@ -185,13 +159,18 @@ module.exports.handler = async (event) => {
       );
 
       const base64 = get(queryStringParams, "b64str", null);
-      console.log("lastKey", get(queryStringParams, "b64str", null));
       let lastKey;
       if (get(queryStringParams, "b64str", {})) {
         lastKey = base64Decode(base64);
         const { error: eventError } = validateLastEventKey.validate(lastKey);
         if (eventError) {
           console.error(error.details);
+          logObj = {
+            ...logObj,
+            api_status_code: "400",
+            errorMsg: "Please verify whether b64str is valid.",
+          }
+          await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
@@ -201,56 +180,40 @@ module.exports.handler = async (event) => {
         }
       }
 
-      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
-
-      // const daysDifference = toDateTime.diff(fromDateTime, "days");
-      // if (daysDifference < 0) {
-      //   console.log("activityToDate cannot be earlier than activityFromDate");
-      //   logObj = {
-      //     ...logObj,
-      //     api_status_code: "400",
-      //     errorMsg: "activityToDate cannot be earlier than activityFromDate",
-      //     payload: mainResponse,
-      //   }
-      //   console.log("logObj", logObj);
-      //   await putItem(logObj);
-      //   throw "activityToDate cannot be earlier than activityFromDate";
-      // } else if (daysDifference > 7) {
-      //   console.log(`date range cannot be more than 7days \n your date range ${daysDifference}`);
-      //   logObj = {
-      //     ...logObj,
-      //     api_status_code: "400",
-      //     errorMsg: "date range cannot be more than 7days",
-      //     payload: mainResponse,
-      //   }
-      //   console.log("logObj", logObj);
-      //   throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
-      // } else if (daysDifference == 0) {
-      //   const hoursDiff = toDateTime.diff(fromDateTime, "hours");
-      //   if (hoursDiff < 0) {
-      //     console.log("activityToDate cannot be earlier than activityFromDate");
-      //     logObj = {
-      //       ...logObj,
-      //       api_status_code: "400",
-      //       errorMsg: "activityToDate cannot be earlier than activityFromDate",
-      //       payload: mainResponse,
-      //     }
-      //     console.log("logObj", logObj);
-      //     throw "activityToDate cannot be earlier than activityFromDate";
-      //   }
-      // }
-      // console.log(daysDifference);
-      fullDataObj = await dateRange(
-        "activityDate",
-        fromDateTime,
-        toDateTime,
-        lastKey
-      );
-      console.log("fullDataObj: ", fullDataObj);
+      const daysDifference = toDateTime.diff(fromDateTime, "days");
+      if (daysDifference < 0) {
+        console.info("activityToDate cannot be earlier than activityFromDate");
+        logObj = {
+          ...logObj,
+          api_status_code: "400",
+          errorMsg: "activityToDate cannot be earlier than activityFromDate",
+        }
+        await putItem(logObj);
+        throw "activityToDate cannot be earlier than activityFromDate";
+      } else if (daysDifference > 7) {
+        console.info(`date range cannot be more than 7days \n your date range ${daysDifference}`);
+        logObj = {
+          ...logObj,
+          api_status_code: "400",
+          errorMsg: "date range cannot be more than 7days",
+        }
+        throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
+      } else if (daysDifference == 0) {
+        const hoursDiff = toDateTime.diff(fromDateTime, "hours");
+        if (hoursDiff < 0) {
+          console.info("activityToDate cannot be earlier than activityFromDate");
+          logObj = {
+            ...logObj,
+            api_status_code: "400",
+            errorMsg: "activityToDate cannot be earlier than activityFromDate",
+          }
+          throw "activityToDate cannot be earlier than activityFromDate";
+        }
+      }
+      fullDataObj = await dateRange("activityDate",fromDateTime,toDateTime,lastKey);
       dataObj = fullDataObj.items.Items.filter(
         (item) => item.status.S == "Ready"
       );
-      ///console.log("dataObj: ", dataObj);
       if (dataObj.length == 0) {
         mainResponse = "Payloads are not ready yet, please try again later";
       } else {
@@ -259,7 +222,6 @@ module.exports.handler = async (event) => {
             return Converter.unmarshall(d);
           })
         );
-        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         mainResponse = await mappingPayload(unmarshalledDataObj, true);
       }
       logObj = {
@@ -267,7 +229,6 @@ module.exports.handler = async (event) => {
         api_status_code: "200",
         payload: mainResponse,
       };
-      console.log("logObj", logObj);
       await putItem(logObj);
     } else {
       const fromDateTime = moment(
@@ -281,14 +242,18 @@ module.exports.handler = async (event) => {
       );
 
       const base64 = get(queryStringParams, "b64str", null);
-      console.log("lastKey", get(queryStringParams, "b64str", null));
       let lastKey;
       if (get(queryStringParams, "b64str", {})) {
         lastKey = base64Decode(base64);
-        console.log("lastKey in orderdate", lastKey);
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
           console.error(error.details);
+          logObj = {
+            ...logObj,
+            api_status_code: "400",
+            errorMsg: "Please verify whether b64str is valid.",
+          }
+          await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
@@ -298,58 +263,41 @@ module.exports.handler = async (event) => {
         }
       }
 
-      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
-
-      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
       const daysDifference = toDateTime.diff(fromDateTime, "days");
       if (daysDifference < 0) {
-        console.log("shipmentToDate cannot be earlier than shipmentFromDate");
+        console.info("shipmentToDate cannot be earlier than shipmentFromDate");
         logObj = {
           ...logObj,
           api_status_code: "400",
           errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
-          payload: mainResponse,
         };
-        console.log("logObj", logObj);
         throw "shipmentToDate cannot be earlier than shipmentFromDate";
       } else if (daysDifference > 7) {
-        console.log(
+        console.info(
           `date range cannot be more than 7days \n your date range ${daysDifference}`
         );
         logObj = {
           ...logObj,
           api_status_code: "400",
           errorMsg: "date range cannot be more than 7days",
-          payload: mainResponse,
         };
-        console.log("logObj", logObj);
         throw `date range cannot be more than 7days \n your date range ${daysDifference}`;
       } else if (daysDifference == 0) {
         const hoursDiff = toDateTime.diff(fromDateTime, "hours");
         if (hoursDiff < 0) {
-          console.log("shipmentToDate cannot be earlier than shipmentFromDate");
+          console.info("shipmentToDate cannot be earlier than shipmentFromDate");
           logObj = {
             ...logObj,
             api_status_code: "400",
             errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
-            payload: mainResponse,
           };
-          console.log("logObj", logObj);
           throw "shipmentToDate cannot be earlier than shipmentFromDate";
         }
       }
-      //console.log(daysDifference);
-      fullDataObj = await dateRange(
-        "shipmentDate",
-        fromDateTime,
-        toDateTime,
-        lastKey
-      );
-      //console.log("fullDataObj: ", fullDataObj);
+      fullDataObj = await dateRange("shipmentDate",fromDateTime,toDateTime,lastKey);
       dataObj = fullDataObj.items.Items.filter(
         (item) => item.status.S == "Ready"
       );
-      console.log("dataObj: ", dataObj);
       if (dataObj.length == 0) {
         mainResponse = "Payloads are not ready yet, please try again later";
       } else {
@@ -358,7 +306,6 @@ module.exports.handler = async (event) => {
             return Converter.unmarshall(d);
           })
         );
-        //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         mainResponse = await mappingPayload(unmarshalledDataObj, true);
       }
       logObj = {
@@ -366,7 +313,6 @@ module.exports.handler = async (event) => {
         api_status_code: "200",
         payload: mainResponse,
       };
-      console.log("logObj", logObj);
       await putItem(logObj);
     }
     return {
@@ -374,7 +320,7 @@ module.exports.handler = async (event) => {
       LastEvaluatedKey: get(fullDataObj, "lastEvaluatedKey", null),
     };
   } catch (error) {
-    console.log("in main function: \n", error);
+    console.error("in main function: \n", error);
     return {
       statusCode: 400,
       body: JSON.stringify({
@@ -393,7 +339,6 @@ async function queryWithFileNumber(tableName, indexName, fileNumber) {
       ":value": { S: fileNumber },
     },
   };
-  //console.log("params:", params);
 
   try {
     const data = await dynamo.query(params).promise();
@@ -405,7 +350,6 @@ async function queryWithFileNumber(tableName, indexName, fileNumber) {
 }
 
 async function queryWithHouseBill(tableName, HouseBillNumber) {
-  //console.log("queryWithHouseBill");
   let params = {
     TableName: tableName,
     KeyConditionExpression: "HouseBillNumber = :value",
@@ -437,12 +381,7 @@ async function dateRange(
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       // const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithEventDate(
-        eventDate,
-        formattedStartDate,
-        formattedEndDate,
-        lastEvaluatedKey
-      );
+      return await queryWithEventDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
@@ -451,24 +390,15 @@ async function dateRange(
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       // const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithOrderDate(
-        eventDate,
-        formattedStartDate,
-        formattedEndDate,
-        lastEvaluatedKey
-      );
+      return await queryWithOrderDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
     }
   } catch (error) {
-    console.log("date range function: ", error);
+    console.error("date range function: ", error);
+    throw error;
   }
 }
 
-async function queryWithEventDate(
-  date,
-  startSortKey,
-  endSortKey,
-  lastEvaluatedKey
-) {
+async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
     IndexName: "EventYearIndex",
@@ -485,16 +415,11 @@ async function queryWithEventDate(
     },
     Limit: 10,
   };
-  console.log("lastEvaluatedKey", lastEvaluatedKey);
   if (lastEvaluatedKey) {
     params.ExclusiveStartKey = lastEvaluatedKey;
-    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
   }
-  console.log("queryWithEventDate,params2:", params);
   try {
     const result = await dynamo.query(params).promise();
-    console.log("result");
-    console.log("last:", get(result, "LastEvaluatedKey", {}));
     let base64;
     if (get(result, "LastEvaluatedKey", {})) {
       const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
@@ -506,17 +431,11 @@ async function queryWithEventDate(
     };
   } catch (error) {
     console.error("EventDate,Query Error:", error);
-    console.log("params:", params);
     throw error;
   }
 }
 
-async function queryWithOrderDate(
-  date,
-  startSortKey,
-  endSortKey,
-  lastEvaluatedKey
-) {
+async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
     IndexName: "OrderYearIndex",
@@ -534,17 +453,12 @@ async function queryWithOrderDate(
     Limit: 10,
   };
 
-  console.log("lastEvaluatedKey", lastEvaluatedKey);
   if (lastEvaluatedKey) {
     params.ExclusiveStartKey = lastEvaluatedKey;
-    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
   }
-  console.log("queryWithOrderDate,params:", params);
 
   try {
     const result = await dynamo.query(params).promise();
-    console.log("result");
-    console.log("last:", get(result, "LastEvaluatedKey", {}));
     let base64;
     if (get(result, "LastEvaluatedKey", {})) {
       const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
@@ -556,7 +470,6 @@ async function queryWithOrderDate(
     };
   } catch (error) {
     console.error("OrderDate,Query Error:", error);
-    console.log("params:", params);
     throw error;
   }
 }
@@ -626,10 +539,10 @@ async function putItem(item) {
       TableName: process.env.SHIPMENT_DETAILS_LOGS__TABLE,
       Item: item,
     };
-    console.log("Inserted into logs table");
     await dynamodb.put(params).promise();
   } catch (e) {
     console.error("Put Item Error: ", e, "\nPut params: ", params);
+    throw error;
   }
 }
 
@@ -638,15 +551,14 @@ function base64Encode(data) {
 
   const base64Encoded = Buffer.from(jsonString).toString("base64");
 
-  console.log("Base64 Encoded:", base64Encoded);
   return base64Encoded;
 }
 
 function base64Decode(data) {
+
   const decodedString = JSON.parse(
     Buffer.from(data, "base64").toString("utf-8")
   );
 
-  console.log("Decoded String:", decodedString);
   return decodedString;
 }
