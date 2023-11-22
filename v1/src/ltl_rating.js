@@ -8,6 +8,7 @@ const qs = require("qs");
 const { zips } = require("../../src/shared/ltlRater/zipCode.js");
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const sqs = new AWS.SQS();
 const { LTL_LOG_TABLE } = process.env;
 
 const ltlRateRequestSchema = Joi.object({
