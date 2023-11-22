@@ -262,10 +262,6 @@ resources:
     ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
     ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
 
-    # Shipment File table stream queue for amazon pod
-    # amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
-    # amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
-
     # Shipment Detail Queue 
     ShipmentDetailQueue: ${file(config/queues/shipmentDetailQueue.yml):ShipmentDetailQueue}
     ShipmentDetailDLQ: ${file(config/queues/shipmentDetailQueue.yml):ShipmentDetailDLQ}
