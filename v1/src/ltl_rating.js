@@ -2213,7 +2213,7 @@ async function sendMessageToQueue(payloadForQueue) {
         const queueMessage = {
             QueueUrl: "https://sqs.us-east-1.amazonaws.com/332281781429/omni-dw-backend-ltl-rating-log-insertion-queue-dev",
             MessageBody: JSON.stringify({
-                data: payloadForQueue,
+                payloadForQueue,
             }),
         };
         console.info(`🙂 -> file: ltl_rating.js:2218 -> queueMessage:`, queueMessage);
