@@ -27,12 +27,28 @@ const validateQueryParams = (params) => {
   return schema.validate(params);
 };
 
-const schema = Joi.object({
-  LastEvaluatedKey: Joi.object({
-    HouseBillNumber: Joi.object({
-      S: Joi.string().required(),
-    }),
-  }),
+const validateLastOrderKey = Joi.object({
+      OrderYear: Joi.object({
+          S: Joi.string().required()
+      }),
+      HouseBillNumber: Joi.object({
+          S: Joi.string().required()
+      }),
+      OrderDateTime: Joi.object({
+          S: Joi.string().required()
+      })
+});
+
+const validateLastEventKey = Joi.object({
+      EventYear: Joi.object({
+          S: Joi.string().required()
+      }),
+      HouseBillNumber: Joi.object({
+          S: Joi.string().required()
+      }),
+      EventDateTime: Joi.object({
+          S: Joi.string().required()
+      })
 });
 
 let logObj = {};
@@ -144,7 +160,7 @@ module.exports.handler = async (event) => {
           console.log("logObj", logObj);
           await putItem(logObj);
         } else {
-          mainResponse = await mappingPayload(unmarshalledDataObj, true);
+          mainResponse = await mappingPayload(unmarshalledDataObj, "true");
           logObj = {
             ...logObj,
             api_status_code: "200",
@@ -173,8 +189,8 @@ module.exports.handler = async (event) => {
       let lastKey;
       if (get(queryStringParams, "b64str", {})) {
         lastKey = base64Decode(base64);
-        const { error } = schema.validate(lastKey);
-        if (error) {
+        const { error: eventError } = validateLastEventKey.validate(lastKey);
+        if (eventError) {
           console.error(error.details);
           return {
             statusCode: 400,
@@ -270,8 +286,8 @@ module.exports.handler = async (event) => {
       if (get(queryStringParams, "b64str", {})) {
         lastKey = base64Decode(base64);
         console.log("lastKey in orderdate", lastKey);
-        const { error } = schema.validate(lastKey);
-        if (error) {
+        const { error: orderError } = validateLastOrderKey.validate(lastKey);
+        if (orderError) {
           console.error(error.details);
           return {
             statusCode: 400,
