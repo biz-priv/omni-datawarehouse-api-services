@@ -219,7 +219,7 @@ module.exports.handler = async (event, context, callback) => {
       };
       for (
         let x = 0;
-        x < get(body, `shipmentRateRequest.accessorialList.length`, "");
+        x < get(body, `shipmentRateRequest.accessorialList.length`, 0);
         x++
       ) {
         newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
@@ -243,7 +243,7 @@ module.exports.handler = async (event, context, callback) => {
     if ("Error" in get(dataObj, `shipmentRateResponse`, "")) {
       return callback(response("[400]", get(dataObj, `shipmentRateResponse.Error`, "")));
     } else {
-      for (let m = 0; m < get(dataObj, `shipmentRateResponse.length`, ""); m++) {
+      for (let m = 0; m < get(dataObj, `shipmentRateResponse.length`, 0); m++) {
         if (
           typeof dataObj.shipmentRateResponse[m].accessorialList == "string"
         ) {
@@ -256,7 +256,7 @@ module.exports.handler = async (event, context, callback) => {
     return callback(
       response(
         "[400]",
-        error != null && error.hasOwnProperty("message") ? get(error, `message`, "") : error
+        error != null ?? get(error, `message`, error)
       )
     );
   }
@@ -264,22 +264,22 @@ module.exports.handler = async (event, context, callback) => {
 
 function addCommodityWeightPerPiece(inputData) {
   let shipmentLinesArray = [];
-  for (let shipmentLine of get(inputData, `shipmentLines`, "")) {
+  for (let shipmentLine of get(inputData, `shipmentLines`, [])) {
     let obj = {
       CommodityInput: {},
     };
     if (shipmentLine.dimUOM.toLowerCase() == "cm") {
       shipmentLine.length = Math.round(get(shipmentLine, `length`, 0) * 0.393701);
-      shipmentLine.width = Math.round(get(shipmentLine, `width`, "") * 0.393701);
-      shipmentLine.height = Math.round(get(shipmentLine, `height`, "") * 0.393701);
+      shipmentLine.width = Math.round(get(shipmentLine, `width`, 0) * 0.393701);
+      shipmentLine.height = Math.round(get(shipmentLine, `height`, 0) * 0.393701);
     }
     if (shipmentLine.weightUOM.toLowerCase() == "kg") {
       shipmentLine.weightPerPiece = Math.round(
-        (get(shipmentLine, `weight`, "") * 2.2046) / get(shipmentLine, `pieces`, "")
+        (get(shipmentLine, `weight`, 0) * 2.2046) / get(shipmentLine, `pieces`, 1)
       );
     } else {
       shipmentLine.weightPerPiece = Math.round(
-        get(shipmentLine, `weight`, "") / get(shipmentLine, `pieces`, "")
+        get(shipmentLine, `weight`, 0) / get(shipmentLine, `pieces`, 1)
       );
     }
     log(correlationId, JSON.stringify(shipmentLine), 200);
@@ -323,14 +323,12 @@ function makeXmlToJson(data) {
     let obj = convert(data, { format: "object" });
     log(correlationId, JSON.stringify(obj), 200);
     if (
-      get(obj["soap:Envelope"][
-        "soap:Body"
-      ], `GetRatingByCustomerResponse.GetRatingByCustomerResult`, "").hasOwnProperty(
+      get(obj, `soap:Envelope.soap:Body.GetRatingByCustomerResponse.GetRatingByCustomerResult`, "").hasOwnProperty(
         "RatingOutput"
       )
     ) {
       const modifiedObj =
-        get(obj, `["soap:Envelope"]["soap:Body"]GetRatingByCustomerResponse.GetRatingByCustomerResult.RatingOutput`, "");
+        get(obj, `soap:Envelope.soap:Body.GetRatingByCustomerResponse.GetRatingByCustomerResult.RatingOutput`, "");
       log(correlationId, JSON.stringify(modifiedObj), 200);
       if (isArray(modifiedObj)) {
         console.info("isArray");
@@ -398,7 +396,7 @@ function makeXmlToJson(data) {
           const list = [];
           for (
             let i = 0;
-            i < get(modifiedObj,`AccessorialOutput.AccessorialOutput.length`, []);
+            i < get(modifiedObj,`AccessorialOutput.AccessorialOutput.length`, 0);
             i++
           ) {
             list[i] = {};
@@ -428,7 +426,7 @@ function makeXmlToJson(data) {
           if (get(modifiedObj, `AccessorialOutput.AccessorialOutput`, null) !== null) {
             for (
               let i = 0;
-              i < get(modifiedObj, `AccessorialOutput.AccessorialOutput.length`, "");
+              i < get(modifiedObj, `AccessorialOutput.AccessorialOutput.length`, 0);
               i++
             ) {
               list[i] = {};
@@ -492,7 +490,7 @@ function makeXmlToJson(data) {
       throw "Rate not found.";
     }
   } catch (e) {
-    throw e.hasOwnProperty("message") ? get(e, `message`, "") : e;
+    throw get(e, `message`, e);
   }
 }
 
@@ -549,7 +547,7 @@ async function getCustomerId(customerId) {
       ExpressionAttributeValues: { ":CustomerID": customerId },
     };
     const response = await documentClient.query(params).promise();
-    if (get(response, `Items`, "") && get(response, `Items.length`, "") > 0) {
+    if (get(response, `Items.length`, 0) > 0) {
       log(correlationId, JSON.stringify(get(response, `Items`, "")), 200);
       return get(response, `Items[0]`, "");
     } else {
@@ -576,9 +574,7 @@ async function getRating(postData) {
   } catch (e) {
     let obj = convert(get(e, `response.data`, ""), { format: "object" });
     let errorMessage =
-      get(obj, `["soap:Envelope"]["soap:Body"]["soap:Fault"]["soap:Reason"][
-        "soap:Text"
-      ]["#"]`, "");
+      get(obj, `soap:Envelope.soap:Body.soap:Fault.soap:Reason.soap:Text.#`, "");
     log(correlationId, JSON.stringify(get(e, `response`, "")), 200);
     throw e.hasOwnProperty("response") ? errorMessage : e;
   }
