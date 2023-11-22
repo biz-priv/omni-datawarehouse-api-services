@@ -213,7 +213,7 @@ module.exports.handler = async (event, context) => {
     }
 };
 
-const xmlPayloadFormat = {
+const initialXmlPayloadFormat = {
     FWDA: {
         FAQuoteRequest: {
             BillToCustomerNumber: 2353722,
@@ -625,8 +625,10 @@ const xmlPayloadFormat = {
     },
 };
 
+const xmlPayloadFormat = { ...initialXmlPayloadFormat };
+
 const responseBodyFormat = {
-    transactionId: v4(),
+    transactionId: "",
     ltlRateResponse: [],
 };
 
