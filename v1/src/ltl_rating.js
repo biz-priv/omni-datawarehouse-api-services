@@ -47,6 +47,7 @@ module.exports.handler = async (event, context) => {
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
     payloadForQueue = [];
+    xmlPayloadFormat = { ...initialXmlPayloadFormat };
     const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
@@ -227,6 +228,8 @@ module.exports.handler = async (event, context) => {
         return response;
     }
 };
+
+let xmlPayloadFormat;
 
 const initialXmlPayloadFormat = {
     FWDA: {
@@ -639,8 +642,6 @@ const initialXmlPayloadFormat = {
         },
     },
 };
-
-const xmlPayloadFormat = { ...initialXmlPayloadFormat };
 
 const responseBodyFormat = {
     transactionId: "",
