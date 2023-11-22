@@ -27,9 +27,17 @@ const validateQueryParams = (params) => {
   return schema.validate(params);
 };
 
+const schema = Joi.object({
+  LastEvaluatedKey: Joi.object({
+    HouseBillNumber: Joi.object({
+      S: Joi.string().required(),
+    }),
+  }),
+});
+
 let logObj = {};
 
-module.exports.handler = async (event,context,callback) => {
+module.exports.handler = async (event) => {
   console.info("event: ", JSON.stringify(event));
 
   if (event.source === "serverless-plugin-warmup") {
@@ -45,7 +53,7 @@ module.exports.handler = async (event,context,callback) => {
     activityToDate: get(event, "query.activityToDate", null),
     shipmentFromDate: get(event, "query.shipmentFromDate", null),
     shipmentToDate: get(event, "query.shipmentToDate", null),
-    lastEvaluatedKey: get(event, "query.lastEvaluatedKey", null),
+    b64str: get(event, "query.b64str", null),
   };
 
   const { error, value } = validateQueryParams(queryParams);
@@ -63,7 +71,7 @@ module.exports.handler = async (event,context,callback) => {
     activityToDate: get(queryStringParams, "activityToDate", null),
     shipmentFromDate: get(queryStringParams, "shipmentFromDate", null),
     shipmentToDate: get(queryStringParams, "shipmentToDate", null),
-    lastEvaluatedKey: get(queryStringParams, "lastEvaluatedKey", null),
+    b64str: get(queryStringParams, "b64str", null),
     api_status_code: "",
     errorMsg: "",
     payload: "",
@@ -72,7 +80,8 @@ module.exports.handler = async (event,context,callback) => {
       .format("YYYY:MM:DD HH:mm:ss")
       .toString(),
   };
-  console.log("logObj: ", logObj);
+
+  //console.log("logObj: ", logObj);
   let dataObj = [];
   let mainResponse = {};
   let fullDataObj = {};
@@ -119,7 +128,10 @@ module.exports.handler = async (event,context,callback) => {
         );
         //console.log("unmarshalledDataObj",JSON.stringify(unmarshalledDataObj));
         if (get(queryStringParams, "milestone_history", null)) {
-          console.log("milestone_history:",get(queryStringParams, "milestone_history", null))
+          console.log(
+            "milestone_history:",
+            get(queryStringParams, "milestone_history", null)
+          );
           mainResponse = await mappingPayload(
             unmarshalledDataObj,
             get(queryStringParams, "milestone_history", null)
@@ -155,21 +167,24 @@ module.exports.handler = async (event,context,callback) => {
         get(queryStringParams, "activityToDate", null),
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
-      // let lastKey;
 
-      // if(get(queryStringParams,"lastEvaluatedKey",null)){
-      //   lastKey = moment(
-      //     get(queryStringParams,"lastEvaluatedKey",null),
-      //     "YYYY-MM-DD HH:mm:ss.SSS"
-      //   );
-      // }else{
-      //   lastKey = ""
-      // }
+      const base64 = get(queryStringParams, "b64str", null);
+      console.log("lastKey", get(queryStringParams, "b64str", null));
+      let lastKey;
+      if (get(queryStringParams, "b64str", {})) {
+        lastKey = base64Decode(base64);
+        const { error } = schema.validate(lastKey);
+        if (error) {
+          console.error(error.details);
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: "Please verify whether b64str is valid.",
+            }),
+          };
+        }
+      }
 
-      const lastKey = moment(
-        get(queryStringParams, "lastEvaluatedKey", null),
-        "YYYY-MM-DD HH:mm:ss.SSS"
-      );
       console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
 
       // const daysDifference = toDateTime.diff(fromDateTime, "days");
@@ -219,7 +234,7 @@ module.exports.handler = async (event,context,callback) => {
       dataObj = fullDataObj.items.Items.filter(
         (item) => item.status.S == "Ready"
       );
-      console.log("dataObj: ", dataObj);
+      ///console.log("dataObj: ", dataObj);
       if (dataObj.length == 0) {
         mainResponse = "Payloads are not ready yet, please try again later";
       } else {
@@ -239,16 +254,6 @@ module.exports.handler = async (event,context,callback) => {
       console.log("logObj", logObj);
       await putItem(logObj);
     } else {
-      //console.log("shipmentDate");
-      // const fromDateTime = moment(
-      //   get(queryStringParams, "shipmentFromDate", null),
-      //   "YYYY-MM-DD HH:mm:ss.SSS"
-      // );
-      // const toDateTime = moment(
-      //   get(queryStringParams, "shipmentToDate", null),
-      //   "YYYY-MM-DD HH:mm:ss.SSS"
-      // );
-
       const fromDateTime = moment(
         get(queryStringParams, "shipmentFromDate", null) + " 00:00:00.000",
         "YYYY-MM-DD HH:mm:ss.SSS"
@@ -258,10 +263,26 @@ module.exports.handler = async (event,context,callback) => {
         get(queryStringParams, "shipmentToDate", null) + " 23:59:59.999",
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
-      const lastKey = moment(
-        get(queryStringParams, "lastEvaluatedKey", null) + " 00:00:00.000",
-        "YYYY-MM-DD HH:mm:ss.SSS"
-      );
+
+      const base64 = get(queryStringParams, "b64str", null);
+      console.log("lastKey", get(queryStringParams, "b64str", null));
+      let lastKey;
+      if (get(queryStringParams, "b64str", {})) {
+        lastKey = base64Decode(base64);
+        console.log("lastKey in orderdate", lastKey);
+        const { error } = schema.validate(lastKey);
+        if (error) {
+          console.error(error.details);
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: "Please verify whether b64str is valid.",
+            }),
+          };
+        }
+      }
+
+      console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
 
       console.log("startDate,endDate", fromDateTime, toDateTime, lastKey);
       const daysDifference = toDateTime.diff(fromDateTime, "days");
@@ -308,7 +329,7 @@ module.exports.handler = async (event,context,callback) => {
         toDateTime,
         lastKey
       );
-      console.log("fullDataObj: ", fullDataObj);
+      //console.log("fullDataObj: ", fullDataObj);
       dataObj = fullDataObj.items.Items.filter(
         (item) => item.status.S == "Ready"
       );
@@ -338,12 +359,12 @@ module.exports.handler = async (event,context,callback) => {
     };
   } catch (error) {
     console.log("in main function: \n", error);
-    return callback(
-      response(
-        "[400]",
-         error
-      )
-    )
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        message: `error: \n ${error}`,
+      }),
+    };
   }
 };
 
@@ -360,7 +381,7 @@ async function queryWithFileNumber(tableName, indexName, fileNumber) {
 
   try {
     const data = await dynamo.query(params).promise();
-    return data.Items;
+    return get(data, "Items", []);
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
@@ -395,30 +416,30 @@ async function dateRange(
     if (eventType == "activityDate") {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
-      const lastKey = moment(lastEvaluatedKey);
+      // const lastKey = moment(lastEvaluatedKey);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
-      const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
+      // const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
       return await queryWithEventDate(
         eventDate,
         formattedStartDate,
         formattedEndDate,
-        formattedLastKey
+        lastEvaluatedKey
       );
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
-      const lastKey = moment(lastEvaluatedKey);
+      // const lastKey = moment(lastEvaluatedKey);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
-      const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
+      // const formattedLastKey = lastKey.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
       return await queryWithOrderDate(
         eventDate,
         formattedStartDate,
         formattedEndDate,
-        formattedLastKey
+        lastEvaluatedKey
       );
     }
   } catch (error) {
@@ -448,18 +469,24 @@ async function queryWithEventDate(
     },
     Limit: 10,
   };
-  console.log("queryWithEventDate,params:", params);
-  // if (lastEvaluatedKey) {
-  //   params.ExclusiveStartKey = lastEvaluatedKey;
-  //   console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
-  // }
-
+  console.log("lastEvaluatedKey", lastEvaluatedKey);
+  if (lastEvaluatedKey) {
+    params.ExclusiveStartKey = lastEvaluatedKey;
+    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
+  }
+  console.log("queryWithEventDate,params2:", params);
   try {
     const result = await dynamo.query(params).promise();
     console.log("result");
+    console.log("last:", get(result, "LastEvaluatedKey", {}));
+    let base64;
+    if (get(result, "LastEvaluatedKey", {})) {
+      const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
+      base64 = base64Encode(lastEvaluatedKeyData);
+    }
     return {
       items: result,
-      lastEvaluatedKey: result.LastEvaluatedKey,
+      lastEvaluatedKey: base64,
     };
   } catch (error) {
     console.error("EventDate,Query Error:", error);
@@ -490,19 +517,26 @@ async function queryWithOrderDate(
     },
     Limit: 10,
   };
-  console.log("queryWithOrderDate,params:", params);
+
   console.log("lastEvaluatedKey", lastEvaluatedKey);
-  // if (lastEvaluatedKey) {
-  //   params.ExclusiveStartKey = lastEvaluatedKey;
-  //   console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
-  // }
+  if (lastEvaluatedKey) {
+    params.ExclusiveStartKey = lastEvaluatedKey;
+    console.log("params.ExclusiveStartKey", params.ExclusiveStartKey);
+  }
+  console.log("queryWithOrderDate,params:", params);
 
   try {
     const result = await dynamo.query(params).promise();
     console.log("result");
+    console.log("last:", get(result, "LastEvaluatedKey", {}));
+    let base64;
+    if (get(result, "LastEvaluatedKey", {})) {
+      const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
+      base64 = base64Encode(lastEvaluatedKeyData);
+    }
     return {
       items: result,
-      lastEvaluatedKey: result.LastEvaluatedKey,
+      lastEvaluatedKey: base64,
     };
   } catch (error) {
     console.error("OrderDate,Query Error:", error);
@@ -583,16 +617,20 @@ async function putItem(item) {
   }
 }
 
-// function response(code, message) {
-//   return {
-//     httpStatus: code,
-//     message,
-//   };
-// }
+function base64Encode(data) {
+  const jsonString = JSON.stringify(data);
 
-function response(code, message) {
-  return JSON.stringify({
-    httpStatus: code,
-    message,
-  });
+  const base64Encoded = Buffer.from(jsonString).toString("base64");
+
+  console.log("Base64 Encoded:", base64Encoded);
+  return base64Encoded;
+}
+
+function base64Decode(data) {
+  const decodedString = JSON.parse(
+    Buffer.from(data, "base64").toString("utf-8")
+  );
+
+  console.log("Decoded String:", decodedString);
+  return decodedString;
 }
