@@ -231,7 +231,7 @@ module.exports.handler = async (event, context, callback) => {
     log(correlationId, JSON.stringify(dataResponse), 200);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
-    console.log("dataObj====>", dataObj);
+    // console.log("dataObj====>", dataObj);
 
     if ("Error" in get(dataObj, `shipmentRateResponse`, "")) {
       return callback(response("[400]", get(dataObj, `shipmentRateResponse.Error`, "")));
