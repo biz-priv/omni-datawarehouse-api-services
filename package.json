@@ -33,7 +33,6 @@
     "qs": "^6.11.2",
     "serverless": "^2.11.1",
     "serverless-add-api-key": "4.2.0",
-    "serverless-apigw-binary": "^0.4.4",
     "serverless-aws-alias-fixed": "2.0.1",
     "serverless-domain-manager": "5.0.0",
     "serverless-layers": "2.3.3",

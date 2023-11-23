@@ -71,11 +71,6 @@ custom:
     enabled: true
     destinationArn: arn:aws:logs:${self:provider.region}:332753493246:destination:bce-logs-cw-destination-${self:provider.region}-${self:provider.stage}
     filterPattern: '{$.service-name = "*"}'
-  apigwBinary:
-    types:           #list of mime-types
-      # - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-      # - application/vnd.ms-excel
-      - multipart/form-data
 
 plugins:
   - serverless-layers
@@ -86,7 +81,6 @@ plugins:
   - serverless-plugin-existing-s3
   - serverless-offline
   - serverless-plugin-log-subscription
-  - serverless-apigw-binary
 
 package:
   individually: true
@@ -126,8 +120,6 @@ functions:
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
-  # pod-doc-upload: ${file(config/functions/pod-doc-upload.yml):function}
-  # shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
   vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
   ltl-rating: ${file(config/functions/ltl-rating.yml):function}
   ltl-batch-rating: ${file(config/functions/ltl-batch-rating.yml):function}
@@ -264,14 +256,6 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
-
-    # Shipment File table stream queue
-    # ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
-    # ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
-
-    # Shipment File table stream queue for amazon pod
-    # amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
-    # amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
 
     DocumentBucket:
       Type: AWS::S3::Bucket

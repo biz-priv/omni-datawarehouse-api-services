@@ -18,13 +18,3 @@ function:
         integration: lambda
         private: true
         cors: true
-        # request:
-        #     contentHandling: CONVERT_TO_BINARY
-        #     parser: multipart/form-data
-            # parser: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-            # passThrough: WHEN_NO_MATCH
-            # template:
-            #     application/json: null
-            #     application/x-www-form-urlencoded: null
-            #     multipart/form-data: ${file(xlsx_format.vtl)}
-                # application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: ${file(xlsx_format.vtl)}
