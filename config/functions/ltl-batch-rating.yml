@@ -14,7 +14,7 @@ function:
   events:
     - http:
         path: /shipment/ltlrate/batch
-        method: POST
+        method: GET
         integration: lambda
         private: true
         cors: true
