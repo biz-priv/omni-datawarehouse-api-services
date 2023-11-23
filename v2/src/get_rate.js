@@ -246,7 +246,7 @@ module.exports.handler = async (event, context, callback) => {
       return dataObj;
     }
   } catch (error) {
-    console.log(error)
+    console.error(error)
     return callback(
       response(
         "[400]",
