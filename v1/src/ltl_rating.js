@@ -9,7 +9,29 @@ const { zips } = require("../../src/shared/ltlRater/zipCode.js");
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const sqs = new AWS.SQS();
-const { LTL_LOG_TABLE } = process.env;
+const { 
+    LTL_LOG_TABLE,
+    FWDA_URL,
+    FWDA_USER,
+    FWDA_PASSWORD,
+    FWDA_CUSTOMERID,
+    EXLA_URL,
+    FEXF_URL,
+    ODFL_URL,
+    ABFS_BASEURL,
+    AVRT_URL,
+    DAFG_URL,
+    SEFN_BASEURL,
+    PENS_URL,
+    SAIA_URL,
+    XPOL_URL,
+    XPOL_TOKEN_URL,
+    XPOL_AUTHORIZATION,
+    XPOL_ACCESS_TOKEN,
+    XPOL_REFRESH_TOKEN,
+    XPOL_EXPIRES_IN,
+    RDFS_URL,
+ } = process.env;
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -654,11 +676,11 @@ async function processFWDARequest({ pickupTime, insuredValue, shipperZip, consig
     let url;
     let headers = {};
     let payload = "";
-    url = "https://api.forwardair.com/ltlservices/v2/rest/waybills/quote";
+    url = FWDA_URL;
     headers = {
-        user: "omniliah",
-        password: "TVud61y6caRfSnjT", //NOSONAR
-        customerId: "OMNILIAH",
+        user: FWDA_USER,
+        password: FWDA_PASSWORD, //NOSONAR
+        customerId: FWDA_CUSTOMERID,
         "Content-Type": "application/xml",
     };
     payload = xmlPayload;
@@ -766,7 +788,7 @@ async function processEXLARequest({ pickupTime, insuredValue, shipperZip, consig
         soapAction: "http://ws.estesexpress.com/ratequote/getQuote", //NOSONAR
         "Content-Type": "text/xml",
     };
-    let url = "https://www.estes-express.com/tools/rating/ratequote/v4.0/services/RateQuoteService";
+    let url = EXLA_URL;
     let payload = xmlPayload;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
@@ -892,7 +914,7 @@ async function processFEXFRequest({ pickupTime, insuredValue, shipperZip, consig
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
     };
-    let url = "https://apis.fedex.com/rate/v1/freight/rates/quotes";
+    let url = FEXF_URL;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     processFEXFResponses({ response });
@@ -1101,7 +1123,7 @@ async function processODFLRequest({ pickupTime, insuredValue, shipperZip, consig
     let headers = {
         "Content-Type": "application/xml",
     };
-    let url = "https://www.odfl.com/wsRate_v6/RateService";
+    let url = ODFL_URL;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processODFLResponses({ response });
@@ -1185,7 +1207,7 @@ async function processABFSRequest({ pickupTime, insuredValue, shipperZip, consig
         accessorialList,
     });
     let headers = {};
-    const baseUrl = "https://www.abfs.com/xml/aquotexml.asp";
+    const baseUrl = ABFS_BASEURL;
     const queryString = qs.stringify(payload);
     const url = `${baseUrl}?${queryString}`;
     const response = await axiosRequest(url, payload, headers, "get", carrier);
@@ -1292,7 +1314,7 @@ async function processAVRTRequest({ pickupTime, insuredValue, shipperZip, consig
         accessorialList,
     });
     let headers = {};
-    const url = `https://api.averittexpress.com/rate-quotes/ltl?api_key=f6723fe521a149c0871694379cf0c047`;
+    const url = AVRT_URL;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     processAVRTResponses({ response });
@@ -1369,7 +1391,7 @@ async function processDAFGRequest({ pickupTime, insuredValue, shipperZip, consig
         Authorization: "Basic TUFDSDE6TWFjaDFMVEw=",
         "Content-Type": "application/json",
     };
-    const url = `https://api.daytonfreight.com/api/Rates`;
+    const url = DAFG_URL;
     const response = await axiosRequest(url, JSON.stringify(payload), headers, "POST", carrier);
     if (!response) return false;
     processDAFGResponses({ response });
@@ -1444,7 +1466,7 @@ async function processSEFNRequest({ pickupTime, insuredValue, shipperZip, consig
         accessorialList,
     });
     let headers = {};
-    const baseUrl = `https://www.sefl.com/webconnect/ratequotes`;
+    const baseUrl = SEFN_BASEURL;
     const query = qs.stringify(payload);
     const url = `${baseUrl}?${query}`;
     const response = await axiosRequest(url, payload, headers, "get", carrier);
@@ -1552,7 +1574,7 @@ async function processPENSRequest({ pickupTime, insuredValue, shipperZip, consig
         accessorialList,
     });
     let headers = { "Content-Type": "application/soap+xml; charset=utf-8" };
-    const url = "https://classicapi.peninsulatruck.com/webservices/pensrater.asmx";
+    const url = PENS_URL;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processPENSResponses({ response });
@@ -1635,7 +1657,7 @@ async function processSAIARequest({ pickupTime, insuredValue, shipperZip, consig
         accessorialList,
     });
     let headers = { "Content-Type": "text/xml; charset=utf-8" };
-    const url = "http://wwwext.saiasecure.com/webservice/ratequote/soap.asmx"; //NOSONAR
+    const url = SAIA_URL; //NOSONAR
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processSAIAResponses({ response });
@@ -1731,7 +1753,7 @@ async function processXPOLRequest({ pickupTime, insuredValue, shipperZip, consig
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
     };
-    const url = "https://api.ltl.xpo.com/rating/1.0/ratequotes";
+    const url = XPOL_URL;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processXPOLResponses({ response });
@@ -1812,17 +1834,17 @@ async function processXPOLResponses({ response }) {
 async function getTokenForXPOL() {
     const dynamoResponse = await getXPOLTokenFromDynamo();
     if (dynamoResponse) return dynamoResponse;
-    const url = `https://api.ltl.xpo.com/token?grant_type=password&username=hmichel%40omnilogistics.com&password=OmniXpo22`;
+    const url = XPOL_TOKEN_URL;
     const headers = {
-        Authorization: "Basic S01aaHZBWHNyUlFnUGs5QjI4SnEydG1tM3ljYTpJMWVSZkVSYWZMS2FoWmRTSWZJMUpGWnlraVFh",
+        Authorization: "Basic " + XPOL_AUTHORIZATION,
         "Content-Type": "application/x-www-form-urlencoded",
     };
     let data = qs.stringify({
-        access_token: "305ba928-4623-30bf-85f2-6f0657e63b03",
-        refresh_token: "d2a22671-9dab-3660-8bca-3a148e302b15",
+        access_token: XPOL_ACCESS_TOKEN,
+        refresh_token: XPOL_REFRESH_TOKEN,
         scope: "default",
         token_type: "Bearer",
-        expires_in: "36986",
+        expires_in: XPOL_EXPIRES_IN,
     });
     const { access_token } = await axiosRequest(url, data, headers);
     await putXPOLTokenFromDynamo(access_token);
@@ -1885,7 +1907,7 @@ async function processRDFSRequest({ pickupTime, insuredValue, shipperZip, consig
     let headers = {
         "Content-Type": "text/xml; charset=utf-8",
     };
-    const url = "https://webservices.rrts.com/rating/ratequote.asmx";
+    const url = RDFS_URL;
     const response = await axiosRequest(url, payload, headers, "POST", carrier);
     if (!response) return false;
     await processRDFSResponses({ response });
