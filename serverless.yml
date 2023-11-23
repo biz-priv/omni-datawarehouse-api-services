@@ -262,10 +262,6 @@ resources:
     ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
     ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
 
-    # Shipment File table stream queue for amazon pod
-    # amazonPODQueue: ${file(config/queues/amazonPODQueue.yml):amazonPODQueue}
-    # amazonPODDLQ: ${file(config/queues/amazonPODQueue.yml):amazonPODDLQ}
-
     DocumentBucket:
       Type: AWS::S3::Bucket
       Properties:
