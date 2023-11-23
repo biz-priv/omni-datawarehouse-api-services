@@ -211,17 +211,13 @@ module.exports.handler = async (event, context, callback) => {
     // );
     if ("accessorialList" in body.shipmentRateRequest) {
       newJSON.AccessorialInput = {};
-      newJSON.AccessorialInput.AccessorialInput = {
-        AccessorialCode: [],
-      };
+      newJSON.AccessorialInput.AccessorialInput = [];
       for (
         let x = 0;
         x < get(body, `shipmentRateRequest.accessorialList.length`, 0);
         x++
       ) {
-        newJSON.AccessorialInput.AccessorialInput.AccessorialCode.push(
-          get(body, `shipmentRateRequest.accessorialList[${x}]`)
-        );
+        newJSON.AccessorialInput.AccessorialInput.push({ AccessorialCode: get(body, `shipmentRateRequest.accessorialList[${x}]`)});
       }
     }
 
@@ -235,7 +231,7 @@ module.exports.handler = async (event, context, callback) => {
     log(correlationId, JSON.stringify(dataResponse), 200);
     const dataObj = {};
     dataObj.shipmentRateResponse = makeXmlToJson(dataResponse);
-    // console.log("dataObj====>", dataObj);
+    console.log("dataObj====>", dataObj);
 
     if ("Error" in get(dataObj, `shipmentRateResponse`, "")) {
       return callback(response("[400]", get(dataObj, `shipmentRateResponse.Error`, "")));
@@ -250,6 +246,7 @@ module.exports.handler = async (event, context, callback) => {
       return dataObj;
     }
   } catch (error) {
+    console.log(error)
     return callback(
       response(
         "[400]",
