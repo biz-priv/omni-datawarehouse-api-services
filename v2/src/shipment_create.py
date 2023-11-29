@@ -15,6 +15,8 @@ from ast import literal_eval
 from datetime import date
 from dateutil.parser import parse
 client = boto3.client('dynamodb')
+import uuid
+
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
@@ -204,6 +206,10 @@ def handler(event, context):  # NOSONAR
     current_date = (date.today()).strftime("%Y-%m-%d")
     update_shipment_table(shipment_data, house_bill_info,
                           service_level_desc, current_date)
+    if customer_id in ['mechanical-orchard']:
+        shipment_data['id'] = uuid.uuid4()
+        shipment_data['version'] = 1
+    
     return shipment_data
 
 
