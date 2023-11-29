@@ -62,6 +62,7 @@ custom:
       - pod
       - freightlabel
       - pod-doc-upload
+      - shipment-mocreate
     dependenciesPath: ./requirements.txt
   standardResponseHeaders:
     "Access-Control-Allow-Origin": "'*'"
@@ -120,6 +121,7 @@ functions:
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
+  shipment-mocreate: ${file(config/functions/shipment-mocreate.yml):function}
   pod-doc-upload: ${file(config/functions/pod-doc-upload.yml):function}
   shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
   vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
