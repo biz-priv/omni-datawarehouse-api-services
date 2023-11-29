@@ -63,7 +63,7 @@ def handler(event, context):
     LOGGER.info("Event params: %s", str(params))
 
     # Validating params only for the GET APIs
-    if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"] and "shipment/detail" not in event["methodArn"] and "/shipment/vendorinvoice" not in event["methodArn"]:
+    if "/create/shipment" not in event["methodArn"] and "shipment/create" not in event["methodArn"] and "/rate" not in event["methodArn"] and "/addDocument" not in event["methodArn"] and "/getdocument" not in event["methodArn"] and "/addmilestone" not in event["methodArn"] and "shipment/detail" not in event["methodArn"] and "/shipment/vendorinvoice" not in event["methodArn"] and "shipment/mocreate" not in event["methodArn"]:
         validation_response = validate_input(params)
         if validation_response["status"] == "error":
             return generate_policy(None, 'Deny', event["methodArn"], None, validation_response["message"])
