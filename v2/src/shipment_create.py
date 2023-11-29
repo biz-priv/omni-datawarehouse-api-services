@@ -207,7 +207,7 @@ def handler(event, context):  # NOSONAR
     update_shipment_table(shipment_data, house_bill_info,
                           service_level_desc, current_date)
     if customer_id in ['mechanical-orchard']:
-        shipment_data['id'] = uuid.uuid4()
+        shipment_data['id'] = str(uuid.uuid4())
         shipment_data['version'] = 1
     
     return shipment_data
