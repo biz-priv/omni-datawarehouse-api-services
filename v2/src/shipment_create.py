@@ -525,19 +525,19 @@ def get_reference_list(data_obj, version):  # NOSONAR
                 t = []
                 m = []
                 if 'quoteId' in data_obj:
-                    t.append({"ReferenceNo": data_obj['quoteId'], "CustomerType" + version: 'BillTo', "RefTypeId": 'QUO'})
+                    t.append({"ReferenceNo": data_obj['quoteId'], "CustomerTypeV3" : 'BillTo', "RefTypeId": 'QUO'})
                 for bill_to_item in x:
                     if ('RefParty' in bill_to_item):
                         if (bill_to_item['RefParty'].upper() in ['SHIPPER', 'BILLTO', 'CONSIGNEE']):
                             if ('RefNumber' in bill_to_item and 'RefType' in bill_to_item):
                                 t.append(
-                                    {"ReferenceNo": bill_to_item['RefNumber'], "CustomerType" + version: bill_to_item['RefParty'], "RefTypeId": bill_to_item['RefType']})
+                                    {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3" : bill_to_item['RefParty'], "RefTypeId": bill_to_item['RefType']})
                             elif ('RefNumber' in bill_to_item and 'RefType' not in bill_to_item):
                                 t.append(
-                                    {"ReferenceNo": bill_to_item['RefNumber'], "CustomerType" + version: bill_to_item['RefParty']})
+                                    {"ReferenceNo": bill_to_item['RefNumber'], "CustomerTypeV3" : bill_to_item['RefParty']})
                             elif ('RefType' in bill_to_item and 'RefNumber' not in bill_to_item):
                                 t.append(
-                                    {"RefTypeId": bill_to_item['RefType'], "CustomerType" + version: bill_to_item['RefParty']})
+                                    {"RefTypeId": bill_to_item['RefType'], "CustomerTypeV3" : bill_to_item['RefParty']})
                 m.extend(t)
                 return m
             temp_reference_list = add_shipper(temp_reference_list)
