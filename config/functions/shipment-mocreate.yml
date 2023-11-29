@@ -1,7 +1,7 @@
 ---
 function:
   handler: v2/src/shipment_create.handler
-  name: ${self:service}-shipment-create-${self:provider.stage}
+  name: ${self:service}-shipment-mocreate-${self:provider.stage}
   description: shipment create api service - ${self:provider.stage}
   warmup:
     default:
