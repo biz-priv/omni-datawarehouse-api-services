@@ -965,7 +965,7 @@ function getXmlPayloadFEXF({ pickupTime, insuredValue, shipperZip, consigneeZip,
     let totalWeight = 0;
     for (let index = 0; index < shipmentLines.length; index++) {
         const shipmentLine = shipmentLines[index];
-        const pieceType = pieceTypeMappingFEXF[get(shipmentLine, "pieceType", "").toUpperCase()];
+        const pieceType = "BOX";
         const pieces = get(shipmentLine, "pieces");
         const weight = get(shipmentLine, "weight");
         const weightUOM = unitMapping["FEXF"][get(shipmentLine, "weightUOM")];
