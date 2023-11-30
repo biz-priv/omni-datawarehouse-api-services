@@ -9,29 +9,7 @@ const { zips } = require("../../src/shared/ltlRater/zipCode.js");
 const AWS = require("aws-sdk");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const sqs = new AWS.SQS();
-const { 
-    LTL_LOG_TABLE,
-    FWDA_URL,
-    FWDA_USER,
-    FWDA_PASSWORD,
-    FWDA_CUSTOMERID,
-    EXLA_URL,
-    FEXF_URL,
-    ODFL_URL,
-    ABFS_BASEURL,
-    AVRT_URL,
-    DAFG_URL,
-    SEFN_BASEURL,
-    PENS_URL,
-    SAIA_URL,
-    XPOL_URL,
-    XPOL_TOKEN_URL,
-    XPOL_AUTHORIZATION,
-    XPOL_ACCESS_TOKEN,
-    XPOL_REFRESH_TOKEN,
-    XPOL_EXPIRES_IN,
-    RDFS_URL,
- } = process.env;
+const { LTL_LOG_TABLE, FWDA_URL, FWDA_USER, FWDA_PASSWORD, FWDA_CUSTOMERID, EXLA_URL, FEXF_URL, ODFL_URL, ABFS_BASEURL, AVRT_URL, DAFG_URL, SEFN_BASEURL, PENS_URL, SAIA_URL, XPOL_URL, XPOL_TOKEN_URL, XPOL_AUTHORIZATION, XPOL_ACCESS_TOKEN, XPOL_REFRESH_TOKEN, XPOL_EXPIRES_IN, RDFS_URL, LOG_QUEUE } = process.env;
 
 const ltlRateRequestSchema = Joi.object({
     ltlRateRequest: Joi.object({
@@ -2227,7 +2205,7 @@ const accessorialMappingRDFS = {
 async function sendMessageToQueue(payloadForQueue) {
     try {
         const queueMessage = {
-            QueueUrl: "https://sqs.us-east-1.amazonaws.com/332281781429/omni-dw-backend-ltl-rating-log-insertion-queue-dev",
+            QueueUrl: LOG_QUEUE,
             MessageBody: JSON.stringify({
                 payloadForQueue,
             }),
@@ -2236,7 +2214,7 @@ async function sendMessageToQueue(payloadForQueue) {
         await sqs.sendMessage(queueMessage).promise();
     } catch (err) {
         console.error(`🙂 -> file: ltl_rating.js:2221 -> err:`, err);
-        throw err;
+        return false;
     }
 }
 
