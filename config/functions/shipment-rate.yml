@@ -60,3 +60,5 @@ function:
     FUNCTION_NAME: ${self:service}-shipment-rate-${self:provider.stage}
     SERVICE_NAME: ${self:service}
     APPLICATION: DataWarehouse
+    RATE_FILE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/rate-file/ddb.tableName~true}
+    RATE_FILE_INDEX: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/rate-file/ddb.index~true}
