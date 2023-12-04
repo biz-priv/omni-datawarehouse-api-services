@@ -1,6 +1,5 @@
 const Joi = require("joi");
 const { get, set } = require("lodash");
-const { v4 } = require("uuid");
 const xml2js = require("xml2js");
 const axios = require("axios");
 const moment = require("moment");
@@ -41,7 +40,7 @@ const ltlRateRequestSchema = Joi.object({
 });
 
 let payloadForQueue = [];
-
+const now = new Date().getTime();
 module.exports.handler = async (event, context) => {
     //NOSONAR
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
@@ -79,7 +78,8 @@ module.exports.handler = async (event, context) => {
             ["FWDA", "EXLA", "FEXF", "ODFL", "ABFS", "AVRT", "DAFG", "SEFN", "PENS", "SAIA", "XPOL", "RDFS"].map(async (carrier) => {
                 console.info(`🙂 -> file: ltl_rating.js:91 -> carrier:`, carrier);
                 if (carrier === "FWDA") {
-                    return await processFWDARequest({
+                    const fwdaStart = getNowTime();
+                    const fwdaResp = await processFWDARequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -88,9 +88,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const fwdaEnd = getNowTime();
+                    const fwdaTime = fwdaEnd - fwdaStart;
+                    console.info(`🙂 -> file: ltl_rating.js:93 -> fwdaTime:`, fwdaTime);
+                    return fwdaResp;
                 }
                 if (carrier === "EXLA") {
-                    return await processEXLARequest({
+                    const exlaStart = getNowTime();
+                    const exlaResp = await processEXLARequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -100,9 +105,14 @@ module.exports.handler = async (event, context) => {
                         reference,
                         carrier,
                     });
+                    const exlaEnd = getNowTime();
+                    const exlaTime = exlaEnd - exlaStart;
+                    console.info(`🙂 -> file: ltl_rating.js:110 -> exlaTime:`, exlaTime);
+                    return exlaResp;
                 }
                 if (carrier === "FEXF") {
-                    return await processFEXFRequest({
+                    const fexfStart = getNowTime();
+                    const fexfResp = await processFEXFRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -112,9 +122,14 @@ module.exports.handler = async (event, context) => {
                         reference,
                         carrier,
                     });
+                    const fexfEnd = getNowTime();
+                    const fexfTime = fexfEnd - fexfStart;
+                    console.info(`🙂 -> file: ltl_rating.js:127 -> fexfTime:`, fexfTime);
+                    return fexfResp;
                 }
                 if (carrier === "ODFL") {
-                    return await processODFLRequest({
+                    const odflStart = getNowTime();
+                    const odflResp = await processODFLRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -124,9 +139,14 @@ module.exports.handler = async (event, context) => {
                         reference,
                         carrier,
                     });
+                    const odflEnd = getNowTime();
+                    const odflTime = odflEnd - odflStart;
+                    console.info(`🙂 -> file: ltl_rating.js:144 -> odflTime:`, odflTime);
+                    return odflResp;
                 }
                 if (carrier === "ABFS") {
-                    return await processABFSRequest({
+                    const abfsStart = getNowTime();
+                    const abfsResp = await processABFSRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -135,9 +155,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const abfsEnd = getNowTime();
+                    const abfsTime = abfsEnd - abfsStart;
+                    console.info(`🙂 -> file: ltl_rating.js:160 -> abfsTime:`, abfsTime);
+                    return abfsResp;
                 }
                 if (carrier === "AVRT") {
-                    return await processAVRTRequest({
+                    const avrtStart = getNowTime();
+                    const avrtResp = await processAVRTRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -146,9 +171,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const avrtEnd = getNowTime();
+                    const avrtTime = avrtEnd - avrtStart;
+                    console.info(`🙂 -> file: ltl_rating.js:176 -> avrtTime:`, avrtTime);
+                    return avrtResp;
                 }
                 if (carrier === "DAFG") {
-                    return await processDAFGRequest({
+                    const dafgStart = getNowTime();
+                    const dafgResp = await processDAFGRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -157,9 +187,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const dafgEnd = getNowTime();
+                    const dafgTime = dafgEnd - dafgStart;
+                    console.info(`🙂 -> file: ltl_rating.js:192 -> dafgTime:`, dafgTime);
+                    return dafgResp;
                 }
                 if (carrier === "SEFN") {
-                    return await processSEFNRequest({
+                    const sefnStart = getNowTime();
+                    const sefnResp = await processSEFNRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -168,9 +203,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const sefnEnd = getNowTime();
+                    const sefnTime = sefnEnd - sefnStart;
+                    console.info(`🙂 -> file: ltl_rating.js:208 -> sefnTime:`, sefnTime);
+                    return sefnResp;
                 }
                 if (carrier === "PENS") {
-                    return await processPENSRequest({
+                    const pensStart = getNowTime();
+                    const pensResp = await processPENSRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -179,9 +219,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const pensEnd = getNowTime();
+                    const pensTime = pensEnd - pensStart;
+                    console.info(`🙂 -> file: ltl_rating.js:224 -> pensTime:`, pensTime);
+                    return pensResp;
                 }
                 if (carrier === "SAIA") {
-                    return await processSAIARequest({
+                    const saiaStart = getNowTime();
+                    const saiaResp = await processSAIARequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -190,9 +235,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const saiaEnd = getNowTime();
+                    const saiaTime = saiaEnd - saiaStart;
+                    console.info(`🙂 -> file: ltl_rating.js:240 -> saiaTime:`, saiaTime);
+                    return saiaResp;
                 }
                 if (carrier === "XPOL") {
-                    return await processXPOLRequest({
+                    const xpolStart = getNowTime();
+                    const xpolResp = await processXPOLRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -201,9 +251,14 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const xpolEnd = getNowTime();
+                    const xpolTime = xpolEnd - xpolStart;
+                    console.info(`🙂 -> file: ltl_rating.js:256 -> xpolTime:`, xpolTime);
+                    return xpolResp;
                 }
                 if (carrier === "RDFS") {
-                    return await processRDFSRequest({
+                    const rdfsStart = getNowTime();
+                    const rdfsResp = await processRDFSRequest({
                         pickupTime,
                         insuredValue,
                         shipperZip,
@@ -212,6 +267,10 @@ module.exports.handler = async (event, context) => {
                         accessorialList,
                         carrier,
                     });
+                    const rdfsEnd = getNowTime();
+                    const rdfsTime = rdfsEnd - rdfsStart;
+                    console.info(`🙂 -> file: ltl_rating.js:272 -> rdfsTime:`, rdfsTime);
+                    return rdfsResp;
                 }
             })
         );
@@ -222,6 +281,8 @@ module.exports.handler = async (event, context) => {
         set(queueData, "response", JSON.stringify(response));
         payloadForQueue[0] = queueData;
         await sendMessageToQueue(payloadForQueue);
+        const responseTime = new Date().getTime() - now;
+        console.info(`🙂 -> file: ltl_rating.js:225 -> responseTime:`, responseTime);
         return response;
     } catch (err) {
         console.error(`🙂 -> file: ltl_rating.js:239 -> err:`, err);
@@ -1810,6 +1871,7 @@ async function processXPOLResponses({ response }) {
 }
 
 async function getTokenForXPOL() {
+    const xpolTokenStart = getNowTime();
     const dynamoResponse = await getXPOLTokenFromDynamo();
     if (dynamoResponse) return dynamoResponse;
     const url = XPOL_TOKEN_URL;
@@ -1826,6 +1888,9 @@ async function getTokenForXPOL() {
     });
     const { access_token } = await axiosRequest(url, data, headers);
     await putXPOLTokenFromDynamo(access_token);
+    const xpolTokenEnd = getNowTime();
+    const xpolGetTokenTime = xpolTokenEnd - xpolTokenStart;
+    console.info(`🙂 -> file: ltl_rating.js:1893 -> xpolGetTokenTime:`, xpolGetTokenTime);
     return access_token;
 }
 
@@ -2203,6 +2268,7 @@ const accessorialMappingRDFS = {
 };
 
 async function sendMessageToQueue(payloadForQueue) {
+    const sendMessageStart = getNowTime();
     try {
         const queueMessage = {
             QueueUrl: LOG_QUEUE,
@@ -2212,6 +2278,9 @@ async function sendMessageToQueue(payloadForQueue) {
         };
         console.info(`🙂 -> file: ltl_rating.js:2218 -> queueMessage:`, queueMessage);
         await sqs.sendMessage(queueMessage).promise();
+        const sendMessageEnd = getNowTime();
+        const sendMessageTime = sendMessageEnd - sendMessageStart;
+        console.info(`🙂 -> file: ltl_rating.js:2283 -> sendMessageTime:`, sendMessageTime);
     } catch (err) {
         console.error(`🙂 -> file: ltl_rating.js:2221 -> err:`, err);
         return false;
@@ -2250,4 +2319,20 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
         payloadForQueue.push(logData);
         return false;
     }
+}
+
+// function getCachedData(key, originalSource) {
+//     if (cache[key]) {
+//         console.log("Cache hit!");
+//         return cache[key];
+//     } else {
+//         console.log("Cache miss!");
+//         const data = originalSource(key);
+//         cache[key] = data;
+//         return data;
+//     }
+// }
+
+function getNowTime() {
+    return new Date().getTime();
 }
