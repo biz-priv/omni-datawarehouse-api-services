@@ -29,3 +29,4 @@ function:
     DB_SERVER: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/serverName}
     DB_PORT: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/port}
     DB_DATABASE: ${ssm:/omni-dw/${self:provider.stage}/worldTrak/source-db/name}
+    ERROR_SNS_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
