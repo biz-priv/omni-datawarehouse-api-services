@@ -19,7 +19,7 @@ let itemObj = {
   version: "v2",
 };
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event, context) => {
   console.info("event", JSON.stringify(event));
 
   try {
@@ -122,7 +122,7 @@ module.exports.handler = async (event) => {
       errorMsgVal = error;
     }
     const params = {
-      Message: `An error occurred in function ${process.env.FUNCTION_NAME}. Error details: ${error}.`,
+      Message: `An error occurred in function ${context.functionName}. Error details: ${error}.`,
       TopicArn: process.env.ERROR_SNS_ARN,
     };
     await sns.publish(params).promise();
