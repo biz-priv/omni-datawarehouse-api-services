@@ -158,18 +158,14 @@ def handler(event, context):  # NOSONAR
     shipment_line_list = get_shipment_line_list(
         event["body"]["shipmentCreateRequest"], version)
     reference_list = get_reference_list(event["body"]["shipmentCreateRequest"], version)
-    accessorial_list = ''
-    if version is "V3":
-        accessorial_list = get_accessorial_list(event["body"]["shipmentCreateRequest"], version)
-    elif version is "V4":
-        accessorial_list = get_accessorial_list(event["body"]["shipmentCreateRequest"], version)
-    vendorList = get_vendor_list(event["body"]["shipmentCreateRequest"], version)
+    accessorial_list = get_accessorial_list(event["body"]["shipmentCreateRequest"], version)
+    vendor_list = get_vendor_list(event["body"]["shipmentCreateRequest"], version)
     ship_data = dicttoxml.dicttoxml(
         temp_ship_data, attr_type=False, custom_root='soap:Body')
     ship_data = str(ship_data).\
         replace(f"""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipment{version}><shipmentCreateRequest>""", """""").\
         replace(f"""</shipmentCreateRequest></AddNewShipment{version}></soap:Body>'""", """""")
-    start = f"""<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
+    start = """<?xml version="1.0" encoding="utf-8" ?><soap:Envelope \
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
         xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
             xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
@@ -177,7 +173,7 @@ def handler(event, context):  # NOSONAR
                     </AuthHeader></soap:Header><soap:Body><AddNewShipment""" +version+ \
                     """ xmlns="http://tempuri.org/"><oShipData>"""
     end = f"""</oShipData></AddNewShipment{version}></soap:Body></soap:Envelope>"""
-    payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+vendorList+end
+    payload = start+ship_data+shipment_line_list+reference_list+accessorial_list+vendor_list+end
     LOGGER.info("Payload xml data is : %s", json.dumps(payload))
     try:
         url = os.environ["URL"]
