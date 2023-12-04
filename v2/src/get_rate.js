@@ -107,17 +107,6 @@ module.exports.handler = async (event, context, callback) => {
     !("customerNumber" in get(body,"shipmentRateRequest", ""))
   ) {
     valError = "customerNumber is a required field for this request.";
-  }else if(event.enhancedAuthContext.customerId == "customer-portal-admin" && get(body,"shipmentRateRequest.customerNumber", null) !== null && get(body,"shipmentRateRequest.pickupTime", null) !== null){
-    const responseData = await getItem(get(body,"shipmentRateRequest.customerNumber", null))
-    console.log("responseData", responseData)
-    const dateObjects = responseData.map(item => new Date(item.ToDate));
-    console.log(dateObjects)
-    const maxDate = new Date(Math.max(...dateObjects));
-    console.log(maxDate)
-    const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
-    if(pickupTime <= maxDate){
-      valError = "pickupTime is not valid. Provide a valid pickupTime.";
-    }
   } else if (
     !("shipmentLines" in get(body,"shipmentRateRequest", "")) ||
     get(body, `shipmentRateRequest.shipmentLines.length`, "") <= 0
@@ -126,13 +115,10 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     if(event.enhancedAuthContext.customerId == "customer-portal-admin" && get(body,"shipmentRateRequest.customerNumber", null) !== null && get(body,"shipmentRateRequest.pickupTime", null) !== null){
       const responseData = await getItem(get(body,"shipmentRateRequest.customerNumber", null))
-      console.log("responseData", responseData)
       const dateObjects = responseData.map(item => new Date(item.ToDate));
-      console.log(dateObjects)
       const maxDate = new Date(Math.max(...dateObjects));
-      console.log(maxDate)
       const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
-      if(pickupTime <= maxDate){
+      if(pickupTime >= maxDate){
         valError = "pickupTime is not valid. Provide a valid pickupTime.";
       }
     }
@@ -155,9 +141,7 @@ module.exports.handler = async (event, context, callback) => {
     }
   }
 
-  console.log("reqFields", reqFields)
   const { error, value } = eventValidation.validate(reqFields);
-  console.log("error", error)
 
   if (valError) {
     log(correlationId, JSON.stringify(valError), 200);
