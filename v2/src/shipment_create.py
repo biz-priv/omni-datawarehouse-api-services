@@ -600,8 +600,7 @@ def get_vendor_list(data, version):
                 replace("""</NewShipmentVendorList>'""",
                         """</NewShipmentVendorList>""")
         else:
-            vendor_list = ''
-        return vendor_list
+            return ''
     except Exception as get_vendor_error:
         logging.exception("GetVendorList: %s", get_vendor_error)
         raise getVendorListError(json.dumps(
