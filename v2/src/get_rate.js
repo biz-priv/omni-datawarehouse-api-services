@@ -6,6 +6,7 @@ const { get } = require("lodash");
 const moment = require("moment");
 const { v4: uuidv4 } = require("uuid");
 const { log, logUtilization } = require("../../src/shared/logger");
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const eventValidation = Joi.object().keys({
   shipperZip: Joi.string().required(),
@@ -112,6 +113,15 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     valError = "At least 1 shipmentLine is required for this request.";
   } else {
+    if(event.enhancedAuthContext.customerId == "customer-portal-admin" && get(body,"shipmentRateRequest.customerNumber", null) !== null && get(body,"shipmentRateRequest.pickupTime", null) !== null){
+      const responseData = await getItem(get(body,"shipmentRateRequest.customerNumber", null))
+      const dateObjects = responseData.map(item => new Date(item.ToDate));
+      const maxDate = new Date(Math.max(...dateObjects));
+      const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
+      if(pickupTime >= maxDate){
+        valError = "pickupTime is not valid. Provide a valid pickupTime.";
+      }
+    }
     reqFields.shipperZip = get(body, "shipmentRateRequest.shipperZip", "");
     reqFields.consigneeZip = get(body, "shipmentRateRequest.consigneeZip", "");
     reqFields.pickupTime = get(body, `shipmentRateRequest.pickupTime`, "").replace(
@@ -606,4 +616,19 @@ async function getCustomerNumber(xApiKey) {
   } catch (e) {
     throw e.hasOwnProperty("message") ? get(e, `message`, "") : e;
   }
+}
+
+async function getItem(customerNumber){
+  const params = {
+    TableName: process.env.RATE_FILE, 
+    IndexName: process.env.RATE_FILE_INDEX, 
+    KeyConditionExpression: 'CVNo = :CVNo AND ChargeCode = :ChargeCode', 
+    ExpressionAttributeValues: {
+      ':CVNo': customerNumber,
+      ':ChargeCode': 'FSC',
+    },
+  };
+  console.log("params: ", params)
+  const response = await dynamodb.query(params).promise();
+  return get(response, "Items", [])
 }
