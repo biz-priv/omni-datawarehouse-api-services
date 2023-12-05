@@ -636,6 +636,6 @@ async function getItem(customerNumber){
   return get(response, "Items", [])
   }catch(error){
     console.error("getItem: ", error)
-    return error
+    return []
   }
 }
