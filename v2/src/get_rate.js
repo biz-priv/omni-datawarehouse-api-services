@@ -113,8 +113,10 @@ module.exports.handler = async (event, context, callback) => {
   ) {
     valError = "At least 1 shipmentLine is required for this request.";
   } else {
-    if(event.enhancedAuthContext.customerId == "customer-portal-admin" && get(body,"shipmentRateRequest.customerNumber", null) !== null && get(body,"shipmentRateRequest.pickupTime", null) !== null){
-      const responseData = await getItem(get(body,"shipmentRateRequest.customerNumber", null))
+    const responseData = await getItem(customerNumber);
+    if(responseData.length == 0){
+      valError = "customer not exist in the rate file";
+    }else{
       const dateObjects = responseData.map(item => new Date(item.ToDate));
       const maxDate = new Date(Math.max(...dateObjects));
       const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
@@ -629,6 +631,11 @@ async function getItem(customerNumber){
     },
   };
   console.log("params: ", params)
+  try{
   const response = await dynamodb.query(params).promise();
   return get(response, "Items", [])
+  }catch(error){
+    console.error("getItem: ", error)
+    return []
+  }
 }
