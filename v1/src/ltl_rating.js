@@ -40,8 +40,9 @@ const ltlRateRequestSchema = Joi.object({
 });
 
 let payloadForQueue = [];
-const now = new Date().getTime();
+
 module.exports.handler = async (event, context) => {
+    const now = getNowTime();
     //NOSONAR
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
@@ -274,14 +275,14 @@ module.exports.handler = async (event, context) => {
                 }
             })
         );
-        console.info(`🙂 -> file: ltl_rating.js:127 -> apiResponse:`, apiResponse);
+        console.info(`🙂 -> file: ltl_rating.js:127 -> apiResponse:`, JSON.stringify(apiResponse));
         const response = { ...responseBodyFormat };
 
         set(queueData, "status", 200);
         set(queueData, "response", JSON.stringify(response));
         payloadForQueue[0] = queueData;
         await sendMessageToQueue(payloadForQueue);
-        const responseTime = new Date().getTime() - now;
+        const responseTime = getNowTime() - now;
         console.info(`🙂 -> file: ltl_rating.js:225 -> responseTime:`, responseTime);
         return response;
     } catch (err) {
@@ -847,6 +848,7 @@ async function processEXLAResponses({ response }) {
 
         const quoteList = quote.map((quoteInfo) => {
             const serviceLevel = get(quoteInfo, "rat:serviceLevel[0].rat:id[0]", "0");
+            const serviceLevelDescription = get(quoteInfo, "rat:serviceLevel[0].rat:text[0]", "");
             const quoteNumber = get(quoteInfo, "rat:quoteNumber[0]", "0");
             const pickup = get(quoteInfo, "rat:pickup[0].rat:date[0]", "0");
             const pickupDate = moment(new Date(pickup));
@@ -860,7 +862,7 @@ async function processEXLAResponses({ response }) {
                 carrier: "EXLA",
                 quoteNumber,
                 serviceLevel,
-                serviceLevelDescription: "",
+                serviceLevelDescription,
                 transitDays: transitDays,
                 totalRate,
                 message: "",
@@ -1136,9 +1138,9 @@ function processFEXFResponses({ response }) {
                 charge: parseFloat(get(acc, "amount")),
             }));
             const data = {
+                carrier: "FEXF",
                 serviceLevel,
                 serviceLevelDescription: "",
-                carrier: "FEXF",
                 transitDays: transitDaysMappingFEXF[transitDays],
                 quoteNumber,
                 totalRate,
@@ -1223,6 +1225,8 @@ async function processODFLResponses({ response }) {
         }));
         const data = {
             carrier: "ODFL",
+            serviceLevel: "",
+            serviceLevelDescription: "",
             transitDays,
             quoteNumber,
             totalRate,
@@ -1331,6 +1335,8 @@ async function processABFSResponses({ response }) {
         const transitDays = parseInt(get(afb, "ADVERTISEDTRANSIT[0]", 0), 10);
         const data = {
             carrier: "ABFS",
+            serviceLevel: "",
+            serviceLevelDescription: "",
             transitDays,
             quoteNumber,
             totalRate,
@@ -1407,8 +1413,9 @@ function processAVRTResponses({ response }) {
         charge: parseFloat(get(acc, "value")),
     }));
     const data = {
-        serviceLevelDescription,
         carrier: "AVRT",
+        serviceLevel: "",
+        serviceLevelDescription,
         transitDays,
         quoteNumber,
         totalRate,
@@ -1484,9 +1491,9 @@ function processDAFGResponses({ response }) {
         charge: parseFloat(get(acc, "amount")),
     }));
     const data = {
+        carrier: "DAFG",
         serviceLevel: "",
         serviceLevelDescription: "",
-        carrier: "DAFG",
         transitDays,
         quoteNumber,
         totalRate,
@@ -1904,7 +1911,7 @@ async function getXPOLTokenFromDynamo() {
         //     sKey: moment().format("DD-MM-YYYY"),
         // },
         KeyConditionExpression: "#pKey = :pKey and #sKey = :sKey",
-        FilterExpression: "#expirations <= :expirations",
+        FilterExpression: "#expirations >= :expirations",
         ExpressionAttributeNames: {
             "#pKey": "pKey",
             "#sKey": "sKey",
@@ -2334,18 +2341,6 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
     }
 }
 
-// function getCachedData(key, originalSource) {
-//     if (cache[key]) {
-//         console.log("Cache hit!");
-//         return cache[key];
-//     } else {
-//         console.log("Cache miss!");
-//         const data = originalSource(key);
-//         cache[key] = data;
-//         return data;
-//     }
-// }
-
 function getNowTime() {
     return new Date().getTime();
 }
@@ -2364,10 +2359,6 @@ async function getFEXFToken(time) {
     } else {
         return get(token, "data");
     }
-}
-
-function getFormattedDateTime() {
-    return moment().format("YYYY-MM-DDTHH:mm:ss");
 }
 
 function getUnixTime(dateTime = new Date()) {
