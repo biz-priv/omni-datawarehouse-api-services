@@ -938,7 +938,8 @@ function getXmlPayloadEXLA({ pickupTime, insuredValue, shipperZip, consigneeZip,
 
 // ===================FEXF=======================
 async function processFEXFRequest({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList, reference, carrier }) {
-    const accessToken = await processFEXFAuthRequest();
+    const accessToken = await getFEXFToken();
+    // const accessToken = await processFEXFAuthRequest();
     if (!accessToken) return;
     const payload = getXmlPayloadFEXF({
         pickupTime,
@@ -1898,15 +1899,28 @@ async function getXPOLTokenFromDynamo() {
     const params = {
         TableName: LTL_LOG_TABLE,
         // TableName: "omni-dw-api-services-ltl-rating-logs-dev",
-        Key: {
-            pKey: "token",
-            sKey: moment().format("DD-MM-YYYY"),
+        // Key: {
+        //     pKey: "token",
+        //     sKey: moment().format("DD-MM-YYYY"),
+        // },
+        KeyConditionExpression: "#pKey = :pKey and #sKey = :sKey",
+        FilterExpression: "#expirations <= :expirations",
+        ExpressionAttributeNames: {
+            "#pKey": "pKey",
+            "#sKey": "sKey",
+            "#expirations": "validUpto",
+        },
+        ExpressionAttributeValues: {
+            ":pKey": "XPOL",
+            ":sKey": "token",
+            ":expirations": getUnixTime(),
         },
     };
+    console.info(`🙂 -> file: ltl_rating.js:1920 -> params:`, params);
     try {
-        let data = await dynamoDB.get(params).promise();
+        let data = await dynamoDB.query(params).promise();
         console.info("QUERY RESP :", data);
-        return get(data, "Item.token", false);
+        return get(data, "Items[0].token", false);
     } catch (err) {
         const errResponse = JSON.stringify(get(err, "response.data", ""));
         console.error(`🙂 -> file: ltl_rating.js:2284 -> err:`, errResponse !== "" ? errResponse : err);
@@ -1915,14 +1929,13 @@ async function getXPOLTokenFromDynamo() {
 }
 
 async function putXPOLTokenFromDynamo(token) {
-    const currentDate = moment().format("DD-MM-YYYY");
     const params = {
         TableName: LTL_LOG_TABLE,
         Item: {
-            pKey: "token",
-            sKey: currentDate,
+            pKey: "XPOL",
+            sKey: "token",
             token: token,
-            expiration: Math.floor(new Date(moment().add(11, "hours").format()).getTime() / 1000),
+            validUpto: Math.floor(new Date(moment().add(11, "hours").format()).getTime() / 1000),
         },
     };
     try {
@@ -2335,4 +2348,28 @@ async function axiosRequest(url, payload, header = {}, method = "POST", carrier 
 
 function getNowTime() {
     return new Date().getTime();
+}
+
+async function getFEXFToken(time) {
+    const token = { dateTime: null, data: null };
+    if (get(token, "dateTime") === null || get(token, "dateTime") < time || get(token, "data") === null) {
+        const tokenResponse = await processFEXFAuthRequest();
+        if (tokenResponse) {
+            const dateTime = getUnixTime(moment().add(50, "minutes").format());
+            set(token, "dateTime", dateTime);
+            set(token, "data", tokenResponse);
+        } else {
+            return false;
+        }
+    } else {
+        return get(token, "data");
+    }
+}
+
+function getFormattedDateTime() {
+    return moment().format("YYYY-MM-DDTHH:mm:ss");
+}
+
+function getUnixTime(dateTime = new Date()) {
+    return Math.floor(new Date(dateTime).getTime() / 1000);
 }
