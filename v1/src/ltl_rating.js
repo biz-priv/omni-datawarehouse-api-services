@@ -2353,7 +2353,7 @@ async function getTokenForFEXF() {
     const dynamoResponse = await getXFEXFTokenFromDynamo();
     if (dynamoResponse) return dynamoResponse;
     const access_token = await processFEXFAuthRequest();
-    if (!tokenResponse) return false;
+    if (!access_token) return false;
     await putFEXFTokenIntoDynamo(access_token);
     const fexfTokenEnd = getNowTime();
     const fexfGetTokenTime = fexfTokenEnd - fexfTokenStart;
