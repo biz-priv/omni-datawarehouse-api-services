@@ -763,10 +763,10 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["AirportPickup"] = "N";
 
-    if (accessorialList.filter((accessorial) => ["APPT", "INSPU", "RESID"].includes(accessorial)).length > 0) {
+    if (accessorialList.filter((accessorial) => ["APPT", "INSPU", "RESID", "LIFT"].includes(accessorial)).length > 0) {
         xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"] = { PickupAccessorial: [] };
         for (const accessorial of accessorialList) {
-            if (["APPT", "INSPU", "RESID"].includes(accessorial)) {
+            if (["APPT", "INSPU", "RESID", "LIFT"].includes(accessorial)) {
                 xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"]["PickupAccessorial"].push(accessorialMappingFWDA[accessorial]);
             }
         }
@@ -776,10 +776,10 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["AirportDelivery"] = "N";
 
-    if (accessorialList.filter((accessorial) => ["APPTD", "INDEL", "RESDE"].includes(accessorial)).length > 0) {
+    if (accessorialList.filter((accessorial) => ["APPTD", "INDEL", "RESDE", "LIFTD"].includes(accessorial)).length > 0) {
         xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"] = { DeliveryAccessorial: [] };
         for (const accessorial of accessorialList) {
-            if (["APPTD", "INDEL", "RESDE"].includes(accessorial)) {
+            if (["APPTD", "INDEL", "RESDE", "LIFTD"].includes(accessorial)) {
                 xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
             }
         }
@@ -2053,10 +2053,12 @@ const accessorialMappingFWDA = {
     APPT: "APP",
     INSPU: "IPU",
     RESID: "RPU",
+    LIFT: "LGP",
 
     APPTD: "ADE",
     INDEL: "IDE",
     RESDE: "RDE",
+    LIFTD: "LGD",
 };
 
 const accessorialMappingEXLA = {
