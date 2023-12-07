@@ -91,7 +91,7 @@ let itemObj = {
     version: "v2.2",
 }
 
-const functionName = ""
+let functionName = ""
 module.exports.handler = async (event, context, callback) => {
     console.log("Event: ", event);
     functionName = context.functionName;
