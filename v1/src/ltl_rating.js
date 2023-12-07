@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { get, set } = require("lodash");
+const { get, set, unset } = require("lodash");
 const xml2js = require("xml2js");
 const axios = require("axios");
 const moment = require("moment");
@@ -770,6 +770,8 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
                 xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["Pickup"]["PickupAccessorials"]["PickupAccessorial"].push(accessorialMappingFWDA[accessorial]);
             }
         }
+    } else {
+        unset(xmlPayloadFormat, "FWDA.FAQuoteRequest.Origin.Pickup.PickupAccessorials");
     }
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DestinationZipCode"] = consigneeZip;
@@ -783,6 +785,8 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
                 xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
             }
         }
+    }else{
+        unset(xmlPayloadFormat, "FWDA.FAQuoteRequest.Destination.DeliveryAccessorials")
     }
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Hazmat"] = "N";
