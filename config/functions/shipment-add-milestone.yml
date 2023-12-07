@@ -22,6 +22,7 @@ function:
     CONVENANT_TRACKING_API_KEY: ${ssm:/omni-dw-api-sevices/${self:provider.stage}/covenant-tracking/x-api-key}
     ADD_MILESTONE_LOGS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/add-milestone-logs/ddb.tableName}
     P44_LOCATION_UPDATES_TABLE: ${ssm:/omni-p44/location-updates/${self:provider.stage}/source/ddb.table_name}
+    ERROR_SNS_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
 
   package:
     include:
