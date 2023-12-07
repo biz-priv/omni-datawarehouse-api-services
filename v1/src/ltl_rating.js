@@ -1653,7 +1653,7 @@ function getXmlPayloadPENS({ pickupTime, insuredValue, shipperZip, consigneeZip,
         if (hazmat) xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push("SP1HA");
     }
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push(`FV${insuredValue}`);
-    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].join(",");
+    xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].join(",");
     const builder = new xml2js.Builder({
         xmldec: { version: "1.0", encoding: "UTF-8" },
     });
