@@ -1649,7 +1649,10 @@ function getXmlPayloadPENS({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["pltWidthList"] = width;
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = [];
     if (accessorialList.length > 0) {
-        xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = accessorialList.filter((acc) => Object.keys(accessorialMappingPENS).includes(acc)).map((item) => accessorialMappingPENS[item]);
+        xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = accessorialList
+            .filter((acc) => Object.keys(accessorialMappingPENS).includes(acc))
+            .map((item) => accessorialMappingPENS[item])
+            .join(",");
         if (hazmat) xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push("SP1HA");
     }
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push(`FV${insuredValue}`);
@@ -1742,9 +1745,10 @@ function getXmlPayloadSAIA({ pickupTime, insuredValue, shipperZip, consigneeZip,
         Units: pieces,
         Width: width,
     };
-    if (accessorialList.length > 0) {
+    const newAccessorialList = accessorialList.filter((acc) => !["APPTD"].includes(acc));
+    if (newAccessorialList.length > 0) {
         xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"] = { AccessorialItem: { Code: [] } };
-        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = accessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => accessorialMappingSAIA[item]);
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = newAccessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => accessorialMappingSAIA[item]);
         if (hazmat) xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"].push("Hazardous");
     }
 
