@@ -7,6 +7,7 @@ const axios = require("axios");
 const AWS = require("aws-sdk");
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const cloudwatch = new AWS.CloudWatch();
+const sns = new AWS.SNS();
 
 const {
     MILESTONE_ORDER_STATUS,
@@ -25,7 +26,7 @@ const eventValidation = Joi.object()
         addMilestoneRequest: Joi.object()
             .keys({
                 housebill: Joi.string().required(),
-                statusCode: statusCodeValidation,
+                statusCode: Joi.string().required(),
                 eventTime: Joi.string().required(),
             })
             .required(),
@@ -37,7 +38,7 @@ const eventDelValidation = Joi.object()
         addMilestoneRequest: Joi.object()
             .keys({
                 housebill: Joi.string().required(),
-                statusCode: statusCodeValidation,
+                statusCode: Joi.string().required(),
                 eventTime: Joi.string().required(),
                 signatory: Joi.string().required(),
             })
@@ -50,7 +51,7 @@ const eventLocValidation = Joi.object()
         addMilestoneRequest: Joi.object()
             .keys({
                 housebill: Joi.string().required(),
-                statusCode: statusCodeValidation,
+                statusCode: Joi.string().required(),
                 eventTime: Joi.string().required(),
                 latitude: Joi.number().required(),
                 longitude: Joi.number().required(),
@@ -64,9 +65,9 @@ const eventLocValidation = Joi.object()
         addMilestoneRequest: Joi.object()
             .keys({
                 housebill: Joi.string().required(),
-                statusCode: statusCodeValidation,
+                statusCode: Joi.string().required(),
                 note: Joi.string().required(),
-                eventTime: Joi.string(),
+                eventTime: Joi.string().required(),
             })
             .required(),
     })
@@ -107,7 +108,6 @@ module.exports.handler = async (event, context, callback) => {
         if (get(body, "addMilestoneRequest", null) === null) {
             itemObj.errorMsg = "Given input body requires addMilestoneRequest data";
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
-            await sendAlarm("Given input body requires addMilestoneRequest data");
             return { statusCode: 400, message: "Given input body requires addMilestoneRequest data" };
         }
         const statusCode = get(body, "addMilestoneRequest.statusCode", "")
@@ -134,11 +134,10 @@ module.exports.handler = async (event, context, callback) => {
             itemObj.errorMsg = key + " " + msg
             console.log("eventLogObj", itemObj);
             await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
-            await sendAlarm(key + " " + msg)
             return { statusCode: 400, message: key + " " + msg };
         }
 
-        return await sendEvent(body, callback);
+        return await sendEvent(body, callback, context);
 
     } catch (error) {
         console.error("Main lambda error: ", error)
@@ -150,12 +149,12 @@ module.exports.handler = async (event, context, callback) => {
         }
         itemObj.errorMsg = errorMsgVal;
         await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
-        await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
+        await sendsns(`Main Lambda Error: ${errorMsgVal}`, context);
         return { statusCode: 400, message: errorMsgVal };
     }
 }
 
-async function sendEvent(body, callback) {
+async function sendEvent(body, callback, context) {
     try {
         const addMilestoneData = get(body, "addMilestoneRequest", "");
         const eventBody = {
@@ -233,7 +232,7 @@ async function sendEvent(body, callback) {
             ReturnValues: "UPDATED_NEW",
         };
         await updateItem(updateParams);
-        await sendAlarm(`Main Lambda Error: ${errorMsgVal}`);
+        await sendsns(`Error while sending event to world trak: ${errorMsgVal}`, context);
         return { statusCode: 400, message: errorMsgVal };
     }
 }
@@ -418,19 +417,14 @@ async function updateItem(params) {
     }
 }
 
-async function sendAlarm(reason) {
-    try {
-        const params = {
-            AlarmName: 'add-milestone-lambda-alarm',
-            StateValue: 'ALARM',
-            StateReason: reason,
-        };
-
-        console.info("cloudwatch alarm params: ", params)
-        const alarmData = await cloudwatch.setAlarmState(params).promise();
-        console.info("Alarm sent to cloudwatch, request Id: ", get(alarmData, "ResponseMetadata.RequestId", ""))
-
-    } catch (error) {
-        console.error('Error while sending cloudwatch alarm:', error);
+async function sendsns(error, context) {
+    const params = {
+        Message: `An error occurred in function ${context.functionName}. Error details: ${error}.`,
+        TopicArn: process.env.ERROR_SNS_ARN,
+    };
+    try{
+    await sns.publish(params).promise();
+    }catch(error){
+        console.error("Error while sending sns notification: ", error)
     }
 }
