@@ -91,8 +91,10 @@ let itemObj = {
     version: "v2.2",
 }
 
+const functionName = ""
 module.exports.handler = async (event, context, callback) => {
     console.log("Event: ", event);
+    functionName = context.functionName;
     try {
         const { body } = event;
 
@@ -137,7 +139,7 @@ module.exports.handler = async (event, context, callback) => {
             return { statusCode: 400, message: key + " " + msg };
         }
 
-        return await sendEvent(body, callback, context);
+        return await sendEvent(body, callback);
 
     } catch (error) {
         console.error("Main lambda error: ", error)
@@ -149,12 +151,12 @@ module.exports.handler = async (event, context, callback) => {
         }
         itemObj.errorMsg = errorMsgVal;
         await putItem(ADD_MILESTONE_LOGS_TABLE, itemObj);
-        await sendsns(`Main Lambda Error: ${errorMsgVal}`, context);
+        await sendsns(`Main Lambda Error: ${errorMsgVal}`);
         return { statusCode: 400, message: errorMsgVal };
     }
 }
 
-async function sendEvent(body, callback, context) {
+async function sendEvent(body, callback) {
     try {
         const addMilestoneData = get(body, "addMilestoneRequest", "");
         const eventBody = {
@@ -232,7 +234,7 @@ async function sendEvent(body, callback, context) {
             ReturnValues: "UPDATED_NEW",
         };
         await updateItem(updateParams);
-        await sendsns(`Error while sending event to world trak: ${errorMsgVal}`, context);
+        await sendsns(`Error while sending event to world trak: ${errorMsgVal}`);
         return { statusCode: 400, message: errorMsgVal };
     }
 }
@@ -417,9 +419,9 @@ async function updateItem(params) {
     }
 }
 
-async function sendsns(error, context) {
+async function sendsns(error) {
     const params = {
-        Message: `An error occurred in function ${context.functionName}. Error details: ${error}.`,
+        Message: `An error occurred in function ${functionName}. Error details: ${error}.`,
         TopicArn: process.env.ERROR_SNS_ARN,
     };
     try{
