@@ -1745,7 +1745,8 @@ function getXmlPayloadSAIA({ pickupTime, insuredValue, shipperZip, consigneeZip,
         Units: pieces,
         Width: width,
     };
-    const newAccessorialList = accessorialList.filter((acc) => !["APPTD"].includes(acc));
+    const newAccessorialList = accessorialList.filter((acc) => !["APPT"].includes(acc));
+    console.info(`🙂 -> file: ltl_rating.js:1749 -> newAccessorialList:`, newAccessorialList);
     if (newAccessorialList.length > 0) {
         xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"] = { AccessorialItem: { Code: [] } };
         xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = newAccessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => accessorialMappingSAIA[item]);
