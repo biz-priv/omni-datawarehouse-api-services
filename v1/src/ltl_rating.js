@@ -1557,18 +1557,46 @@ function getXmlPayloadSEFN({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["SEFN"]["PieceWidth1"] = width;
     xmlPayloadFormat["SEFN"]["PieceHeight1"] = height;
     xmlPayloadFormat["SEFN"]["UnitOfMeasure1"] = dimUOM;
-    if (hazmat) xmlPayloadFormat["SEFN"]["chkHM"] = "on";
+    if (hazmat) {
+        xmlPayloadFormat["SEFN"]["chkHM"] = "on";
+    } else {
+        xmlPayloadFormat["SEFN"]["chkHM"] = "off";
+    }
     xmlPayloadFormat["SEFN"]["Class1"] = freightClass;
 
     accessorialList
         .filter((acc) => Object.keys(accessorialMappingSEFN).includes(acc))
         .map((item) => {
-            if (item === "INSPU") xmlPayloadFormat["SEFN"]["chkIP"] = "on";
-            if (item === "RESID") xmlPayloadFormat["SEFN"]["chkPR"] = "on";
-            if (item === "LIFT") xmlPayloadFormat["SEFN"]["chkLGP"] = "on";
-            if (item === "INDEL") xmlPayloadFormat["SEFN"]["chkID"] = "on";
-            if (item === "RESDE") xmlPayloadFormat["SEFN"]["chkPR"] = "on";
-            if (item === "LIFTD") xmlPayloadFormat["SEFN"]["chkLGD"] = "on";
+            if (item === "INSPU") {
+                xmlPayloadFormat["SEFN"]["chkIP"] = "on";
+            } else {
+                xmlPayloadFormat["SEFN"]["chkIP"] = "off";
+            }
+            if (item === "RESID") {
+                xmlPayloadFormat["SEFN"]["chkPR"] = "on";
+            } else {
+                xmlPayloadFormat["SEFN"]["chkPR"] = "off";
+            }
+            if (item === "LIFT") {
+                xmlPayloadFormat["SEFN"]["chkLGP"] = "on";
+            } else {
+                xmlPayloadFormat["SEFN"]["chkLGP"] = "off";
+            }
+            if (item === "INDEL") {
+                xmlPayloadFormat["SEFN"]["chkID"] = "on";
+            } else {
+                xmlPayloadFormat["SEFN"]["chkID"] = "off";
+            }
+            if (item === "RESDE") {
+                xmlPayloadFormat["SEFN"]["chkPR"] = "on";
+            } else {
+                xmlPayloadFormat["SEFN"]["chkPR"] = "off";
+            }
+            if (item === "LIFTD") {
+                xmlPayloadFormat["SEFN"]["chkLGD"] = "on";
+            } else {
+                xmlPayloadFormat["SEFN"]["chkLGD"] = "off";
+            }
         });
 
     return xmlPayloadFormat["SEFN"];
