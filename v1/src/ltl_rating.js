@@ -1751,9 +1751,9 @@ function getXmlPayloadSAIA({ pickupTime, insuredValue, shipperZip, consigneeZip,
     const newAccessorialList = accessorialList.filter((acc) => !["APPT"].includes(acc));
     console.info(`🙂 -> file: ltl_rating.js:1749 -> newAccessorialList:`, newAccessorialList);
     if (newAccessorialList.length > 0 || hazmat) {
-        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"] = { AccessorialItem: { Code: [] } };
-        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"] = newAccessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => accessorialMappingSAIA[item]);
-        if (hazmat) xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"]["Code"].push("Hazardous");
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"] = { AccessorialItem: [] };
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"] = newAccessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => ({ Code: accessorialMappingSAIA[item] }));
+        if (hazmat) xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"].push({ Code: "Hazardous" });
     }
 
     const builder = new xml2js.Builder({
