@@ -748,7 +748,7 @@ async function processFWDAResponses({ response }) {
         data["accessorialList"] = ChargeLineItems.map((chargeLineItem) => ({
             code: get(chargeLineItem, "Code[0]"),
             description: get(chargeLineItem, "Description[0]"),
-            charge: parseFloat(get(chargeLineItem, "Amount[0]")),
+            charge: parseFloat(get(chargeLineItem, "Amount[0]", 0)),
         }));
         responseBodyFormat["ltlRateResponse"].push(data);
     } catch (err) {
@@ -873,9 +873,9 @@ async function processEXLAResponses({ response }) {
                 accessorialList: [],
             };
             data["accessorialList"] = accessorialInfo.map((accessorial) => ({
-                code: get(accessorial, "rat:code[0]"),
-                description: get(accessorial, "rat:description[0]"),
-                charge: parseFloat(get(accessorial, "rat:charge[0]")),
+                code: get(accessorial, "rat:code[0]", ""),
+                description: get(accessorial, "rat:description[0]", ""),
+                charge: parseFloat(get(accessorial, "rat:charge[0]", 0)),
             }));
             return data;
         });
@@ -1138,7 +1138,7 @@ function processFEXFResponses({ response }) {
             const accessorialList = shipmentRateDetail.map((acc) => ({
                 code: get(acc, "type"),
                 description: get(acc, "description"),
-                charge: parseFloat(get(acc, "amount")),
+                charge: parseFloat(get(acc, "amount", 0)),
             }));
             const data = {
                 carrier: "FEXF",
@@ -1224,7 +1224,7 @@ async function processODFLResponses({ response }) {
         const accessorialList = get(rateEstimate, "accessorialCharges", []).map((acc) => ({
             code: "",
             description: get(acc, "description[0]"),
-            charge: parseFloat(get(acc, "amount[0]")),
+            charge: parseFloat(get(acc, "amount[0]", 0)),
         }));
         const data = {
             carrier: "ODFL",
@@ -1414,7 +1414,7 @@ function processAVRTResponses({ response }) {
     const transitDays = parseInt(get(quoteDetails, "estimatedServiceDays"));
     const accessorialList = get(response, "accessorialCharges", []).map((acc) => ({
         description: get(acc, "description"),
-        charge: parseFloat(get(acc, "value")),
+        charge: parseFloat(get(acc, "value", 0)),
     }));
     const data = {
         carrier: "AVRT",
@@ -1492,7 +1492,7 @@ function processDAFGResponses({ response }) {
     const accessorialList = get(response, "accessorials", []).map((acc) => ({
         code: get(acc, "code"),
         description: get(acc, "name"),
-        charge: parseFloat(get(acc, "amount")),
+        charge: parseFloat(get(acc, "amount", 0)),
     }));
     const data = {
         carrier: "DAFG",
@@ -1591,7 +1591,7 @@ async function processSEFNResponses({ response }) {
         for (let index = 0; index < typeCharge.length; index++) {
             const code = typeCharge[index] ?? "";
             const description = descArray[index] ?? "";
-            const charge = chargeArray[index] ?? "";
+            const charge = chargeArray[index] ?? 0;
             accessorialList.push({
                 code,
                 description,
@@ -1680,7 +1680,7 @@ async function processPENSResponses({ response }) {
         const accessorialList = accessorialDetail.map((acc) => ({
             code: get(acc, "code[0]"),
             description: get(acc, "description[0]"),
-            charge: parseFloat(get(acc, "charge[0]")),
+            charge: parseFloat(get(acc, "charge[0]", 0)),
         }));
         const data = {
             carrier: "PENS",
@@ -1775,7 +1775,7 @@ async function processSAIAResponses({ response }) {
         const accessorialList = get(body, "RateAccessorials[0].RateAccessorialItem", []).map((acc) => ({
             code: get(acc, "Code[0]"),
             description: get(acc, "Description[0]"),
-            charge: parseFloat(get(acc, "Amount[0]")),
+            charge: parseFloat(get(acc, "Amount[0]", 0)),
         }));
         const data = {
             carrier: "SAIA",
@@ -1872,7 +1872,7 @@ async function processXPOLResponses({ response }) {
     const accessorialList = get(body, "rateQuote.shipmentInfo.accessorials", []).map((acc) => ({
         code: get(acc, "accessorialCd"),
         description: get(acc, "accessorialDesc"),
-        charge: parseFloat(get(acc, "chargeAmt.amt")),
+        charge: parseFloat(get(acc, "chargeAmt.amt", 0)),
     }));
     const data = {
         carrier: "XPOL",
@@ -2038,7 +2038,7 @@ async function processRDFSResponses({ response }) {
         const accessorialList = get(body, "RateDetails[0].QuoteDetail", []).map((acc) => ({
             code: get(acc, "Code[0]"),
             description: get(acc, "Description[0]"),
-            charge: parseFloat(get(acc, "Charge[0]")),
+            charge: parseFloat(get(acc, "Charge[0]", 0)),
         }));
         const data = {
             carrier: "RDFS",
