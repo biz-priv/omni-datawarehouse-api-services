@@ -57,6 +57,7 @@ module.exports.handler = async (event, context) => {
     xmlPayloadFormat["DAFG"]["items"] = [];
     xmlPayloadFormat["XPOL"]["shipmentInfo"]["commodity"] = [];
     unset(xmlPayloadFormat, "EXLA.soapenv:Envelope.soapenv:Body.rat1:rateRequest.rat1:accessorials");
+    unset(xmlPayloadFormat, "FEXF.freightRequestedShipment.freightShipmentSpecialServices");
     const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
@@ -1119,7 +1120,12 @@ function getXmlPayloadFEXF({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentDetail"]["alternateBillingParty"]["accountNumber"] = {
         value: "554332390",
     };
-    xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"] = { specialServiceTypes: accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).map((item) => accessorialMappingFEXF[item]) };
+    const hazmat = get(shipmentLines, "[0].hazmat", false);
+    if (accessorialList.length > 0 || hazmat) {
+        xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"] = { specialServiceTypes: [] };
+        xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"] = { specialServiceTypes: accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).map((item) => accessorialMappingFEXF[item]) };
+        if (hazmat) xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"]["specialServiceTypes"].push("DANGEROUS_GOODS");
+    }
     return xmlPayloadFormat["FEXF"];
 }
 
