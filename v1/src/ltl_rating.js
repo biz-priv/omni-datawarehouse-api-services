@@ -56,6 +56,7 @@ module.exports.handler = async (event, context) => {
     xmlPayloadFormat["DAFG"]["handlingUnits"] = [];
     xmlPayloadFormat["DAFG"]["items"] = [];
     xmlPayloadFormat["XPOL"]["shipmentInfo"]["commodity"] = [];
+    unset(xmlPayloadFormat, "EXLA.soapenv:Envelope.soapenv:Body.rat1:rateRequest.rat1:accessorials");
     const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
