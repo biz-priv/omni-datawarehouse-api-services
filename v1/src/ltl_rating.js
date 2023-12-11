@@ -66,6 +66,16 @@ module.exports.handler = async (event, context) => {
     set(xmlPayloadFormat, "ABFS.Acc_RDEL", "N");
     set(xmlPayloadFormat, "ABFS.Acc_GRD_DEL", "N");
     set(xmlPayloadFormat, "ABFS.Acc_HAZ", "N");
+    unset(xmlPayloadFormat, "AVRT.shipmentInfo.accessorials");
+    unset(xmlPayloadFormat, "DAFG.accessorials");
+    set(xmlPayloadFormat, "SEFN.chkIP", "off");
+    set(xmlPayloadFormat, "SEFN.chkPR", "off");
+    set(xmlPayloadFormat, "SEFN.chkLGP", "off");
+    set(xmlPayloadFormat, "SEFN.chkID", "off");
+    set(xmlPayloadFormat, "SEFN.chkLGD", "off");
+    unset(xmlPayloadFormat, "SAIA.soap:Envelope.soap:Body.Create.request.Accessorials");
+    unset(xmlPayloadFormat, "XPOL.shipmentInfo.accessorials");
+    unset(xmlPayloadFormat, "RDFS.soap:Envelope.soap:Body.RateQuote.request.ServiceDeliveryOptions");
     const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
