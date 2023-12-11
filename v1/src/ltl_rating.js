@@ -1600,33 +1600,21 @@ function getXmlPayloadSEFN({ pickupTime, insuredValue, shipperZip, consigneeZip,
         .map((item) => {
             if (item === "INSPU") {
                 xmlPayloadFormat["SEFN"]["chkIP"] = "on";
-            } else {
-                xmlPayloadFormat["SEFN"]["chkIP"] = "off";
             }
             if (item === "RESID") {
                 xmlPayloadFormat["SEFN"]["chkPR"] = "on";
-            } else {
-                xmlPayloadFormat["SEFN"]["chkPR"] = "off";
             }
             if (item === "LIFT") {
                 xmlPayloadFormat["SEFN"]["chkLGP"] = "on";
-            } else {
-                xmlPayloadFormat["SEFN"]["chkLGP"] = "off";
             }
             if (item === "INDEL") {
                 xmlPayloadFormat["SEFN"]["chkID"] = "on";
-            } else {
-                xmlPayloadFormat["SEFN"]["chkID"] = "off";
             }
             if (item === "RESDE") {
                 xmlPayloadFormat["SEFN"]["chkPR"] = "on";
-            } else {
-                xmlPayloadFormat["SEFN"]["chkPR"] = "off";
             }
             if (item === "LIFTD") {
                 xmlPayloadFormat["SEFN"]["chkLGD"] = "on";
-            } else {
-                xmlPayloadFormat["SEFN"]["chkLGD"] = "off";
             }
         });
 
