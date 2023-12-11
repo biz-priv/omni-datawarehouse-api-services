@@ -34,16 +34,15 @@ def handler(event, context):  # NOSONAR
     customer_id = validate_input(event)
     if customer_id not in ['customer-portal-admin', 'mechanical-orchard']:
         customer_info = validate_dynamodb(customer_id)
-        for key in ['controllingStation', 'customerNumber']:
-            if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
-                event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
-
-            if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
-                event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-                event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
-
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
+        event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+        event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+        event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        print(event['body']['shipmentCreateRequest'])
+        for key in ["deliveryWindowFrom","deliveryWindowTo","delBy","billTo","projectCode","UserID","showName","venueName","booth","decorator","customerCharges","vendorCharges","controllingStation","customerNumber"]:
+            event["body"]["shipmentCreateRequest"].pop(key, None)
+
     if customer_id in ['mechanical-orchard']:
         version = "V4"
     else:
