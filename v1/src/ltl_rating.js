@@ -1129,7 +1129,7 @@ function getXmlPayloadFEXF({ pickupTime, insuredValue, shipperZip, consigneeZip,
         value: "554332390",
     };
     const hazmat = get(shipmentLines, "[0].hazmat", false);
-    if (accessorialList.length > 0 || hazmat) {
+    if (accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).length > 0 || hazmat) {
         xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"] = { specialServiceTypes: [] };
         xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"] = { specialServiceTypes: accessorialList.filter((acc) => Object.keys(accessorialMappingFEXF).includes(acc)).map((item) => accessorialMappingFEXF[item]) };
         if (hazmat) xmlPayloadFormat["FEXF"]["freightRequestedShipment"]["freightShipmentSpecialServices"]["specialServiceTypes"].push("DANGEROUS_GOODS");
@@ -1202,7 +1202,7 @@ function getXmlPayloadODFL({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["pickupDateTime"] = pickupTime;
     xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["insuranceAmount"] = insuredValue;
     const shipmentLine = shipmentLines[0];
-    if (accessorialList.length > 0 || get(shipmentLine, "hazmat") === true) {
+    if (accessorialList.filter((acc) => Object.keys(accessorialMappingODFL).includes(acc)).length > 0 || get(shipmentLine, "hazmat") === true) {
         xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"] = [];
         xmlPayloadFormat["ODFL"]["soapenv:Envelope"]["soapenv:Body"]["myr:getLTLRateEstimate"]["arg0"]["accessorials"] = accessorialList.filter((acc) => Object.keys(accessorialMappingODFL).includes(acc)).map((item) => accessorialMappingODFL[item]);
         if (get(shipmentLine, "hazmat") === true || get(shipmentLine, "hazmat") === "true") {
@@ -1416,7 +1416,7 @@ function getXmlPayloadAVRT({ pickupTime, insuredValue, shipperZip, consigneeZip,
         shipmentClass: get(shipmentLine, "freightClass"),
         shipmentWeight: get(shipmentLine, "weight"),
     });
-    if (accessorialList.length > 0 || get(shipmentLine, "hazmat")) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"] = {};
+    if (accessorialList.filter((acc) => ["LIFT", "LIFTD", "INDEL", "RESDE"].includes(acc)).length > 0 || get(shipmentLine, "hazmat")) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"] = {};
     if (get(shipmentLine, "hazmat")) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["hazmat"] = true;
     accessorialList.forEach((acc) => {
         if (["LIFT", "LIFTD"].includes(acc)) xmlPayloadFormat["AVRT"]["shipmentInfo"]["accessorials"]["liftgate"] = true;
@@ -1497,7 +1497,7 @@ function getXmlPayloadDAFG({ pickupTime, insuredValue, shipperZip, consigneeZip,
         class: freightClass,
         weight,
     });
-    if (accessorialList.length > 0 || hazmat) {
+    if (accessorialList.filter((acc) => Object.keys(accessorialMappingDAFG).includes(acc)).length > 0 || hazmat) {
         xmlPayloadFormat["DAFG"]["accessorials"] = [];
         xmlPayloadFormat["DAFG"]["accessorials"] = accessorialList.filter((acc) => Object.keys(accessorialMappingDAFG).includes(acc)).map((item) => accessorialMappingDAFG[item]);
         if (hazmat) xmlPayloadFormat["DAFG"]["accessorials"].push("HMF");
@@ -1702,7 +1702,7 @@ function getXmlPayloadPENS({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["pltLengthList"] = length;
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["pltWidthList"] = width;
     xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = [];
-    if (accessorialList.length > 0) {
+    if (accessorialList.filter((acc) => Object.keys(accessorialMappingPENS).includes(acc)).length > 0) {
         xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"] = accessorialList.filter((acc) => Object.keys(accessorialMappingPENS).includes(acc)).map((item) => accessorialMappingPENS[item]);
     }
     if (hazmat) xmlPayloadFormat["PENS"]["soap12:Envelope"]["soap12:Body"]["CreatePensRateQuote"]["accessorialList"].push("SP1HA");
@@ -1898,7 +1898,7 @@ function getXmlPayloadXPOL({ pickupTime, insuredValue, shipperZip, consigneeZip,
         };
     });
     const hazmat0 = get(shipmentLines, "[0].hazmat", false);
-    if (accessorialList.length > 0 || hazmat0) {
+    if (accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).length > 0 || hazmat0) {
         xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [];
         xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).map((item) => accessorialMappingXPOL[item]))].map((item2) => ({
             accessorialCd: item2,
@@ -2058,7 +2058,7 @@ function getXmlPayloadRDFS({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["PaymentType"] = "P";
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["CubicFeet"] = cubicFeet;
     xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["Pieces"] = pieces;
-    if (accessorialList.length > 0 || hazmat) {
+    if (accessorialList.filter((acc) => Object.keys(accessorialMappingRDFS).includes(acc)).length > 0 || hazmat) {
         xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"] = { ServiceOptions: [] };
         xmlPayloadFormat["RDFS"]["soap:Envelope"]["soap:Body"]["RateQuote"]["request"]["ServiceDeliveryOptions"]["ServiceOptions"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingRDFS).includes(acc)).map((item) => accessorialMappingRDFS[item]))].map((item2) => ({
             ServiceCode: item2,
