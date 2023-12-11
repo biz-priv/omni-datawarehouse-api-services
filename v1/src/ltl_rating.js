@@ -59,6 +59,13 @@ module.exports.handler = async (event, context) => {
     unset(xmlPayloadFormat, "EXLA.soapenv:Envelope.soapenv:Body.rat1:rateRequest.rat1:accessorials");
     unset(xmlPayloadFormat, "FEXF.freightRequestedShipment.freightShipmentSpecialServices");
     unset(xmlPayloadFormat, "ODFL.soapenv:Envelope.soapenv:Body.myr:getLTLRateEstimate.arg0.accessorials");
+    set(xmlPayloadFormat, "ABFS.Acc_IPU", "N");
+    set(xmlPayloadFormat, "ABFS.Acc_RPU", "N");
+    set(xmlPayloadFormat, "ABFS.Acc_GRD_PU", "N");
+    set(xmlPayloadFormat, "ABFS.Acc_IDEL", "N");
+    set(xmlPayloadFormat, "ABFS.Acc_RDEL", "N");
+    set(xmlPayloadFormat, "ABFS.Acc_GRD_DEL", "N");
+    set(xmlPayloadFormat, "ABFS.Acc_HAZ", "N");
     const queueData = {};
     try {
         const validation = await ltlRateRequestSchema.validateAsync(get(event, "body"));
@@ -1316,22 +1323,28 @@ function setAccessorialForABFS(accessorialList) {
     accessorialList.map((item) => {
         if (item === "INSPU") {
             xmlPayloadFormat["ABFS"]["Acc_IPU"] = "Y";
-        } else xmlPayloadFormat["ABFS"]["Acc_IPU"] = "N";
+            return;
+        }
         if (item === "RESID") {
             xmlPayloadFormat["ABFS"]["Acc_RPU"] = "Y";
-        } else xmlPayloadFormat["ABFS"]["Acc_RPU"] = "N";
+            return;
+        }
         if (item === "LIFT") {
             xmlPayloadFormat["ABFS"]["Acc_GRD_PU"] = "Y";
-        } else xmlPayloadFormat["ABFS"]["Acc_GRD_PU"] = "N";
+            return;
+        }
         if (item === "INDEL") {
             xmlPayloadFormat["ABFS"]["Acc_IDEL"] = "Y";
-        } else xmlPayloadFormat["ABFS"]["Acc_IDEL"] = "N";
+            return;
+        }
         if (item === "RESDE") {
             xmlPayloadFormat["ABFS"]["Acc_RDEL"] = "Y";
-        } else xmlPayloadFormat["ABFS"]["Acc_RDEL"] = "N";
+            return;
+        }
         if (item === "LIFTD") {
             xmlPayloadFormat["ABFS"]["Acc_GRD_DEL"] = "Y";
-        } else xmlPayloadFormat["ABFS"]["Acc_GRD_DEL"] = "N";
+            return;
+        }
     });
 }
 
