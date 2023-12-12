@@ -21,16 +21,16 @@ const ltlRateRequestSchema = Joi.object({
             .max(99)
             .items(
                 Joi.object({
-                    pieces: Joi.number().required().label("pieces is invalid."),
-                    pieceType: Joi.string().optional().label("pieceType is invalid."),
-                    weight: Joi.number().required().label("weight is invalid."),
-                    weightUOM: Joi.string().required().label("weightUOM is invalid."),
-                    length: Joi.number().required().label("length is invalid."),
-                    width: Joi.number().required().label("width is invalid."),
-                    height: Joi.number().required().label("height is invalid."),
-                    dimUOM: Joi.string().required().label("dimUOM is invalid."),
-                    hazmat: Joi.boolean().optional().label("hazmat is invalid."),
-                    freightClass: Joi.number().optional().label("freightClass is invalid."),
+                    pieces: Joi.number().required().label("pieces."),
+                    pieceType: Joi.string().optional().label("pieceType."),
+                    weight: Joi.number().required().label("weight."),
+                    weightUOM: Joi.string().required().label("weightUOM."),
+                    length: Joi.number().required().label("length."),
+                    width: Joi.number().required().label("width."),
+                    height: Joi.number().required().label("height."),
+                    dimUOM: Joi.string().required().label("dimUOM."),
+                    hazmat: Joi.boolean().optional().label("hazmat."),
+                    freightClass: Joi.number().optional().label("freightClass."),
                 })
             )
             .required()
@@ -799,14 +799,14 @@ function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip,
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["AirportDelivery"] = "N";
 
     if (accessorialList.filter((accessorial) => ["APPTD", "INDEL", "RESDE", "LIFTD"].includes(accessorial)).length > 0) {
-        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"] = { DeliveryAccessorial: [] };
+        xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["DeliveryAccessorials"] = { DeliveryAccessorial: [] };
         for (const accessorial of accessorialList) {
             if (["APPTD", "INDEL", "RESDE", "LIFTD"].includes(accessorial)) {
-                xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["DeliveryAccessorials"]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
+                xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Destination"]["Delivery"]["DeliveryAccessorials"]["DeliveryAccessorial"].push(accessorialMappingFWDA[accessorial]);
             }
         }
     } else {
-        unset(xmlPayloadFormat, "FWDA.FAQuoteRequest.Destination.DeliveryAccessorials");
+        unset(xmlPayloadFormat, "FWDA.FAQuoteRequest.Destination.Delivery.DeliveryAccessorials");
     }
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Hazmat"] = "N";
