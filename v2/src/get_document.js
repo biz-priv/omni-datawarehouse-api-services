@@ -153,8 +153,22 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
+    const apiKey = event.identity.apiKey
+    const params = {
+      TableName: process.env.TOKEN_VALIDATOR,
+      IndexName: process.env.TOKEN_VALIDATION_TABLE_INDEX,
+      KeyConditionExpression: 'ApiKey = :ApiKey',
+      ExpressionAttributeValues: {
+        ':ApiKey': apiKey
+      }
+    };
+    const data = await ddb.query(params).promise();
+    let websliKey = get(data, "Items[0].websli_key", process.env.WEBSLI_DEFAULT_KEY)
+    
+    console.log("websli api key record in token validator", data)
+
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
-    const resp = await getData(eventParams, parameterString, searchType);
+    const resp = await getData(eventParams, parameterString, searchType, websliKey);
 
     const newResponse = await newResponseStructureForV2(resp);
     console.log("newResponse", newResponse);
@@ -191,10 +205,10 @@ async function newResponseStructureForV2(response) {
  * @param searchType
  * @returns
  */
-async function getData(eventParams, parameterString, searchType) {
+async function getData(eventParams, parameterString, searchType, apiKey) {
   try {
 
-    let url = `${process.env.GET_DOCUMENT_API}/${searchType}=${eventParams[searchType]}/${parameterString}`;
+    let url = `${process.env.GET_DOCUMENT_API}/${apiKey}/${searchType}=${eventParams[searchType]}/${parameterString}`;
     console.log("websli url :", url);
 
     let getDocumentData = {
