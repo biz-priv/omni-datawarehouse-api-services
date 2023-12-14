@@ -26,23 +26,19 @@ module.exports.handler = async (event, context) => {
     const body = get(event, "body", {});
     itemObj.eventBody = body;
 
-    if (get(event, "enhancedAuthContext.customerId", null) === "7L") {
-      if (get(body, "vendorInvoiceRequest", null) === null) {
-        throw new Error("Given input body requires vendorInvoiceRequest data.");
-      } else if (
-        get(body, "vendorInvoiceRequest.housebill", null) === null &&
-        get(body, "vendorInvoiceRequest.fileNumber", null) === null
-      ) {
-        throw new Error(
-          "housebill or fileNumber is required in vendorInvoiceRequest."
-        );
-      } else if (
-        get(body, "vendorInvoiceRequest.vendorReference", null) === null || get(body, "vendorInvoiceRequest.vendorId", null) === null
-      ) {
-        throw new Error("vendorReference or vendorId is required in vendorInvoiceRequest.");
-      } 
-    } else {
-      throw new Error("Unauthorized request.");
+    if (get(body, "vendorInvoiceRequest", null) === null) {
+      throw new Error("Given input body requires vendorInvoiceRequest data.");
+    } else if (
+      get(body, "vendorInvoiceRequest.housebill", null) === null &&
+      get(body, "vendorInvoiceRequest.fileNumber", null) === null
+    ) {
+      throw new Error(
+        "housebill or fileNumber is required in vendorInvoiceRequest."
+      );
+    } else if (
+      get(body, "vendorInvoiceRequest.vendorReference", null) === null || get(body, "vendorInvoiceRequest.vendorId", null) === null
+    ) {
+      throw new Error("vendorReference or vendorId is required in vendorInvoiceRequest.");
     }
 
     let getQuery;
