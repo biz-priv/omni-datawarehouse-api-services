@@ -2166,20 +2166,6 @@ const pieceTypeMappingEXLA = {
     UNT: "PC",
 };
 
-const pieceTypeMappingFEXF = {
-    BND: "BUNDLE",
-    BOX: "BOX",
-    CNT: "CONTAINER",
-    CRT: "CRATE",
-    CAS: "CASE",
-    CTN: "CARTON",
-    PCE: "PIECE",
-    PLT: "PALLET",
-    REL: "REEL",
-    SKD: "SKID",
-    UNT: "UNIT",
-};
-
 const freightClassFEXF = {
     50: "CLASS_050",
     55: "CLASS_055",

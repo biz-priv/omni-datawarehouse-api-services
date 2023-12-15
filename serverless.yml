@@ -84,11 +84,6 @@ plugins:
 
 package:
   individually: true
-  # exclude:
-  #   - "*/**"
-  #   - serverless.yaml
-  # patterns:
-  #   - "!**/*"
 
 layers:
   DWAPILayer:
