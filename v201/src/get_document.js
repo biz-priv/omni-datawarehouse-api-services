@@ -11,12 +11,12 @@ const constants = {
   billNo: {
     "agistics": true,
     "customer-portal-admin": true,
-    "10040516": "8515",
-    "10126801": "8515",
-    "10343158": "9468",
-    "10041424": "9468",
-    "10573219": "53278",
-    "10265170": "53278"
+    "10040516": "8515",  //logitech prod
+    "10126801": "8515",  //logitech dev
+    "10343158": "9468",  //Vivint dev
+    "10041424": "9468",  //Vivint prod
+    "10573219": "53278", //CDW prod
+    "10265170": "53278"  //CDW dev
   },
   pkey: {
     "housebill": "Housebill",
