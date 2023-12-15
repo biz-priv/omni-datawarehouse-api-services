@@ -41,4 +41,4 @@ function:
     XPOL_REFRESH_TOKEN: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-refresh-token}
     XPOL_EXPIRES_IN: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-expires-in}
     RDFS_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/RDFS-url}
-    LOG_QUEUE: "https://sqs.${self:provider.stage}.amazonaws.com/332281781429/omni-dw-backend-ltl-rating-log-insertion-queue-${self:provider.stage}"
+    LOG_QUEUE: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-rating/log-queue-url}
