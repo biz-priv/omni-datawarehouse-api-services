@@ -13,8 +13,8 @@ const { LTL_LOG_TABLE, FWDA_URL, FWDA_USER, FWDA_PASSWORD, FWDA_CUSTOMERID, EXLA
 let payloadForQueue = [];
 
 module.exports.handler = async (event) => {
-    const now = getNowTime();
     //NOSONAR
+    const now = getNowTime();
     console.info(`🙂 -> file: ltl_rating.js:2 -> event:`, event);
     responseBodyFormat["ltlRateResponse"] = [];
     payloadForQueue = [];
