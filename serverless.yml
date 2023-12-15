@@ -122,7 +122,6 @@ functions:
   shipment-create: ${file(config/functions/shipment-create.yml):function}
   vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
   ltl-rating: ${file(config/functions/ltl-rating.yml):function}
-  ltl-batch-rating: ${file(config/functions/ltl-batch-rating.yml):function}
 
 resources:
   Resources:
