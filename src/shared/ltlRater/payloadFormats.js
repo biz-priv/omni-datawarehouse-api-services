@@ -403,7 +403,8 @@ const xmlPayloadFormat = {
     },
 };
 
-function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) { //NOSONAR
+function getXmlPayloadFWDA({ pickupTime, insuredValue, shipperZip, consigneeZip, shipmentLines, accessorialList }) {
+    //NOSONAR
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["BillToCustomerNumber"] = 2353722;
 
     xmlPayloadFormat["FWDA"]["FAQuoteRequest"]["Origin"]["OriginZipCode"] = shipperZip;
@@ -964,7 +965,7 @@ function getXmlPayloadSAIA({ pickupTime, insuredValue, shipperZip, consigneeZip,
     console.info(`🙂 -> file: ltl_rating.js:1749 -> newAccessorialList:`, newAccessorialList);
     if (newAccessorialList.length > 0 || hazmat) {
         xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"] = { AccessorialItem: [] };
-        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"] = newAccessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => ({ Code: accessorialMappingSAIA[item] }));//NOSONAR
+        xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"] = newAccessorialList.filter((acc) => Object.keys(accessorialMappingSAIA).includes(acc)).map((item) => ({ Code: accessorialMappingSAIA[item] })); //NOSONAR
         if (hazmat) xmlPayloadFormat["SAIA"]["soap:Envelope"]["soap:Body"]["Create"]["request"]["Accessorials"]["AccessorialItem"].push({ Code: "Hazardous" });
     }
 
@@ -1011,9 +1012,10 @@ function getXmlPayloadXPOL({ pickupTime, insuredValue, shipperZip, consigneeZip,
     const hazmat0 = get(shipmentLines, "[0].hazmat", false);
     if (accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).length > 0 || hazmat0) {
         xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [];
-        xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).map((item) => accessorialMappingXPOL[item]))].map((item2) => ({
-            accessorialCd: item2,
-        })); //NOSONAR
+        if (accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).length > 0)
+            xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"] = [...new Set(accessorialList.filter((acc) => Object.keys(accessorialMappingXPOL).includes(acc)).map((item) => accessorialMappingXPOL[item]))].map((item2) => ({
+                accessorialCd: item2,
+            })); //NOSONAR
 
         if (hazmat0)
             xmlPayloadFormat["XPOL"]["shipmentInfo"]["accessorials"].push({
