@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 const { get } = require("lodash");
 const sql = require("mssql");
+const sns = new AWS.SNS();
 
 let itemObj = {
   id: uuidv4().toString(),
@@ -18,30 +19,26 @@ let itemObj = {
   version: "v2",
 };
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event, context) => {
   console.info("event", JSON.stringify(event));
 
   try {
     const body = get(event, "body", {});
     itemObj.eventBody = body;
 
-    if (get(event, "enhancedAuthContext.customerId", null) === "7L") {
-      if (get(body, "vendorInvoiceRequest", null) === null) {
-        throw new Error("Given input body requires vendorInvoiceRequest data.");
-      } else if (
-        get(body, "vendorInvoiceRequest.housebill", null) === null &&
-        get(body, "vendorInvoiceRequest.fileNumber", null) === null
-      ) {
-        throw new Error(
-          "housebill or fileNumber is required in vendorInvoiceRequest."
-        );
-      } else if (
-        get(body, "vendorInvoiceRequest.vendorReference", null) === null || get(body, "vendorInvoiceRequest.vendorId", null) === null
-      ) {
-        throw new Error("vendorReference or vendorId is required in vendorInvoiceRequest.");
-      } 
-    } else {
-      throw new Error("Unauthorized request.");
+    if (get(body, "vendorInvoiceRequest", null) === null) {
+      throw new Error("Given input body requires vendorInvoiceRequest data.");
+    } else if (
+      get(body, "vendorInvoiceRequest.housebill", null) === null &&
+      get(body, "vendorInvoiceRequest.fileNumber", null) === null
+    ) {
+      throw new Error(
+        "housebill or fileNumber is required in vendorInvoiceRequest."
+      );
+    } else if (
+      get(body, "vendorInvoiceRequest.vendorReference", null) === null || get(body, "vendorInvoiceRequest.vendorId", null) === null
+    ) {
+      throw new Error("vendorReference or vendorId is required in vendorInvoiceRequest.");
     }
 
     let getQuery;
@@ -120,6 +117,11 @@ module.exports.handler = async (event) => {
     } else {
       errorMsgVal = error;
     }
+    const params = {
+      Message: `An error occurred in function ${context.functionName}. Error details: ${error}.`,
+      TopicArn: process.env.ERROR_SNS_ARN,
+    };
+    await sns.publish(params).promise();
     itemObj.errorMsg = errorMsgVal;
     itemObj.status = "FAILED";
     await putItem(itemObj);

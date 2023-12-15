@@ -167,7 +167,8 @@ module.exports.handler = async (event, context, callback) => {
       }
     };
     const data = await ddb.query(params).promise();
-    const websliKey = get(data, "Items[0].websli_key", "")
+    let websliKey = get(data, "Items[0].websli_key", process.env.WEBSLI_DEFAULT_KEY)
+    
     console.log("websli api key record in token validator", data)
 
 
