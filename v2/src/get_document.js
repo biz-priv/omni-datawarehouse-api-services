@@ -1,6 +1,28 @@
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
+const { get } = require("lodash");
+const ddb = new AWS.DynamoDB.DocumentClient();
+
+
+//constants
+const constants = {
+  billNo: {
+    "agistics": true,
+    "customer-portal-admin": true,
+    "10040516": "8515",  //logitech prod
+    "10126801": "8515",  //logitech dev
+    "10343158": "9468",  //Vivint dev
+    "10041424": "9468",  //Vivint prod
+    "10573219": "53278", //CDW prod
+    "10265170": "53278"  //CDW dev
+  },
+  pkey: {
+    "housebill": "Housebill",
+    "fileNumber": "PK_OrderNo"
+  }
+}
+
 
 //1. do a joi valiation
 const housebillSchema = Joi.object({
@@ -153,6 +175,18 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
+    const customerId = get(event, "enhancedAuthContext.customerId", "")
+    if(get(constants, `billNo.${customerId}`, null) == null){
+      return callback(response("[400]", "Customer not valid, please contact support for further queries."));
+    }
+
+    const validate = await customerValidation(searchType, get(eventParams, searchType, ""), customerId)
+
+    if(validate == false){
+      return callback(response("[400]", "Unauthorised request."));
+    }
+    console.info("validation: ", validate)
+
     const apiKey = event.identity.apiKey
     const params = {
       TableName: process.env.TOKEN_VALIDATOR,
@@ -229,39 +263,44 @@ async function getData(eventParams, parameterString, searchType, apiKey) {
   }
 }
 
-/**
- *
- * @param eventParams
- * @param searchType
- * @returns
- */
-async function getDataWithoutGateway(eventParams, parameterString, searchType) {
-    try {
-  
-      let url = `https://jsi-websli.omni.local/wtProd/getwtdoc/v1/json/fa75bbb8-9a10-4c64-80e8-e48d48f34088/${searchType}=${eventParams[searchType]}/${parameterString}`;
-      console.log("websli url :", url);
-  
-      let getDocumentData = {
-        wtDocs: {
-          housebill: "",
-          fileNumber: "",
-          wtDoc: [],
-        },
-      }
-  
-      const queryType = await axios.get(url);
-      getDocumentData = queryType.data;
-      console.log("data", getDocumentData);
-    //   return getDocumentData;
-    } catch (error) {
-      console.log("error", error);
-    //   throw error;
-    }
-  }
-
 function response(code, message) {
   return JSON.stringify({
     httpStatus: code,
     message,
   });
+}
+
+async function customerValidation(searchType, value, customerId){
+  try{
+  const billNo = get(constants, `billNo.${customerId}`, false)
+  if(billNo == true){
+    return true
+  }
+
+  const params = {
+    TableName: process.env.SHIPMENT_HEADER_TABLE,
+    IndexName: `${searchType}-billNo-index`,
+    KeyConditionExpression: '#pKey = :pKey and #sKey = :sKey',
+    ExpressionAttributeNames: {
+      '#pKey': get(constants, `pkey.${searchType}`, ""),
+      '#sKey': "BillNo"
+    },
+    ExpressionAttributeValues: {
+      ':pKey': value,
+      ':sKey': get(constants, `billNo.${customerId}`, "")
+    }
+  };
+
+  console.info("params: ", params)
+  
+  const data = await ddb.query(params).promise();
+  console.info("data: ", data)
+  if(get(data, "Items.length", 0) == 0){
+    return false
+  }
+  return true
+  }catch(error){
+    console.error(error)
+    throw error
+  }
 }

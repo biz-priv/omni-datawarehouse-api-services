@@ -5,6 +5,26 @@ const { v4: uuidv4 } = require("uuid");
 const { get } = require("lodash");
 const ddb = new AWS.DynamoDB.DocumentClient();
 
+
+//constants
+const constants = {
+  billNo: {
+    "agistics": true,
+    "customer-portal-admin": true,
+    "10040516": "8515",
+    "10126801": "8515",
+    "10343158": "9468",
+    "10041424": "9468",
+    "10573219": "53278",
+    "10265170": "53278"
+  },
+  pkey: {
+    "housebill": "Housebill",
+    "fileNumber": "PK_OrderNo"
+  }
+}
+
+
 //1. do a joi valiation
 const housebillSchema = Joi.object({
   housebill: Joi.string().required().max(13),
@@ -157,6 +177,16 @@ module.exports.handler = async (event, context, callback) => {
       return callback(response("[400]", error?.message ?? ""));
     }
 
+    const customerId = get(event, "enhancedAuthContext.customerId", "")
+    if(get(constants, `billNo.${customerId}`, null) == null){
+      return callback(response("[400]", "Customer not valid, please contact support for further queries."));
+    }
+    const validate = await customerValidation(searchType, get(eventParams, searchType, ""), customerId)
+
+    if(validate == false){
+      return callback(response("[400]", "Unauthorized request."));
+    }
+
     const apiKey = event.identity.apiKey
     const params = {
       TableName: process.env.TOKEN_VALIDATOR,
@@ -303,4 +333,37 @@ async function generatePreSignedURL(filename) {
   };
   let url = await S3.getSignedUrlPromise('getObject', params)
   return url;
+}
+
+async function customerValidation(searchType, value, customerId){
+  try{
+  const billNo = get(constants, `billNo.${customerId}`, false)
+  if(billNo == true){
+    return true
+  }
+
+  const params = {
+    TableName: process.env.SHIPMENT_HEADER_TABLE,
+    IndexName: `${searchType}-billNo-index`,
+    KeyConditionExpression: '#pKey = :pKey and #sKey = :sKey',
+    ExpressionAttributeNames: {
+      '#pKey': get(constants, `pkey.${searchType}`, ""),
+      '#sKey': "BillNo"
+    },
+    ExpressionAttributeValues: {
+      ':pKey': value,
+      ':sKey': get(constants, `billNo.${customerId}`, "")
+    }
+  };
+  console.info("params: ", params)
+  const data = await ddb.query(params).promise();
+  console.info("data: ", data)
+  if(get(data, "Items.length", 0) == 0){
+    return false
+  }
+  return true
+  }catch(error){
+    console.error(error)
+    throw error
+  }
 }
