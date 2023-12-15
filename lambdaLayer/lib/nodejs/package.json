@@ -1,39 +1,42 @@
 {
-	"name": "omni-datawarehouse-api-services",
-	"version": "1.0.0",
-	"description": "omni-datawarehouse-api-services",
-	"main": "index.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/bizcloud-experts/omni-datawarehouse-api-services.git"
-	},
-	"author": "BizCloud Experts",
-	"license": "ISC",
-	"bugs": {
-		"url": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services/issues"
-	},
-	"homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
-	"dependencies": {
-		"aws-sdk": "^2.1446.0",
-		"axios": "^0.21.1",
-		"buffer-image-size": "^0.6.4",
-		"csvtojson": "^2.0.10",
-		"form-data": "^4.0.0",
-		"joi": "^17.4.2",
-		"js-base64": "^3.7.3",
-		"lodash": "^4.17.21",
-		"log4js": "^6.9.1",
-		"moment": "^2.29.4",
-		"moment-timezone": "^0.5.41",
-		"mssql": "^10.0.1",
-		"pdfkit": "^0.13.0",
-		"pg-promise": "^10.11.1",
-		"pngjs": "^7.0.0",
-		"util": "^0.12.5",
-		"uuid": "^9.0.0",
-		"xmlbuilder2": "^3.0.2"
-	}
+    "name": "omni-datawarehouse-api-services",
+    "version": "1.0.0",
+    "description": "omni-datawarehouse-api-services",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bizcloud-experts/omni-datawarehouse-api-services.git"
+    },
+    "author": "BizCloud Experts",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services/issues"
+    },
+    "homepage": "https://github.com/bizcloud-experts/omni-datawarehouse-api-services#readme",
+    "dependencies": {
+        "aws-sdk": "^2.1446.0",
+        "axios": "^0.21.1",
+        "form-data": "^4.0.0",
+        "joi": "^17.4.2",
+        "js-base64": "^3.7.3",
+        "lodash": "^4.17.21",
+        "log4js": "^6.9.1",
+        "moment": "^2.29.4",
+        "moment-timezone": "^0.5.41",
+        "pg-promise": "^10.11.1",
+        "uuid": "^9.0.0",
+        "xmlbuilder2": "^3.0.2",
+        "pdfkit": "^0.13.0",
+        "buffer-image-size": "^0.6.4",
+        "pngjs": "^7.0.0",
+        "csvtojson": "^2.0.10",
+        "util": "^0.12.5",
+        "qs": "^6.11.2",
+        "xml2js": "^0.6.2",
+        "xlsx": "^0.18.5",
+        "mssql": "^10.0.1"
+    }
 }

@@ -1,0 +1,25 @@
+{
+    "body": {
+        "ltlRateRequest": {
+            "reference": "12345678-9abc-def0-1234-56789abcdef1",
+            "pickupTime": "2023-11-23T17:00:00",
+            "shipperZip": "78045",
+            "consigneeZip": "62025",
+            "shipmentLines": [
+                {
+                    "pieces": 12,
+                    "pieceType": "PCE",
+                    "weight": 38,
+                    "weightUOM": "lb",
+                    "length": 18,
+                    "width": 14,
+                    "height": 3,
+                    "dimUOM": "in",
+                    "hazmat": true,
+                    "freightClass": 50
+                }
+            ],
+            "accessorialList": ["APPT", "INDEL"]
+        }
+    }
+}

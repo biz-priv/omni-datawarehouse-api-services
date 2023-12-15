@@ -1,0 +1,44 @@
+function:
+  handler: ${self:custom.alias}/src/ltl_rating.handler
+  name: ${self:service}-ltl-rating-${self:provider.stage}
+  description: ltl rating api service - ${self:provider.stage}
+  runtime: nodejs18.x
+  timeout: 30
+  role: ShippeoPODRole
+  layers:
+    - !Ref DWAPILayerLambdaLayer
+  memorySize: 512
+  package:
+    include:
+      - ${self:custom.alias}/src/ltl_rating.js
+      - src/shared/**
+  events:
+    - http:
+        path: /shipment/ltlrate
+        method: POST
+        integration: lambda
+        private: true
+        cors: true
+  environment:
+    LTL_LOG_TABLE: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-rating/log-table-name}
+    FWDA_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/FWDA-url}
+    FWDA_USER: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/FWDA-user} 
+    FWDA_PASSWORD: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/FWDA-password~true}
+    FWDA_CUSTOMERID: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/FWDA-customerId}
+    EXLA_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/EXLA-url}
+    FEXF_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/FEXF-url}
+    ODFL_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/ODFL-url}
+    ABFS_BASEURL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/ABFS-baseUrl} 
+    AVRT_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/AVRT-url} 
+    DAFG_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/DAFG-url} 
+    SEFN_BASEURL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/SEFN-baseUrl} 
+    PENS_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/PENS-url} 
+    SAIA_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/SAIA-url}
+    XPOL_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-url}
+    XPOL_TOKEN_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-token-url}
+    XPOL_AUTHORIZATION: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-authorization}
+    XPOL_ACCESS_TOKEN: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-access-token}
+    XPOL_REFRESH_TOKEN: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-refresh-token}
+    XPOL_EXPIRES_IN: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/XPOL-expires-in}
+    RDFS_URL: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-batch-rating/RDFS-url}
+    LOG_QUEUE: ${ssm:/omni-dw-api-services/${self:provider.stage}/ltl-rating/log-queue-url}

@@ -84,11 +84,6 @@ plugins:
 
 package:
   individually: true
-  # exclude:
-  #   - "*/**"
-  #   - serverless.yaml
-  # patterns:
-  #   - "!**/*"
 
 layers:
   DWAPILayer:
@@ -120,10 +115,8 @@ functions:
   get-document-alb: ${file(config/functions/get-document-alb.yml):function}
   add-milestone: ${file(config/functions/shipment-add-milestone.yml):function}
   shipment-create: ${file(config/functions/shipment-create.yml):function}
-  pod-doc-upload: ${file(config/functions/pod-doc-upload.yml):function}
-  shipment-header-table-stream-processor: ${file(config/functions/shipment-header-table-stream-processor.yml):function}
   vendor-invoice: ${file(config/functions/vendor-invoice.yml):function}
-  
+  ltl-rating: ${file(config/functions/ltl-rating.yml):function}
 
 resources:
   Resources:
@@ -257,10 +250,6 @@ resources:
         RestApiId:
           Ref: "ApiGatewayRestApi"
         StatusCode: "401"
-
-    # Shipment File table stream queue
-    ShipmentFileTableStreamQueue: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamQueue}
-    ShipmentFileTableStreamDLQ: ${file(config/queues/shipmentFileTableStream.yml):ShipmentFileTableStreamDLQ}
 
     DocumentBucket:
       Type: AWS::S3::Bucket
