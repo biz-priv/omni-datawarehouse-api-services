@@ -103,7 +103,7 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "shipment/addmilestone" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
-    elif "shipment/getdocument" in event["methodArn"] and api_key in manual_apiKeys:
+    elif "shipment/getdocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     else:
         query = "CustomerID = :id AND "

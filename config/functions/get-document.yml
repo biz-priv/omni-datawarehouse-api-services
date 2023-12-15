@@ -54,5 +54,6 @@ function:
     TOKEN_VALIDATOR: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/table}
     TOKEN_VALIDATION_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/tokenValidator/apiKey/index.allColumns}
     GET_DOCUMENT_API: ${ssm:/omni-dw/${self:provider.stage}/websli/api/url}
+    SHIPMENT_HEADER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/shipment-header/ddb.tableName~true}
     WEBSLI_DEFAULT_KEY: ${ssm:/omni-dw/${self:provider.stage}/get-document/websli-key.default}
     DOCUMENTS_BUCKET: !Ref DocumentBucket

@@ -98,6 +98,8 @@ def handler(event, context):
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/shipment/vendorinvoice" in event["methodArn"] and customer_id in ["7L"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "shipment/getdocument" in event["methodArn"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     else:
         query = "CustomerID = :id AND "
         if "file_nbr" in params:
