@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const { get } = require("lodash");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const sqs = new AWS.SQS();
+const qs = require('qs')
 const { LTL_LOG_TABLE, LOG_QUEUE } = process.env;
 
 async function putFEXFTokenIntoDynamo(token) {
