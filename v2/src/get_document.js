@@ -10,6 +10,7 @@ const constants = {
   billNo: {
     "agistics": true,
     "customer-portal-admin": true,
+    "mechanical-orchard": true,
     "10040516": "8515",  //logitech prod
     "10126801": "8515",  //logitech dev
     "10343158": "9468",  //Vivint dev
@@ -176,13 +177,13 @@ module.exports.handler = async (event, context, callback) => {
     }
 
     const customerId = get(event, "enhancedAuthContext.customerId", "")
-    if(get(constants, `billNo.${customerId}`, null) == null){
+    if (get(constants, `billNo.${customerId}`, null) == null) {
       return callback(response("[400]", "Customer not valid, please contact support for further queries."));
     }
 
     const validate = await customerValidation(searchType, get(eventParams, searchType, ""), customerId)
 
-    if(validate == false){
+    if (validate == false) {
       return callback(response("[400]", "Unauthorised request."));
     }
     console.info("validation: ", validate)
@@ -198,7 +199,7 @@ module.exports.handler = async (event, context, callback) => {
     };
     const data = await ddb.query(params).promise();
     let websliKey = get(data, "Items[0].websli_key", process.env.WEBSLI_DEFAULT_KEY)
-    
+
     console.log("websli api key record in token validator", data)
 
     // await getDataWithoutGateway(eventParams, parameterString, searchType);
@@ -270,36 +271,36 @@ function response(code, message) {
   });
 }
 
-async function customerValidation(searchType, value, customerId){
-  try{
-  const billNo = get(constants, `billNo.${customerId}`, false)
-  if(billNo == true){
-    return true
-  }
-
-  const params = {
-    TableName: process.env.SHIPMENT_HEADER_TABLE,
-    IndexName: `${searchType}-billNo-index`,
-    KeyConditionExpression: '#pKey = :pKey and #sKey = :sKey',
-    ExpressionAttributeNames: {
-      '#pKey': get(constants, `pkey.${searchType}`, ""),
-      '#sKey': "BillNo"
-    },
-    ExpressionAttributeValues: {
-      ':pKey': value,
-      ':sKey': get(constants, `billNo.${customerId}`, "")
+async function customerValidation(searchType, value, customerId) {
+  try {
+    const billNo = get(constants, `billNo.${customerId}`, false)
+    if (billNo == true) {
+      return true
     }
-  };
 
-  console.info("params: ", params)
-  
-  const data = await ddb.query(params).promise();
-  console.info("data: ", data)
-  if(get(data, "Items.length", 0) == 0){
-    return false
-  }
-  return true
-  }catch(error){
+    const params = {
+      TableName: process.env.SHIPMENT_HEADER_TABLE,
+      IndexName: `${searchType}-billNo-index`,
+      KeyConditionExpression: '#pKey = :pKey and #sKey = :sKey',
+      ExpressionAttributeNames: {
+        '#pKey': get(constants, `pkey.${searchType}`, ""),
+        '#sKey': "BillNo"
+      },
+      ExpressionAttributeValues: {
+        ':pKey': value,
+        ':sKey': get(constants, `billNo.${customerId}`, "")
+      }
+    };
+
+    console.info("params: ", params)
+
+    const data = await ddb.query(params).promise();
+    console.info("data: ", data)
+    if (get(data, "Items.length", 0) == 0) {
+      return false
+    }
+    return true
+  } catch (error) {
     console.error(error)
     throw error
   }
