@@ -115,12 +115,16 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     const responseData = await getItem(customerNumber);
     if(responseData.length == 0){
-      valError = "customer not exist in the rate file";
+      valError = "customer not exist. Please contact support for further details.";
     }else{
-      const dateObjects = responseData.map(item => new Date(item.ToDate));
-      const maxDate = new Date(Math.max(...dateObjects));
       const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
-      if(pickupTime >= maxDate){
+      const filteredDates = responseData.filter(item => {
+        const itemFromDate = new Date(item.FromDate);
+        const itemToDate = new Date(item.ToDate);
+        return itemFromDate <= pickupTime && itemToDate >= pickupTime;
+      });
+
+      if(filteredDates.length == 0){
         valError = "pickupTime is not valid. Provide a valid pickupTime.";
       }
     }
