@@ -76,14 +76,11 @@ module.exports.handler = async (event) => {
   const { error, value } = validateQueryParams(queryParams);
   
   if(error){
-    let msg = get(error, "details[0].message", "")
-    .split('" ')[1]
-    .replace(/"/g, "");
-    let key = get(error, "details[0].context.key", "");
-
-    itemObj.errorMsg = key + " " + msg
-    console.log("eventLogObj", itemObj);
-    return { statusCode: 400, message: key + " " + msg };
+            let msg = get(error, "details[0].message", "")
+                .split('" ')[1]
+                .replace(/"/g, "");
+            let key = get(error, "details[0].context.key", "");
+            return { statusCode: 400, message: key + " " + msg };
   }
 
   let queryStringParams = value;
