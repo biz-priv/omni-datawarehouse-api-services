@@ -59,7 +59,9 @@ def handler(event, context):
     if type(customer_id) != str:
         return customer_id
 
-    if "/uploadpoddocument" in event["methodArn"]:
+    if customer_id in ["mechanical-orchard"]:
+        return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
+    elif "/uploadpoddocument" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
     elif "/create/shipment" in event["methodArn"]:
         return generate_policy(POLICY_ID, 'Allow', event["methodArn"], customer_id)
