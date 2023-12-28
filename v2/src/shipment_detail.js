@@ -74,7 +74,12 @@ module.exports.handler = async (event) => {
   };
 
   const { error, value } = validateQueryParams(queryParams);
-
+  
+  if(error){
+    console.info("error",error)
+    return ""
+  }
+  
   let queryStringParams = value;
 
   logObj = {
