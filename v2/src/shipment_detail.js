@@ -64,7 +64,6 @@ module.exports.handler = async (event) => {
     return "Lambda is warm!";
   }
 
-  console.log("queryparams",get(event,"query"))
   const { error, value } = validateQueryParams(get(event,"query"));
   
   if(error){
@@ -72,7 +71,6 @@ module.exports.handler = async (event) => {
                 .split('" ')[1]
                 .replace(/"/g, "");
             let key = get(error, "details[0].context.key", "");
-            console.log("error",error)
             return { message: key + " " + msg };
   }
 
@@ -151,7 +149,6 @@ module.exports.handler = async (event) => {
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
     ) {
-      console.log("queryStringParams",queryStringParams)
       const fromDateTime = moment(
         get(queryStringParams, "activityFromDate", null),
         "YYYY-MM-DD HH:mm:ss.SSS"
