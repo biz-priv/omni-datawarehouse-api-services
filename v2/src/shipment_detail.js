@@ -163,6 +163,7 @@ module.exports.handler = async (event) => {
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
     ) {
+      console.log("queryStringParams",queryStringParams)
       const fromDateTime = moment(
         get(queryStringParams, "activityFromDate", null),
         "YYYY-MM-DD HH:mm:ss.SSS"
