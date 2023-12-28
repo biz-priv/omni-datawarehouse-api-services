@@ -74,6 +74,14 @@ module.exports.handler = async (event) => {
   };
 
   const { error, value } = validateQueryParams(queryParams);
+  
+  if(error){
+            let msg = get(error, "details[0].message", "")
+                .split('" ')[1]
+                .replace(/"/g, "");
+            let key = get(error, "details[0].context.key", "");
+            return { message: key + " " + msg };
+  }
 
   let queryStringParams = value;
 
