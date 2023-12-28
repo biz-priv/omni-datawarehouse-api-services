@@ -27,6 +27,7 @@ INTERNAL_ERROR_MESSAGE = "Internal Error."
 
 xml_const = """b'<?xml version="1.0" encoding="UTF-8" ?>"""
 version = ""
+userName = ""
 
 @skip_execution_if
 def handler(event, context):  # NOSONAR
@@ -45,8 +46,10 @@ def handler(event, context):  # NOSONAR
 
     if customer_id in ['mechanical-orchard']:
         version = "V4"
+        userName = os.environ["wt_mo_soap_username"]
     else:
         version = "V3"
+        userName = os.environ["wt_soap_username"]
 
     try:
         temp_ship_data = {}
@@ -167,7 +170,7 @@ def handler(event, context):  # NOSONAR
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
         xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
             xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Header><AuthHeader xmlns="http://tempuri.org/"> \
-                    <UserName>""" + os.environ["wt_soap_username"]+"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
+                    <UserName>""" + userName +"""</UserName><Password>"""+os.environ["wt_soap_password"]+"""</Password>\
                     </AuthHeader></soap:Header><soap:Body><AddNewShipment""" +version+ \
                     """ xmlns="http://tempuri.org/"><oShipData>"""
     end = f"""</oShipData></AddNewShipment{version}></soap:Body></soap:Envelope>"""
