@@ -10,7 +10,12 @@ const { queryWithFileNumber,queryWithHouseBill,dateRange,queryWithEventDate,quer
 const sns = new AWS.SNS();
 
 const validateQueryParams = (params) => {
-  const schema = Joi.object({
+  const schema = Joi.object().or(
+    "housebill",
+    "fileNumber",
+    "activityFromDate",
+    "shipmentFromDate"
+  ).keys({
     housebill: Joi.string().allow(""),
     fileNumber: Joi.string().allow(""),
     activityFromDate: Joi.string().allow(""),
@@ -23,10 +28,11 @@ const validateQueryParams = (params) => {
       is: Joi.exist(),
       then: Joi.required(),
     }),
-  }).or("housebill", "fileNumber", "activityFromDate", "shipmentFromDate");
+  });
 
   return schema.validate(params);
 };
+
 
 const validateLastOrderKey = Joi.object({
       OrderYear: Joi.object({
