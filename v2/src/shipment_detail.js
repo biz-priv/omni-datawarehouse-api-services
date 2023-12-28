@@ -82,6 +82,7 @@ module.exports.handler = async (event) => {
                 .split('" ')[1]
                 .replace(/"/g, "");
             let key = get(error, "details[0].context.key", "");
+            console.log("error",error)
             return { message: key + " " + msg };
   }
 
