@@ -225,6 +225,7 @@ module.exports.handler = async (event, context, callback) => {
     "customer-portal-admin",
     process.env.IVIA_CUSTOMER_ID,
     "hill-logistics",
+    "mechanical-orchard",
   ];
 
   if (!allowedCustomers.includes(customerId)) {
@@ -279,8 +280,9 @@ module.exports.handler = async (event, context, callback) => {
     //  if customerId with "customer-portal-admin" and IVIA_CUSTOMER_ID matches
     //  query the shipment-header table with the housebill number to find the PK_OrderNo
   } else if (
-    customerId == "customer-portal-admin" ||
-    customerId == "hill-logistics"
+    customerId == "customer-portal-admin" || 
+    customerId == "hill-logistics" || 
+    customerId == "mechanical-orchard"
   ) {
     validated.housebill = eventBody.documentUploadRequest.housebill;
   } else {
