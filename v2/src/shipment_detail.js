@@ -80,7 +80,7 @@ module.exports.handler = async (event) => {
                 .split('" ')[1]
                 .replace(/"/g, "");
             let key = get(error, "details[0].context.key", "");
-            return { statusCode: 400, message: key + " " + msg };
+            return { message: key + " " + msg };
   }
 
   let queryStringParams = value;
