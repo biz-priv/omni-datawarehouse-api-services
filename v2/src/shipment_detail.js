@@ -23,7 +23,9 @@ const validateQueryParams = (params) => {
       is: Joi.exist(),
       then: Joi.required(),
     }),
-  }).or("housebill", "fileNumber", "activityFromDate", "shipmentFromDate");
+    milestone_history: Joi.boolean(),
+    b64str: Joi.string().allow(""),
+  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestone_history","b64str");
 
   return schema.validate(params);
 };
@@ -74,7 +76,7 @@ module.exports.handler = async (event) => {
   // };
 
   // console.info("queryParams",queryParams)
-
+  console.log("queryparams",get(event,"query"))
   const { error, value } = validateQueryParams(get(event,"query"));
   
   if(error){
