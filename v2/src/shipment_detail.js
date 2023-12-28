@@ -77,7 +77,13 @@ module.exports.handler = async (event) => {
   
   if(error){
     let msg = get(error, "details[0].message", "")
-    return msg;
+    .split('" ')[1]
+    .replace(/"/g, "");
+    let key = get(error, "details[0].context.key", "");
+
+    itemObj.errorMsg = key + " " + msg
+    console.log("eventLogObj", itemObj);
+    return { statusCode: 400, message: key + " " + msg };
   }
 
   let queryStringParams = value;
