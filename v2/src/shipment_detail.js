@@ -23,7 +23,9 @@ const validateQueryParams = (params) => {
       is: Joi.exist(),
       then: Joi.required(),
     }),
-  }).or("housebill", "fileNumber", "activityFromDate", "shipmentFromDate");
+    milestone_history: Joi.boolean(),
+    b64str: Joi.string().allow(""),
+  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestone_history","b64str");
 
   return schema.validate(params);
 };
@@ -62,18 +64,7 @@ module.exports.handler = async (event) => {
     return "Lambda is warm!";
   }
 
-  const queryParams = {
-    housebill: get(event, "query.housebill", null),
-    milestone_history: get(event, "query.milestone_history", null),
-    fileNumber: get(event, "query.fileNumber", null),
-    activityFromDate: get(event, "query.activityFromDate", null),
-    activityToDate: get(event, "query.activityToDate", null),
-    shipmentFromDate: get(event, "query.shipmentFromDate", null),
-    shipmentToDate: get(event, "query.shipmentToDate", null),
-    b64str: get(event, "query.b64str", null),
-  };
-
-  const { error, value } = validateQueryParams(queryParams);
+  const { error, value } = validateQueryParams(get(event,"query"));
   
   if(error){
             let msg = get(error, "details[0].message", "")
@@ -169,7 +160,7 @@ module.exports.handler = async (event) => {
 
       const base64 = get(queryStringParams, "b64str", null);
       let lastKey;
-      if (get(queryStringParams, "b64str", {})) {
+      if (get(queryStringParams, "b64str")) {
         lastKey = base64Decode(base64);
         const { error: eventError } = validateLastEventKey.validate(lastKey);
         if (eventError) {
@@ -252,7 +243,7 @@ module.exports.handler = async (event) => {
 
       const base64 = get(queryStringParams, "b64str", null);
       let lastKey;
-      if (get(queryStringParams, "b64str", {})) {
+      if (get(queryStringParams, "b64str")) {
         lastKey = base64Decode(base64);
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
