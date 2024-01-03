@@ -9,7 +9,7 @@ const Joi = require("joi");
 
 const eventValidation = Joi.object({
   vendorInvoiceRequest: Joi.object({
-    housebill: Joi.string().required(),
+    housebill: Joi.string(),
     fileNumber: Joi.string(),
     vendorReference: Joi.string().required(),
     vendorId: Joi.string().required(),
@@ -41,7 +41,7 @@ let itemObj = {
   version: "v2",
 };
 
-module.exports.handler = async (event, context) => {
+module.exports.handler = async (event, context, callback) => {
   console.info("event", JSON.stringify(event));
 
   try {
@@ -144,10 +144,10 @@ module.exports.handler = async (event, context) => {
     itemObj.errorMsg = errorMsgVal;
     itemObj.status = "FAILED";
     await putItem(itemObj);
-    return JSON.stringify({
+    return callback(JSON.stringify({
       httpStatus: "[400]",
       message: errorMsgVal,
-    });
+    }))
   }
 };
 
