@@ -104,7 +104,7 @@ module.exports.handler = async (event, context, callback) => {
         get(body, "vendorInvoiceRequest.chargeList[0].code", null) !== null ||
         get(body, "vendorInvoiceRequest.chargeList[0].charge", null) !== null
       ) {
-        updateQuery = `update dbo.tbl_shipmentapar set ${get(columnFromCode, get(body, "vendorInvoiceRequest.chargeList[0].code", "default"), "Total")}=sum(${get(body,"vendorInvoiceRequest.chargeList[0].charge",0)}) where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
+        updateQuery = `update dbo.tbl_shipmentapar set ${get(columnFromCode, get(body, "vendorInvoiceRequest.chargeList[0].code", "default"), "Total")}=${get(body,"vendorInvoiceRequest.chargeList[0].charge",0)} where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
       }
     } else {
       updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body,"vendorInvoiceRequest.vendorReference",null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
