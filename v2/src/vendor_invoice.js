@@ -47,7 +47,6 @@ module.exports.handler = async (event, context) => {
   try {
     const body = get(event, "body", {});
     itemObj.eventBody = body;
-
     const { error, value } = eventValidation.validate(body);
     if(error){
       console.log("Error: ", error);
