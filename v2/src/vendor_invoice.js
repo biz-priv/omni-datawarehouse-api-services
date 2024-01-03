@@ -5,6 +5,28 @@ const momentTZ = require("moment-timezone");
 const { get } = require("lodash");
 const sql = require("mssql");
 const sns = new AWS.SNS();
+const Joi = require("joi");
+
+const eventValidation = Joi.object({
+  vendorInvoiceRequest: Joi.object({
+    housebill: Joi.string().required(),
+    fileNumber: Joi.string(),
+    vendorReference: Joi.string().required(),
+    vendorId: Joi.string().required(),
+    chargeList: Joi.array().items(Joi.object({
+      code: Joi.string().required(),
+      description: Joi.string(),
+      charge: Joi.number().required()
+    }))
+  }).xor('housebill', 'fileNumber')
+});
+
+const columnFromCode = {
+  FRT: "cost",
+  FSC: "extra",
+  TAX: "tax",
+  default: "total"
+}
 
 let itemObj = {
   id: uuidv4().toString(),
@@ -26,19 +48,10 @@ module.exports.handler = async (event, context) => {
     const body = get(event, "body", {});
     itemObj.eventBody = body;
 
-    if (get(body, "vendorInvoiceRequest", null) === null) {
-      throw new Error("Given input body requires vendorInvoiceRequest data.");
-    } else if (
-      get(body, "vendorInvoiceRequest.housebill", null) === null &&
-      get(body, "vendorInvoiceRequest.fileNumber", null) === null
-    ) {
-      throw new Error(
-        "housebill or fileNumber is required in vendorInvoiceRequest."
-      );
-    } else if (
-      get(body, "vendorInvoiceRequest.vendorReference", null) === null || get(body, "vendorInvoiceRequest.vendorId", null) === null
-    ) {
-      throw new Error("vendorReference or vendorId is required in vendorInvoiceRequest.");
+    const { error, value } = eventValidation.validate(body);
+    if(error){
+      console.log("Error: ", error);
+      throw new Error(`Error,${error}`);
     }
 
     let getQuery;
@@ -82,24 +95,22 @@ module.exports.handler = async (event, context) => {
       get(result, "recordset", []).length
     );
 
-    if (
-      get(result, "recordset", []).length === 0 ||
-      get(result, "recordset", []).length > 2
-    ) {
-      throw new Error("0 rows updated");
+    if (get(result, "recordset", []).length !== 1) {
+      throw new Error("Error,0 rows updated.");
     }
     const fileNumber = get(result, "recordset[0].FK_OrderNo", "");
-    let updateQuery = `update dbo.tbl_shipmentapar set refno='${get(
-      body,
-      "vendorInvoiceRequest.vendorReference",
-      null
-    )}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(
-      body,
-      "vendorInvoiceRequest.vendorId",
-      null
-    )}' and finalize<>'Y'`;
+    let updateQuery = ""
+    if (get(body, "vendorInvoiceRequest.chargeList", null) !== null) {
+      if (
+        get(body, "vendorInvoiceRequest.chargeList[0].code", null) !== null ||
+        get(body, "vendorInvoiceRequest.chargeList[0].charge", null) !== null
+      ) {
+        updateQuery = `update dbo.tbl_shipmentapar set ${get(columnFromCode, get(body, "vendorInvoiceRequest.chargeList[0].code", "default"), "total")}=sum(${get(body,"vendorInvoiceRequest.chargeList[0].charge",0)}) where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
+      }
+    } else {
+      updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body,"vendorInvoiceRequest.vendorReference",null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
+    }
     console.info("updateQuery: ", updateQuery);
-
     const updateResult = await request.query(updateQuery);
     console.info("updateResult: ", updateResult);
 
@@ -108,7 +119,11 @@ module.exports.handler = async (event, context) => {
     itemObj.status = "SUCCESS";
     const dynamoInsert = await putItem(itemObj);
     console.info("dynamoInsert: ", dynamoInsert);
-    return { id: itemObj.id, message: "success" };
+    return JSON.stringify({
+      httpStatus: "[200]",
+      id: itemObj.id,
+      message: "success"
+    });
   } catch (error) {
     console.error("Main lambda error: ", error);
     let errorMsgVal = "";
@@ -117,15 +132,23 @@ module.exports.handler = async (event, context) => {
     } else {
       errorMsgVal = error;
     }
-    const params = {
-      Message: `An error occurred in function ${context.functionName}. Error details: ${error}.`,
-      TopicArn: process.env.ERROR_SNS_ARN,
-    };
-    await sns.publish(params).promise();
+    let flag = errorMsgVal.split(",")[0]
+    if(flag !== "Error"){
+      const params = {
+        Message: `An error occurred in function ${context.functionName}. Error details: ${error}.`,
+        TopicArn: process.env.ERROR_SNS_ARN,
+      };
+      await sns.publish(params).promise();
+    }else{
+      errorMsgVal = errorMsgVal.split(",")[1]
+    }
     itemObj.errorMsg = errorMsgVal;
     itemObj.status = "FAILED";
     await putItem(itemObj);
-    return { statusCode: 400, message: errorMsgVal };
+    return JSON.stringify({
+      httpStatus: "[400]",
+      message: errorMsgVal,
+    });
   }
 };
 
