@@ -46,7 +46,9 @@ def handler(event, context):  # NOSONAR
 
     if customer_id in ['mechanical-orchard']:
         version = "V4"
-        userName = os.environ["wt_mo_soap_username"]
+        if "UserId" not in event["body"]["shipmentCreateRequest"]:
+            return {"httpStatus": 400, "message": "Please provide UserId in the shipmentCreateRequest."}
+        userName = event["body"]["shipmentCreateRequest"]["UserID"]
     else:
         version = "V3"
         userName = os.environ["wt_soap_username"]
