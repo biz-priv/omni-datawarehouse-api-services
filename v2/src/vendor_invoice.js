@@ -118,11 +118,11 @@ module.exports.handler = async (event, context, callback) => {
     itemObj.status = "SUCCESS";
     const dynamoInsert = await putItem(itemObj);
     console.info("dynamoInsert: ", dynamoInsert);
-    return JSON.stringify({
+    return callback(JSON.stringify({
       httpStatus: "[200]",
       id: itemObj.id,
       message: "success"
-    });
+    }));
   } catch (error) {
     console.error("Main lambda error: ", error);
     let errorMsgVal = "";
@@ -139,7 +139,7 @@ module.exports.handler = async (event, context, callback) => {
       };
       await sns.publish(params).promise();
     }else{
-      errorMsgVal = errorMsgVal.split(",")[1]
+      errorMsgVal = errorMsgVal.split(",").slice(1)
     }
     itemObj.errorMsg = errorMsgVal;
     itemObj.status = "FAILED";
