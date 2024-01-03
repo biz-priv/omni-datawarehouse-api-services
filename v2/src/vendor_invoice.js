@@ -118,11 +118,10 @@ module.exports.handler = async (event, context, callback) => {
     itemObj.status = "SUCCESS";
     const dynamoInsert = await putItem(itemObj);
     console.info("dynamoInsert: ", dynamoInsert);
-    return callback(JSON.stringify({
-      httpStatus: "[200]",
+    return {
       id: itemObj.id,
       message: "success"
-    }));
+    };
   } catch (error) {
     console.error("Main lambda error: ", error);
     let errorMsgVal = "";
