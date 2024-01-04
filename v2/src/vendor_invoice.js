@@ -44,7 +44,7 @@ module.exports.handler = async (event, context, callback) => {
     const { error, value } = eventValidation.validate(body);
     if(error){
       console.log("Error: ", error);
-      throw new Error(`Error,${get(error, "details[0].message", "request body validation error.")}`);
+      throw new Error(`Error,${error}`);
     }
 
     let getQuery;
