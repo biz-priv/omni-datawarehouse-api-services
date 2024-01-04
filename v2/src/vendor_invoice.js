@@ -18,7 +18,7 @@ const eventValidation = Joi.object({
       description: Joi.string(),
       charge: Joi.number().required()
     }))
-  }).xor('housebill', 'fileNumber')
+  }).xor('housebill', 'fileNumber').required()
 });
 
 
