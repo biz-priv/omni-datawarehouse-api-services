@@ -115,7 +115,7 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     const responseData = await getItem(customerNumber);
     if(responseData.length == 0){
-      valError = "customer not exist. Please contact support for further details.";
+      valError = "customer doen't exist. Please contact support for further details.";
     }else{
       const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
       const filteredDates = responseData.filter(item => {
