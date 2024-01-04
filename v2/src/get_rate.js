@@ -630,7 +630,7 @@ async function getItem(customerNumber){
     IndexName: process.env.RATE_FILE_INDEX, 
     KeyConditionExpression: 'CVNo = :CVNo AND ChargeCode = :ChargeCode', 
     ExpressionAttributeValues: {
-      ':CVNo': customerNumber,
+      ':CVNo': `${customerNumber}`,
       ':ChargeCode': 'FSC',
     },
   };
