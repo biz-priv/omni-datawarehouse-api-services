@@ -115,7 +115,7 @@ module.exports.handler = async (event, context, callback) => {
   } else {
     const responseData = await getItem(customerNumber);
     if(responseData.length == 0){
-      valError = "customer not exist. Please contact support for further details.";
+      valError = "customer doen't exist. Please contact support for further details.";
     }else{
       const pickupTime = new Date(get(body,"shipmentRateRequest.pickupTime", ""));
       const filteredDates = responseData.filter(item => {
@@ -630,7 +630,7 @@ async function getItem(customerNumber){
     IndexName: process.env.RATE_FILE_INDEX, 
     KeyConditionExpression: 'CVNo = :CVNo AND ChargeCode = :ChargeCode', 
     ExpressionAttributeValues: {
-      ':CVNo': customerNumber,
+      ':CVNo': `${customerNumber}`,
       ':ChargeCode': 'FSC',
     },
   };
