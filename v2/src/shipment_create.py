@@ -488,9 +488,9 @@ def get_shipment_line_list(data_obj, version):  # NOSONAR
                     try:
                         i['Weigth'] = int(i['Weigth'])
                         if (int(i['Weigth']) > 999):
-                            i.pop('Weigth')
-                    except ValueError:
-                        i.pop('Weigth')
+                            raise ValueError("Weight should not exceed more than 999.")
+                    except ValueError as er:
+                        raise ValueError(er)
 
             def shipment_line_list_item(x): return 'NewShipmentDimLine' + version
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
