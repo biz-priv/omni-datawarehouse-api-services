@@ -488,7 +488,7 @@ def get_shipment_line_list(data_obj, version):  # NOSONAR
                     try:
                         i['Weigth'] = int(i['Weigth'])
                         if (int(i['Weigth']) > 99999.9):
-                            raise ValueError("Weight should not exceed more than 999.")
+                            raise ValueError("Weight should not exceed more than 99999.9")
                     except ValueError as er:
                         raise ValueError(er)
 
