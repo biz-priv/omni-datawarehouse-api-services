@@ -467,27 +467,27 @@ def get_shipment_line_list(data_obj, version):  # NOSONAR
                     try:
                         i['Pieces'] = int(i['Pieces'])
                         if (int(i['Pieces']) > 32767):
-                            i.pop('Pieces')
-                    except ValueError:
-                        i.pop('Pieces')
+                            raise ValueError("Pieces should not exceed more than 32767.")
+                    except ValueError as er:
+                        raise ValueError(er)
                 if ('Length' in i):
                     try:
                         i['Length'] = int(i['Length'])
                         if (int(i['Length']) > 999):
-                            i.pop('Length')
-                    except ValueError:
-                        i.pop('Length')
+                            raise ValueError("Length should not exceed more than 999.")
+                    except ValueError as er:
+                        raise ValueError(er)
                 if ('Width' in i):
                     try:
                         i['Width'] = int(i['Width'])
                         if (int(i['Width']) > 999):
-                            i.pop('Width')
-                    except ValueError:
-                        i.pop('Width')
+                            raise ValueError("Width should not exceed more than 999.")
+                    except ValueError as er:
+                        raise ValueError(er)
                 if ('Weigth' in i):
                     try:
                         i['Weigth'] = int(i['Weigth'])
-                        if (int(i['Weigth']) > 999):
+                        if (int(i['Weigth']) > 99999.9):
                             raise ValueError("Weight should not exceed more than 999.")
                     except ValueError as er:
                         raise ValueError(er)
