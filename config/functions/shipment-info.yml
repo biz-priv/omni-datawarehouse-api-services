@@ -41,7 +41,7 @@ function:
     - psycopg2/*
   environment:
     db_username: ${ssm:/omni-dw/${self:provider.stage}/db/user~true}
-    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password~true}
+    db_password: ${ssm:/omni-dw/${self:provider.stage}/db/password.unparsed~true}
     db_name: ${ssm:/omni-dw/${self:provider.stage}/db/name}
     db_host: ${ssm:/omni-dw/${self:provider.stage}/db/host~true}
     db_port: ${ssm:/omni-dw/${self:provider.stage}/db/port} 
