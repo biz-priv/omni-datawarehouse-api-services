@@ -226,6 +226,7 @@ module.exports.handler = async (event, context, callback) => {
     process.env.IVIA_CUSTOMER_ID,
     "hill-logistics",
     "mechanical-orchard",
+    "agistics"
   ];
 
   if (!allowedCustomers.includes(customerId)) {
@@ -282,7 +283,8 @@ module.exports.handler = async (event, context, callback) => {
   } else if (
     customerId == "customer-portal-admin" || 
     customerId == "hill-logistics" || 
-    customerId == "mechanical-orchard"
+    customerId == "mechanical-orchard" ||
+    customerId == "agistics"
   ) {
     validated.housebill = eventBody.documentUploadRequest.housebill;
   } else {
