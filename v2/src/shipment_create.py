@@ -439,6 +439,7 @@ def update_shipment_table(shipment_data, house_bill_info, service_level_desc, cu
 
 
 def get_shipment_line_list(data_obj, version):  # NOSONAR
+    valueErrorMsg = ""
     try:
         if "shipmentLines" in data_obj:
             temp_shipment_line_list = modify_object_keys(
@@ -464,33 +465,25 @@ def get_shipment_line_list(data_obj, version):  # NOSONAR
                 if ('PieceType' in i):
                     i['PieceType'] = i['PieceType'][0:3]
                 if ('Pieces' in i):
-                    try:
-                        i['Pieces'] = int(i['Pieces'])
-                        if (int(i['Pieces']) > 32767):
-                            raise ValueError("Pieces should not exceed more than 32767.")
-                    except ValueError as er:
-                        raise ValueError(er)
+                    i['Pieces'] = int(i['Pieces'])
+                    if (int(i['Pieces']) > 32767):
+                        valueErrorMsg = "Pieces should not exceed more than 32767."
+                        raise ValueError("Pieces should not exceed more than 32767.")
                 if ('Length' in i):
-                    try:
-                        i['Length'] = int(i['Length'])
-                        if (int(i['Length']) > 999):
-                            raise ValueError("Length should not exceed more than 999.")
-                    except ValueError as er:
-                        raise ValueError(er)
+                    i['Length'] = int(i['Length'])
+                    if (int(i['Length']) > 999):
+                        valueErrorMsg = "Length should not exceed more than 999."
+                        raise ValueError("Length should not exceed more than 999.")
                 if ('Width' in i):
-                    try:
-                        i['Width'] = int(i['Width'])
-                        if (int(i['Width']) > 999):
-                            raise ValueError("Width should not exceed more than 999.")
-                    except ValueError as er:
-                        raise ValueError(er)
+                    i['Width'] = int(i['Width'])
+                    if (int(i['Width']) > 999):
+                        valueErrorMsg = "Width should not exceed more than 999."
+                        raise ValueError("Width should not exceed more than 999.")
                 if ('Weigth' in i):
-                    try:
-                        i['Weigth'] = int(i['Weigth'])
-                        if (int(i['Weigth']) > 99999.9):
-                            raise ValueError("Weight should not exceed more than 99999.9")
-                    except ValueError as er:
-                        raise ValueError(er)
+                    i['Weigth'] = int(i['Weigth'])
+                    if (int(i['Weigth']) > 99999.9):
+                        valueErrorMsg = "Weight should not exceed more than 99999.9"
+                        raise ValueError("Weight should not exceed more than 99999.9")
 
             def shipment_line_list_item(x): return 'NewShipmentDimLine' + version
             shipment_line_list = dicttoxml.dicttoxml(temp_shipment_line_list,
@@ -503,9 +496,13 @@ def get_shipment_line_list(data_obj, version):  # NOSONAR
         return shipment_line_list
     except Exception as get_linelist_error:
         logging.exception("GetShipmentLineListError: %s",
-                          json.dumps(get_linelist_error))
-        raise GetShipmentLineListError(json.dumps(
-            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_linelist_error
+                          get_linelist_error)
+        if type(get_linelist_error) == ValueError:
+            raise InputError(json.dumps(
+            {"httpStatus": 400, "message": valueErrorMsg}))
+        else:
+            raise GetShipmentLineListError(json.dumps(
+                {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from get_linelist_error
 
 
 def get_reference_list(data_obj, version):  # NOSONAR
