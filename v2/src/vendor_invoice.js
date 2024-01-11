@@ -106,8 +106,8 @@ module.exports.handler = async (event, context, callback) => {
       }
       for(let chargelist of get(body, "vendorInvoiceRequest.chargeList", [])){
         const code = get(chargelist, "code", "")
-        charges[code] = get(charges, code, 0.00) + Number(get(chargelist, "charge", 0.00)).toFixed(2)
-        charges.total = get(charges, "total", 0.00) + Number(get(chargelist, "charge", 0.00)).toFixed(2)
+        charges[code] = get(charges, code, 0.00) + Number(Number(get(chargelist, "charge", 0.00)).toFixed(2))
+        charges.total = get(charges, "total", 0.00) + Number(Number(get(chargelist, "charge", 0.00)).toFixed(2))
       }
       console.log(charges)
       updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body,"vendorInvoiceRequest.vendorReference",null)}', Cost = ${get(charges, "FRT", 0.00)}, Extra = ${get(charges, "FSC", 0.00)}, Tax = ${get(charges, "TAX", 0.00)}, Total = ${get(charges, "total", 0.00)} where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
