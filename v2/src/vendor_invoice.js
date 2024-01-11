@@ -11,6 +11,7 @@ const eventValidation = Joi.object({
   vendorInvoiceRequest: Joi.object({
     housebill: Joi.string(),
     fileNumber: Joi.string(),
+    operation: Joi.string().valid('ADD', 'UPDATE').required(),
     vendorReference: Joi.string().required(),
     vendorId: Joi.string().required(),
     chargeList: Joi.array().items(Joi.object({
@@ -47,6 +48,9 @@ module.exports.handler = async (event, context, callback) => {
       throw new Error(`Error,${error}`);
     }
 
+    if(get(body, "vendorInvoiceRequest.operation", null) == "ADD"){
+      return { message: "ADD operation is not exist in this phase. This will be available in next phase." };
+    }
     let getQuery;
     itemObj.vendorId = get(body, "vendorInvoiceRequest.vendorId", null);
     itemObj.vendorReference = get(
@@ -102,11 +106,11 @@ module.exports.handler = async (event, context, callback) => {
       }
       for(let chargelist of get(body, "vendorInvoiceRequest.chargeList", [])){
         const code = get(chargelist, "code", "")
-        charges[code] = get(charges, code, 0.00) + Number(get(chargelist, "charge", 0.00))
-        charges.total = get(charges, "total", 0.00) + Number(get(chargelist, "charge", 0.00))
+        charges[code] = get(charges, code, 0.00) + Number(Number(get(chargelist, "charge", 0.00)).toFixed(2))
+        charges.total = get(charges, "total", 0.00) + Number(Number(get(chargelist, "charge", 0.00)).toFixed(2))
       }
       console.log(charges)
-      updateQuery = `update dbo.tbl_shipmentapar set Cost = ${get(charges, "FRT", 0.00)}, Extra = ${get(charges, "FSC", 0.00)}, Tax = ${get(charges, "TAX", 0.00)}, Total = ${get(charges, "total", 0.00)} where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
+      updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body,"vendorInvoiceRequest.vendorReference",null)}', Cost = ${get(charges, "FRT", 0.00)}, Extra = ${get(charges, "FSC", 0.00)}, Tax = ${get(charges, "TAX", 0.00)}, Total = ${get(charges, "total", 0.00)} where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
     } else {
       updateQuery = `update dbo.tbl_shipmentapar set refno='${get(body,"vendorInvoiceRequest.vendorReference",null)}' where fk_orderno='${fileNumber}' and fk_vendorid='${get(body,"vendorInvoiceRequest.vendorId",null)}' and finalize<>'Y'`;
     }
