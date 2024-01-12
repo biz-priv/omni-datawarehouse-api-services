@@ -17,7 +17,7 @@ const eventValidation = Joi.object({
     chargeList: Joi.array().items(Joi.object({
       code: Joi.string().valid('FRT', 'FSC', 'TAX').required(),
       description: Joi.string(),
-      charge: Joi.number().min(1).required()
+      charge: Joi.number().greater(0).required()
     }))
   }).xor('housebill', 'fileNumber').required()
 });
