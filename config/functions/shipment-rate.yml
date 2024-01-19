@@ -62,3 +62,4 @@ function:
     APPLICATION: DataWarehouse
     RATE_FILE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/rate-file/ddb.tableName~true}
     RATE_FILE_INDEX: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/rate-file/ddb.index~true}
+    ERROR_SNS_ARN: ${ssm:/omni-reports/${self:provider.stage}/error-notification/sns/arn}
