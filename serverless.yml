@@ -51,7 +51,7 @@ custom:
   # UsePython: !Equals ["${self:custom.alias}", 'v1.3']
   shipmentDetailRuntime: 
     Fn::If: 
-      - ${self:custom.UsePython}
+      - UsePython
       - python3.7
       - nodejs18.x
 
