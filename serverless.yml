@@ -48,7 +48,7 @@ custom:
       role: WarmupRole
   alias: ${opt:alias, 'v1'}
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
-  UsePython: !Equals ["${self:custom.alias}", 'v1.3']
+  # UsePython: !Equals ["${self:custom.alias}", 'v1.3']
   shipmentDetailRuntime: 
     Fn::If: 
       - ${self:custom.UsePython}
