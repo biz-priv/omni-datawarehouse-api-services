@@ -127,6 +127,8 @@ functions:
   ltl-rating: ${file(config/functions/ltl-rating.yml):function}
 
 resources:
+  Conditions:
+    UsePython: !Equals ["${self:custom.alias}", 'v1.3']
   Resources:
     WarmupRole:
       Type: AWS::IAM::Role
