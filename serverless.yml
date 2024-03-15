@@ -48,6 +48,13 @@ custom:
       role: WarmupRole
   alias: ${opt:alias, 'v1'}
   apiKeys: ${file(config/${self:provider.stage}ApiKeys.yaml):keys}
+  
+  shipmentDetailRuntime: 
+    Fn::If: 
+      - UsePython
+      - python3.7
+      - nodejs18.x
+
   serverless-layers:
     functions:
       - shipment-info
@@ -71,7 +78,8 @@ custom:
     enabled: true
     destinationArn: arn:aws:logs:${self:provider.region}:332753493246:destination:bce-logs-cw-destination-${self:provider.region}-${self:provider.stage}
     filterPattern: '{$.service-name = "*"}'
-
+conditions:
+  UsePython: !Equals ["${self:custom.alias}", 'v1.3']
 plugins:
   - serverless-layers
   - serverless-add-api-key
