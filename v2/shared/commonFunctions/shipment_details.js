@@ -186,7 +186,7 @@ async function mappingPayload(data, milestone_history) {
       customerReference: get(i, "customerReference", []),
       locations: get(i, "locations", []),
     };
-    if (milestone_history == "true") {
+    if (milestone_history != false) {
       const milestoneData = {
         milestones: get(i, "milestones", []),
       };

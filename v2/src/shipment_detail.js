@@ -23,9 +23,9 @@ const validateQueryParams = (params) => {
       is: Joi.exist(),
       then: Joi.required(),
     }),
-    milestone_history: Joi.boolean(),
+    milestoneHistory: Joi.boolean(),
     b64str: Joi.string().allow(""),
-  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestone_history","b64str");
+  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestoneHistory","b64str");
 
   return schema.validate(params);
 };
@@ -79,7 +79,7 @@ module.exports.handler = async (event) => {
   logObj = {
     id: uuidv4(),
     housebill: get(queryStringParams, "housebill", null),
-    milestone_history: get(queryStringParams, "milestone_history", null),
+    milestoneHistory: get(queryStringParams, "milestoneHistory", null),
     fileNumber: get(queryStringParams, "fileNumber", null),
     activityFromDate: get(queryStringParams, "activityFromDate", null),
     activityToDate: get(queryStringParams, "activityToDate", null),
@@ -127,8 +127,8 @@ module.exports.handler = async (event) => {
             return Converter.unmarshall(d);
           })
         );
-        if (get(queryStringParams, "milestone_history", null)) {
-          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestone_history", null));
+        if (get(queryStringParams, "milestoneHistory", null)) {
+          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestoneHistory", true));
           logObj = {
             ...logObj,
             api_status_code: "200",
@@ -136,7 +136,7 @@ module.exports.handler = async (event) => {
           };
           await putItem(logObj);
         } else {
-          mainResponse = await mappingPayload(unmarshalledDataObj, "true");
+          mainResponse = await mappingPayload(unmarshalledDataObj, true);
           logObj = {
             ...logObj,
             api_status_code: "200",
