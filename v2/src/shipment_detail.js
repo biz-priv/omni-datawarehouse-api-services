@@ -64,6 +64,9 @@ module.exports.handler = async (event) => {
     return "Lambda is warm!";
   }
 
+  const host = get(event,"headers.Host");
+  console.log("host",host);
+
   const { error, value } = validateQueryParams(get(event,"query"));
   
   if(error){
@@ -98,8 +101,10 @@ module.exports.handler = async (event) => {
   let dataObj = [];
   let mainResponse = {};
   let fullDataObj = {};
+  let nextEndPoint;
   try {
     if (get(queryStringParams, "fileNumber", null)) {
+      console.info("fileNumber",get(queryStringParams, "fileNumber", null));
       dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE,"fileNumberIndex",get(queryStringParams, "fileNumber", null));
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
@@ -118,6 +123,7 @@ module.exports.handler = async (event) => {
       };
       await putItem(logObj);
     } else if (get(queryStringParams, "housebill", null)) {
+      console.info("housebill",get(queryStringParams, "housebill", null));
       dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "housebill", null));
       if (dataObj[0].status.S == "Pending") {
         mainResponse = "Payload is not ready yet, please try again later";
@@ -127,8 +133,9 @@ module.exports.handler = async (event) => {
             return Converter.unmarshall(d);
           })
         );
-        if (get(queryStringParams, "milestoneHistory", null)) {
-          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestoneHistory", true));
+        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+          console.info("milestoneHistory",get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestoneHistory"));
           logObj = {
             ...logObj,
             api_status_code: "200",
@@ -149,6 +156,7 @@ module.exports.handler = async (event) => {
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
     ) {
+      console.info("activityFromDate & activityToDate", get(queryStringParams, "activityFromDate", null) + "    ", get(queryStringParams, "activityToDate", null));
       const fromDateTime = moment(
         get(queryStringParams, "activityFromDate", null),
         "YYYY-MM-DD HH:mm:ss.SSS"
@@ -224,6 +232,10 @@ module.exports.handler = async (event) => {
         );
         mainResponse = await mappingPayload(unmarshalledDataObj, true);
       }
+
+      if(get(fullDataObj, "lastEvaluatedKey")){
+        nextEndPoint = "https://" +host+"/v2/shipment/detail?activityFromDate="+get(queryStringParams, "activityFromDate", null)+"&activityToDate="+get(queryStringParams, "activityToDate", null)+"&b64str="+get(fullDataObj, "lastEvaluatedKey");
+      }
       logObj = {
         ...logObj,
         api_status_code: "200",
@@ -231,6 +243,7 @@ module.exports.handler = async (event) => {
       };
       await putItem(logObj);
     } else {
+      console.info("shipmentFromDate & shipmentToDate", get(queryStringParams, "shipmentFromDate", null) + "    ", get(queryStringParams, "shipmentToDate", null));
       const fromDateTime = moment(
         get(queryStringParams, "shipmentFromDate", null) + " 00:00:00.000",
         "YYYY-MM-DD HH:mm:ss.SSS"
@@ -308,6 +321,10 @@ module.exports.handler = async (event) => {
         );
         mainResponse = await mappingPayload(unmarshalledDataObj, true);
       }
+
+      if(get(fullDataObj, "lastEvaluatedKey")){
+        nextEndPoint = "https://" +host+"/v2/shipment/detail?shipmentFromDate="+get(queryStringParams, "shipmentFromDate", null)+"&shipmentToDate="+get(queryStringParams, "shipmentToDate", null)+"&b64str="+get(fullDataObj, "lastEvaluatedKey");
+      }
       logObj = {
         ...logObj,
         api_status_code: "200",
@@ -317,7 +334,7 @@ module.exports.handler = async (event) => {
     }
     return {
       Items: mainResponse,
-      LastEvaluatedKey: get(fullDataObj, "lastEvaluatedKey", null),
+      NextEndPoint: nextEndPoint ?? ""
     };
   } catch (error) {
     console.error("in main function: \n", error);

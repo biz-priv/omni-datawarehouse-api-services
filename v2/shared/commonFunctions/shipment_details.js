@@ -33,7 +33,7 @@ async function queryWithHouseBill(tableName, HouseBillNumber) {
   try {
     let data = await dynamo.query(params).promise();
     return get(data, "Items", []);
-  } catch (e) {
+  } catch (error) {
     console.error("Query Error:", error);
     throw error;
   }
@@ -82,7 +82,7 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
     },
-    Limit: 10,
+    Limit: 30,
   };
   if (lastEvaluatedKey) {
     params.ExclusiveStartKey = lastEvaluatedKey;
@@ -119,7 +119,7 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
     },
-    Limit: 10,
+    Limit: 30,
   };
 
   if (lastEvaluatedKey) {
@@ -209,8 +209,8 @@ async function putItem(item) {
       Item: item,
     };
     await dynamodb.put(params).promise();
-  } catch (e) {
-    console.error("Put Item Error: ", e, "\nPut params: ", params);
+  } catch (error) {
+    console.error("Put Item Error: ", error, "\nPut params: ", params);
     throw error;
   }
 }
@@ -224,4 +224,4 @@ function base64Encode(data) {
 }
 
 
-module.exports = { queryWithFileNumber,queryWithHouseBill,dateRange,queryWithEventDate,queryWithOrderDate,mappingPayload,putItem,base64Encode }
+module.exports = { queryWithFileNumber,queryWithHouseBill,dateRange,queryWithEventDate,queryWithOrderDate,mappingPayload,putItem,base64Encode };
