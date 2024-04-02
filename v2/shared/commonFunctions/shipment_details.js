@@ -89,8 +89,8 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
   }
   try {
     const result = await dynamo.query(params).promise();
-    let base64;
-    if (get(result, "LastEvaluatedKey", {})) {
+    let base64 = "";
+    if (get(result, "LastEvaluatedKey")) {
       const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
       base64 = base64Encode(lastEvaluatedKeyData);
     }
@@ -128,8 +128,8 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
 
   try {
     const result = await dynamo.query(params).promise();
-    let base64;
-    if (get(result, "LastEvaluatedKey", {})) {
+    let base64 = "";
+    if (get(result, "LastEvaluatedKey")) {
       const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
       base64 = base64Encode(lastEvaluatedKeyData);
     }
@@ -148,13 +148,13 @@ async function mappingPayload(data, milestone_history) {
   response["shipmentDetailResponse"] = [];
   for (const i of data) {
     const payload = {
-      fileNumber: get(i, "fileNumber", null),
-      housebill: get(i, "HouseBillNumber", null),
-      masterbill: get(i, "masterbill", null),
-      shipmentDate: get(i, "shipmentDate", null),
-      handlingStation: get(i, "handlingStation", null),
-      originPort: get(i, "originPort", null),
-      destinationPort: get(i, "destinationPort", null),
+      fileNumber: get(i, "fileNumber", ""),
+      housebill: get(i, "HouseBillNumber", ""),
+      masterbill: get(i, "masterbill", ""),
+      shipmentDate: get(i, "shipmentDate", ""),
+      handlingStation: get(i, "handlingStation", ""),
+      originPort: get(i, "originPort", ""),
+      destinationPort: get(i, "destinationPort", ""),
       shipper: get(i, "shipper", {
         name: "",
         address: "",
@@ -171,18 +171,18 @@ async function mappingPayload(data, milestone_history) {
         zip: "",
         country: "",
       }),
-      pieces: get(i, "pieces", null),
-      actualWeight: get(i, "actualWeight", null),
-      chargeableWeight: get(i, "chargeableWeight", null),
-      weightUOM: get(i, "weightUOM", null),
-      pickupTime: get(i, "pickupTime", null),
-      estimatedDepartureTime: get(i, "estimatedDepartureTime", null),
-      estimatedArrivalTime: get(i, "estimatedArrivalTime", null),
-      scheduledDeliveryTime: get(i, "scheduledDeliveryTime", null),
-      deliveryTime: get(i, "deliveryTime", null),
-      podName: get(i, "podName", null),
-      serviceLevelCode: get(i, "serviceLevelCode", null),
-      serviceLevelDescription: get(i, "serviceLevelDescription", null),
+      pieces: get(i, "pieces", 0),
+      actualWeight: get(i, "actualWeight", 0),
+      chargeableWeight: get(i, "chargeableWeight", 0),
+      weightUOM: get(i, "weightUOM", ""),
+      pickupTime: get(i, "pickupTime", ""),
+      estimatedDepartureTime: get(i, "estimatedDepartureTime", ""),
+      estimatedArrivalTime: get(i, "estimatedArrivalTime", ""),
+      scheduledDeliveryTime: get(i, "scheduledDeliveryTime", ""),
+      deliveryTime: get(i, "deliveryTime", ""),
+      podName: get(i, "podName", ""),
+      serviceLevelCode: get(i, "serviceLevelCode", ""),
+      serviceLevelDescription: get(i, "serviceLevelDescription", ""),
       customerReference: get(i, "customerReference", []),
       locations: get(i, "locations", []),
     };

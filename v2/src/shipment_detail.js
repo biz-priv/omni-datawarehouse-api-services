@@ -24,8 +24,8 @@ const validateQueryParams = (params) => {
       then: Joi.required(),
     }),
     milestoneHistory: Joi.boolean(),
-    b64str: Joi.string().allow(""),
-  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestoneHistory","b64str");
+    nextStartToken: Joi.string().allow(""),
+  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestoneHistory","nextStartToken");
 
   return schema.validate(params);
 };
@@ -88,7 +88,7 @@ module.exports.handler = async (event) => {
     activityToDate: get(queryStringParams, "activityToDate", null),
     shipmentFromDate: get(queryStringParams, "shipmentFromDate", null),
     shipmentToDate: get(queryStringParams, "shipmentToDate", null),
-    b64str: get(queryStringParams, "b64str", null),
+    nextStartToken: get(queryStringParams, "nextStartToken", null),
     api_status_code: "",
     errorMsg: "",
     payload: "",
@@ -166,9 +166,9 @@ module.exports.handler = async (event) => {
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
 
-      const base64 = get(queryStringParams, "b64str", null);
+      const base64 = get(queryStringParams, "nextStartToken", null);
       let lastKey;
-      if (get(queryStringParams, "b64str")) {
+      if (get(queryStringParams, "nextStartToken")) {
         lastKey = base64Decode(base64);
         const { error: eventError } = validateLastEventKey.validate(lastKey);
         if (eventError) {
@@ -176,13 +176,13 @@ module.exports.handler = async (event) => {
           logObj = {
             ...logObj,
             api_status_code: "400",
-            errorMsg: "Please verify whether b64str is valid.",
+            errorMsg: "Please verify whether nextStartToken is valid.",
           }
           await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
-              message: "Please verify whether b64str is valid.",
+              message: "Please verify whether nextStartToken is valid.",
             }),
           };
         }
@@ -234,7 +234,7 @@ module.exports.handler = async (event) => {
       }
 
       if(get(fullDataObj, "lastEvaluatedKey")){
-        nextEndPoint = "https://" +host+"/v2/shipment/detail?activityFromDate="+get(queryStringParams, "activityFromDate", null)+"&activityToDate="+get(queryStringParams, "activityToDate", null)+"&b64str="+get(fullDataObj, "lastEvaluatedKey");
+        nextEndPoint = "https://" +host+"/v2/shipment/detail?activityFromDate="+get(queryStringParams, "activityFromDate", null)+"&activityToDate="+get(queryStringParams, "activityToDate", null)+"&nextStartToken="+get(fullDataObj, "lastEvaluatedKey");
       }
       logObj = {
         ...logObj,
@@ -254,9 +254,9 @@ module.exports.handler = async (event) => {
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
 
-      const base64 = get(queryStringParams, "b64str", null);
+      const base64 = get(queryStringParams, "nextStartToken", null);
       let lastKey;
-      if (get(queryStringParams, "b64str")) {
+      if (get(queryStringParams, "nextStartToken")) {
         lastKey = base64Decode(base64);
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
@@ -264,13 +264,13 @@ module.exports.handler = async (event) => {
           logObj = {
             ...logObj,
             api_status_code: "400",
-            errorMsg: "Please verify whether b64str is valid.",
+            errorMsg: "Please verify whether nextStartToken is valid.",
           }
           await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
-              message: "Please verify whether b64str is valid.",
+              message: "Please verify whether nextStartToken is valid.",
             }),
           };
         }
@@ -323,7 +323,7 @@ module.exports.handler = async (event) => {
       }
 
       if(get(fullDataObj, "lastEvaluatedKey")){
-        nextEndPoint = "https://" +host+"/v2/shipment/detail?shipmentFromDate="+get(queryStringParams, "shipmentFromDate", null)+"&shipmentToDate="+get(queryStringParams, "shipmentToDate", null)+"&b64str="+get(fullDataObj, "lastEvaluatedKey");
+        nextEndPoint = "https://" +host+"/v2/shipment/detail?shipmentFromDate="+get(queryStringParams, "shipmentFromDate", null)+"&shipmentToDate="+get(queryStringParams, "shipmentToDate", null)+"&nextStartToken="+get(fullDataObj, "lastEvaluatedKey");
       }
       logObj = {
         ...logObj,
