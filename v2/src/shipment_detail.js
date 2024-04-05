@@ -106,16 +106,14 @@ module.exports.handler = async (event) => {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber",get(queryStringParams, "fileNumber", null));
       dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE,"fileNumberIndex",get(queryStringParams, "fileNumber", null));
-      if (dataObj[0].status.S == "Pending") {
-        mainResponse = "Payload is not ready yet, please try again later";
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-      }
+
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.map((d) => {
+          return Converter.unmarshall(d);
+        })
+      );
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
       logObj = {
         ...logObj,
         api_status_code: "200",
@@ -125,33 +123,31 @@ module.exports.handler = async (event) => {
     } else if (get(queryStringParams, "housebill", null)) {
       console.info("housebill",get(queryStringParams, "housebill", null));
       dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "housebill", null));
-      if (dataObj[0].status.S == "Pending") {
-        mainResponse = "Payload is not ready yet, please try again later";
+
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.map((d) => {
+          return Converter.unmarshall(d);
+        })
+      );
+      if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+        console.info("milestoneHistory",get(queryStringParams, "milestoneHistory"));
+        mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestoneHistory"));
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
       } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
-          console.info("milestoneHistory",get(queryStringParams, "milestoneHistory"));
-          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestoneHistory"));
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          };
-          await putItem(logObj);
-        } else {
-          mainResponse = await mappingPayload(unmarshalledDataObj, true);
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          };
-          await putItem(logObj);
-        }
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
       }
+
     } else if (
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
@@ -218,23 +214,17 @@ module.exports.handler = async (event) => {
           throw new Error("activityToDate cannot be earlier than activityFromDate");
         }
       }
-      fullDataObj = await dateRange("activityDate",fromDateTime,toDateTime,lastKey);
-      dataObj = fullDataObj.items.Items.filter(
-        (item) => item.status.S == "Ready"
+      dataObj = await dateRange("activityDate",fromDateTime,toDateTime,lastKey);
+      
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.items.Items.map((d) => {
+          return Converter.unmarshall(d);
+        })
       );
-      if (dataObj.length == 0) {
-        mainResponse = "Payloads are not ready yet, please try again later";
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-      }
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
 
-      if(get(fullDataObj, "lastEvaluatedKey")){
-        nextEndPoint = "https://" +host+"/v2/shipment/detail?activityFromDate="+get(queryStringParams, "activityFromDate", null)+"&activityToDate="+get(queryStringParams, "activityToDate", null)+"&nextStartToken="+get(fullDataObj, "lastEvaluatedKey");
+      if(get(dataObj, "lastEvaluatedKey")){
+        nextEndPoint = "https://" +host+"/v2/shipment/detail?activityFromDate="+get(queryStringParams, "activityFromDate", null)+"&activityToDate="+get(queryStringParams, "activityToDate", null)+"&nextStartToken="+get(dataObj, "lastEvaluatedKey");
       }
       logObj = {
         ...logObj,
@@ -307,23 +297,17 @@ module.exports.handler = async (event) => {
           throw new Error("shipmentToDate cannot be earlier than shipmentFromDate");
         }
       }
-      fullDataObj = await dateRange("shipmentDate",fromDateTime,toDateTime,lastKey);
-      dataObj = fullDataObj.items.Items.filter(
-        (item) => item.status.S == "Ready"
-      );
-      if (dataObj.length == 0) {
-        mainResponse = "Payloads are not ready yet, please try again later";
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-      }
+      dataObj = await dateRange("shipmentDate",fromDateTime,toDateTime,lastKey);
 
-      if(get(fullDataObj, "lastEvaluatedKey")){
-        nextEndPoint = "https://" +host+"/v2/shipment/detail?shipmentFromDate="+get(queryStringParams, "shipmentFromDate", null)+"&shipmentToDate="+get(queryStringParams, "shipmentToDate", null)+"&nextStartToken="+get(fullDataObj, "lastEvaluatedKey");
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.items.Items.map((d) => {
+          return Converter.unmarshall(d);
+        })
+      );
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+      if(get(dataObj, "lastEvaluatedKey")){
+        nextEndPoint = "https://" +host+"/v2/shipment/detail?shipmentFromDate="+get(queryStringParams, "shipmentFromDate", null)+"&shipmentToDate="+get(queryStringParams, "shipmentToDate", null)+"&nextStartToken="+get(dataObj, "lastEvaluatedKey");
       }
       logObj = {
         ...logObj,
