@@ -1,4 +1,4 @@
-from src.common import dynamo_query
+from src.common import dynamo_query, query_dynamodb
 from src.common import skip_execution_if
 
 import logging
@@ -29,12 +29,15 @@ def handler(event, context):
     truncate_description(event["body"]["oShipData"]["Shipment Line List"])
     LOGGER.info("Event: %s", json.dumps(event))
     customer_id = validate_input(event)
+    LOGGER.info("customer_id: %s", json.dumps(customer_id))
     customer_info = validate_dynamodb(customer_id)
     LOGGER.info("Customer Info: %s", json.dumps(customer_info))
+    cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
+    LOGGER.info("cust_info: %s", json.dumps(cust_info))
     if customer_info == 'Failure':
         return {"httpStatus": 400, "message": "Customer Information doesnot exist. Please raise a support ticket to add the customer"}
     try:
-        event["body"]["oShipData"]["Station"] = customer_info['Station']['S']
+        event["body"]["oShipData"]["Station"] = cust_info['FK_CtrlStationId']['S']
         event["body"]["oShipData"]["CustomerNo"] = customer_info['CustomerNo']['S']
         event["body"]["oShipData"]["BillToAcct"] = customer_info['BillToAcct']['S']
         event["body"]["oShipData"]["DeclaredType"] = customer_info['DeclaredType']['S']
@@ -180,6 +183,19 @@ def validate_dynamodb(customer_id):
     except Exception as validate_error:
         logging.exception("ValidateDynamoDBError: %s",
                           json.dumps(validate_error))
+        raise ValidateDynamoDBError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
+    
+def get_dynamodb(cust_no):
+    LOGGER.info("cust_no in get_dynamodb: %s", json.dumps(cust_no))
+    try: 
+        response = query_dynamodb('omni-wt-rt-customers-dev',
+                                'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
+        if not response['Items']:
+            return 'Failure'
+        return response['Items'][0]
+    except Exception as validate_error:
+        logging.exception("ValidateDynamoDBError: %s", json.dumps(validate_error))
         raise ValidateDynamoDBError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
 
