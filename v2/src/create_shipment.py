@@ -1,5 +1,5 @@
 from re import template
-from src.common import dynamo_query
+from src.common import dynamo_query, query_dynamodb
 from src.common import skip_execution_if
 from src.common import send_notification_to_sns
 
@@ -33,11 +33,15 @@ def handler(event, context):
         #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
 
         customer_id = validate_input(event)
+        LOGGER.info("customer_id: %s", customer_id)
         if(customer_id != 'customer-portal-admin'):
             customer_info = validate_dynamodb(customer_id)
+            LOGGER.info("customer_info: %s", customer_info)
+            cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
+            LOGGER.info("cust_info: %s", cust_info)
             for key in ['controllingStation', 'customerNumber']:
                 if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
-                    event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+                    event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
 
                 if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
                     event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
@@ -59,12 +63,15 @@ def handler(event, context):
                         event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                     elif(key == 'customerNumber'):
                         new_key = 'CustomerNo'
+                        cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
+                        if cust_info != 'Failure':
+                            temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                     elif(key == 'billTo'):
                         new_key = 'PayType'
                         temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
-                    elif(key == 'controllingStation'):
-                        new_key = 'Station'
-                        event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
+                    # elif(key == 'controllingStation'):
+                    #     new_key = 'Station'
+                    #     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                     elif(key == 'UserID'):
                         new_key = 'WebtrakUserID'
                     elif(key == 'mode'):
@@ -96,6 +103,7 @@ def handler(event, context):
                         temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['ReadyTime'] = event["body"]["shipmentCreateRequest"][key]
                     # LOGGER.info("New Key: %s",new_key)
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+            LOGGER.info("temp_ship_data: %s",temp_ship_data)
             if('accessorialList' in event["body"]["shipmentCreateRequest"]):
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
                     event["body"]["shipmentCreateRequest"]['accessorialList'])
@@ -339,6 +347,19 @@ def validate_dynamodb(customer_id):
     except Exception as validate_error:
         logging.exception("ValidateDynamoDBError: %s",
                           json.dumps(validate_error))
+        raise ValidateDynamoDBError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
+    
+def get_dynamodb(cust_no):
+    LOGGER.info("cust_no in get_dynamodb: %s", cust_no)
+    try: 
+        response = query_dynamodb('omni-wt-rt-customers-dev',
+                                'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
+        if not response['Items']:
+            return 'Failure'
+        return response['Items'][0]
+    except Exception as validate_error:
+        logging.exception("ValidateDynamoDBError: %s", json.dumps(validate_error))
         raise ValidateDynamoDBError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
 
