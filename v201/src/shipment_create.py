@@ -1,5 +1,5 @@
 from re import template
-from src.common import dynamo_query
+from src.common import dynamo_query, query_dynamodb
 from src.common import skip_execution_if
 
 import logging
@@ -58,12 +58,15 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
+                    cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
+                    if cust_info != 'Failure':
+                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                 elif(key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
-                elif(key == 'controllingStation'):
-                    new_key = 'Station'
-                    event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
+                # elif(key == 'controllingStation'):
+                #     new_key = 'Station'
+                #     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'UserID'):
                     new_key = 'WebtrakUserID'
                 elif(key == 'mode'):
@@ -336,6 +339,19 @@ def validate_dynamodb(customer_id):
     except Exception as validate_error:
         logging.exception("ValidateDynamoDBError: %s",
                           json.dumps(validate_error))
+        raise ValidateDynamoDBError(json.dumps(
+            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
+
+def get_dynamodb(cust_no):
+    LOGGER.info("cust_no in get_dynamodb: %s", cust_no)
+    try: 
+        response = query_dynamodb('omni-wt-rt-customers-dev',
+                                'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
+        if not response['Items']:
+            return 'Failure'
+        return response['Items'][0]
+    except Exception as validate_error:
+        logging.exception("ValidateDynamoDBError: %s", json.dumps(validate_error))
         raise ValidateDynamoDBError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
 
