@@ -44,8 +44,8 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
 
                 if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
-                    event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-                    event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+                    event["body"]["shipmentCreateRequest"]["customerNumber"] = customer_info['CustomerNo']['S']
+                    event["body"]["shipmentCreateRequest"]["billTo"] = customer_info['BillToAcct']['S']
 
             if customer_info == 'Failure':
                 return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
