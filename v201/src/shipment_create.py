@@ -34,9 +34,11 @@ def handler(event, context):
     customer_id = validate_input(event)
     if(customer_id != 'customer-portal-admin'):
         customer_info = validate_dynamodb(customer_id)
+        cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
+        LOGGER.info("cust_info: %s", cust_info)
         for key in ['controllingStation', 'customerNumber']:
             if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
-                event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+                event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
 
             if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
                 event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
@@ -44,6 +46,8 @@ def handler(event, context):
 
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
+        if cust_info == 'Failure':
+            return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket"}
 
     try:
         temp_ship_data = {}

@@ -37,7 +37,11 @@ def handler(event, context):  # NOSONAR
         customer_info = validate_dynamodb(customer_id)
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
-        event["body"]["shipmentCreateRequest"]["Station"] = customer_info['Station']['S']
+        cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
+        LOGGER.info("cust_info: %s", cust_info)
+        if cust_info == 'Failure':
+            return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket"}
+        event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
         event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
         event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
         print(event['body']['shipmentCreateRequest'])
