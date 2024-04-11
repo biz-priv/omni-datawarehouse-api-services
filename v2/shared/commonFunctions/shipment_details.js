@@ -52,14 +52,14 @@ async function dateRange(
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithEventDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
+      return await queryWithEventDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey);
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithOrderDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
+      return await queryWithOrderDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey);
     }
   } catch (error) {
     console.error("date range function: ", error);
@@ -67,7 +67,7 @@ async function dateRange(
   }
 }
 
-async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
+async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
     IndexName: "EventYearIndex",
@@ -104,7 +104,7 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
   }
 }
 
-async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
+async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
     IndexName: "OrderYearIndex",
@@ -139,6 +139,25 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
     };
   } catch (error) {
     console.error("OrderDate,Query Error:", error);
+    throw error;
+  }
+}
+
+async function getOrders(tableName, indexName, refNumber) {
+  const params = {
+    TableName: tableName,
+    IndexName: indexName,
+    KeyConditionExpression: "ReferenceNo = :value",
+    ExpressionAttributeValues: {
+      ":value": { S: refNumber },
+    },
+  };
+
+  try {
+    const data = await dynamo.query(params).promise();
+    return get(data, "Items", []);
+  } catch (error) {
+    console.error("Query Error:", error);
     throw error;
   }
 }
@@ -224,4 +243,4 @@ function base64Encode(data) {
 }
 
 
-module.exports = { queryWithFileNumber,queryWithHouseBill,dateRange,queryWithEventDate,queryWithOrderDate,mappingPayload,putItem,base64Encode };
+module.exports = { queryWithFileNumber, queryWithHouseBill, dateRange, queryWithEventDate, queryWithOrderDate, mappingPayload, putItem, base64Encode, getOrders };
