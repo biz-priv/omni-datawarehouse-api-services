@@ -13,6 +13,7 @@ const {
     MILESTONE_ORDER_STATUS,
     ADD_MILESTONE_LOGS_TABLE,
     P44_LOCATION_UPDATES_TABLE,
+    wt_soap_username
 } = process.env;
 
 const statusCodes = MILESTONE_ORDER_STATUS.split(",");
@@ -268,7 +269,7 @@ function makeJsonToXml(data) {
                 "soap:Header": {
                     "AuthHeader": {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
-                        "UserName": "eeprod",
+                        "UserName": wt_soap_username,
                         "Password": "eE081020!"
                     }
                 },
@@ -295,7 +296,7 @@ function makeJsonToXml(data) {
               "soap:Header": {
                 "AuthHeader": {
                   "@xmlns": "http://tempuri.org/",//NOSONAR
-                  "UserName": "eeprod",
+                  "UserName": wt_soap_username,
                   "Password": "eE081020!"
                 }
               },
