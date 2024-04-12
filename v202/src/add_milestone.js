@@ -270,7 +270,7 @@ function makeJsonToXml(data) {
                     "AuthHeader": {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         "UserName": wt_soap_username,
-                        "Password": "eE081020!"
+                        "Password": wt_soap_password
                     }
                 },
                 "soap:Body": {
@@ -297,7 +297,7 @@ function makeJsonToXml(data) {
                 "AuthHeader": {
                   "@xmlns": "http://tempuri.org/",//NOSONAR
                   "UserName": wt_soap_username,
-                  "Password": "eE081020!"
+                  "Password": wt_soap_password
                 }
               },
               "soap:Body": {
