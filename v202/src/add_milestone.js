@@ -252,7 +252,7 @@ function makeJsonToXml(data) {
                     SubmitPOD: {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         HAWB: get(data, "housebill", ""),
-                        UserName: "BIZCLOUD",
+                        UserName: wt_soap_username,
                         UserInitials: "BCE",
                         Signer: get(data, "signatory", ""),
                         PODDateTime: get(data, "eventTime", ""),
@@ -325,7 +325,7 @@ function makeJsonToXml(data) {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         HandlingStation: "",
                         HAWB: get(data, "housebill", ""),
-                        UserName: "BIZCLOUD",
+                        UserName: wt_soap_username,
                         StatusCode: get(data, "statusCode", ""),
                         EventDateTime: get(data, "eventTime", ""),
                     },
