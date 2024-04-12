@@ -13,7 +13,8 @@ const {
     MILESTONE_ORDER_STATUS,
     ADD_MILESTONE_LOGS_TABLE,
     P44_LOCATION_UPDATES_TABLE,
-    wt_soap_username
+    wt_soap_username,
+    wt_soap_password
 } = process.env;
 
 const statusCodes = MILESTONE_ORDER_STATUS.split(",");
