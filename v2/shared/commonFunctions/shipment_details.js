@@ -152,10 +152,24 @@ async function getOrders(tableName, indexName, refNumber) {
       ":value": { S: refNumber },
     },
   };
+  const orderNos = [];
 
   try {
     const data = await dynamo.query(params).promise();
-    return get(data, "Items", []);
+    const dataItems = get(data, "Items", []);
+
+    dataItems.forEach(item => {
+      const orderNo = get(item, "FK_OrderNo.S");
+      if (orderNo && !orderNos.includes(orderNo)) {
+        orderNos.push(orderNo);
+      }
+    });
+
+    console.info("Unique Order Numbers:", orderNos);
+    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE, "fileNumberIndex", orderNo));
+
+    const result = await Promise.all(promises);
+    return { result };
   } catch (error) {
     console.error("Query Error:", error);
     throw error;

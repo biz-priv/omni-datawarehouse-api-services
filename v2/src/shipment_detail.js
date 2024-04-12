@@ -65,7 +65,7 @@ module.exports.handler = async (event) => {
   }
 
   const host = get(event, "headers.Host");
-  console.log("host", host);
+  console.info("host", host);
 
   const { error, value } = validateQueryParams(get(event, "query"));
 
@@ -150,14 +150,13 @@ module.exports.handler = async (event) => {
 
     } else if (get(queryStringParams, "refNumber", null)) {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
-      dataObj = getOrders(process.env.SHIPMENT_DETAILS_Collector_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null));
+      dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null));
       const unmarshalledDataObj = await Promise.all(
-        dataObj.map((d) => {
-          return Converter.unmarshall(d);
-        })
+        dataObj.result.flatMap(innerArray =>
+          innerArray.map(obj => Converter.unmarshall(obj))
+        )
       );
       mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
       logObj = {
         ...logObj,
         api_status_code: "200",
