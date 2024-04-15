@@ -332,7 +332,7 @@ module.exports.handler = async (event) => {
       await putItem(logObj);
     }
     return {
-      Items: mainResponse,
+      ...mainResponse,
       NextEndPoint: nextEndPoint ?? ""
     };
   } catch (error) {
