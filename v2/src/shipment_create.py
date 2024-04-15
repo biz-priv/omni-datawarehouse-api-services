@@ -38,7 +38,6 @@ def handler(event, context):  # NOSONAR
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
         cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
-        LOGGER.info("cust_info: %s", cust_info)
         if cust_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket"}
         event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
@@ -78,9 +77,6 @@ def handler(event, context):  # NOSONAR
                 elif (key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
-                # elif (key == 'controllingStation'):
-                #     new_key = 'Station'
-                #     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif (key == 'UserID'):
                     new_key = 'WebtrakUserID'
                 elif (key == 'mode'):
@@ -352,9 +348,8 @@ def validate_dynamodb(customer_id):
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from validate_error
 
 def get_dynamodb(cust_no):
-    LOGGER.info("cust_no in get_dynamodb: %s", cust_no)
     try: 
-        response = query_dynamodb('omni-wt-rt-customers-dev',
+        response = query_dynamodb(os.environ['CUSTOMER_TABLE'],
                                 'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
         if not response['Items']:
             return 'Failure'
