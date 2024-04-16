@@ -35,7 +35,6 @@ def handler(event, context):
     if(customer_id != 'customer-portal-admin'):
         customer_info = validate_dynamodb(customer_id)
         cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
-        # LOGGER.info("cust_info: %s", cust_info)
         for key in ['controllingStation', 'customerNumber']:
             if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
                 event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']

@@ -117,7 +117,6 @@ def handler(event, context):  # NOSONAR
                         'Z', '-00:00')
                     event["body"]["shipmentCreateRequest"][key] = temp_var
                 temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        LOGGER.info("temp_ship_data: %s",temp_ship_data)
         if ('accessorialList' in event["body"]["shipmentCreateRequest"]):
             temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
                 event["body"]["shipmentCreateRequest"]['accessorialList'])
