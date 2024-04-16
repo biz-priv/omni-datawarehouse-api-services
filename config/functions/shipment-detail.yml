@@ -73,5 +73,5 @@ function:
     TRACKING_NOTES_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/tracking-notes/ddb.tableName~true}
     P44_LOCATION_UPDATE_TABLE: ${ssm:/omni-p44/location-updates/${self:provider.stage}/source/ddb.table_name}
     ATHENA_RESULT_S3_BUCKET: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/athena/result/bucket.name}
-    SHIPMENT_DETAILS_Collector_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetailsCollector/ddb.tableName}
+    SHIPMENT_DETAILS_COLLECTOR_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetailsCollector/ddb.tableName}
     SHIPMENT_DETAILS_LOGS__TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetailsLogs/ddb.tableName}

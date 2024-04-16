@@ -105,7 +105,7 @@ module.exports.handler = async (event) => {
   try {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber", get(queryStringParams, "fileNumber", null));
-      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null));
+      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null));
 
       const unmarshalledDataObj = await Promise.all(
         dataObj.map((d) => {
@@ -122,7 +122,7 @@ module.exports.handler = async (event) => {
       await putItem(logObj);
     } else if (get(queryStringParams, "housebill", null)) {
       console.info("housebill", get(queryStringParams, "housebill", null));
-      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE, get(queryStringParams, "housebill", null));
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "housebill", null));
 
       const unmarshalledDataObj = await Promise.all(
         dataObj.map((d) => {

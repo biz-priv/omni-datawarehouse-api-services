@@ -69,7 +69,7 @@ async function dateRange(
 
 async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
   const params = {
-    TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
+    TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
     IndexName: "EventYearIndex",
     KeyConditionExpression:
       "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
@@ -106,7 +106,7 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
 
 async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
   const params = {
-    TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
+    TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
     IndexName: "OrderYearIndex",
     KeyConditionExpression:
       "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
@@ -166,7 +166,7 @@ async function getOrders(tableName, indexName, refNumber) {
     });
 
     console.info("Unique Order Numbers:", orderNos);
-    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE, "fileNumberIndex", orderNo));
+    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", orderNo));
 
     const result = await Promise.all(promises);
     return { result };
