@@ -3,7 +3,7 @@ const dynamo = new AWS.DynamoDB();
 const moment = require("moment");
 const { get } = require("lodash");
 
-async function queryWithFileNumber(tableName, indexName, fileNumber) {
+async function queryWithFileNumber(tableName, indexName, fileNumber, customerId) {
   const params = {
     TableName: tableName,
     IndexName: indexName,
@@ -15,7 +15,21 @@ async function queryWithFileNumber(tableName, indexName, fileNumber) {
 
   try {
     const data = await dynamo.query(params).promise();
-    return get(data, "Items", []);
+    const custIDs = get(data.Items, "[0].customerIds", "");
+    let dataFlag = '';
+    if(get(data, "Items") && custIDs.includes(customerId)){
+      console.log("if in function");
+      return get(data, "Items", []),dataFlag;
+    }
+    else if(get(data, "Items")){
+      console.log("else if in function");
+      dataFlag = 'Yes';
+      return get(data, "Items", []),dataFlag;
+    }
+    else{
+      console.log("else in function");
+      return [],dataFlag;
+    }
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
