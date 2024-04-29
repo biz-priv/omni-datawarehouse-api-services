@@ -43,7 +43,7 @@ def handler(event, context):  # NOSONAR
         event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
         event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
         event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
-        print(event['body']['shipmentCreateRequest'])
+        print("updated event",event['body']['shipmentCreateRequest'])
         for key in ["deliveryWindowFrom","deliveryWindowTo","delBy","billTo","projectCode","UserID","showName","venueName","booth","decorator","customerCharges","vendorCharges","controllingStation","customerNumber"]:
             event["body"]["shipmentCreateRequest"].pop(key, None)
 
@@ -62,6 +62,7 @@ def handler(event, context):  # NOSONAR
         temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"] = {}
         if customer_id in ['mechanical-orchard']:
             temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"]["ShipmentType"] = "Shipment"
+        print("temp_ship_data in if",temp_ship_data)
         for key in event["body"]["shipmentCreateRequest"]:
             if type(event["body"]["shipmentCreateRequest"][key]) is str:
                 new_key = key.replace(" ", "")
@@ -117,6 +118,7 @@ def handler(event, context):  # NOSONAR
                         'Z', '-00:00')
                     event["body"]["shipmentCreateRequest"][key] = temp_var
                 temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+        print("temp_ship_data: -------->",temp_ship_data)
         if ('accessorialList' in event["body"]["shipmentCreateRequest"]):
             temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
                 event["body"]["shipmentCreateRequest"]['accessorialList'])
