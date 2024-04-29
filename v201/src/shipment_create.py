@@ -47,7 +47,7 @@ def handler(event, context):
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
         if cust_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket"}
-
+    print("updated event",event['body']['shipmentCreateRequest'])    
     try:
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
@@ -105,6 +105,7 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = temp_var
                 # LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
+        print("temp_ship_data at starting",temp_ship_data)
         if('accessorialList' in event["body"]["shipmentCreateRequest"]):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
                 event["body"]["shipmentCreateRequest"]['accessorialList'])
@@ -157,6 +158,7 @@ def handler(event, context):
 
     ship_data = dicttoxml.dicttoxml(
         temp_ship_data, attr_type=False, custom_root='soap:Body')
+    print("temp_ship_data at end",temp_ship_data)
     ship_data = str(ship_data).\
         replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><shipmentCreateRequest>""", """""").\
         replace("""</shipmentCreateRequest></AddNewShipmentV3></soap:Body>'""", """""")
