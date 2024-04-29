@@ -205,7 +205,6 @@ def handler(event, context):  # NOSONAR
     LOGGER.info("House Bill Details are: %s", json.dumps(house_bill_info))
     service_level_desc = get_service_level(
         event["body"]["shipmentCreateRequest"])
-    LOGGER.info("service_level_desc: %s", service_level_desc)
     current_date = (date.today()).strftime("%Y-%m-%d")
     update_shipment_table(shipment_data, house_bill_info,
                           service_level_desc, current_date)
@@ -302,9 +301,14 @@ def get_service_level(service_level_code):
                 f"select trim(service_level_desc) from public.service_level where service_level_id = '{service_level_id}'")
             con.commit()
             service_code = cur.fetchone()
-            service_level_desc = service_code[0]
             cur.close()
             con.close()
+            if service_code:
+                LOGGER.info("service_code: %s", service_code)
+            else:
+                return "NA"
+            service_level_desc = service_code[0]
+            LOGGER.info("service_level_desc: %s", service_level_desc)
             return service_level_desc
         return "NA"
     except Exception as service_level_error:
