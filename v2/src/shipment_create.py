@@ -72,9 +72,9 @@ def handler(event, context):  # NOSONAR
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif (key == 'customerNumber'):
                     new_key = 'CustomerNo'
-                    cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
-                    if cust_info != 'Failure':
-                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
+                    # cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
+                    # if cust_info != 'Failure':
+                    #     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                 elif (key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
@@ -157,6 +157,7 @@ def handler(event, context):  # NOSONAR
                     new_key = "ConsigneeShowDecorator"
                 temp_ship_data["AddNewShipment"+ version]["shipmentCreateRequest"][
                     new_key] = event["body"]["shipmentCreateRequest"]["consignee"][key]
+        print("temp_ship_data at last stage",temp_ship_data)
     except Exception as transform_error:
         logging.exception("DataTransformError: %s", transform_error)
         raise DataTransformError(json.dumps(
