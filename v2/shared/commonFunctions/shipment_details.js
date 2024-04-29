@@ -17,18 +17,18 @@ async function queryWithFileNumber(tableName, indexName, fileNumber, customerId)
     const data = await dynamo.query(params).promise();
     const custIDs = get(data.Items, "[0].customerIds", "");
     let dataFlag = '';
-    if(get(data, "Items") && custIDs.includes(customerId)){
+    if (get(data, "Items") && custIDs.S.includes(customerId)) {
       console.log("if in function");
-      return get(data, "Items", []),dataFlag;
+      return [get(data, "Items", []), dataFlag];
     }
-    else if(get(data, "Items")){
+    else if (get(data, "Items")) {
       console.log("else if in function");
       dataFlag = 'Yes';
-      return get(data, "Items", []),dataFlag;
+      return [get(data, "Items", []), dataFlag];
     }
-    else{
+    else {
       console.log("else in function");
-      return [],dataFlag;
+      return [[], dataFlag];
     }
   } catch (error) {
     console.error("Query Error:", error);
@@ -36,7 +36,7 @@ async function queryWithFileNumber(tableName, indexName, fileNumber, customerId)
   }
 }
 
-async function queryWithHouseBill(tableName, HouseBillNumber) {
+async function queryWithHouseBill(tableName, HouseBillNumber, customerId) {
   let params = {
     TableName: tableName,
     KeyConditionExpression: "HouseBillNumber = :value",
@@ -46,7 +46,21 @@ async function queryWithHouseBill(tableName, HouseBillNumber) {
   };
   try {
     let data = await dynamo.query(params).promise();
-    return get(data, "Items", []);
+    const custIDs = get(data.Items, "[0].customerIds", "");
+    let dataFlag = '';
+    if (get(data, "Items") && custIDs.S.includes(customerId)) {
+      console.log("if in function");
+      return [get(data, "Items", []), dataFlag];
+    }
+    else if (get(data, "Items")) {
+      console.log("else if in function");
+      dataFlag = 'Yes';
+      return [get(data, "Items", []), dataFlag];
+    }
+    else {
+      console.log("else in function");
+      return [[], dataFlag];
+    }
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
@@ -57,7 +71,8 @@ async function dateRange(
   eventType,
   eventDateTimeFrom,
   eventDateTimeTo,
-  lastEvaluatedKey
+  lastEvaluatedKey,
+  customerId
 ) {
   try {
     if (eventType == "activityDate") {
@@ -66,14 +81,14 @@ async function dateRange(
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithEventDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey);
+      return await queryWithEventDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey, customerId);
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithOrderDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey);
+      return await queryWithOrderDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey, customerId);
     }
   } catch (error) {
     console.error("date range function: ", error);
@@ -81,7 +96,7 @@ async function dateRange(
   }
 }
 
-async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
+async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedKey, customerId) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
     IndexName: "EventYearIndex",
@@ -90,12 +105,15 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
     ExpressionAttributeNames: {
       "#date": "EventYear",
       "#sortKey": "EventDateTime",
+      "#customerIds": "customerIds"
     },
     ExpressionAttributeValues: {
       ":dateValue": { S: date },
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
+      ":customerId": { S: customerId }
     },
+    FilterExpression: "contains (#customerIds, :customerId)",
     Limit: 30,
   };
   if (lastEvaluatedKey) {
@@ -118,7 +136,7 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
   }
 }
 
-async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
+async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedKey, customerId) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
     IndexName: "OrderYearIndex",
@@ -127,12 +145,15 @@ async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedK
     ExpressionAttributeNames: {
       "#date": "OrderYear",
       "#sortKey": "OrderDateTime",
+      "#customerIds": "customerIds"
     },
     ExpressionAttributeValues: {
       ":dateValue": { S: date },
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
+      ":customerId": { S: customerId }
     },
+    FilterExpression: "contains (#customerIds, :customerId)",
     Limit: 30,
   };
 
@@ -157,7 +178,7 @@ async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedK
   }
 }
 
-async function getOrders(tableName, indexName, refNumber) {
+async function getOrders(tableName, indexName, refNumber, customerId) {
   const params = {
     TableName: tableName,
     IndexName: indexName,
