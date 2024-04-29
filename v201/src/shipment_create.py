@@ -61,9 +61,9 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
-                    cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
-                    if cust_info != 'Failure':
-                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
+                    # cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
+                    # if cust_info != 'Failure':
+                    #     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                 elif(key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
@@ -351,6 +351,7 @@ def get_dynamodb(cust_no):
     try: 
         response = query_dynamodb(os.environ['CUSTOMER_TABLE'],
                                 'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
+        print("response in get_dynamodb",response['Items'][0]);
         if not response['Items']:
             return 'Failure'
         return response['Items'][0]
