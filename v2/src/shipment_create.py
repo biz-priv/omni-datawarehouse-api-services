@@ -205,6 +205,7 @@ def handler(event, context):  # NOSONAR
     LOGGER.info("House Bill Details are: %s", json.dumps(house_bill_info))
     service_level_desc = get_service_level(
         event["body"]["shipmentCreateRequest"])
+    LOGGER.info("service_level_desc: %s", service_level_desc)
     current_date = (date.today()).strftime("%Y-%m-%d")
     update_shipment_table(shipment_data, house_bill_info,
                           service_level_desc, current_date)
