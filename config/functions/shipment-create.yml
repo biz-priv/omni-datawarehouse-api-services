@@ -71,6 +71,7 @@ function:
     ACCOUNT_INFO_TABLE: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/table}
     SHIPMENT_DETAILS_TABLE: ${ssm:/omni-dw/${self:provider.stage}/shipmentDetails/table}
     ACCOUNT_INFO_TABLE_INDEX: ${ssm:/omni-dw/${self:provider.stage}/accountInfo/customerId/index}
+    CUSTOMER_TABLE: ${ssm:/omni-wt-rt-updates/${self:provider.stage}/customers/ddb.tableName}
     REGION: ${self:provider.region}
     URL: ${ssm:/omni-dw/${self:provider.stage}/createShipment/wt/url}
     wt_soap_username: ${ssm:/omni-dw/${self:provider.stage}/wt/soap/username~true}
