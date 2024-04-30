@@ -37,13 +37,11 @@ def handler(event, context):
         LOGGER.info("customer_info: %s", customer_info)
         cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
         LOGGER.info("cust_info: %s", cust_info)
-        for key in ['controllingStation', 'customerNumber']:
-            if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
-                event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']  
-            if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
-                event["body"]["shipmentCreateRequest"]["customerNumber"] = customer_info['CustomerNo']['S']
-                event["body"]["shipmentCreateRequest"]["billTo"] = customer_info['BillToAcct']['S']
-
+        event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
+        if 'customerNumber' not in event["body"]["shipmentCreateRequest"]:
+            event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+            event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
 
@@ -60,9 +58,9 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
-                    cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
-                    if cust_info != 'Failure':
-                        temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
+                    # cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
+                    # if cust_info != 'Failure':
+                    #     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                 elif(key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
@@ -296,9 +294,14 @@ def get_service_level(service_level_code):
                 f"select trim(service_level_desc) from public.service_level where service_level_id = '{service_level_id}'")
             con.commit()
             service_code = cur.fetchone()
-            service_level_desc = service_code[0]
             cur.close()
             con.close()
+            if service_code:
+                LOGGER.info("service_code: %s", service_code)
+            else:
+                return "NA"
+            service_level_desc = service_code[0]
+            LOGGER.info("service_level_desc: %s", service_level_desc)            
             return service_level_desc
         return "NA"
     except Exception as service_level_error:
