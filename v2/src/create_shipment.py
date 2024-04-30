@@ -45,7 +45,12 @@ def handler(event, context):
 
             if customer_info == 'Failure':
                 return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
-
+        else:
+            if 'customerNumber' in event["body"]["shipmentCreateRequest"]:
+                cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"]["customerNumber"])
+                event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
+            else: 
+                return {"httpStatus": 400, "message": "Please provide customerNumber in the payload."}
         try:
             temp_ship_data = {}
             temp_ship_data["AddNewShipmentV3"] = {}
