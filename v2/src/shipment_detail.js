@@ -1,18 +1,18 @@
 const AWS = require("aws-sdk");
-const dynamo = new AWS.DynamoDB();
 const moment = require("moment");
 const { get } = require("lodash");
 const { Converter } = AWS.DynamoDB;
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 const Joi = require("joi");
-const { queryWithFileNumber,queryWithHouseBill,dateRange,queryWithEventDate,queryWithOrderDate,mappingPayload,putItem,base64Encode } = require("../shared/commonFunctions/shipment_details");
+const { queryWithFileNumber, queryWithHouseBill, dateRange, mappingPayload, putItem, getOrders } = require("../shared/commonFunctions/shipment_details");
 const sns = new AWS.SNS();
 
 const validateQueryParams = (params) => {
   const schema = Joi.object({
     housebill: Joi.string().allow(""),
     fileNumber: Joi.string().allow(""),
+    refNumber: Joi.string().allow(""),
     activityFromDate: Joi.string().allow(""),
     activityToDate: Joi.string().allow("").when("activityFromDate", {
       is: Joi.exist(),
@@ -23,35 +23,35 @@ const validateQueryParams = (params) => {
       is: Joi.exist(),
       then: Joi.required(),
     }),
-    milestone_history: Joi.boolean(),
-    b64str: Joi.string().allow(""),
-  }).or("housebill","fileNumber","activityFromDate","shipmentFromDate","milestone_history","b64str");
+    milestoneHistory: Joi.boolean(),
+    nextStartToken: Joi.string().allow(""),
+  }).or("housebill", "fileNumber", "activityFromDate", "shipmentFromDate", "milestoneHistory", "nextStartToken", "refNumber");
 
   return schema.validate(params);
 };
 
 const validateLastOrderKey = Joi.object({
-      OrderYear: Joi.object({
-          S: Joi.string().required()
-      }),
-      HouseBillNumber: Joi.object({
-          S: Joi.string().required()
-      }),
-      OrderDateTime: Joi.object({
-          S: Joi.string().required()
-      })
+  OrderYear: Joi.object({
+    S: Joi.string().required()
+  }),
+  HouseBillNumber: Joi.object({
+    S: Joi.string().required()
+  }),
+  OrderDateTime: Joi.object({
+    S: Joi.string().required()
+  })
 });
 
 const validateLastEventKey = Joi.object({
-      EventYear: Joi.object({
-          S: Joi.string().required()
-      }),
-      HouseBillNumber: Joi.object({
-          S: Joi.string().required()
-      }),
-      EventDateTime: Joi.object({
-          S: Joi.string().required()
-      })
+  EventYear: Joi.object({
+    S: Joi.string().required()
+  }),
+  HouseBillNumber: Joi.object({
+    S: Joi.string().required()
+  }),
+  EventDateTime: Joi.object({
+    S: Joi.string().required()
+  })
 });
 
 let logObj = {};
@@ -64,14 +64,17 @@ module.exports.handler = async (event) => {
     return "Lambda is warm!";
   }
 
-  const { error, value } = validateQueryParams(get(event,"query"));
-  
-  if(error){
-            let msg = get(error, "details[0].message", "")
-                .split('" ')[1]
-                .replace(/"/g, "");
-            let key = get(error, "details[0].context.key", "");
-            return { message: key + " " + msg };
+  const host = get(event, "headers.Host");
+  console.info("host", host);
+
+  const { error, value } = validateQueryParams(get(event, "query"));
+
+  if (error) {
+    let msg = get(error, "details[0].message", "")
+      .split('" ')[1]
+      .replace(/"/g, "");
+    let key = get(error, "details[0].context.key", "");
+    return { message: key + " " + msg };
   }
 
   let queryStringParams = value;
@@ -79,13 +82,14 @@ module.exports.handler = async (event) => {
   logObj = {
     id: uuidv4(),
     housebill: get(queryStringParams, "housebill", null),
-    milestone_history: get(queryStringParams, "milestone_history", null),
+    milestoneHistory: get(queryStringParams, "milestoneHistory", null),
     fileNumber: get(queryStringParams, "fileNumber", null),
+    refNumber: get(queryStringParams, "refNumber", null),
     activityFromDate: get(queryStringParams, "activityFromDate", null),
     activityToDate: get(queryStringParams, "activityToDate", null),
     shipmentFromDate: get(queryStringParams, "shipmentFromDate", null),
     shipmentToDate: get(queryStringParams, "shipmentToDate", null),
-    b64str: get(queryStringParams, "b64str", null),
+    nextStartToken: get(queryStringParams, "nextStartToken", null),
     api_status_code: "",
     errorMsg: "",
     payload: "",
@@ -97,20 +101,19 @@ module.exports.handler = async (event) => {
 
   let dataObj = [];
   let mainResponse = {};
-  let fullDataObj = {};
+  let nextEndPoint;
   try {
     if (get(queryStringParams, "fileNumber", null)) {
-      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_Collector_TABLE,"fileNumberIndex",get(queryStringParams, "fileNumber", null));
-      if (dataObj[0].status.S == "Pending") {
-        mainResponse = "Payload is not ready yet, please try again later";
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-      }
+      console.info("fileNumber", get(queryStringParams, "fileNumber", null));
+      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null));
+
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.map((d) => {
+          return Converter.unmarshall(d);
+        })
+      );
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
       logObj = {
         ...logObj,
         api_status_code: "200",
@@ -118,37 +121,53 @@ module.exports.handler = async (event) => {
       };
       await putItem(logObj);
     } else if (get(queryStringParams, "housebill", null)) {
-      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_Collector_TABLE,get(queryStringParams, "housebill", null));
-      if (dataObj[0].status.S == "Pending") {
-        mainResponse = "Payload is not ready yet, please try again later";
+      console.info("housebill", get(queryStringParams, "housebill", null));
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "housebill", null));
+
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.map((d) => {
+          return Converter.unmarshall(d);
+        })
+      );
+      if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+        console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+        mainResponse = await mappingPayload(unmarshalledDataObj, get(queryStringParams, "milestoneHistory"));
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
       } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        if (get(queryStringParams, "milestone_history", null)) {
-          mainResponse = await mappingPayload(unmarshalledDataObj,get(queryStringParams, "milestone_history", null));
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          };
-          await putItem(logObj);
-        } else {
-          mainResponse = await mappingPayload(unmarshalledDataObj, "true");
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          };
-          await putItem(logObj);
-        }
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
       }
+
+    } else if (get(queryStringParams, "refNumber", null)) {
+      console.info("refNumber", get(queryStringParams, "refNumber", null));
+      dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null));
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.result.flatMap(innerArray =>
+          innerArray.map(obj => Converter.unmarshall(obj))
+        )
+      );
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      logObj = {
+        ...logObj,
+        api_status_code: "200",
+        payload: mainResponse,
+      };
+      await putItem(logObj);
     } else if (
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
     ) {
+      console.info("activityFromDate & activityToDate", get(queryStringParams, "activityFromDate", null) + "    ", get(queryStringParams, "activityToDate", null));
       const fromDateTime = moment(
         get(queryStringParams, "activityFromDate", null),
         "YYYY-MM-DD HH:mm:ss.SSS"
@@ -158,9 +177,9 @@ module.exports.handler = async (event) => {
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
 
-      const base64 = get(queryStringParams, "b64str", null);
+      const base64 = get(queryStringParams, "nextStartToken", null);
       let lastKey;
-      if (get(queryStringParams, "b64str")) {
+      if (get(queryStringParams, "nextStartToken")) {
         lastKey = base64Decode(base64);
         const { error: eventError } = validateLastEventKey.validate(lastKey);
         if (eventError) {
@@ -168,13 +187,13 @@ module.exports.handler = async (event) => {
           logObj = {
             ...logObj,
             api_status_code: "400",
-            errorMsg: "Please verify whether b64str is valid.",
-          }
+            errorMsg: "Please verify whether nextStartToken is valid.",
+          };
           await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
-              message: "Please verify whether b64str is valid.",
+              message: "Please verify whether nextStartToken is valid.",
             }),
           };
         }
@@ -187,7 +206,7 @@ module.exports.handler = async (event) => {
           ...logObj,
           api_status_code: "400",
           errorMsg: "activityToDate cannot be earlier than activityFromDate",
-        }
+        };
         await putItem(logObj);
         throw new Error("activityToDate cannot be earlier than activityFromDate");
       } else if (daysDifference > 7) {
@@ -196,7 +215,7 @@ module.exports.handler = async (event) => {
           ...logObj,
           api_status_code: "400",
           errorMsg: "date range cannot be more than 7days",
-        }
+        };
         throw new Error(`date range cannot be more than 7days \n your date range ${daysDifference}`);
       } else if (daysDifference == 0) {
         const hoursDiff = toDateTime.diff(fromDateTime, "hours");
@@ -206,23 +225,21 @@ module.exports.handler = async (event) => {
             ...logObj,
             api_status_code: "400",
             errorMsg: "activityToDate cannot be earlier than activityFromDate",
-          }
+          };
           throw new Error("activityToDate cannot be earlier than activityFromDate");
         }
       }
-      fullDataObj = await dateRange("activityDate",fromDateTime,toDateTime,lastKey);
-      dataObj = fullDataObj.items.Items.filter(
-        (item) => item.status.S == "Ready"
+      dataObj = await dateRange("activityDate", fromDateTime, toDateTime, lastKey);
+
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.items.Items.map((d) => {
+          return Converter.unmarshall(d);
+        })
       );
-      if (dataObj.length == 0) {
-        mainResponse = "Payloads are not ready yet, please try again later";
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+      if (get(dataObj, "lastEvaluatedKey")) {
+        nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
       }
       logObj = {
         ...logObj,
@@ -231,6 +248,7 @@ module.exports.handler = async (event) => {
       };
       await putItem(logObj);
     } else {
+      console.info("shipmentFromDate & shipmentToDate", get(queryStringParams, "shipmentFromDate", null) + "    ", get(queryStringParams, "shipmentToDate", null));
       const fromDateTime = moment(
         get(queryStringParams, "shipmentFromDate", null) + " 00:00:00.000",
         "YYYY-MM-DD HH:mm:ss.SSS"
@@ -241,9 +259,9 @@ module.exports.handler = async (event) => {
         "YYYY-MM-DD HH:mm:ss.SSS"
       );
 
-      const base64 = get(queryStringParams, "b64str", null);
+      const base64 = get(queryStringParams, "nextStartToken", null);
       let lastKey;
-      if (get(queryStringParams, "b64str")) {
+      if (get(queryStringParams, "nextStartToken")) {
         lastKey = base64Decode(base64);
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
@@ -251,13 +269,13 @@ module.exports.handler = async (event) => {
           logObj = {
             ...logObj,
             api_status_code: "400",
-            errorMsg: "Please verify whether b64str is valid.",
-          }
+            errorMsg: "Please verify whether nextStartToken is valid.",
+          };
           await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
-              message: "Please verify whether b64str is valid.",
+              message: "Please verify whether nextStartToken is valid.",
             }),
           };
         }
@@ -271,7 +289,7 @@ module.exports.handler = async (event) => {
           api_status_code: "400",
           errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
         };
-        throw new Error ("shipmentToDate cannot be earlier than shipmentFromDate");
+        throw new Error("shipmentToDate cannot be earlier than shipmentFromDate");
       } else if (daysDifference > 7) {
         console.info(
           `date range cannot be more than 7days \n your date range ${daysDifference}`
@@ -294,19 +312,17 @@ module.exports.handler = async (event) => {
           throw new Error("shipmentToDate cannot be earlier than shipmentFromDate");
         }
       }
-      fullDataObj = await dateRange("shipmentDate",fromDateTime,toDateTime,lastKey);
-      dataObj = fullDataObj.items.Items.filter(
-        (item) => item.status.S == "Ready"
+      dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey);
+
+      const unmarshalledDataObj = await Promise.all(
+        dataObj.items.Items.map((d) => {
+          return Converter.unmarshall(d);
+        })
       );
-      if (dataObj.length == 0) {
-        mainResponse = "Payloads are not ready yet, please try again later";
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+      if (get(dataObj, "lastEvaluatedKey")) {
+        nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
       }
       logObj = {
         ...logObj,
@@ -316,8 +332,8 @@ module.exports.handler = async (event) => {
       await putItem(logObj);
     }
     return {
-      Items: mainResponse,
-      LastEvaluatedKey: get(fullDataObj, "lastEvaluatedKey", null),
+      ...mainResponse,
+      NextEndPoint: nextEndPoint ?? ""
     };
   } catch (error) {
     console.error("in main function: \n", error);

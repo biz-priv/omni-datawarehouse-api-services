@@ -13,6 +13,8 @@ const {
     MILESTONE_ORDER_STATUS,
     ADD_MILESTONE_LOGS_TABLE,
     P44_LOCATION_UPDATES_TABLE,
+    wt_soap_username,
+    wt_soap_password
 } = process.env;
 
 const statusCodes = MILESTONE_ORDER_STATUS.split(",");
@@ -251,7 +253,7 @@ function makeJsonToXml(data) {
                     SubmitPOD: {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         HAWB: get(data, "housebill", ""),
-                        UserName: "BIZCLOUD",
+                        UserName: wt_soap_username,
                         UserInitials: "BCE",
                         Signer: get(data, "signatory", ""),
                         PODDateTime: get(data, "eventTime", ""),
@@ -268,8 +270,8 @@ function makeJsonToXml(data) {
                 "soap:Header": {
                     "AuthHeader": {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
-                        "UserName": "eeprod",
-                        "Password": "eE081020!"
+                        "UserName": wt_soap_username,
+                        "Password": wt_soap_password
                     }
                 },
                 "soap:Body": {
@@ -295,8 +297,8 @@ function makeJsonToXml(data) {
               "soap:Header": {
                 "AuthHeader": {
                   "@xmlns": "http://tempuri.org/",//NOSONAR
-                  "UserName": "eeprod",
-                  "Password": "eE081020!"
+                  "UserName": wt_soap_username,
+                  "Password": wt_soap_password
                 }
               },
               "soap:Body": {
@@ -324,7 +326,7 @@ function makeJsonToXml(data) {
                         "@xmlns": "http://tempuri.org/",//NOSONAR
                         HandlingStation: "",
                         HAWB: get(data, "housebill", ""),
-                        UserName: "BIZCLOUD",
+                        UserName: wt_soap_username,
                         StatusCode: get(data, "statusCode", ""),
                         EventDateTime: get(data, "eventTime", ""),
                     },

@@ -33,7 +33,7 @@ async function queryWithHouseBill(tableName, HouseBillNumber) {
   try {
     let data = await dynamo.query(params).promise();
     return get(data, "Items", []);
-  } catch (e) {
+  } catch (error) {
     console.error("Query Error:", error);
     throw error;
   }
@@ -52,14 +52,14 @@ async function dateRange(
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithEventDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
+      return await queryWithEventDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey);
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const eventDate = fromDateTime.format("YYYY");
-      return await queryWithOrderDate(eventDate,formattedStartDate,formattedEndDate,lastEvaluatedKey);
+      return await queryWithOrderDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey);
     }
   } catch (error) {
     console.error("date range function: ", error);
@@ -67,9 +67,9 @@ async function dateRange(
   }
 }
 
-async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
+async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
   const params = {
-    TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
+    TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
     IndexName: "EventYearIndex",
     KeyConditionExpression:
       "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
@@ -82,15 +82,15 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
     },
-    Limit: 10,
+    Limit: 30,
   };
   if (lastEvaluatedKey) {
     params.ExclusiveStartKey = lastEvaluatedKey;
   }
   try {
     const result = await dynamo.query(params).promise();
-    let base64;
-    if (get(result, "LastEvaluatedKey", {})) {
+    let base64 = "";
+    if (get(result, "LastEvaluatedKey")) {
       const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
       base64 = base64Encode(lastEvaluatedKeyData);
     }
@@ -104,9 +104,9 @@ async function queryWithEventDate(date,startSortKey,endSortKey,lastEvaluatedKey)
   }
 }
 
-async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey) {
+async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedKey) {
   const params = {
-    TableName: process.env.SHIPMENT_DETAILS_Collector_TABLE,
+    TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
     IndexName: "OrderYearIndex",
     KeyConditionExpression:
       "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
@@ -119,7 +119,7 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
       ":startSortKey": { S: startSortKey },
       ":endSortKey": { S: endSortKey },
     },
-    Limit: 10,
+    Limit: 30,
   };
 
   if (lastEvaluatedKey) {
@@ -128,8 +128,8 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
 
   try {
     const result = await dynamo.query(params).promise();
-    let base64;
-    if (get(result, "LastEvaluatedKey", {})) {
+    let base64 = "";
+    if (get(result, "LastEvaluatedKey")) {
       const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
       base64 = base64Encode(lastEvaluatedKeyData);
     }
@@ -143,18 +143,51 @@ async function queryWithOrderDate(date,startSortKey,endSortKey,lastEvaluatedKey)
   }
 }
 
+async function getOrders(tableName, indexName, refNumber) {
+  const params = {
+    TableName: tableName,
+    IndexName: indexName,
+    KeyConditionExpression: "ReferenceNo = :value",
+    ExpressionAttributeValues: {
+      ":value": { S: refNumber },
+    },
+  };
+  const orderNos = [];
+
+  try {
+    const data = await dynamo.query(params).promise();
+    const dataItems = get(data, "Items", []);
+
+    dataItems.forEach(item => {
+      const orderNo = get(item, "PK_ReferenceNo.S");
+      if (orderNo && !orderNos.includes(orderNo)) {
+        orderNos.push(orderNo);
+      }
+    });
+
+    console.info("Unique Order Numbers:", orderNos);
+    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", orderNo));
+
+    const result = await Promise.all(promises);
+    return { result };
+  } catch (error) {
+    console.error("Query Error:", error);
+    throw error;
+  }
+}
+
 async function mappingPayload(data, milestone_history) {
   const response = {};
   response["shipmentDetailResponse"] = [];
   for (const i of data) {
     const payload = {
-      fileNumber: get(i, "fileNumber", null),
-      housebill: get(i, "HouseBillNumber", null),
-      masterbill: get(i, "masterbill", null),
-      shipmentDate: get(i, "shipmentDate", null),
-      handlingStation: get(i, "handlingStation", null),
-      originPort: get(i, "originPort", null),
-      destinationPort: get(i, "destinationPort", null),
+      fileNumber: get(i, "fileNumber", ""),
+      housebill: get(i, "HouseBillNumber", ""),
+      masterbill: get(i, "masterbill", ""),
+      shipmentDate: get(i, "shipmentDate", ""),
+      handlingStation: get(i, "handlingStation", ""),
+      originPort: get(i, "originPort", ""),
+      destinationPort: get(i, "destinationPort", ""),
       shipper: get(i, "shipper", {
         name: "",
         address: "",
@@ -171,22 +204,22 @@ async function mappingPayload(data, milestone_history) {
         zip: "",
         country: "",
       }),
-      pieces: get(i, "pieces", null),
-      actualWeight: get(i, "actualWeight", null),
-      chargeableWeight: get(i, "chargeableWeight", null),
-      weightUOM: get(i, "weightUOM", null),
-      pickupTime: get(i, "pickupTime", null),
-      estimatedDepartureTime: get(i, "estimatedDepartureTime", null),
-      estimatedArrivalTime: get(i, "estimatedArrivalTime", null),
-      scheduledDeliveryTime: get(i, "scheduledDeliveryTime", null),
-      deliveryTime: get(i, "deliveryTime", null),
-      podName: get(i, "podName", null),
-      serviceLevelCode: get(i, "serviceLevelCode", null),
-      serviceLevelDescription: get(i, "serviceLevelDescription", null),
+      pieces: get(i, "pieces", 0),
+      actualWeight: get(i, "actualWeight", 0),
+      chargeableWeight: get(i, "chargeableWeight", 0),
+      weightUOM: get(i, "weightUOM", ""),
+      pickupTime: get(i, "pickupTime", ""),
+      estimatedDepartureTime: get(i, "estimatedDepartureTime", ""),
+      estimatedArrivalTime: get(i, "estimatedArrivalTime", ""),
+      scheduledDeliveryTime: get(i, "scheduledDeliveryTime", ""),
+      deliveryTime: get(i, "deliveryTime", ""),
+      podName: get(i, "podName", ""),
+      serviceLevelCode: get(i, "serviceLevelCode", ""),
+      serviceLevelDescription: get(i, "serviceLevelDescription", ""),
       customerReference: get(i, "customerReference", []),
       locations: get(i, "locations", []),
     };
-    if (milestone_history == "true") {
+    if (milestone_history != false) {
       const milestoneData = {
         milestones: get(i, "milestones", []),
       };
@@ -209,8 +242,8 @@ async function putItem(item) {
       Item: item,
     };
     await dynamodb.put(params).promise();
-  } catch (e) {
-    console.error("Put Item Error: ", e, "\nPut params: ", params);
+  } catch (error) {
+    console.error("Put Item Error: ", error, "\nPut params: ", params);
     throw error;
   }
 }
@@ -224,4 +257,4 @@ function base64Encode(data) {
 }
 
 
-module.exports = { queryWithFileNumber,queryWithHouseBill,dateRange,queryWithEventDate,queryWithOrderDate,mappingPayload,putItem,base64Encode }
+module.exports = { queryWithFileNumber, queryWithHouseBill, dateRange, queryWithEventDate, queryWithOrderDate, mappingPayload, putItem, base64Encode, getOrders };
