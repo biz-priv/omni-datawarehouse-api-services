@@ -34,20 +34,18 @@ def handler(event, context):
     customer_id = validate_input(event)
     if(customer_id != 'customer-portal-admin'):
         customer_info = validate_dynamodb(customer_id)
+        LOGGER.info("customer_info: %s", customer_info)
         cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
-        # for key in ['controllingStation', 'customerNumber']:
-            # if key not in event["body"]["shipmentCreateRequest"] and key == 'controllingStation':
+        LOGGER.info("cust_info: %s", cust_info)
         event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
-
-            # if key not in event["body"]["shipmentCreateRequest"] and key == 'customerNumber':
-        event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
-        event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
+        if 'customerNumber' not in event["body"]["shipmentCreateRequest"]:
+            event["body"]["shipmentCreateRequest"]["CustomerNo"] = customer_info['CustomerNo']['S']
+            event["body"]["shipmentCreateRequest"]["BillToAcct"] = customer_info['BillToAcct']['S']
 
         if customer_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket to add the customer"}
         if cust_info == 'Failure':
             return {"httpStatus": 400, "message": "Customer Information does not exist. Please raise a support ticket"}
-    print("updated event",event['body']['shipmentCreateRequest'])    
     try:
         temp_ship_data = {}
         temp_ship_data["AddNewShipmentV3"] = {}
@@ -61,9 +59,6 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                 elif(key == 'customerNumber'):
                     new_key = 'CustomerNo'
-                    # cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
-                    # if cust_info != 'Failure':
-                    #     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                 elif(key == 'billTo'):
                     new_key = 'PayType'
                     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
@@ -105,7 +100,6 @@ def handler(event, context):
                     event["body"]["shipmentCreateRequest"][key] = temp_var
                 # LOGGER.info("New Key: %s",new_key)
                 temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"][new_key] = event["body"]["shipmentCreateRequest"][key]
-        print("temp_ship_data at starting",temp_ship_data)
         if('accessorialList' in event["body"]["shipmentCreateRequest"]):
             temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]['PickupInstructions'] = ','.join(
                 event["body"]["shipmentCreateRequest"]['accessorialList'])
@@ -158,7 +152,6 @@ def handler(event, context):
 
     ship_data = dicttoxml.dicttoxml(
         temp_ship_data, attr_type=False, custom_root='soap:Body')
-    print("temp_ship_data at end",temp_ship_data)
     ship_data = str(ship_data).\
         replace("""b'<?xml version="1.0" encoding="UTF-8" ?><soap:Body><AddNewShipmentV3><shipmentCreateRequest>""", """""").\
         replace("""</shipmentCreateRequest></AddNewShipmentV3></soap:Body>'""", """""")
@@ -353,7 +346,6 @@ def get_dynamodb(cust_no):
     try: 
         response = query_dynamodb(os.environ['CUSTOMER_TABLE'],
                                 'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
-        print("response in get_dynamodb",response['Items'][0]);
         if not response['Items']:
             return 'Failure'
         return response['Items'][0]
