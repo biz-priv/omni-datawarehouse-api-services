@@ -33,7 +33,6 @@ def handler(event, context):
         #     str(event["body"]["shipmentCreateRequest"]).replace("Weight", "Weigth"))
 
         customer_id = validate_input(event)
-        LOGGER.info("customer_id: %s", customer_id)
         if(customer_id != 'customer-portal-admin'):
             customer_info = validate_dynamodb(customer_id)
             LOGGER.info("customer_info: %s", customer_info)
@@ -60,15 +59,9 @@ def handler(event, context):
                         event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                     elif(key == 'customerNumber'):
                         new_key = 'CustomerNo'
-                        # cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"][key])
-                        # if cust_info != 'Failure':
-                        #     temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
                     elif(key == 'billTo'):
                         new_key = 'PayType'
                         temp_ship_data["AddNewShipmentV3"]["shipmentCreateRequest"]["BillToAcct"] = event["body"]["shipmentCreateRequest"][key]
-                    # elif(key == 'controllingStation'):
-                    #     new_key = 'Station'
-                    #     event["body"]["shipmentCreateRequest"][key] = event["body"]["shipmentCreateRequest"][key][0:3].upper()
                     elif(key == 'UserID'):
                         new_key = 'WebtrakUserID'
                     elif(key == 'mode'):

@@ -38,20 +38,7 @@ def dynamo_query(table_name, index_name, expression, attributes):
         logging.exception("DynamoQueryError: %s", dynamo_query_error)
         raise DynamoQueryError(json.dumps(
             {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from dynamo_query_error
-    
-def query_dynamodb(table_name, expression, attributes):
-    try:
-        response = dynamodb.query(
-            TableName=table_name,
-            KeyConditionExpression=expression,
-            ExpressionAttributeValues=attributes
-        )
-        LOGGER.info("DynamoDB query response: {}".format(json.dumps(response)))
-        return response
-    except Exception as query_dynamodb_error:
-        logging.exception("DynamoDBQueryError: %s", query_dynamodb_error)
-        raise DynamoQueryError(json.dumps(
-            {"httpStatus": 501, "message": INTERNAL_ERROR_MESSAGE})) from query_dynamodb_error
+
 
 def dynamo_get(table_name, key):
     try:

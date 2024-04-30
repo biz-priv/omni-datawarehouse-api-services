@@ -27,7 +27,6 @@ def handler(event,context):
     truncate_description(event["body"]["oShipData"]["Shipment Line List"])
     logger.info("Event: %s", json.dumps(event))
     customer_id = validate_input(event)
-    logger.info("customer_id: %s", customer_id)
     customer_info = validate_dynamodb(customer_id)
     logger.info("Customer Info: %s",customer_info)
     cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
