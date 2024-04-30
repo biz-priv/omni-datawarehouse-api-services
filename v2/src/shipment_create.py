@@ -48,6 +48,12 @@ def handler(event, context):  # NOSONAR
         print(event['body']['shipmentCreateRequest'])
         for key in ["deliveryWindowFrom","deliveryWindowTo","delBy","billTo","projectCode","UserID","showName","venueName","booth","decorator","customerCharges","vendorCharges","controllingStation","customerNumber"]:
             event["body"]["shipmentCreateRequest"].pop(key, None)
+    else:
+        if 'customerNumber' in event["body"]["shipmentCreateRequest"]:
+            cust_info = get_dynamodb(event["body"]["shipmentCreateRequest"]["customerNumber"])
+            event["body"]["shipmentCreateRequest"]["Station"] = cust_info['FK_CtrlStationId']['S']
+        else: 
+            return {"httpStatus": 400, "message": "Please provide customerNumber in the payload."}
 
     if customer_id in ['mechanical-orchard']:
         version = "V4"
