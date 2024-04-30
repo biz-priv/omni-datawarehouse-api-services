@@ -15,7 +15,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 dicttoxml.LOG.setLevel(logging.ERROR)
 
-from src.common import dynamo_query
+from src.common import dynamo_query, query_dynamodb
 from src.common import skip_execution_if
 
 InternalErrorMessage = "Internal Error."
@@ -29,10 +29,12 @@ def handler(event,context):
     customer_id = validate_input(event)
     customer_info = validate_dynamodb(customer_id)
     logger.info("Customer Info: %s",customer_info)
+    cust_info = get_dynamodb(customer_info['CustomerNo']['S'])
+    logger.info("cust_info: %s", cust_info)
     if customer_info == 'Failure':
         return {"httpStatus": 400, "message": "Customer Information doesnot exist. Please raise a support ticket to add the customer"}
     try:
-        event["body"]["oShipData"]["Station"] = customer_info['Station']['S']
+        event["body"]["oShipData"]["Station"] = cust_info['FK_CtrlStationId']['S']
         event["body"]["oShipData"]["CustomerNo"] = customer_info['CustomerNo']['S']
         event["body"]["oShipData"]["BillToAcct"] = customer_info['BillToAcct']['S']
         event["body"]["oShipData"]["DeclaredType"] = customer_info['DeclaredType']['S']
@@ -118,9 +120,14 @@ def get_service_level(service_level_code):
             cur.execute(f"select trim(service_level_desc) from public.service_level where service_level_id = '{service_level_id}'")
             con.commit()
             service_code = cur.fetchone()
-            service_level_desc = service_code[0]
             cur.close()
             con.close()
+            if service_code:
+                logger.info("service_code: %s", service_code)
+            else:
+                return "NA"
+            service_level_desc = service_code[0]
+            logger.info("service_level_desc: %s", service_level_desc)
             return service_level_desc
         return "NA"
     except Exception as service_level_error:
@@ -154,6 +161,19 @@ def validate_dynamodb(customer_id):
     except Exception as validate_error:
         logging.exception("ValidateDynamoDBError: %s", validate_error)
         raise ValidateDynamoDBError(json.dumps({"httpStatus": 501, "message": InternalErrorMessage})) from validate_error
+    
+def get_dynamodb(cust_no):
+    logger.info("cust_no in get_dynamodb: %s", cust_no)
+    try: 
+        response = query_dynamodb(os.environ['CUSTOMER_TABLE'],
+                                'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
+        if not response['Items']:
+            return 'Failure'
+        return response['Items'][0]
+    except Exception as validate_error:
+        logging.exception("ValidateDynamoDBError: %s", json.dumps(validate_error))
+        raise ValidateDynamoDBError(json.dumps(
+            {"httpStatus": 501, "message": InternalErrorMessage})) from validate_error
 
 def update_response(response):
     try:
