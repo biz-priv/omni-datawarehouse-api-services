@@ -184,7 +184,7 @@ def validate_dynamodb(customer_id):
 def get_dynamodb(cust_no):
     logger.info("cust_no in get_dynamodb: %s", cust_no)
     try: 
-        response = query_dynamodb('omni-wt-rt-customers-dev',
+        response = query_dynamodb(os.environ['CUSTOMER_TABLE'],
                                 'PK_CustNo = :PK_CustNo', {":PK_CustNo": {"S": cust_no}})
         if not response['Items']:
             return 'Failure'
