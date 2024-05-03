@@ -108,7 +108,7 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
       ":customerId": { S: customerId }
     },
     FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 10,
+    Limit: 30,
   };
   try {
     let mainResult = [];
@@ -157,7 +157,7 @@ async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedK
       ":customerId": { S: customerId }
     },
     FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 10,
+    Limit: 30,
   };
 
   try {
