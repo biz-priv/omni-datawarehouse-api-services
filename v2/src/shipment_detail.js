@@ -67,6 +67,8 @@ module.exports.handler = async (event) => {
   const host = get(event, "headers.Host");
   console.info("host", host);
 
+  const customerId = get(event, "enhancedAuthContext.customerId");
+
   const { error, value } = validateQueryParams(get(event, "query"));
 
   if (error) {
@@ -102,44 +104,84 @@ module.exports.handler = async (event) => {
   let dataObj = [];
   let mainResponse = {};
   let nextEndPoint;
+  let flag;
   try {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber", get(queryStringParams, "fileNumber", null));
-      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null));
+      [dataObj, flag] = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null), customerId);
+      console.log("dataObj ay fileNumber", dataObj);
+      console.log("flag at fileNumber", flag);
+      if (dataObj && flag === '') {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
 
-      const unmarshalledDataObj = await Promise.all(
-        dataObj.map((d) => {
-          return Converter.unmarshall(d);
-        })
-      );
-      mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
-      logObj = {
-        ...logObj,
-        api_status_code: "200",
-        payload: mainResponse,
-      };
-      await putItem(logObj);
-    } else if (get(queryStringParams, "housebill", null)) {
-      console.info("housebill", get(queryStringParams, "housebill", null));
-      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "housebill", null));
-
-      const unmarshalledDataObj = await Promise.all(
-        dataObj.map((d) => {
-          return Converter.unmarshall(d);
-        })
-      );
-      if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
-        console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
-        mainResponse = await mappingPayload(unmarshalledDataObj, get(queryStringParams, "milestoneHistory"));
         logObj = {
           ...logObj,
           api_status_code: "200",
           payload: mainResponse,
         };
         await putItem(logObj);
+      }
+      else if (dataObj && flag === 'Yes') {
+        throw new Error(`404,Invalid fileNumber`);
       } else {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
         mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
+      }
+    } else if (get(queryStringParams, "housebill", null)) {
+      console.info("housebill", get(queryStringParams, "housebill", null));
+      [dataObj, flag] = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "housebill", null), customerId);
+
+      if (dataObj && flag === '') {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+          console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(unmarshalledDataObj, get(queryStringParams, "milestoneHistory"));
+          logObj = {
+            ...logObj,
+            api_status_code: "200",
+            payload: mainResponse,
+          };
+          await putItem(logObj);
+        } else {
+          mainResponse = await mappingPayload(unmarshalledDataObj, true);
+          logObj = {
+            ...logObj,
+            api_status_code: "200",
+            payload: mainResponse,
+          };
+          await putItem(logObj);
+        }
+      }
+      else if (dataObj && flag === 'Yes') {
+        throw new Error(`404,Invalid housebill`);
+      } else {
+        const unmarshalledDataObj = await Promise.all(
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
+        mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
         logObj = {
           ...logObj,
           api_status_code: "200",
@@ -150,7 +192,7 @@ module.exports.handler = async (event) => {
 
     } else if (get(queryStringParams, "refNumber", null)) {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
-      dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null));
+      dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null), customerId);
       const unmarshalledDataObj = await Promise.all(
         dataObj.result.flatMap(innerArray =>
           innerArray.map(obj => Converter.unmarshall(obj))
@@ -229,7 +271,7 @@ module.exports.handler = async (event) => {
           throw new Error("activityToDate cannot be earlier than activityFromDate");
         }
       }
-      dataObj = await dateRange("activityDate", fromDateTime, toDateTime, lastKey);
+      dataObj = await dateRange("activityDate", fromDateTime, toDateTime, lastKey, customerId);
 
       const unmarshalledDataObj = await Promise.all(
         dataObj.items.Items.map((d) => {
@@ -309,10 +351,10 @@ module.exports.handler = async (event) => {
             api_status_code: "400",
             errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
           };
-          throw new Error("shipmentToDate cannot be earlier than shipmentFromDate");
+          throw new Error("404,shipmentToDate cannot be earlier than shipmentFromDate");
         }
       }
-      dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey);
+      dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey, customerId);
 
       const unmarshalledDataObj = await Promise.all(
         dataObj.items.Items.map((d) => {
