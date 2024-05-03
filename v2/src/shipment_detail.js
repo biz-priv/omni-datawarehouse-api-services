@@ -109,8 +109,6 @@ module.exports.handler = async (event) => {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber", get(queryStringParams, "fileNumber", null));
       [dataObj, flag] = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null), customerId);
-      console.log("dataObj ay fileNumber", dataObj);
-      console.log("flag at fileNumber", flag);
       if (dataObj && flag === '') {
         const unmarshalledDataObj = await Promise.all(
           dataObj.map((d) => {
@@ -194,10 +192,10 @@ module.exports.handler = async (event) => {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
       dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null), customerId);
       const unmarshalledDataObj = await Promise.all(
-        dataObj.result.flatMap(innerArray =>
-          innerArray.map(obj => Converter.unmarshall(obj))
-        )
-      );
+          dataObj.map((d) => {
+            return Converter.unmarshall(d);
+          })
+        );
       mainResponse = await mappingPayload(unmarshalledDataObj, true);
       logObj = {
         ...logObj,
@@ -274,7 +272,7 @@ module.exports.handler = async (event) => {
       dataObj = await dateRange("activityDate", fromDateTime, toDateTime, lastKey, customerId);
 
       const unmarshalledDataObj = await Promise.all(
-        dataObj.items.Items.map((d) => {
+        dataObj.items.map((d) => {
           return Converter.unmarshall(d);
         })
       );
@@ -357,7 +355,7 @@ module.exports.handler = async (event) => {
       dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey, customerId);
 
       const unmarshalledDataObj = await Promise.all(
-        dataObj.items.Items.map((d) => {
+        dataObj.items.map((d) => {
           return Converter.unmarshall(d);
         })
       );

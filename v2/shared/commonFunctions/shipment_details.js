@@ -17,17 +17,14 @@ async function queryWithFileNumber(tableName, indexName, fileNumber, customerId)
     const data = await dynamo.query(params).promise();
     const custIDs = get(data.Items, "[0].customerIds", "");
     let dataFlag = '';
-    if (get(data, "Items") && custIDs.S.includes(customerId)) {
-      console.log("if in function");
+    if (get(data, "Items") && custIDs && custIDs.S.includes(customerId)) {
       return [get(data, "Items", []), dataFlag];
     }
     else if (get(data, "Items")) {
-      console.log("else if in function");
       dataFlag = 'Yes';
       return [get(data, "Items", []), dataFlag];
     }
     else {
-      console.log("else in function");
       return [[], dataFlag];
     }
   } catch (error) {
@@ -48,17 +45,14 @@ async function queryWithHouseBill(tableName, HouseBillNumber, customerId) {
     let data = await dynamo.query(params).promise();
     const custIDs = get(data.Items, "[0].customerIds", "");
     let dataFlag = '';
-    if (get(data, "Items") && custIDs.S.includes(customerId)) {
-      console.log("if in function");
+    if (get(data, "Items") && custIDs && custIDs.S.includes(customerId)) {
       return [get(data, "Items", []), dataFlag];
     }
     else if (get(data, "Items")) {
-      console.log("else if in function");
       dataFlag = 'Yes';
       return [get(data, "Items", []), dataFlag];
     }
     else {
-      console.log("else in function");
       return [[], dataFlag];
     }
   } catch (error) {
@@ -114,22 +108,22 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
       ":customerId": { S: customerId }
     },
     FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 30,
+    Limit: 10,
   };
-  if (lastEvaluatedKey) {
-    params.ExclusiveStartKey = lastEvaluatedKey;
-  }
   try {
     let mainResult = [];
     do{
-      const result = await dynamo.query(params).promise();
-      mainResult = mainResult.concat(get(result, 'Items', []))
-      if(get(result, "LastEvaluatedKey")){
-        lastEvaluatedKey = get(result, "LastEvaluatedKey", )
-      }else{
-        lastEvaluatedKey = ''
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
       }
-    }while(mainResult.length < 30  )
+      const result = await dynamo.query(params).promise();
+      mainResult = mainResult.concat(get(result, 'Items', []));
+      if(get(result, "LastEvaluatedKey")){
+        lastEvaluatedKey = get(result, "LastEvaluatedKey", );
+      }else{
+        lastEvaluatedKey = null;
+      }
+    }while(mainResult.length < 30 && lastEvaluatedKey);
     let base64 = "";
     if (lastEvaluatedKey) {
       // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
@@ -163,22 +157,21 @@ async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedK
       ":customerId": { S: customerId }
     },
     FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 30,
+    Limit: 10,
   };
-
-  if (lastEvaluatedKey) {
-    params.ExclusiveStartKey = lastEvaluatedKey;
-  }
 
   try {
     let mainResult = [];
     do{
+      if (lastEvaluatedKey) {
+        params.ExclusiveStartKey = lastEvaluatedKey;
+      }
       const result = await dynamo.query(params).promise();
       mainResult = mainResult.concat(get(result, 'Items', []))
       if(get(result, "LastEvaluatedKey")){
         lastEvaluatedKey = get(result, "LastEvaluatedKey", )
       }else{
-        lastEvaluatedKey = ''
+        lastEvaluatedKey = null
       }
     }while(mainResult.length < 30 && lastEvaluatedKey)
     let base64 = "";
@@ -219,15 +212,24 @@ async function getOrders(tableName, indexName, refNumber, customerId) {
     });
 
     console.info("Unique Order Numbers:", orderNos);
-    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", orderNo));
+    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", orderNo, customerId));
 
-    const result = await Promise.all(promises);
-    return { result };
+    const results = await Promise.all(promises);
+    
+    const finalResult = [];
+    results.forEach(([items, dataFlag]) => {
+      if (items && dataFlag === '') {
+        finalResult.push(...items);
+      }
+    });
+    
+    return finalResult;
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
   }
 }
+
 
 async function mappingPayload(data, milestone_history) {
   const response = {};
