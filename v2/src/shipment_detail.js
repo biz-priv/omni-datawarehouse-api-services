@@ -249,14 +249,6 @@ module.exports.handler = async (event) => {
         };
         await putItem(logObj);
         throw new Error("activityToDate cannot be earlier than activityFromDate");
-      } else if (daysDifference > 7) {
-        console.info(`date range cannot be more than 7days \n your date range ${daysDifference}`);
-        logObj = {
-          ...logObj,
-          api_status_code: "400",
-          errorMsg: "date range cannot be more than 7days",
-        };
-        throw new Error(`date range cannot be more than 7days \n your date range ${daysDifference}`);
       } else if (daysDifference == 0) {
         const hoursDiff = toDateTime.diff(fromDateTime, "hours");
         if (hoursDiff < 0) {
@@ -330,16 +322,6 @@ module.exports.handler = async (event) => {
           errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
         };
         throw new Error("shipmentToDate cannot be earlier than shipmentFromDate");
-      } else if (daysDifference > 7) {
-        console.info(
-          `date range cannot be more than 7days \n your date range ${daysDifference}`
-        );
-        logObj = {
-          ...logObj,
-          api_status_code: "400",
-          errorMsg: "date range cannot be more than 7days",
-        };
-        throw new Error(`date range cannot be more than 7days \n your date range ${daysDifference}`);
       } else if (daysDifference == 0) {
         const hoursDiff = toDateTime.diff(fromDateTime, "hours");
         if (hoursDiff < 0) {
