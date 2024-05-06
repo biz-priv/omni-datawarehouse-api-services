@@ -108,7 +108,7 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
       ":customerId": { S: customerId }
     },
     FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 100,
+    Limit: 75,
   };
   try {
     let mainResult = [];
@@ -123,7 +123,7 @@ async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedK
       }else{
         lastEvaluatedKey = null;
       }
-    }while(mainResult.length < 100 && lastEvaluatedKey);
+    }while(mainResult.length < 75 && lastEvaluatedKey);
     let base64 = "";
     if (lastEvaluatedKey) {
       // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
@@ -157,7 +157,7 @@ async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedK
       ":customerId": { S: customerId }
     },
     FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 100,
+    Limit: 75,
   };
 
   try {
@@ -173,7 +173,7 @@ async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedK
       }else{
         lastEvaluatedKey = null
       }
-    }while(mainResult.length < 100 && lastEvaluatedKey)
+    }while(mainResult.length < 75 && lastEvaluatedKey)
     let base64 = "";
     if (lastEvaluatedKey) {
       // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
