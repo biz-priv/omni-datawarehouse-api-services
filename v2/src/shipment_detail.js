@@ -56,7 +56,7 @@ const validateLastEventKey = Joi.object({
 
 let logObj = {};
 
-module.exports.handler = async (event, context, callback) => {
+module.exports.handler = async (event, context) => {
   console.info("event: ", JSON.stringify(event));
 
   if (event.source === "serverless-plugin-warmup") {
