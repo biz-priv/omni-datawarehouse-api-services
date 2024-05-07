@@ -56,7 +56,7 @@ const validateLastEventKey = Joi.object({
 
 let logObj = {};
 
-module.exports.handler = async (event,context, callback) => {
+module.exports.handler = async (event, context, callback) => {
   console.info("event: ", JSON.stringify(event));
 
   if (event.source === "serverless-plugin-warmup") {
@@ -108,12 +108,12 @@ module.exports.handler = async (event,context, callback) => {
   try {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber", get(queryStringParams, "fileNumber", null));
-      dataObj= await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "fileNumber", null), customerId);
-      if(dataObj && dataObj.length>0){
+      dataObj = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "fileNumber", null), customerId);
+      if (dataObj && dataObj.length > 0) {
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
-        }else{
+        } else {
           mainResponse = await mappingPayload(dataObj, true);
         }
         logObj = {
@@ -122,9 +122,10 @@ module.exports.handler = async (event,context, callback) => {
           payload: mainResponse,
         };
         await putItem(logObj);
-      }else{
+      } else {
         console.info("Please check the fileNumber and provided API key")
-        return callback(null, {statusCode: 404, body: "Please check the fileNumber and provided API key"})
+        return { statusCode: 404, body: JSON.stringify({ Message: 'Please check the fileNumber and provided API key', }, null, 2), };
+        // return callback(null, {statusCode: 404, body: "Please check the fileNumber and provided API key"})
       }
       // [dataObj, flag] = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "fileNumber", null), customerId);
       // if (dataObj && flag === '') {
@@ -161,12 +162,12 @@ module.exports.handler = async (event,context, callback) => {
       // }
     } else if (get(queryStringParams, "housebill", null)) {
       console.info("housebill", get(queryStringParams, "housebill", null));
-      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,"houseBillNumberIndex", get(queryStringParams, "housebill", null), customerId);
-      if(dataObj && dataObj.length>0){
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "houseBillNumberIndex", get(queryStringParams, "housebill", null), customerId);
+      if (dataObj && dataObj.length > 0) {
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
-        }else{
+        } else {
           mainResponse = await mappingPayload(dataObj, true);
         }
         logObj = {
@@ -175,9 +176,9 @@ module.exports.handler = async (event,context, callback) => {
           payload: mainResponse,
         };
         await putItem(logObj);
-      }else{
+      } else {
         console.info("Please check the housebill and provided API key")
-        return callback(null, {statusCode: 404, body: "Please check the housebill and provided API key"})
+        return callback(null, { statusCode: 404, body: "Please check the housebill and provided API key" })
       }
       // [dataObj, flag] = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,"houseBillNumberIndex", get(queryStringParams, "housebill", null), customerId);
       // if (dataObj && flag === '') {
@@ -226,11 +227,11 @@ module.exports.handler = async (event,context, callback) => {
     } else if (get(queryStringParams, "refNumber", null)) {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
       dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null), customerId);
-      if(dataObj.result && dataObj.result.length > 0){
+      if (dataObj.result && dataObj.result.length > 0) {
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.result, get(queryStringParams, "milestoneHistory"));
-        }else{
+        } else {
           mainResponse = await mappingPayload(dataObj.result, true);
         }
         logObj = {
@@ -239,9 +240,9 @@ module.exports.handler = async (event,context, callback) => {
           payload: mainResponse,
         };
         await putItem(logObj);
-      }else{
+      } else {
         console.info("Please check the refNumber and provided API key")
-        return callback(null, {statusCode: 404, body: "Please check the refNumber and provided API key"})
+        return callback(null, { statusCode: 404, body: "Please check the refNumber and provided API key" })
       }
       // const unmarshalledDataObj = await Promise.all(
       //     dataObj.map((d) => {
@@ -320,11 +321,11 @@ module.exports.handler = async (event,context, callback) => {
       //     return Converter.unmarshall(d);
       //   })
       // );
-      if(dataObj.items.Items && dataObj.items.Items.length > 0){
+      if (dataObj.items.Items && dataObj.items.Items.length > 0) {
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
-        }else{
+        } else {
           mainResponse = await mappingPayload(dataObj.items.Items, true);
         }
         if (get(dataObj, "lastEvaluatedKey")) {
@@ -336,9 +337,9 @@ module.exports.handler = async (event,context, callback) => {
           payload: mainResponse,
         };
         await putItem(logObj);
-      }else{
+      } else {
         console.info("Please check the refNumber and provided API key")
-        return callback(null, {statusCode: 404, body: "Please check the refNumber and provided API key"})
+        return callback(null, { statusCode: 404, body: "Please check the refNumber and provided API key" })
       }
       // mainResponse = await mappingPayload(dataObj, true);
       // logObj = {
@@ -403,26 +404,26 @@ module.exports.handler = async (event,context, callback) => {
         }
       }
       dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey, customerId);
-      if(dataObj.items.Items && dataObj.items.Items.length > 0){
+      if (dataObj.items.Items && dataObj.items.Items.length > 0) {
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
-        }else{
+        } else {
           mainResponse = await mappingPayload(dataObj.items.Items, true);
         }
 
-        if(get(dataObj, "lastEvaluatedKey")){
-        nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
-      }
+        if (get(dataObj, "lastEvaluatedKey")) {
+          nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+        }
         logObj = {
           ...logObj,
           api_status_code: "200",
           payload: mainResponse,
         };
         await putItem(logObj);
-      }else{
+      } else {
         console.info("Please check the refNumber and provided API key")
-        return callback(null, {statusCode: 404, body: "Please check the refNumber and provided API key"})
+        return callback(null, { statusCode: 404, body: "Please check the refNumber and provided API key" })
       }
       // const unmarshalledDataObj = await Promise.all(
       //   dataObj.items.map((d) => {
