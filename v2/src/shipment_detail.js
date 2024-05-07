@@ -30,28 +30,16 @@ const validateQueryParams = (params) => {
   return schema.validate(params);
 };
 
-const validateLastOrderKey = Joi.object({
-  customerIds: Joi.object({
-    S: Joi.string().required()
-  }),
-  fileNumber: Joi.object({
-    S: Joi.string().required()
-  }),
-  OrderDateTime: Joi.object({
-    S: Joi.string().required()
-  })
+const validateLastOrderKey =  Joi.object({
+  customerIds: Joi.string().required(),
+  fileNumber: Joi.string().required(),
+  OrderDateTime: Joi.string().required()
 });
 
 const validateLastEventKey = Joi.object({
-  customerIds: Joi.object({
-    S: Joi.string().required()
-  }),
-  fileNumber: Joi.object({
-    S: Joi.string().required()
-  }),
-  EventDateTime: Joi.object({
-    S: Joi.string().required()
-  })
+  customerIds: Joi.string().required(),
+  fileNumber: Joi.string().required(),
+  EventDateTime: Joi.string().required()
 });
 
 let logObj = {};
@@ -369,6 +357,7 @@ module.exports.handler = async (event, context, callback) => {
       let lastKey;
       if (get(queryStringParams, "nextStartToken")) {
         lastKey = base64Decode(base64);
+        console.log("lastKey",lastKey)
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
           console.error(error);
