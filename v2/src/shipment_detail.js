@@ -56,7 +56,7 @@ const validateLastEventKey = Joi.object({
 
 let logObj = {};
 
-module.exports.handler = async (event) => {
+module.exports.handler = async (event,context, callback) => {
   console.info("event: ", JSON.stringify(event));
 
   if (event.source === "serverless-plugin-warmup") {
@@ -108,101 +108,153 @@ module.exports.handler = async (event) => {
   try {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber", get(queryStringParams, "fileNumber", null));
-      [dataObj, flag] = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", get(queryStringParams, "fileNumber", null), customerId);
-      if (dataObj && flag === '') {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
-      }
-      else if (dataObj && flag === 'Yes') {
-        throw new Error(`404,Invalid fileNumber`);
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
-      }
-    } else if (get(queryStringParams, "housebill", null)) {
-      console.info("housebill", get(queryStringParams, "housebill", null));
-      [dataObj, flag] = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "housebill", null), customerId);
-
-      if (dataObj && flag === '') {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
+      dataObj= await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "fileNumber", null), customerId);
+      if(dataObj){
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
-          mainResponse = await mappingPayload(unmarshalledDataObj, get(queryStringParams, "milestoneHistory"));
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          };
-          await putItem(logObj);
-        } else {
-          mainResponse = await mappingPayload(unmarshalledDataObj, true);
-          logObj = {
-            ...logObj,
-            api_status_code: "200",
-            payload: mainResponse,
-          };
-          await putItem(logObj);
+          mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
+        }else{
+          mainResponse = await mappingPayload(dataObj, true);
         }
-      }
-      else if (dataObj && flag === 'Yes') {
-        throw new Error(`404,Invalid housebill`);
-      } else {
-        const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-        mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
         logObj = {
           ...logObj,
           api_status_code: "200",
           payload: mainResponse,
         };
         await putItem(logObj);
+      }else{
+        console.info("Please check the fileNumber and provided API key")
+        return callback(null, {statusCode: 404, body: "Please check the fileNumber and provided API key"})
       }
+      // [dataObj, flag] = await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "fileNumber", null), customerId);
+      // if (dataObj && flag === '') {
+      //   const unmarshalledDataObj = await Promise.all(
+      //     dataObj.map((d) => {
+      //       return Converter.unmarshall(d);
+      //     })
+      //   );
+      //   mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+      //   logObj = {
+      //     ...logObj,
+      //     api_status_code: "200",
+      //     payload: mainResponse,
+      //   };
+      //   await putItem(logObj);
+      // }
+      // else if (dataObj && flag === 'Yes') {
+      //   throw new Error(`404,Invalid fileNumber`);
+      // } else {
+      //   const unmarshalledDataObj = await Promise.all(
+      //     dataObj.map((d) => {
+      //       return Converter.unmarshall(d);
+      //     })
+      //   );
+      //   mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+      //   logObj = {
+      //     ...logObj,
+      //     api_status_code: "200",
+      //     payload: mainResponse,
+      //   };
+      //   await putItem(logObj);
+      // }
+    } else if (get(queryStringParams, "housebill", null)) {
+      console.info("housebill", get(queryStringParams, "housebill", null));
+      dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,"houseBillNumberIndex", get(queryStringParams, "housebill", null), customerId);
+      if(dataObj){
+        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+          console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
+        }else{
+          mainResponse = await mappingPayload(dataObj, true);
+        }
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
+      }else{
+        console.info("Please check the housebill and provided API key")
+        return callback(null, {statusCode: 404, body: "Please check the housebill and provided API key"})
+      }
+      // [dataObj, flag] = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,"houseBillNumberIndex", get(queryStringParams, "housebill", null), customerId);
+      // if (dataObj && flag === '') {
+      //   const unmarshalledDataObj = await Promise.all(
+      //     dataObj.map((d) => {
+      //       return Converter.unmarshall(d);
+      //     })
+      //   );
+      //   if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+      //     console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+      //     mainResponse = await mappingPayload(unmarshalledDataObj, get(queryStringParams, "milestoneHistory"));
+      //     logObj = {
+      //       ...logObj,
+      //       api_status_code: "200",
+      //       payload: mainResponse,
+      //     };
+      //     await putItem(logObj);
+      //   } else {
+      //     mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      //     logObj = {
+      //       ...logObj,
+      //       api_status_code: "200",
+      //       payload: mainResponse,
+      //     };
+      //     await putItem(logObj);
+      //   }
+      // }
+      // else if (dataObj && flag === 'Yes') {
+      //   throw new Error(`404,Invalid housebill`);
+      // } else {
+      //   const unmarshalledDataObj = await Promise.all(
+      //     dataObj.map((d) => {
+      //       return Converter.unmarshall(d);
+      //     })
+      //   );
+      //   mainResponse = await mappingPayload(unmarshalledDataObj, true);
+
+      //   logObj = {
+      //     ...logObj,
+      //     api_status_code: "200",
+      //     payload: mainResponse,
+      //   };
+      //   await putItem(logObj);
+      // }
 
     } else if (get(queryStringParams, "refNumber", null)) {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
       dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null), customerId);
-      const unmarshalledDataObj = await Promise.all(
-          dataObj.map((d) => {
-            return Converter.unmarshall(d);
-          })
-        );
-      mainResponse = await mappingPayload(unmarshalledDataObj, true);
-      logObj = {
-        ...logObj,
-        api_status_code: "200",
-        payload: mainResponse,
-      };
-      await putItem(logObj);
+      if(dataObj){
+        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+          console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
+        }else{
+          mainResponse = await mappingPayload(dataObj, true);
+        }
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
+      }else{
+        console.info("Please check the refNumber and provided API key")
+        return callback(null, {statusCode: 404, body: "Please check the refNumber and provided API key"})
+      }
+      // const unmarshalledDataObj = await Promise.all(
+      //     dataObj.map((d) => {
+      //       return Converter.unmarshall(d);
+      //     })
+      //   );
+      // mainResponse = await mappingPayload(unmarshalledDataObj, true);
+      // logObj = {
+      //   ...logObj,
+      //   api_status_code: "200",
+      //   payload: mainResponse,
+      // };
+      // await putItem(logObj);
     } else if (
       get(queryStringParams, "activityFromDate", null) &&
       get(queryStringParams, "activityToDate", null)
@@ -263,22 +315,38 @@ module.exports.handler = async (event) => {
       }
       dataObj = await dateRange("activityDate", fromDateTime, toDateTime, lastKey, customerId);
 
-      const unmarshalledDataObj = await Promise.all(
-        dataObj.items.map((d) => {
-          return Converter.unmarshall(d);
-        })
-      );
-      mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
-      if (get(dataObj, "lastEvaluatedKey")) {
-        nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+      // const unmarshalledDataObj = await Promise.all(
+      //   dataObj.items.map((d) => {
+      //     return Converter.unmarshall(d);
+      //   })
+      // );
+      if(dataObj){
+        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+          console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
+        }else{
+          mainResponse = await mappingPayload(dataObj.items.Items, true);
+        }
+        if (get(dataObj, "lastEvaluatedKey")) {
+          nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+        }
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
+      }else{
+        console.info("Please check the refNumber and provided API key")
+        return callback(null, {statusCode: 404, body: "Please check the refNumber and provided API key"})
       }
-      logObj = {
-        ...logObj,
-        api_status_code: "200",
-        payload: mainResponse,
-      };
-      await putItem(logObj);
+      // mainResponse = await mappingPayload(dataObj, true);
+      // logObj = {
+      //   ...logObj,
+      //   api_status_code: "200",
+      //   payload: mainResponse,
+      // };
+      // await putItem(logObj);
     } else {
       console.info("shipmentFromDate & shipmentToDate", get(queryStringParams, "shipmentFromDate", null) + "    ", get(queryStringParams, "shipmentToDate", null));
       const fromDateTime = moment(
@@ -335,23 +403,42 @@ module.exports.handler = async (event) => {
         }
       }
       dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey, customerId);
-
-      const unmarshalledDataObj = await Promise.all(
-        dataObj.items.map((d) => {
-          return Converter.unmarshall(d);
-        })
-      );
-      mainResponse = await mappingPayload(unmarshalledDataObj, true);
-
-      if (get(dataObj, "lastEvaluatedKey")) {
-        nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+      if(dataObj){
+        if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
+          console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
+        }else{
+          mainResponse = await mappingPayload(dataObj.items.Items, true);
+        }
+        if (get(dataObj, "lastEvaluatedKey")) {
+          nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+        }
+        logObj = {
+          ...logObj,
+          api_status_code: "200",
+          payload: mainResponse,
+        };
+        await putItem(logObj);
+      }else{
+        console.info("Please check the refNumber and provided API key")
+        return callback(null, {statusCode: 404, body: "Please check the refNumber and provided API key"})
       }
-      logObj = {
-        ...logObj,
-        api_status_code: "200",
-        payload: mainResponse,
-      };
-      await putItem(logObj);
+      // const unmarshalledDataObj = await Promise.all(
+      //   dataObj.items.map((d) => {
+      //     return Converter.unmarshall(d);
+      //   })
+      // );
+      // mainResponse = await mappingPayload(dataObj, true);
+
+      // if (get(dataObj, "lastEvaluatedKey")) {
+      //   nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+      // }
+      // logObj = {
+      //   ...logObj,
+      //   api_status_code: "200",
+      //   payload: mainResponse,
+      // };
+      // await putItem(logObj);
     }
     return {
       ...mainResponse,

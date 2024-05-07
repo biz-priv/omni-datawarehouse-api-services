@@ -1,60 +1,65 @@
 const AWS = require("aws-sdk");
-const dynamo = new AWS.DynamoDB();
+// const dynamo = new AWS.DynamoDB();
 const moment = require("moment");
 const { get } = require("lodash");
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-async function queryWithFileNumber(tableName, indexName, fileNumber, customerId) {
+async function queryWithFileNumber(tableName, fileNumber, customerId) {
   const params = {
     TableName: tableName,
-    IndexName: indexName,
-    KeyConditionExpression: "fileNumber = :value",
+    KeyConditionExpression: "fileNumber = :value AND customerIds = :customerId",
     ExpressionAttributeValues: {
-      ":value": { S: fileNumber },
+      ":value": fileNumber,
+      ":customerId": customerId
     },
   };
 
   try {
-    const data = await dynamo.query(params).promise();
-    const custIDs = get(data.Items, "[0].customerIds", "");
-    let dataFlag = '';
-    if (get(data, "Items") && custIDs && custIDs.S.includes(customerId)) {
-      return [get(data, "Items", []), dataFlag];
-    }
-    else if (get(data, "Items")) {
-      dataFlag = 'Yes';
-      return [get(data, "Items", []), dataFlag];
-    }
-    else {
-      return [[], dataFlag];
-    }
+    const data = await dynamodb.query(params).promise();
+    // const custIDs = get(data.Items, "[0].customerIds", "");
+    // let dataFlag = '';
+    // if (get(data, "Items") && custIDs && custIDs.S.includes(customerId)) {
+    //   return [get(data, "Items", []), dataFlag];
+    // }
+    // else if (get(data, "Items")) {
+    //   dataFlag = 'Yes';
+    //   return [get(data, "Items", []), dataFlag];
+    // }
+    // else {
+    //   return [[], dataFlag];
+    // }
+    return get(data, "Items", []);
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
   }
 }
 
-async function queryWithHouseBill(tableName, HouseBillNumber, customerId) {
+async function queryWithHouseBill(tableName, indexName, HouseBillNumber, customerId) {
   let params = {
     TableName: tableName,
-    KeyConditionExpression: "HouseBillNumber = :value",
+    IndexName: indexName,
+    KeyConditionExpression: "customerIds = :customerId AND houseBillNumber = :value",
     ExpressionAttributeValues: {
-      ":value": { S: HouseBillNumber },
+      ":value": HouseBillNumber,
+      ":customerId": customerId
     },
   };
   try {
-    let data = await dynamo.query(params).promise();
-    const custIDs = get(data.Items, "[0].customerIds", "");
-    let dataFlag = '';
-    if (get(data, "Items") && custIDs && custIDs.S.includes(customerId)) {
-      return [get(data, "Items", []), dataFlag];
-    }
-    else if (get(data, "Items")) {
-      dataFlag = 'Yes';
-      return [get(data, "Items", []), dataFlag];
-    }
-    else {
-      return [[], dataFlag];
-    }
+    const data = await dynamodb.query(params).promise();
+    // const custIDs = get(data.Items, "[0].customerIds", "");
+    // let dataFlag = '';
+    // if (get(data, "Items") && custIDs && custIDs.S.includes(customerId)) {
+    //   return [get(data, "Items", []), dataFlag];
+    // }
+    // else if (get(data, "Items")) {
+    //   dataFlag = 'Yes';
+    //   return [get(data, "Items", []), dataFlag];
+    // }
+    // else {
+    //   return [[], dataFlag];
+    // }
+    return get(data, "Items", []);
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
@@ -74,15 +79,15 @@ async function dateRange(
       const toDateTime = moment(eventDateTimeTo);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
-      const eventDate = fromDateTime.format("YYYY");
-      return await queryWithEventDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey, customerId);
+      // const eventDate = fromDateTime.format("YYYY");
+      return await queryWithEventDate(formattedStartDate, formattedEndDate, lastEvaluatedKey, customerId);
     } else {
       const fromDateTime = moment(eventDateTimeFrom);
       const toDateTime = moment(eventDateTimeTo);
       const formattedStartDate = fromDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
       const formattedEndDate = toDateTime.format("YYYY-MM-DD HH:mm:ss.SSS");
-      const eventDate = fromDateTime.format("YYYY");
-      return await queryWithOrderDate(eventDate, formattedStartDate, formattedEndDate, lastEvaluatedKey, customerId);
+      // const eventDate = fromDateTime.format("YYYY");
+      return await queryWithOrderDate(formattedStartDate, formattedEndDate, lastEvaluatedKey, customerId);
     }
   } catch (error) {
     console.error("date range function: ", error);
@@ -90,99 +95,113 @@ async function dateRange(
   }
 }
 
-async function queryWithEventDate(date, startSortKey, endSortKey, lastEvaluatedKey, customerId) {
+async function queryWithEventDate(startSortKey, endSortKey, lastEvaluatedKey, customerId) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
-    IndexName: "EventYearIndex",
+    IndexName: "EventDateIndex",
     KeyConditionExpression:
-      "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
-    ExpressionAttributeNames: {
-      "#date": "EventYear",
-      "#sortKey": "EventDateTime",
-      "#customerIds": "customerIds"
-    },
+      "customerIds = :customerId AND EventDateTime BETWEEN :startSortKey AND :endSortKey",
     ExpressionAttributeValues: {
-      ":dateValue": { S: date },
-      ":startSortKey": { S: startSortKey },
-      ":endSortKey": { S: endSortKey },
-      ":customerId": { S: customerId }
+      ":customerId": customerId,
+      ":startSortKey": startSortKey,
+      ":endSortKey": endSortKey
     },
-    FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 75,
+    // FilterExpression: "contains (#customerIds, :customerId)",
+    Limit: 30,
   };
+  if (lastEvaluatedKey) {
+    params.ExclusiveStartKey = lastEvaluatedKey;
+  }
   try {
-    let mainResult = [];
-    do{
-      if (lastEvaluatedKey) {
-        params.ExclusiveStartKey = lastEvaluatedKey;
-      }
-      const result = await dynamo.query(params).promise();
-      mainResult = mainResult.concat(get(result, 'Items', []));
-      if(get(result, "LastEvaluatedKey")){
-        lastEvaluatedKey = get(result, "LastEvaluatedKey", );
-      }else{
-        lastEvaluatedKey = null;
-      }
-    }while(mainResult.length < 30 && lastEvaluatedKey);
+    const result = await dynamodb.query(params).promise();
     let base64 = "";
-    if (lastEvaluatedKey) {
-      // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
-      base64 = base64Encode(lastEvaluatedKey);
+    if (get(result, "LastEvaluatedKey")) {
+      const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
+      base64 = base64Encode(lastEvaluatedKeyData);
     }
     return {
-      items: mainResult,
+      items: result,
       lastEvaluatedKey: base64,
     };
+    // let mainResult = [];
+    // do {
+    //   if (lastEvaluatedKey) {
+    //     params.ExclusiveStartKey = lastEvaluatedKey;
+    //   }
+    //   const result = await dynamo.query(params).promise();
+    //   mainResult = mainResult.concat(get(result, 'Items', []));
+    //   if (get(result, "LastEvaluatedKey")) {
+    //     lastEvaluatedKey = get(result, "LastEvaluatedKey",);
+    //   } else {
+    //     lastEvaluatedKey = null;
+    //   }
+    // } while (mainResult.length < 30 && lastEvaluatedKey);
+    // let base64 = "";
+    // if (lastEvaluatedKey) {
+    //   // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
+    //   base64 = base64Encode(lastEvaluatedKey);
+    // }
+    // return {
+    //   items: mainResult,
+    //   lastEvaluatedKey: base64,
+    // };
   } catch (error) {
     console.error("EventDate,Query Error:", error);
     throw error;
   }
 }
 
-async function queryWithOrderDate(date, startSortKey, endSortKey, lastEvaluatedKey, customerId) {
+async function queryWithOrderDate(startSortKey, endSortKey, lastEvaluatedKey, customerId) {
   const params = {
     TableName: process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,
-    IndexName: "OrderYearIndex",
+    IndexName: "OrderDateIndex",
     KeyConditionExpression:
-      "#date = :dateValue AND #sortKey BETWEEN :startSortKey AND :endSortKey",
-    ExpressionAttributeNames: {
-      "#date": "OrderYear",
-      "#sortKey": "OrderDateTime",
-      "#customerIds": "customerIds"
-    },
+      "customerIds = :customerId AND OrderDateTime BETWEEN :startSortKey AND :endSortKey",
     ExpressionAttributeValues: {
-      ":dateValue": { S: date },
-      ":startSortKey": { S: startSortKey },
-      ":endSortKey": { S: endSortKey },
-      ":customerId": { S: customerId }
+      ":customerId": customerId,
+      ":startSortKey": startSortKey,
+      ":endSortKey": endSortKey
     },
-    FilterExpression: "contains (#customerIds, :customerId)",
-    Limit: 75,
+    // FilterExpression: "contains (#customerIds, :customerId)",
+    Limit: 30,
   };
+  if (lastEvaluatedKey) {
+    params.ExclusiveStartKey = lastEvaluatedKey;
+  }
 
   try {
-    let mainResult = [];
-    do{
-      if (lastEvaluatedKey) {
-        params.ExclusiveStartKey = lastEvaluatedKey;
-      }
-      const result = await dynamo.query(params).promise();
-      mainResult = mainResult.concat(get(result, 'Items', []))
-      if(get(result, "LastEvaluatedKey")){
-        lastEvaluatedKey = get(result, "LastEvaluatedKey", )
-      }else{
-        lastEvaluatedKey = null
-      }
-    }while(mainResult.length < 30 && lastEvaluatedKey)
+    const result = await dynamodb.query(params).promise();
     let base64 = "";
-    if (lastEvaluatedKey) {
-      // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
-      base64 = base64Encode(lastEvaluatedKey);
+    if (get(result, "LastEvaluatedKey")) {
+      const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
+      base64 = base64Encode(lastEvaluatedKeyData);
     }
     return {
-      items: mainResult,
+      items: result,
       lastEvaluatedKey: base64,
     };
+    // let mainResult = [];
+    // do {
+    //   if (lastEvaluatedKey) {
+    //     params.ExclusiveStartKey = lastEvaluatedKey;
+    //   }
+    //   const result = await dynamo.query(params).promise();
+    //   mainResult = mainResult.concat(get(result, 'Items', []))
+    //   if (get(result, "LastEvaluatedKey")) {
+    //     lastEvaluatedKey = get(result, "LastEvaluatedKey",)
+    //   } else {
+    //     lastEvaluatedKey = null
+    //   }
+    // } while (mainResult.length < 30 && lastEvaluatedKey)
+    // let base64 = "";
+    // if (lastEvaluatedKey) {
+    //   // const lastEvaluatedKeyData = get(result, "LastEvaluatedKey", {});
+    //   base64 = base64Encode(lastEvaluatedKey);
+    // }
+    // return {
+    //   items: mainResult,
+    //   lastEvaluatedKey: base64,
+    // };
   } catch (error) {
     console.error("OrderDate,Query Error:", error);
     throw error;
@@ -195,13 +214,13 @@ async function getOrders(tableName, indexName, refNumber, customerId) {
     IndexName: indexName,
     KeyConditionExpression: "ReferenceNo = :value",
     ExpressionAttributeValues: {
-      ":value": { S: refNumber },
+      ":value": refNumber,
     },
   };
   const orderNos = [];
 
   try {
-    const data = await dynamo.query(params).promise();
+    const data = await dynamodb.query(params).promise();
     const dataItems = get(data, "Items", []);
 
     dataItems.forEach(item => {
@@ -212,18 +231,19 @@ async function getOrders(tableName, indexName, refNumber, customerId) {
     });
 
     console.info("Unique Order Numbers:", orderNos);
-    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, "fileNumberIndex", orderNo, customerId));
+    const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, orderNo, customerId));
 
-    const results = await Promise.all(promises);
-    
-    const finalResult = [];
-    results.forEach(([items, dataFlag]) => {
-      if (items && dataFlag === '') {
-        finalResult.push(...items);
-      }
-    });
-    
-    return finalResult;
+
+    const result = await Promise.all(promises);
+    return { result };
+    // const results = await Promise.all(promises);
+    // const finalResult = [];
+    // results.forEach(([items, dataFlag]) => {
+    //   if (items && dataFlag === '') {
+    //     finalResult.push(...items);
+    //   }
+    // });
+    // return results;
   } catch (error) {
     console.error("Query Error:", error);
     throw error;
@@ -237,7 +257,7 @@ async function mappingPayload(data, milestone_history) {
   for (const i of data) {
     const payload = {
       fileNumber: get(i, "fileNumber", ""),
-      housebill: get(i, "HouseBillNumber", ""),
+      housebill: get(i, "houseBillNumber", ""),
       masterbill: get(i, "masterbill", ""),
       shipmentDate: get(i, "shipmentDate", ""),
       handlingStation: get(i, "handlingStation", ""),
