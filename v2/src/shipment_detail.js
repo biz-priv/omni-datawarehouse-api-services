@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 const moment = require("moment");
 const { get } = require("lodash");
-const { Converter } = AWS.DynamoDB;
+// const { Converter } = AWS.DynamoDB;
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 const Joi = require("joi");
@@ -109,7 +109,7 @@ module.exports.handler = async (event,context, callback) => {
     if (get(queryStringParams, "fileNumber", null)) {
       console.info("fileNumber", get(queryStringParams, "fileNumber", null));
       dataObj= await queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, get(queryStringParams, "fileNumber", null), customerId);
-      if(dataObj){
+      if(dataObj && dataObj.length>0){
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
@@ -162,7 +162,7 @@ module.exports.handler = async (event,context, callback) => {
     } else if (get(queryStringParams, "housebill", null)) {
       console.info("housebill", get(queryStringParams, "housebill", null));
       dataObj = await queryWithHouseBill(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE,"houseBillNumberIndex", get(queryStringParams, "housebill", null), customerId);
-      if(dataObj){
+      if(dataObj && dataObj.length>0){
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
@@ -226,12 +226,12 @@ module.exports.handler = async (event,context, callback) => {
     } else if (get(queryStringParams, "refNumber", null)) {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
       dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null), customerId);
-      if(dataObj){
+      if(dataObj.result && dataObj.result.length > 0){
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
-          mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(dataObj.result, get(queryStringParams, "milestoneHistory"));
         }else{
-          mainResponse = await mappingPayload(dataObj, true);
+          mainResponse = await mappingPayload(dataObj.result, true);
         }
         logObj = {
           ...logObj,
@@ -320,7 +320,7 @@ module.exports.handler = async (event,context, callback) => {
       //     return Converter.unmarshall(d);
       //   })
       // );
-      if(dataObj){
+      if(dataObj.items.Items && dataObj.items.Items.length > 0){
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
@@ -403,7 +403,7 @@ module.exports.handler = async (event,context, callback) => {
         }
       }
       dataObj = await dateRange("shipmentDate", fromDateTime, toDateTime, lastKey, customerId);
-      if(dataObj){
+      if(dataObj.items.Items && dataObj.items.Items.length > 0){
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
