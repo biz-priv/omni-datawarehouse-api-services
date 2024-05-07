@@ -31,10 +31,10 @@ const validateQueryParams = (params) => {
 };
 
 const validateLastOrderKey = Joi.object({
-  OrderYear: Joi.object({
+  customerIds: Joi.object({
     S: Joi.string().required()
   }),
-  HouseBillNumber: Joi.object({
+  fileNumber: Joi.object({
     S: Joi.string().required()
   }),
   OrderDateTime: Joi.object({
@@ -43,10 +43,10 @@ const validateLastOrderKey = Joi.object({
 });
 
 const validateLastEventKey = Joi.object({
-  EventYear: Joi.object({
+  customerIds: Joi.object({
     S: Joi.string().required()
   }),
-  HouseBillNumber: Joi.object({
+  fileNumber: Joi.object({
     S: Joi.string().required()
   }),
   EventDateTime: Joi.object({
@@ -128,7 +128,7 @@ module.exports.handler = async (event, context, callback) => {
           statusCode: 404,
           body: "Please check the fileNumber and provided API key"
       };
-        return { httpStatus: 404, body: JSON.stringify({ Message: 'Please check the fileNumber and provided API key', }, null, 2), };
+        // return { httpStatus: 404, body: JSON.stringify({ Message: 'Please check the fileNumber and provided API key', }, null, 2), };
         // return callback(new Error("Please check the fileNumber and provided API key"))
         // return callback(null, {statusCode: 404, body: "Please check the fileNumber and provided API key"})
       }
@@ -371,7 +371,7 @@ module.exports.handler = async (event, context, callback) => {
         lastKey = base64Decode(base64);
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
-          console.error(error.details);
+          console.error(error);
           logObj = {
             ...logObj,
             api_status_code: "400",
