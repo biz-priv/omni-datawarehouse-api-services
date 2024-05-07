@@ -410,9 +410,10 @@ module.exports.handler = async (event,context, callback) => {
         }else{
           mainResponse = await mappingPayload(dataObj.items.Items, true);
         }
-        if (get(dataObj, "lastEvaluatedKey")) {
-          nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
-        }
+
+        if(get(dataObj, "lastEvaluatedKey")){
+        nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
+      }
         logObj = {
           ...logObj,
           api_status_code: "200",
