@@ -124,6 +124,10 @@ module.exports.handler = async (event, context, callback) => {
         await putItem(logObj);
       } else {
         console.info("Please check the fileNumber and provided API key")
+        return {
+          statusCode: 404,
+          body: "Please check the fileNumber and provided API key"
+      };
         return { httpStatus: 404, body: JSON.stringify({ Message: 'Please check the fileNumber and provided API key', }, null, 2), };
         // return callback(new Error("Please check the fileNumber and provided API key"))
         // return callback(null, {statusCode: 404, body: "Please check the fileNumber and provided API key"})
