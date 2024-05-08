@@ -31,7 +31,6 @@ def handler(event, context):
 
 # function to get all the history of milestone related shipment details
 
-
 def get_shipment_detail_history(hwb_file_nbr, parameter, customer_id):
     try:
         con = psycopg2.connect(dbname=os.environ['db_name'], host=os.environ['db_host'],
