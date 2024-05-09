@@ -151,7 +151,7 @@ async function getOrders(tableName, indexName, refNumber, customerId) {
     const dataItems = get(data, "Items", []);
 
     dataItems.forEach(item => {
-      const orderNo = get(item, "PK_ReferenceNo.S");
+      const orderNo = get(item, "PK_ReferenceNo");
       if (orderNo && !orderNos.includes(orderNo)) {
         orderNos.push(orderNo);
       }
