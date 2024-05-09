@@ -157,12 +157,12 @@ module.exports.handler = async (event, context, callback) => {
     } else if (get(queryStringParams, "refNumber", null)) {
       console.info("refNumber", get(queryStringParams, "refNumber", null));
       dataObj = await getOrders(process.env.REFERENCE_TABLE, "ReferenceNo-FK_RefTypeId-index", get(queryStringParams, "refNumber", null), customerId);
-      if (dataObj.result && dataObj.result.length > 0) {
+      if (dataObj.result[0] && dataObj.result[0].length > 0) {
         if (get(queryStringParams, "milestoneHistory") === true || get(queryStringParams, "milestoneHistory") === false) {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
-          mainResponse = await mappingPayload(dataObj.result, get(queryStringParams, "milestoneHistory"));
+          mainResponse = await mappingPayload(dataObj.result[0], get(queryStringParams, "milestoneHistory"));
         } else {
-          mainResponse = await mappingPayload(dataObj.result, true);
+          mainResponse = await mappingPayload(dataObj.result[0], true);
         }
         logObj = {
           ...logObj,

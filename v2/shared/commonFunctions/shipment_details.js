@@ -160,8 +160,8 @@ async function getOrders(tableName, indexName, refNumber, customerId) {
     console.info("Unique Order Numbers:", orderNos);
     const promises = orderNos.map(orderNo => queryWithFileNumber(process.env.SHIPMENT_DETAILS_COLLECTOR_TABLE, orderNo, customerId));
 
-
-    const result = await Promise.all(promises);
+    let result = await Promise.all(promises);
+    result = result.filter(item=>item.length)
     return { result };
   } catch (error) {
     console.error("Query Error:", error);
