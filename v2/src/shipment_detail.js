@@ -101,7 +101,7 @@ module.exports.handler = async (event, context, callback) => {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
         } else {
-          mainResponse = await mappingPayload(dataObj, true);
+          mainResponse = await mappingPayload(dataObj, false);
         }
         logObj = {
           ...logObj,
@@ -133,7 +133,7 @@ module.exports.handler = async (event, context, callback) => {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj, get(queryStringParams, "milestoneHistory"));
         } else {
-          mainResponse = await mappingPayload(dataObj, true);
+          mainResponse = await mappingPayload(dataObj, false);
         }
         logObj = {
           ...logObj,
@@ -162,7 +162,7 @@ module.exports.handler = async (event, context, callback) => {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.result[0], get(queryStringParams, "milestoneHistory"));
         } else {
-          mainResponse = await mappingPayload(dataObj.result[0], true);
+          mainResponse = await mappingPayload(dataObj.result[0], false);
         }
         logObj = {
           ...logObj,
@@ -248,7 +248,7 @@ module.exports.handler = async (event, context, callback) => {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
         } else {
-          mainResponse = await mappingPayload(dataObj.items.Items, true);
+          mainResponse = await mappingPayload(dataObj.items.Items, false);
         }
         if (get(dataObj, "lastEvaluatedKey")) {
           nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
@@ -334,7 +334,7 @@ module.exports.handler = async (event, context, callback) => {
           console.info("milestoneHistory", get(queryStringParams, "milestoneHistory"));
           mainResponse = await mappingPayload(dataObj.items.Items, get(queryStringParams, "milestoneHistory"));
         } else {
-          mainResponse = await mappingPayload(dataObj.items.Items, true);
+          mainResponse = await mappingPayload(dataObj.items.Items, false);
         }
 
         if (get(dataObj, "lastEvaluatedKey")) {
