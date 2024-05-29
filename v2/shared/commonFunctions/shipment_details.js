@@ -224,24 +224,6 @@ async function mappingPayload(data, milestone_history) {
   return response;
 }
 
-async function putItem(item) {
-  const dynamodb = new AWS.DynamoDB.DocumentClient({
-    region: process.env.REGION,
-  });
-
-  let params;
-  try {
-    params = {
-      TableName: process.env.SHIPMENT_DETAILS_LOGS__TABLE,
-      Item: item,
-    };
-    await dynamodb.put(params).promise();
-  } catch (error) {
-    console.error("Put Item Error: ", error, "\nPut params: ", params);
-    throw error;
-  }
-}
-
 function base64Encode(data) {
   const jsonString = JSON.stringify(data);
 

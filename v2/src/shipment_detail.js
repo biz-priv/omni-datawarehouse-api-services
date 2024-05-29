@@ -4,7 +4,7 @@ const { get } = require("lodash");
 const { v4: uuidv4 } = require("uuid");
 const momentTZ = require("moment-timezone");
 const Joi = require("joi");
-const { queryWithFileNumber, queryWithHouseBill, dateRange, mappingPayload, putItem, getOrders } = require("../shared/commonFunctions/shipment_details");
+const { queryWithFileNumber, queryWithHouseBill, dateRange, mappingPayload, getOrders } = require("../shared/commonFunctions/shipment_details");
 const sns = new AWS.SNS();
 
 const validateQueryParams = (params) => {
@@ -41,8 +41,6 @@ const validateLastEventKey = Joi.object({
   EventDateTime: Joi.string().required()
 });
 
-let logObj = {};
-
 module.exports.handler = async (event, context, callback) => {
   console.info("event: ", JSON.stringify(event));
 
@@ -67,28 +65,6 @@ module.exports.handler = async (event, context, callback) => {
   }
 
   let queryStringParams = value;
-
-  logObj = {
-    id: uuidv4(),
-    housebill: get(queryStringParams, "housebill", null),
-    milestoneHistory: get(queryStringParams, "milestoneHistory", null),
-    fileNumber: get(queryStringParams, "fileNumber", null),
-    refNumber: get(queryStringParams, "refNumber", null),
-    activityFromDate: get(queryStringParams, "activityFromDate", null),
-    activityToDate: get(queryStringParams, "activityToDate", null),
-    shipmentFromDate: get(queryStringParams, "shipmentFromDate", null),
-    shipmentToDate: get(queryStringParams, "shipmentToDate", null),
-    nextStartToken: get(queryStringParams, "nextStartToken", null),
-    customerId: customerId,
-    api_status_code: "",
-    errorMsg: "",
-    payload: "",
-    inserted_time_stamp: momentTZ
-      .tz("America/Chicago")
-      .format("YYYY:MM:DD HH:mm:ss")
-      .toString(),
-  };
-
   let dataObj = [];
   let mainResponse = {};
   let nextEndPoint;
@@ -103,27 +79,12 @@ module.exports.handler = async (event, context, callback) => {
         } else {
           mainResponse = await mappingPayload(dataObj, false);
         }
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
       } else {
         console.info("Please check the fileNumber and provided API key");
-        logObj = {
-          ...logObj,
-          api_status_code: "404",
-          errorMsg: "Please check the fileNumber and provided API key",
-        };
-        await putItem(logObj);
         return {
           statusCode: 404,
           body: "Please check the fileNumber and provided API key"
         };
-        // return { httpStatus: 404, body: JSON.stringify({ Message: 'Please check the fileNumber and provided API key', }, null, 2), };
-        // return callback(new Error("Please check the fileNumber and provided API key"))
-        // return callback(null, {statusCode: 404, body: "Please check the fileNumber and provided API key"})
       }
     } else if (get(queryStringParams, "housebill", null)) {
       console.info("housebill", get(queryStringParams, "housebill", null));
@@ -135,20 +96,8 @@ module.exports.handler = async (event, context, callback) => {
         } else {
           mainResponse = await mappingPayload(dataObj, false);
         }
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
       } else {
         console.info("Please check the housebill and provided API key");
-        logObj = {
-          ...logObj,
-          api_status_code: "404",
-          errorMsg: "Please check the housebill and provided API key",
-        };
-        await putItem(logObj);
         return {
           statusCode: 404,
           body: "Please check the housebill and provided API key"
@@ -164,20 +113,8 @@ module.exports.handler = async (event, context, callback) => {
         } else {
           mainResponse = await mappingPayload(dataObj.result[0], false);
         }
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
       } else {
         console.info("Please check the refNumber and provided API key");
-        logObj = {
-          ...logObj,
-          api_status_code: "404",
-          errorMsg: "Please check the refNumber and provided API key",
-        };
-        await putItem(logObj);
         return {
           statusCode: 404,
           body: "Please check the refNumber and provided API key"
@@ -204,12 +141,6 @@ module.exports.handler = async (event, context, callback) => {
         const { error: eventError } = validateLastEventKey.validate(lastKey);
         if (eventError) {
           console.error("Please verify whether nextStartToken is valid.",error);
-          logObj = {
-            ...logObj,
-            api_status_code: "400",
-            errorMsg: "Please verify whether nextStartToken is valid.",
-          };
-          await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
@@ -222,22 +153,11 @@ module.exports.handler = async (event, context, callback) => {
       const daysDifference = toDateTime.diff(fromDateTime, "days");
       if (daysDifference < 0) {
         console.info("activityToDate cannot be earlier than activityFromDate");
-        logObj = {
-          ...logObj,
-          api_status_code: "400",
-          errorMsg: "activityToDate cannot be earlier than activityFromDate",
-        };
-        await putItem(logObj);
         throw new Error("activityToDate cannot be earlier than activityFromDate");
       } else if (daysDifference == 0) {
         const hoursDiff = toDateTime.diff(fromDateTime, "hours");
         if (hoursDiff < 0) {
           console.info("activityToDate cannot be earlier than activityFromDate");
-          logObj = {
-            ...logObj,
-            api_status_code: "400",
-            errorMsg: "activityToDate cannot be earlier than activityFromDate",
-          };
           throw new Error("activityToDate cannot be earlier than activityFromDate");
         }
       }
@@ -253,20 +173,8 @@ module.exports.handler = async (event, context, callback) => {
         if (get(dataObj, "lastEvaluatedKey")) {
           nextEndPoint = "https://" + host + "/v2/shipment/detail?activityFromDate=" + get(queryStringParams, "activityFromDate", null) + "&activityToDate=" + get(queryStringParams, "activityToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
         }
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
       } else {
         console.info("Please change the date range and try. Also verify API key");
-        logObj = {
-          ...logObj,
-          api_status_code: "404",
-          errorMsg: "Please change the date range and try. Also verify API key",
-        };
-        await putItem(logObj);
         return {
           statusCode: 404,
           body: "Please change the date range and try. Also verify API key"
@@ -292,12 +200,6 @@ module.exports.handler = async (event, context, callback) => {
         const { error: orderError } = validateLastOrderKey.validate(lastKey);
         if (orderError) {
           console.error(error);
-          logObj = {
-            ...logObj,
-            api_status_code: "400",
-            errorMsg: "Please verify whether nextStartToken is valid.",
-          };
-          await putItem(logObj);
           return {
             statusCode: 400,
             body: JSON.stringify({
@@ -310,21 +212,11 @@ module.exports.handler = async (event, context, callback) => {
       const daysDifference = toDateTime.diff(fromDateTime, "days");
       if (daysDifference < 0) {
         console.info("shipmentToDate cannot be earlier than shipmentFromDate");
-        logObj = {
-          ...logObj,
-          api_status_code: "400",
-          errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
-        };
         throw new Error("shipmentToDate cannot be earlier than shipmentFromDate");
       } else if (daysDifference == 0) {
         const hoursDiff = toDateTime.diff(fromDateTime, "hours");
         if (hoursDiff < 0) {
           console.info("shipmentToDate cannot be earlier than shipmentFromDate");
-          logObj = {
-            ...logObj,
-            api_status_code: "400",
-            errorMsg: "shipmentToDate cannot be earlier than shipmentFromDate",
-          };
           throw new Error("404,shipmentToDate cannot be earlier than shipmentFromDate");
         }
       }
@@ -340,20 +232,8 @@ module.exports.handler = async (event, context, callback) => {
         if (get(dataObj, "lastEvaluatedKey")) {
           nextEndPoint = "https://" + host + "/v2/shipment/detail?shipmentFromDate=" + get(queryStringParams, "shipmentFromDate", null) + "&shipmentToDate=" + get(queryStringParams, "shipmentToDate", null) + "&nextStartToken=" + get(dataObj, "lastEvaluatedKey");
         }
-        logObj = {
-          ...logObj,
-          api_status_code: "200",
-          payload: mainResponse,
-        };
-        await putItem(logObj);
       } else {
         console.info("Please change the date range and try. Also verify API key");
-        logObj = {
-          ...logObj,
-          api_status_code: "404",
-          errorMsg: "Please change the date range and try. Also verify API key",
-        };
-        await putItem(logObj);
         return {
           statusCode: 404,
           body: "Please change the date range and try. Also verify API key"
@@ -366,6 +246,17 @@ module.exports.handler = async (event, context, callback) => {
     };
   } catch (error) {
     console.error("in main function: \n", error);
+    try {
+      const params = {
+        Message: `An error occurred in function ${context.functionName}.\n\nERROR DETAILS: ${error}.`,
+        Subject: `An error occured in function ${context.functionName}`,
+        TopicArn: process.env.ERROR_SNS_TOPIC_ARN,
+      };
+      await sns.publish(params).promise();
+      console.info('SNS notification has sent');
+    } catch (err) {
+      console.error('Error while sending sns notification: ', err);
+    }
     return {
       statusCode: 400,
       body: JSON.stringify({
