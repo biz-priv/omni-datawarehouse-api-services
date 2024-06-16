@@ -1,3 +1,10 @@
+# """
+# * File: v1\src\invoice_detail.py
+# * Project: Omni-datawarehouse-api-services
+# * Author: Bizcloud Experts
+# * Date: 2022-12-10
+# * Confidential and Proprietary
+# """
 import psycopg2
 import logging
 import json

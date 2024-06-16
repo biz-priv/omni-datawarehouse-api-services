@@ -5,6 +5,8 @@ function:
   runtime: nodejs18.x
   timeout: 30
   role: ShippeoPODRole
+  tags:
+    Name : ltl-rating
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512

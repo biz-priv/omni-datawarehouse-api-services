@@ -1,3 +1,11 @@
+
+/*
+* File: src\shared\ltlRater\payloadFormats.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-12-16
+* Confidential and Proprietary
+*/
 const { get, unset } = require("lodash");
 const xml2js = require("xml2js");
 const moment = require("moment");

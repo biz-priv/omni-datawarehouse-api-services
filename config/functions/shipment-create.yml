@@ -3,6 +3,8 @@ function:
   handler: ${self:custom.alias}/src/shipment_create.handler
   name: ${self:service}-shipment-create-${self:provider.stage}
   description: shipment create api service - ${self:provider.stage}
+  tags:
+    Name : shipment-create
   warmup:
     default:
       enabled: true

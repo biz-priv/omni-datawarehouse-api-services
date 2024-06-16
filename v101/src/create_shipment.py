@@ -1,3 +1,10 @@
+# """
+# * File: v101\src\create_shipment.py
+# * Project: Omni-datawarehouse-api-services
+# * Author: Bizcloud Experts
+# * Date: 2022-12-10
+# * Confidential and Proprietary
+# """
 from src.common import dynamo_query, query_dynamodb
 from src.common import skip_execution_if
 

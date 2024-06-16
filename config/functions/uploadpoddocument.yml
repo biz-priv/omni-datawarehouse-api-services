@@ -3,6 +3,8 @@ function:
   handler: v1/src/uploadpoddocument.handler
   name: ${self:service}-upload-pod-document-${self:provider.stage}
   description: upload pod document api service - ${self:provider.stage}
+  tags:
+    Name : upload-pod-document
   warmup:
     default:
       enabled: true

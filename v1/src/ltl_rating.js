@@ -1,3 +1,10 @@
+/*
+* File: v1\src\ltl_rating.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-12-17
+* Confidential and Proprietary
+*/
 const { get, set, unset } = require("lodash");
 const xml2js = require("xml2js");
 const axios = require("axios");

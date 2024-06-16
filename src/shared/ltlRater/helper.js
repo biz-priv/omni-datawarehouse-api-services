@@ -1,3 +1,10 @@
+/*
+* File: src\shared\ltlRater\helper.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-12-18
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const { get } = require("lodash");
 const dynamoDB = new AWS.DynamoDB.DocumentClient();

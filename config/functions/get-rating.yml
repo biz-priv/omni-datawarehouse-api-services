@@ -4,6 +4,8 @@ function:
   name: ${self:service}-get-rating-${self:provider.stage}
   description: Rating detail api service - ${self:provider.stage}
   runtime: nodejs16.x
+  tags:
+    Name : get-rating  
   layers:
     - !Ref DWAPILayerLambdaLayer  
   events:

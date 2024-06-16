@@ -3,6 +3,8 @@ function:
   handler: ${self:custom.alias}/src/shipment_info.handler
   name: ${self:service}-shipment-info-${self:provider.stage}
   description: shipment info api service - ${self:provider.stage}
+  tags:
+    Name : shipment-info
   warmup:
     default:
       enabled: true

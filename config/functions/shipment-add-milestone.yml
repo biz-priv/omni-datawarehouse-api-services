@@ -4,6 +4,8 @@ function:
   description: add milestone api service - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 60
+  tags:
+    Name : add-milestone 
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512

@@ -1,3 +1,10 @@
+/*
+* File: v2\src\shipment_detail.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2024-04-29
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const moment = require("moment");
 const { get } = require("lodash");

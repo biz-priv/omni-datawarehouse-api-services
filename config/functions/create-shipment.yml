@@ -8,6 +8,8 @@ function:
       enabled: true
       alias: ${self:custom.alias}
   memorySize: 2048
+  tags:
+    Name : create-shipment
   events:
     - http:
         path: /create/shipment
