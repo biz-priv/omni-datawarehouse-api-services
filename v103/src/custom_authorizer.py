@@ -1,3 +1,10 @@
+# """
+# * File: v103\src\custom_authorizer.py
+# * Project: Omni-datawarehouse-api-services
+# * Author: Bizcloud Experts
+# * Date: 2023-12-28
+# * Confidential and Proprietary
+# """
 import os
 import json
 import logging

@@ -5,6 +5,8 @@ function:
   description: get document alb api service-${self:provider.stage}
   runtime: nodejs14.x
   timeout: 180
+  tags:
+    Name : get-document-alb
   layers:
     - !Ref DWAPILayerLambdaLayer  
   package:

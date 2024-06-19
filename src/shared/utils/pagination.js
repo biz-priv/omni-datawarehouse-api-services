@@ -1,3 +1,10 @@
+/*
+* File: src\shared\utils\pagination.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2022-08-02
+* Confidential and Proprietary
+*/
 async function createPagination(response, responseArrayName, host, path, page, size, totalCount, selfPageLink) {
   let currentPageResult
   let lastPageLink = "N/A";

@@ -1,3 +1,10 @@
+# """
+# * File: v201\src\customer_entitlement_sync.py
+# * Project: Omni-datawarehouse-api-services
+# * Author: Bizcloud Experts
+# * Date: 2023-06-28
+# * Confidential and Proprietary
+# """
 import json
 import boto3
 import os

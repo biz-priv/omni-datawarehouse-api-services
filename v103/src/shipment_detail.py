@@ -1,3 +1,10 @@
+# """
+# * File: v103\src\shipment_detail.py
+# * Project: Omni-datawarehouse-api-services
+# * Author: Bizcloud Experts
+# * Date: 2024-03-15
+# * Confidential and Proprietary
+# """
 from src.common import modify_response
 from src.common import modify_date
 from src.common import modify_float

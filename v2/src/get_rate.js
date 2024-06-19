@@ -1,3 +1,10 @@
+/*
+* File: v2\src\get_rate.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2024-01-19
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const sns = new AWS.SNS();
 const Joi = require("joi");

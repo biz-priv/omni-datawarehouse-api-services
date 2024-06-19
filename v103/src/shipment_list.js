@@ -1,3 +1,10 @@
+/*
+* File: v103\src\shipment_list.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2022-08-02
+* Confidential and Proprietary
+*/
 const { schema } = require("../../src/shared/validation/index");
 const { CUSTOMER_ENTITLEMENT_TABLE, TOKEN_VALIDATION_TABLE } = process.env;
 const { queryMethod } = require("../../src/shared/dynamoDB/index");

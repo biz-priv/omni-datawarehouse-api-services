@@ -1,3 +1,10 @@
+/*
+* File: v201\src\add_document.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-06-28
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");
