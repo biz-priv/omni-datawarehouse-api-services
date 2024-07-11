@@ -4,6 +4,8 @@ function:
   name: ${self:service}-update-shipment-status-${self:provider.stage}
   description: update shipment status - cloudwatch trigger - ${self:provider.stage}
   timeout: 900
+  tags:
+    Name : update-shipment-status 
   package:
     include:
     - ${self:custom.alias}/src/update_shipment_status.py

@@ -4,6 +4,8 @@ function:
   name: ${self:service}-shipment-detail-${self:provider.stage}
   description: shipment detail api service - ${self:provider.stage}
   runtime: ${self:custom.shipmentDetailRuntime}
+  tags:
+    Name : shipment-detail
   layers:
     - !Ref DWAPILayerLambdaLayer
   warmup:

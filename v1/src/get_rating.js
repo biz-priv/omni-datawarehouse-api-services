@@ -1,3 +1,10 @@
+/*
+* File: v1\src\get_rating.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-03-04
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");

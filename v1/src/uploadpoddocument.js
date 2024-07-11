@@ -1,3 +1,10 @@
+/*
+* File: v1\src\uploadpoddocument.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2022-12-15
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 const Joi = require("joi");
 const axios = require("axios");

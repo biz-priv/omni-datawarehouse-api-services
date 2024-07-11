@@ -1,3 +1,10 @@
+/*
+* File: src\shared\validation\index.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-12-16
+* Confidential and Proprietary
+*/
 const Joi = require("joi");
 
 const schema = Joi.object({

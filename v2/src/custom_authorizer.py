@@ -1,3 +1,10 @@
+# """
+# * File: v2\src\custom_authorizer.py
+# * Project: Omni-datawarehouse-api-services
+# * Author: Bizcloud Experts
+# * Date: 2023-12-16
+# * Confidential and Proprietary
+# """
 from jsonschema import validate
 from src.common import dynamo_query
 import os

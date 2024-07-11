@@ -1,3 +1,10 @@
+"""
+* File: src\common.py
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2024-04-10
+* Confidential and Proprietary
+"""
 import os
 import json
 import logging

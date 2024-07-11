@@ -4,6 +4,8 @@ function:
   description: vendor invoice api service - ${self:provider.stage}
   runtime: nodejs18.x
   timeout: 30
+  tags:
+    Name : vendor-invoice
   layers:
     - !Ref DWAPILayerLambdaLayer
   memorySize: 512

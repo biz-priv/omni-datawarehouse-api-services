@@ -1,3 +1,10 @@
+/*
+* File: src\shared\dynamoDB\index.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2022-07-16
+* Confidential and Proprietary
+*/
 const AWS = require("aws-sdk");
 let documentClient = new AWS.DynamoDB.DocumentClient({
   region: process.env.DEFAULT_AWS,

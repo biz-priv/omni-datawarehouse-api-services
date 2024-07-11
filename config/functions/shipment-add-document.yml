@@ -6,6 +6,8 @@ function:
   runtime: nodejs14.x
   timeout: 500
   memorySize: 2048
+  tags:
+    Name : add-document
   layers:
     - !Ref DWAPILayerLambdaLayer  
   events:

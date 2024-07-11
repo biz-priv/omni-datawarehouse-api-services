@@ -1,3 +1,10 @@
+/*
+* File: src\shared\logger.js
+* Project: Omni-datawarehouse-api-services
+* Author: Bizcloud Experts
+* Date: 2023-04-06
+* Confidential and Proprietary
+*/
 const log4js = require('log4js');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Chicago');
