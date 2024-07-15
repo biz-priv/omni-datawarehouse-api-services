@@ -526,42 +526,17 @@ function makeXmlToJson(data) {
           }
           AccessorialOutput = list;
         } else {
-          const list = [];
           if (
             get(modifiedObj, `AccessorialOutput.AccessorialOutput`, null) !==
             null
           ) {
-            for (
-              let i = 0;
-              i <
-              get(modifiedObj, `AccessorialOutput.AccessorialOutput.length`, 0);
-              i++
-            ) {
-              list[i] = {};
-              list[i].code = get(
-                modifiedObj,
-                `AccessorialOutput.AccessorialOutput[
-                  ${i}
-                ].AccessorialCode`,
-                ""
-              );
-              list[i].description = get(
-                modifiedObj,
-                `AccessorialOutput.AccessorialOutput[
-                  ${i}
-                ].AccessorialDesc`,
-                ""
-              );
-              list[i].charge = parseFloat(
-                get(
-                  modifiedObj,
-                  `AccessorialOutput.AccessorialOutput[
-                  ${i}
-                ].AccessorialCharge`,
-                  ""
-                ).replace(/,/g, "")
-              );
-            }
+            const list = get(modifiedObj, 'AccessorialOutput.AccessorialOutput', []).map( (item)=>{
+              return {
+                code: get(item, 'AccessorialCode', ''),
+                description: get(item, 'AccessorialDesc', ''),
+                charge: get(item, 'AccessorialCharge', '').replace(/,/g, "")
+              }
+            })
             AccessorialOutput = list;
           }
         }
