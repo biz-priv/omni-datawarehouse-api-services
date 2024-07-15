@@ -530,14 +530,22 @@ function makeXmlToJson(data) {
             get(modifiedObj, `AccessorialOutput.AccessorialOutput`, null) !==
             null
           ) {
-            
-            const list = get(modifiedObj, 'AccessorialOutput.AccessorialOutput', []).map( (item)=>{
-              return {
-                code: get(item, 'AccessorialCode', ''),
-                description: get(item, 'AccessorialDesc', ''),
-                charge: get(item, 'AccessorialCharge', '').replace(/,/g, "")
-              }
-            })
+            let list = []
+            if (Array.isArray(get(modifiedObj, 'AccessorialOutput.AccessorialOutput', []))) {
+              list = get(modifiedObj, 'AccessorialOutput.AccessorialOutput', []).map( (item)=>{
+                return {
+                  code: get(item, 'AccessorialCode', ''),
+                  description: get(item, 'AccessorialDesc', ''),
+                  charge: get(item, 'AccessorialCharge', '').replace(/,/g, "")
+                }
+              })
+            }else{
+              list.push({
+                code: get(modifiedObj, "AccessorialOutput.AccessorialOutput.AccessorialCode", ""),
+                description: get(modifiedObj, "AccessorialOutput.AccessorialOutput.AccessorialDesc", ""),
+                charge: get(modifiedObj, "AccessorialOutput.AccessorialOutput.AccessorialCharge", "").replace(/,/g, ""),
+              })
+            }
             AccessorialOutput = list;
           }
         }
@@ -762,6 +770,6 @@ async function getItem(customerNumber) {
     return get(response, "Items", []);
   } catch (error) {
     console.error("getItem: ", error);
-    throw error
+    throw error;
   }
 }
