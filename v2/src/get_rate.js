@@ -530,6 +530,7 @@ function makeXmlToJson(data) {
             get(modifiedObj, `AccessorialOutput.AccessorialOutput`, null) !==
             null
           ) {
+            
             const list = get(modifiedObj, 'AccessorialOutput.AccessorialOutput', []).map( (item)=>{
               return {
                 code: get(item, 'AccessorialCode', ''),
