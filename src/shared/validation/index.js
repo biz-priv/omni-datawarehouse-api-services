@@ -27,8 +27,32 @@ const ltlRateRequestSchema = Joi.object({
         pickupTime: Joi.string().required().label("pickupTime"),
         reference: Joi.string().required().label("Reference"),
         insuredValue: Joi.number().optional().label("insuredValue"),
-        shipperZip: Joi.string().required().label("shipperZip"),
-        consigneeZip: Joi.string().required().label("consigneeZip"),
+        shipperZip: Joi.string()
+            .required()
+            .custom((value, helpers) => {
+                const usZipRegex = /^[0-9]{5}(?:-[0-9]{4})?$/;
+                const caPostalCodeRegex = /^[A-Za-z][0-9][A-Za-z][ ]?[0-9][A-Za-z][0-9]$/;
+
+                if (usZipRegex.test(value) || caPostalCodeRegex.test(value)) {
+                    return value;
+                } else {
+                    return helpers.error('any.invalid');
+                }
+            })
+            .label("shipperZip"),
+        consigneeZip: Joi.string()
+            .required()
+            .custom((value, helpers) => {
+                const usZipRegex = /^[0-9]{5}(?:-[0-9]{4})?$/;
+                const caPostalCodeRegex = /^[A-Za-z][0-9][A-Za-z][ ]?[0-9][A-Za-z][0-9]$/;
+
+                if (usZipRegex.test(value) || caPostalCodeRegex.test(value)) {
+                    return value;
+                } else {
+                    return helpers.error('any.invalid');
+                }
+            })
+            .label("consigneeZip"),
         shipmentLines: Joi.array()
             .max(99)
             .items(

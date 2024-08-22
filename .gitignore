@@ -15,3 +15,4 @@ sample.json
 launch.json
 __pycache__
 .vscode/**
+test.js
