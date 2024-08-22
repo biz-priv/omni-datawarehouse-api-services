@@ -1,78 +1,80 @@
 /*
-* File: src\shared\validation\index.js
-* Project: Omni-datawarehouse-api-services
-* Author: Bizcloud Experts
-* Date: 2023-12-16
-* Confidential and Proprietary
-*/
+ * File: src\shared\validation\index.js
+ * Project: Omni-datawarehouse-api-services
+ * Author: Bizcloud Experts
+ * Date: 2023-12-16
+ * Confidential and Proprietary
+ */
 const Joi = require("joi");
 
 const schema = Joi.object({
-    headers: Joi.object({
-        "x-api-key": Joi.string().required(),
-    }).unknown(true),
-    pathParameters: Joi.object({
-        customerID: Joi.string().required(),
-    }),
-    queryStringParameters: Joi.object({
-        page: Joi.number().integer().min(1).default(1),
-        size: Joi.number().integer().min(1).default(10),
-    })
-        .empty(null)
-        .default({ page: 1, size: 10 }),
+  headers: Joi.object({
+    "x-api-key": Joi.string().required(),
+  }).unknown(true),
+  pathParameters: Joi.object({
+    customerID: Joi.string().required(),
+  }),
+  queryStringParameters: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    size: Joi.number().integer().min(1).default(10),
+  })
+    .empty(null)
+    .default({ page: 1, size: 10 }),
 }).unknown(true);
 
 const ltlRateRequestSchema = Joi.object({
-    ltlRateRequest: Joi.object({
-        pickupTime: Joi.string().required().label("pickupTime"),
-        reference: Joi.string().required().label("Reference"),
-        insuredValue: Joi.number().optional().label("insuredValue"),
-        shipperZip: Joi.string()
-            .required()
-            .custom((value, helpers) => {
-                const usZipRegex = /^[0-9]{5}(?:-[0-9]{4})?$/;
-                const caPostalCodeRegex = /^[A-Za-z][0-9][A-Za-z][ ]?[0-9][A-Za-z][0-9]$/;
+  ltlRateRequest: Joi.object({
+    pickupTime: Joi.string().required().label("pickupTime"),
+    reference: Joi.string().required().label("Reference"),
+    insuredValue: Joi.number().optional().label("insuredValue"),
+    shipperZip: Joi.string()
+      .required()
+      .custom((value, helpers) => {
+        const usZipRegex = /^\d{5}(?:-\d{4})?$/;
+        const caPostalCodeRegex = /^[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$/;
 
-                if (usZipRegex.test(value) || caPostalCodeRegex.test(value)) {
-                    return value;
-                } else {
-                    return helpers.error('any.invalid');
-                }
-            })
-            .label("shipperZip"),
-        consigneeZip: Joi.string()
-            .required()
-            .custom((value, helpers) => {
-                const usZipRegex = /^[0-9]{5}(?:-[0-9]{4})?$/;
-                const caPostalCodeRegex = /^[A-Za-z][0-9][A-Za-z][ ]?[0-9][A-Za-z][0-9]$/;
-
-                if (usZipRegex.test(value) || caPostalCodeRegex.test(value)) {
-                    return value;
-                } else {
-                    return helpers.error('any.invalid');
-                }
-            })
-            .label("consigneeZip"),
-        shipmentLines: Joi.array()
-            .max(99)
-            .items(
-                Joi.object({
-                    pieces: Joi.number().required().label("pieces."),
-                    pieceType: Joi.string().optional().label("pieceType."),
-                    weight: Joi.number().required().label("weight."),
-                    weightUOM: Joi.string().required().label("weightUOM."),
-                    length: Joi.number().required().label("length."),
-                    width: Joi.number().required().label("width."),
-                    height: Joi.number().required().label("height."),
-                    dimUOM: Joi.string().required().label("dimUOM."),
-                    hazmat: Joi.boolean().optional().label("hazmat."),
-                    freightClass: Joi.number().optional().label("freightClass."),
-                })
-            )
-            .required()
-            .label("shipmentLines"),
-        accessorialList: Joi.array().items(Joi.string()).optional().label("accessorialList"),
-    }),
+        if (usZipRegex.test(value) || caPostalCodeRegex.test(value)) {
+          return value;
+        } else {
+          return helpers.error("any.invalid");
+        }
+      })
+      .label("shipperZip"),
+    consigneeZip: Joi.string()
+      .required()
+      .custom((value, helpers) => {
+        const usZipRegex = /^\d{5}(?:-\d{4})?$/;
+        const caPostalCodeRegex = /^[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$/;
+        if (usZipRegex.test(value) || caPostalCodeRegex.test(value)) {
+          return value;
+        } else {
+          return helpers.error("any.invalid");
+        }
+      })
+      .label("consigneeZip"),
+    shipmentLines: Joi.array()
+      .max(99)
+      .items(
+        Joi.object({
+          pieces: Joi.number().required().label("pieces."),
+          pieceType: Joi.string().optional().label("pieceType."),
+          weight: Joi.number().required().label("weight."),
+          weightUOM: Joi.string().required().label("weightUOM."),
+          length: Joi.number().required().label("length."),
+          width: Joi.number().required().label("width."),
+          height: Joi.number().required().label("height."),
+          dimUOM: Joi.string().required().label("dimUOM."),
+          hazmat: Joi.boolean().optional().label("hazmat."),
+          freightClass: Joi.number().optional().label("freightClass."),
+        })
+      )
+      .required()
+      .label("shipmentLines"),
+    accessorialList: Joi.array()
+      .items(Joi.string())
+      .optional()
+      .label("accessorialList"),
+  }),
 });
 
 module.exports = { schema, ltlRateRequestSchema };
